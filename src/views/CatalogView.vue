@@ -64,51 +64,56 @@
     </section>
 
     <!-- Filters & Search Toolbar (Bento Card) -->
-    <section class="bg-white rounded-3xl p-3.5 sm:p-5 border border-slate-100 shadow-sm space-y-3">
-      <div class="flex flex-col lg:flex-row gap-3 items-start lg:items-center justify-between">
-        
-        <!-- Category Filter Tabs (Smooth horizontal scrolling on mobile, zero page overflow) -->
-        <div class="flex items-center gap-1.5 overflow-x-auto w-full no-scrollbar py-0.5 -mx-1 px-1 scroll-smooth">
+    <section class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm space-y-3.5">
+      
+      <!-- Category Filter Tabs (Flex-wrap with clean spacing, never clipped or truncated) -->
+      <div>
+        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Kategori Buku:</div>
+        <div class="flex flex-wrap items-center gap-2">
           <button 
             v-for="cat in categories" 
             :key="cat"
             @click="selectedCategory = cat"
-            class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition cursor-pointer shrink-0 active:scale-95"
+            class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition cursor-pointer active:scale-95"
             :class="selectedCategory === cat ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'"
           >
             {{ cat === 'all' ? 'Semua Kategori' : cat }}
           </button>
         </div>
+      </div>
 
-        <!-- Shelf & Availability Dropdowns -->
-        <div class="flex items-center gap-2 w-full lg:w-auto">
+      <!-- Secondary Filters: Shelf, Availability, and Result Info -->
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-slate-100">
+        <div class="flex flex-wrap items-center gap-2 flex-1">
           <select 
             v-model="selectedShelfId"
-            class="flex-1 lg:w-48 px-3 py-2 bg-slate-50 border border-slate-200 rounded-full text-slate-700 text-xs focus:outline-none focus:border-blue-500 font-medium"
+            class="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-full text-slate-700 text-xs focus:outline-none focus:border-blue-500 font-medium"
           >
             <option value="all">Semua Lokasi Rak</option>
             <option v-for="s in store.shelves" :key="s.id" :value="s.id">
-              {{ s.code }} - Lantai {{ s.floor }}
+              {{ s.code }} - Lantai {{ s.floor }} ({{ s.zone }})
             </option>
           </select>
 
           <select 
             v-model="availabilityFilter"
-            class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-full text-slate-700 text-xs focus:outline-none focus:border-blue-500 font-medium"
+            class="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-full text-slate-700 text-xs focus:outline-none focus:border-blue-500 font-medium"
           >
-            <option value="all">Semua Status</option>
-            <option value="available">Tersedia</option>
+            <option value="all">Semua Status Ketersediaan</option>
+            <option value="available">Hanya Buku Tersedia</option>
           </select>
         </div>
 
-      </div>
-
-      <!-- Result Count Info -->
-      <div class="flex items-center justify-between text-[11px] sm:text-xs text-slate-400 pt-2 border-t border-slate-100">
-        <span>Menampilkan <strong class="text-slate-800">{{ filteredBooks.length }}</strong> buku</span>
-        <span v-if="selectedCategory !== 'all' || selectedShelfId !== 'all' || searchQuery" class="text-blue-600 font-medium">
-          <button @click="resetFilters" class="underline hover:text-blue-700 cursor-pointer">Reset Filter</button>
-        </span>
+        <div class="flex items-center justify-between sm:justify-end gap-3 text-[11px] sm:text-xs text-slate-400">
+          <span>Menampilkan <strong class="text-slate-800">{{ filteredBooks.length }}</strong> buku</span>
+          <button 
+            v-if="selectedCategory !== 'all' || selectedShelfId !== 'all' || availabilityFilter !== 'all' || searchQuery"
+            @click="resetFilters" 
+            class="text-blue-600 font-bold underline hover:text-blue-700 cursor-pointer"
+          >
+            Reset Filter
+          </button>
+        </div>
       </div>
     </section>
 

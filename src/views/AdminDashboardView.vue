@@ -211,10 +211,11 @@
     <!-- MAIN INTERACTIVE BENTO CARD: Tabs & Circulation Tables -->
     <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
       
-      <!-- Bento Tab Bar (Scrollable on mobile with smooth swipe) -->
-      <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-50/50">
+      <!-- Bento Tab Bar (Responsive flex-wrap layout, prevents clipping and overflow) -->
+      <div class="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3.5 bg-slate-50/60">
         
-        <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 -mx-2 px-2 scroll-smooth">
+        <!-- Tab Navigation (Flex-wrap with clean gap, ensuring all menu pills are visible) -->
+        <div class="flex flex-wrap items-center gap-2 flex-1 min-w-0">
           <button 
             v-for="tab in adminTabs"
             :key="tab.id"
@@ -228,7 +229,7 @@
             <span>{{ tab.label }}</span>
             <span 
               v-if="tab.badge" 
-              class="px-2 py-0.2 rounded-full text-[10px] font-bold"
+              class="px-2 py-0.5 rounded-full text-[10px] font-bold"
               :class="activeTab === tab.id ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-700'"
             >
               {{ tab.badge }}
@@ -237,12 +238,12 @@
         </div>
 
         <!-- Real-time Search Input -->
-        <div class="relative w-full sm:w-64 shrink-0">
+        <div class="relative w-full xl:w-72 shrink-0">
           <input 
             v-model="loanSearch"
             type="text" 
             placeholder="Cari transaksi / nama..."
-            class="w-full pl-4 pr-3 py-2 sm:py-1.5 bg-white border border-slate-200 rounded-full text-xs text-slate-900 focus:outline-none focus:border-blue-500 shadow-sm"
+            class="w-full pl-4 pr-3 py-2 bg-white border border-slate-200 rounded-full text-xs text-slate-900 focus:outline-none focus:border-blue-500 shadow-sm"
           />
         </div>
 
@@ -464,13 +465,13 @@
 
           <!-- Member Filter & Search Bar -->
           <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-            <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+            <div class="flex flex-wrap items-center gap-1.5 py-0.5">
               <button 
                 v-for="filter in ['all', 'active', 'suspended', 'admin']" 
                 :key="filter"
                 @click="memberFilter = filter"
-                class="px-3 py-1.5 rounded-full text-xs font-semibold capitalize transition cursor-pointer"
-                :class="memberFilter === filter ? 'bg-slate-900 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'"
+                class="px-3.5 py-1.5 rounded-full text-xs font-semibold capitalize transition cursor-pointer"
+                :class="memberFilter === filter ? 'bg-slate-900 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200/60'"
               >
                 {{ filter === 'all' ? 'Semua Anggota' : filter === 'active' ? 'Aktif' : filter === 'suspended' ? 'Disuspend' : 'Admin' }}
               </button>

@@ -33,13 +33,13 @@
       </div>
     </div>
 
-    <!-- Floor Selector Tabs (Zero overflow, smooth swipe on mobile) -->
-    <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 -mx-1 px-1 scroll-smooth">
+    <!-- Floor Selector Tabs (Flex-wrap, responsive layout) -->
+    <div class="flex flex-wrap items-center gap-2 py-1">
       <button 
         v-for="floor in [0, 1, 2, 3]" 
         :key="floor"
         @click="selectedFloor = floor"
-        class="px-3.5 py-2 rounded-full text-xs font-bold transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 active:scale-95"
+        class="px-3.5 py-2 rounded-full text-xs font-bold transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap active:scale-95"
         :class="selectedFloor === floor 
           ? 'bg-slate-900 text-white shadow-sm' 
           : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
@@ -47,7 +47,7 @@
         <Building2 class="w-3.5 h-3.5" />
         <span>{{ floor === 0 ? 'Semua Lantai' : `Lantai ${floor}` }}</span>
         <span 
-          class="px-2 py-0.2 rounded-full text-[10px] font-bold"
+          class="px-2 py-0.5 rounded-full text-[10px] font-bold"
           :class="selectedFloor === floor ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-700'"
         >
           {{ floor === 0 ? store.shelves.length : store.shelves.filter(s => s.floor === floor).length }}
