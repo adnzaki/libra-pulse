@@ -1,6 +1,6 @@
 <template>
   <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
-    <div class="bg-white border border-slate-100 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+    <div class="bg-white border border-slate-100 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 my-auto">
       
       <!-- Header -->
       <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between">
@@ -19,8 +19,17 @@
       </div>
 
       <!-- Content -->
-      <div class="p-6 space-y-5">
+      <div class="p-6 space-y-4">
         
+        <!-- Inline Modal Error Alert (Always on top & visible inside modal) -->
+        <div v-if="modalError" class="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-center justify-between gap-2.5 animate-in fade-in">
+          <div class="flex items-center gap-2">
+            <AlertCircle class="w-4 h-4 shrink-0 text-rose-600" />
+            <span class="font-semibold leading-tight">{{ modalError }}</span>
+          </div>
+          <button @click="modalError = ''" type="button" class="text-rose-500 hover:text-rose-800 text-sm font-bold p-1 cursor-pointer">✕</button>
+        </div>
+
         <!-- Book Preview Card -->
         <div v-if="book" class="flex gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
           <img :src="book.cover" class="w-16 h-22 object-cover rounded-xl shadow-sm shrink-0" alt="Cover" />
@@ -48,7 +57,7 @@
           <div class="flex rounded-full bg-slate-100 p-1 text-xs">
             <button 
               type="button"
-              @click="authMode = 'card'"
+              @click="setAuthMode('card')"
               class="flex-1 py-2 rounded-full font-bold transition cursor-pointer"
               :class="authMode === 'card' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
             >
@@ -56,7 +65,7 @@
             </button>
             <button 
               type="button"
-              @click="authMode = 'register'"
+              @click="setAuthMode('register')"
               class="flex-1 py-2 rounded-full font-bold transition cursor-pointer"
               :class="authMode === 'register' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
             >
@@ -64,43 +73,93 @@
             </button>
           </div>
 
-          <!-- Card Input Mode -->
+          <!-- Card Input / QR Scan Mode -->
           <div v-if="authMode === 'card'" class="space-y-3">
             <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1.5">Nomor Kartu Member atau ID</label>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="text-xs font-bold text-slate-700">Nomor Kartu Member atau ID</label>
+                <button 
+                  type="button"
+                  @click="toggleCameraScanner"
+                  class="text-[11px] px-2.5 py-1 rounded-full font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  :class="isCameraActive ? 'bg-rose-100 text-rose-700 hover:bg-rose-200' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'"
+                >
+                  <Camera class="w-3.5 h-3.5" />
+                  <span>{{ isCameraActive ? 'Tutup Scanner' : 'Scan QR Kartu' }}</span>
+                </button>
+              </div>
+
+              <!-- Embedded Camera QR Scanner Area -->
+              <div v-if="isCameraActive" class="mb-3 p-3 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-2">
+                <div id="booking-qr-reader" class="w-full max-h-52 rounded-xl overflow-hidden bg-slate-950 mx-auto"></div>
+                <p class="text-[11px] text-slate-300">Arahkan kamera ke QR Code atau Barcode pada kartu anggota</p>
+              </div>
+
               <div class="relative">
                 <input 
                   v-model="cardNumberInput" 
+                  @input="handleCardInputChanged"
                   type="text" 
-                  placeholder="Contoh: LIB-2026-8801 atau LIB-2026-8803"
-                  class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-800 text-xs focus:outline-none focus:border-blue-500 font-mono font-semibold"
+                  placeholder="Contoh: LIB-2026-8801"
+                  class="w-full pl-4 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-800 text-xs focus:outline-none focus:border-blue-500 font-mono font-semibold uppercase"
                 />
                 <button 
                   type="button"
-                  @click="useDemoMember('LIB-2026-8801')" 
-                  class="absolute right-2 top-2 text-[11px] px-2.5 py-1 rounded-full bg-white hover:bg-slate-100 border border-slate-200 text-blue-600 font-bold transition shadow-sm cursor-pointer"
+                  @click="toggleCameraScanner" 
+                  class="absolute right-2.5 top-2.5 text-slate-400 hover:text-blue-600 transition"
+                  title="Scan QR Code"
                 >
-                  Gunakan Demo
+                  <QrCode class="w-4 h-4" />
                 </button>
               </div>
-              <p class="text-[11px] text-slate-400 mt-1">Kartu member langsung divalidasi tanpa perlu password manual.</p>
+              
+              <!-- Verified Member Preview Pill if found -->
+              <div v-if="verifiedMember" class="mt-2 p-2.5 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between text-xs animate-in fade-in">
+                <div class="flex items-center gap-2.5">
+                  <img :src="verifiedMember.avatar" class="w-7 h-7 rounded-full object-cover border border-emerald-300" alt="Avatar" />
+                  <div>
+                    <span class="font-bold text-emerald-950">{{ verifiedMember.name }}</span>
+                    <span class="text-[10px] text-emerald-700 font-mono ml-1.5">({{ verifiedMember.cardNumber }})</span>
+                  </div>
+                </div>
+                <span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">Terverifikasi</span>
+              </div>
+              <p v-else class="text-[11px] text-slate-400 mt-1">Gunakan nomor kartu terdaftar atau scan QR kartu anggota Anda.</p>
             </div>
           </div>
 
           <!-- Register Mode -->
           <div v-else-if="authMode === 'register'" class="space-y-3">
             <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap</label>
-              <input v-model="regForm.name" type="text" placeholder="Nama Anda" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 font-medium" />
+              <label class="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap *</label>
+              <input 
+                v-model="regForm.name" 
+                @input="modalError = ''"
+                type="text" 
+                placeholder="Nama Lengkap Anda" 
+                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 font-medium" 
+              />
             </div>
             <div class="grid grid-cols-2 gap-2">
               <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Email</label>
-                <input v-model="regForm.email" type="email" placeholder="email@domain.com" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 font-medium" />
+                <label class="block text-xs font-bold text-slate-700 mb-1">Email *</label>
+                <input 
+                  v-model="regForm.email" 
+                  @input="modalError = ''"
+                  type="email" 
+                  placeholder="email@domain.com" 
+                  class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 font-medium" 
+                />
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">No. WhatsApp/HP</label>
-                <input v-model="regForm.phone" type="text" placeholder="+62812..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 font-medium" />
+                <label class="block text-xs font-bold text-slate-700 mb-1">No. WhatsApp/HP *</label>
+                <input 
+                  v-model="regForm.phone" 
+                  @input="modalError = ''"
+                  type="text" 
+                  placeholder="+62812..." 
+                  class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 font-medium" 
+                />
               </div>
             </div>
           </div>
@@ -154,7 +213,7 @@
           Batal
         </button>
         <button 
-          type="button"
+          type="button" 
           @click="handleSubmitBooking"
           :disabled="isSubmitting || (book && book.availableCopies <= 0)"
           class="px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
@@ -169,10 +228,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onBeforeUnmount, nextTick } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
-import type { Book } from '../types.js';
-import { BookmarkCheck, Bookmark, X, Clock, AlertCircle } from 'lucide-vue-next';
+import type { Book, Member } from '../types.js';
+import { BookmarkCheck, Bookmark, X, Clock, AlertCircle, Camera, QrCode } from 'lucide-vue-next';
+import { Html5Qrcode } from 'html5-qrcode';
 import confetti from 'canvas-confetti';
 
 const props = defineProps<{
@@ -187,6 +247,11 @@ const authMode = ref<'card' | 'register'>('card');
 const cardNumberInput = ref('');
 const bookingNotes = ref('');
 const isSubmitting = ref(false);
+const modalError = ref('');
+const verifiedMember = ref<Member | null>(null);
+
+const isCameraActive = ref(false);
+let html5QrScanner: Html5Qrcode | null = null;
 
 const regForm = ref({
   name: '',
@@ -199,44 +264,114 @@ const isCurrentMemberSuspended = computed(() => {
   return false;
 });
 
-const useDemoMember = (card: string) => {
-  cardNumberInput.value = card;
+const setAuthMode = (mode: 'card' | 'register') => {
+  authMode.value = mode;
+  modalError.value = '';
+  if (mode === 'register') {
+    stopCamera();
+  }
+};
+
+const handleCardInputChanged = () => {
+  modalError.value = '';
+  verifiedMember.value = null;
+  const input = cardNumberInput.value.trim().toUpperCase();
+  if (input.length >= 4) {
+    const found = store.members.find(m => m.cardNumber.toUpperCase() === input || m.id === input);
+    if (found) {
+      verifiedMember.value = found;
+    }
+  }
+};
+
+const toggleCameraScanner = async () => {
+  modalError.value = '';
+  if (isCameraActive.value) {
+    await stopCamera();
+  } else {
+    await startCamera();
+  }
+};
+
+const startCamera = async () => {
+  try {
+    isCameraActive.value = true;
+    await nextTick();
+    html5QrScanner = new Html5Qrcode('booking-qr-reader');
+    await html5QrScanner.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: { width: 220, height: 220 } },
+      (decodedText) => {
+        cardNumberInput.value = decodedText.trim();
+        handleCardInputChanged();
+        store.showToast(`Kartu ${decodedText} berhasil dipindai!`);
+        stopCamera();
+      },
+      () => {}
+    );
+  } catch (err: any) {
+    console.error('Camera error', err);
+    modalError.value = 'Tidak dapat mengakses kamera. Pastikan izin kamera telah diizinkan.';
+    isCameraActive.value = false;
+  }
+};
+
+const stopCamera = async () => {
+  if (html5QrScanner && isCameraActive.value) {
+    try {
+      await html5QrScanner.stop();
+      html5QrScanner = null;
+    } catch (err) {
+      console.error(err);
+    }
+  }
+  isCameraActive.value = false;
 };
 
 const closeModal = () => {
+  stopCamera();
+  modalError.value = '';
   emit('close');
 };
 
 const handleSubmitBooking = async () => {
   if (!props.book) return;
+  modalError.value = '';
 
-  isSubmitting.value = true;
-  try {
-    let targetCardNumber = '';
+  let targetCardNumber = '';
 
-    if (store.currentUser) {
-      targetCardNumber = store.currentUser.cardNumber;
-    } else if (authMode.value === 'card') {
-      if (!cardNumberInput.value.trim()) {
-        store.setError('Silakan masukkan nomor kartu member');
-        isSubmitting.value = false;
-        return;
-      }
-      targetCardNumber = cardNumberInput.value.trim();
-    } else if (authMode.value === 'register') {
-      if (!regForm.value.name || !regForm.value.email || !regForm.value.phone) {
-        store.setError('Lengkapi semua data registrasi');
-        isSubmitting.value = false;
-        return;
-      }
+  if (store.currentUser) {
+    targetCardNumber = store.currentUser.cardNumber;
+  } else if (authMode.value === 'card') {
+    const cleanCard = cardNumberInput.value.trim();
+    if (!cleanCard) {
+      modalError.value = 'Silakan masukkan atau scan nomor kartu member Anda terlebih dahulu.';
+      return;
+    }
+    targetCardNumber = cleanCard;
+  } else if (authMode.value === 'register') {
+    if (!regForm.value.name.trim() || !regForm.value.email.trim() || !regForm.value.phone.trim()) {
+      modalError.value = 'Silakan lengkapi nama, email, dan nomor HP untuk pendaftaran member baru.';
+      return;
+    }
+    isSubmitting.value = true;
+    try {
       const regRes = await store.registerMember(regForm.value);
       if (!regRes.success) {
+        modalError.value = regRes.error || 'Gagal mendaftarkan anggota baru.';
         isSubmitting.value = false;
         return;
       }
       targetCardNumber = regRes.member.cardNumber;
+    } catch (e: any) {
+      modalError.value = e.message || 'Terjadi kesalahan pendaftaran.';
+      isSubmitting.value = false;
+      return;
     }
+  }
 
+  isSubmitting.value = true;
+  try {
     const res = await store.createBooking(props.book.id, targetCardNumber, bookingNotes.value);
     if (res.success) {
       confetti({
@@ -246,12 +381,18 @@ const handleSubmitBooking = async () => {
       });
       emit('booked', res.booking);
       closeModal();
+    } else {
+      modalError.value = res.error || 'Gagal melakukan booking buku.';
     }
   } catch (err: any) {
-    console.error('Booking error', err);
+    modalError.value = err.message || 'Terjadi kesalahan saat memproses booking.';
   } finally {
     isSubmitting.value = false;
   }
 };
+
+onBeforeUnmount(() => {
+  stopCamera();
+});
 </script>
 

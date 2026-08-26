@@ -7,7 +7,7 @@
     <!-- Toast Notification Banner -->
     <div 
       v-if="store.toastMessage"
-      class="fixed bottom-20 md:bottom-6 right-4 sm:right-6 left-4 sm:left-auto z-50 px-4 sm:px-5 py-3.5 bg-slate-900/95 text-white font-semibold rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-bottom-5 duration-300 text-xs border border-slate-800 backdrop-blur-md"
+      class="fixed bottom-20 md:bottom-6 right-4 sm:right-6 left-4 sm:left-auto z-[100] px-4 sm:px-5 py-3.5 bg-slate-900/95 text-white font-semibold rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-bottom-5 duration-300 text-xs border border-slate-800 backdrop-blur-md"
     >
       <div class="w-6 h-6 rounded-lg bg-blue-500 flex items-center justify-center text-white shrink-0">
         <Bell class="w-3.5 h-3.5" />
@@ -18,7 +18,7 @@
     <!-- Error Alert Toast -->
     <div 
       v-if="store.error"
-      class="fixed bottom-20 md:bottom-6 left-4 sm:left-6 right-4 sm:right-auto z-50 px-4 sm:px-5 py-3.5 bg-rose-600/95 text-white font-semibold rounded-2xl shadow-2xl flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5 duration-300 text-xs border border-rose-500 max-w-md backdrop-blur-md"
+      class="fixed bottom-20 md:bottom-6 left-4 sm:left-6 right-4 sm:right-auto z-[100] px-4 sm:px-5 py-3.5 bg-rose-600/95 text-white font-semibold rounded-2xl shadow-2xl flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5 duration-300 text-xs border border-rose-500 max-w-md backdrop-blur-md"
     >
       <div class="flex items-center gap-2">
         <AlertCircle class="w-4 h-4 shrink-0 text-white" />
