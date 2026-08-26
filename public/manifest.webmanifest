@@ -1,0 +1,23 @@
+{
+  "name": "PustakaModern - Smart Library System",
+  "short_name": "PustakaModern",
+  "description": "Sistem Manajemen Perpustakaan Modern PWA dengan Kartu Member QR & Booking 24 Jam",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=192&h=192&fit=crop&q=80",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=512&h=512&fit=crop&q=80",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}

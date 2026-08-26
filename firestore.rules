@@ -1,0 +1,163 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Safety Net Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'azzackey@gmail.com' ||
+        (exists(/databases/$(database)/documents/members/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/members/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+
+    // Validation Helpers
+    function isValidCategory(data) {
+      return data.id is string && data.id.size() <= 64 &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.description is string && data.description.size() <= 300 &&
+             data.color is string && data.color.size() <= 20;
+    }
+
+    function isValidBook(data) {
+      return data.id is string && data.id.size() <= 64 &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
+             data.author is string && data.author.size() <= 150 &&
+             data.isbn is string && data.isbn.size() <= 50 &&
+             data.category is string && data.category.size() <= 100 &&
+             data.shelfId is string && data.shelfId.size() <= 64 &&
+             data.shelfCode is string && data.shelfCode.size() <= 64 &&
+             data.totalCopies is number && data.totalCopies >= 0 &&
+             data.availableCopies is number && data.availableCopies >= 0 &&
+             data.reservedCopies is number && data.reservedCopies >= 0;
+    }
+
+    function isValidShelf(data) {
+      return data.id is string && data.id.size() <= 64 &&
+             data.code is string && data.code.size() <= 64 &&
+             data.name is string && data.name.size() <= 150 &&
+             data.floor is number && data.floor >= 1 &&
+             data.zone is string && data.zone.size() <= 150 &&
+             data.capacity is number && data.capacity >= 0 &&
+             data.currentCount is number && data.currentCount >= 0 &&
+             data.category is string && data.category.size() <= 100 &&
+             data.color is string && data.color.size() <= 20;
+    }
+
+    function isValidMember(data) {
+      return data.id is string && data.id.size() <= 64 &&
+             data.name is string && data.name.size() <= 150 &&
+             data.cardNumber is string && data.cardNumber.size() <= 50 &&
+             data.email is string && data.email.size() <= 150 &&
+             data.role in ['admin', 'member', 'staff'] &&
+             data.isSuspended is bool;
+    }
+
+    function isValidBooking(data) {
+      return data.id is string && data.id.size() <= 64 &&
+             data.bookId is string && data.bookId.size() <= 64 &&
+             data.bookTitle is string && data.bookTitle.size() <= 200 &&
+             data.memberId is string && data.memberId.size() <= 64 &&
+             data.memberName is string && data.memberName.size() <= 150 &&
+             data.memberCardNumber is string && data.memberCardNumber.size() <= 50 &&
+             data.status in ['active_hold', 'fulfilled', 'cancelled', 'expired'] &&
+             data.pickupCode is string && data.pickupCode.size() <= 50;
+    }
+
+    function isValidLoan(data) {
+      return data.id is string && data.id.size() <= 64 &&
+             data.bookId is string && data.bookId.size() <= 64 &&
+             data.bookTitle is string && data.bookTitle.size() <= 200 &&
+             data.memberId is string && data.memberId.size() <= 64 &&
+             data.memberName is string && data.memberName.size() <= 150 &&
+             data.memberCardNumber is string && data.memberCardNumber.size() <= 50 &&
+             data.borrowDate is string && data.borrowDate.size() <= 50 &&
+             data.dueDate is string && data.dueDate.size() <= 50 &&
+             data.status in ['active', 'returned', 'overdue'];
+    }
+
+    // Categories: Public read, Admin write
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(categoryId) && isAdmin() && (request.resource == null || isValidCategory(incoming()));
+    }
+
+    // Books: Public read, Admin write, or stock adjustment via booking/loan
+    match /books/{bookId} {
+      allow read: if true;
+      allow create, delete: if isValidId(bookId) && isAdmin() && (request.resource == null || isValidBook(incoming()));
+      allow update: if isValidId(bookId) && (
+        (isAdmin() && isValidBook(incoming())) ||
+        (isSignedIn() && isValidBook(incoming()) && 
+         incoming().diff(existing()).affectedKeys().hasOnly(['availableCopies', 'reservedCopies']))
+      );
+    }
+
+    // Shelves: Public read, Admin write
+    match /shelves/{shelfId} {
+      allow read: if true;
+      allow create, update, delete: if isValidId(shelfId) && isAdmin() && (request.resource == null || isValidShelf(incoming()));
+    }
+
+    // Members: Authenticated read & profile management, Admin full control
+    match /members/{memberId} {
+      allow read: if isSignedIn();
+      allow create: if isValidId(memberId) && (isAdmin() || (isSignedIn() && request.auth.uid == memberId && isValidMember(incoming())));
+      allow update: if isValidId(memberId) && (
+        isAdmin() ||
+        (isSignedIn() && request.auth.uid == memberId && isValidMember(incoming()) &&
+         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'phone', 'avatar', 'qrCodeData']))
+      );
+      allow delete: if isValidId(memberId) && isAdmin();
+    }
+
+    // Bookings: Member can read/create own booking, Admin full control
+    match /bookings/{bookingId} {
+      allow read: if isSignedIn() && (isAdmin() || resource.data.memberId == request.auth.uid);
+      allow create: if isValidId(bookingId) && isSignedIn() && isValidBooking(incoming()) && (isAdmin() || incoming().memberId == request.auth.uid);
+      allow update: if isValidId(bookingId) && isSignedIn() && isValidBooking(incoming()) && (
+        isAdmin() ||
+        (existing().memberId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['status']))
+      );
+      allow delete: if isValidId(bookingId) && isAdmin();
+    }
+
+    // Loans: Admin full control, Members read own active/historical loans
+    match /loans/{loanId} {
+      allow read: if isSignedIn() && (isAdmin() || resource.data.memberId == request.auth.uid);
+      allow create, update, delete: if isValidId(loanId) && isAdmin() && (request.resource == null || isValidLoan(incoming()));
+    }
+
+    // Notifications: Admin can write, members read own logs
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn() && (isAdmin() || resource.data.memberId == request.auth.uid);
+      allow create, update, delete: if isValidId(notificationId) && isAdmin();
+    }
+
+    // Test Connection collection for verification
+    match /test/{testDoc} {
+      allow read, write: if true;
+    }
+  }
+}

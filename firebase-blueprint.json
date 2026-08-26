@@ -1,0 +1,169 @@
+{
+  "entities": {
+    "BookCategory": {
+      "title": "BookCategory",
+      "description": "Kategori buku perpustakaan",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "name": { "type": "string", "maxLength": 100 },
+        "description": { "type": "string", "maxLength": 300 },
+        "color": { "type": "string", "maxLength": 20 }
+      },
+      "required": ["id", "name", "description", "color"]
+    },
+    "Book": {
+      "title": "Book",
+      "description": "Koleksi buku perpustakaan",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "title": { "type": "string", "maxLength": 200 },
+        "author": { "type": "string", "maxLength": 150 },
+        "isbn": { "type": "string", "maxLength": 50 },
+        "barcode": { "type": "string", "maxLength": 50 },
+        "category": { "type": "string", "maxLength": 100 },
+        "shelfId": { "type": "string", "maxLength": 64 },
+        "shelfCode": { "type": "string", "maxLength": 64 },
+        "totalCopies": { "type": "number" },
+        "availableCopies": { "type": "number" },
+        "reservedCopies": { "type": "number" },
+        "cover": { "type": "string", "maxLength": 500 },
+        "synopsis": { "type": "string", "maxLength": 2000 },
+        "publisher": { "type": "string", "maxLength": 150 },
+        "year": { "type": "number" },
+        "pages": { "type": "number" },
+        "language": { "type": "string", "maxLength": 50 },
+        "addedAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "title", "author", "isbn", "category", "shelfId", "shelfCode", "totalCopies", "availableCopies", "reservedCopies"]
+    },
+    "Shelf": {
+      "title": "Shelf",
+      "description": "Lokasi rak fisik perpustakaan",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "code": { "type": "string", "maxLength": 64 },
+        "name": { "type": "string", "maxLength": 150 },
+        "floor": { "type": "number" },
+        "zone": { "type": "string", "maxLength": 150 },
+        "capacity": { "type": "number" },
+        "currentCount": { "type": "number" },
+        "category": { "type": "string", "maxLength": 100 },
+        "color": { "type": "string", "maxLength": 20 },
+        "description": { "type": "string", "maxLength": 500 },
+        "shelfRow": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["id", "code", "name", "floor", "zone", "capacity", "currentCount", "category", "color"]
+    },
+    "Member": {
+      "title": "Member",
+      "description": "Anggota perpustakaan digital",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "name": { "type": "string", "maxLength": 150 },
+        "cardNumber": { "type": "string", "maxLength": 50 },
+        "email": { "type": "string", "maxLength": 150 },
+        "phone": { "type": "string", "maxLength": 50 },
+        "avatar": { "type": "string", "maxLength": 500 },
+        "role": { "type": "string", "enum": ["admin", "member", "staff"] },
+        "isSuspended": { "type": "boolean" },
+        "suspendReason": { "type": "string", "maxLength": 300 },
+        "suspendedUntil": { "type": "string", "maxLength": 50 },
+        "joinedAt": { "type": "string", "maxLength": 50 },
+        "activeLoansCount": { "type": "number" },
+        "qrCodeData": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["id", "name", "cardNumber", "email", "role", "isSuspended"]
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "Reservasi peminjaman buku (Hold 24 Jam)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "bookId": { "type": "string", "maxLength": 64 },
+        "bookTitle": { "type": "string", "maxLength": 200 },
+        "bookCover": { "type": "string", "maxLength": 500 },
+        "shelfCode": { "type": "string", "maxLength": 64 },
+        "memberId": { "type": "string", "maxLength": 64 },
+        "memberName": { "type": "string", "maxLength": 150 },
+        "memberCardNumber": { "type": "string", "maxLength": 50 },
+        "bookingDate": { "type": "string", "maxLength": 50 },
+        "expiresAt": { "type": "string", "maxLength": 50 },
+        "status": { "type": "string", "enum": ["active_hold", "fulfilled", "cancelled", "expired"] },
+        "pickupCode": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "bookId", "bookTitle", "memberId", "memberName", "memberCardNumber", "bookingDate", "expiresAt", "status", "pickupCode"]
+    },
+    "Loan": {
+      "title": "Loan",
+      "description": "Transaksi sirkulasi peminjaman buku aktif",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "bookId": { "type": "string", "maxLength": 64 },
+        "bookTitle": { "type": "string", "maxLength": 200 },
+        "bookCover": { "type": "string", "maxLength": 500 },
+        "shelfCode": { "type": "string", "maxLength": 64 },
+        "memberId": { "type": "string", "maxLength": 64 },
+        "memberName": { "type": "string", "maxLength": 150 },
+        "memberCardNumber": { "type": "string", "maxLength": 50 },
+        "borrowDate": { "type": "string", "maxLength": 50 },
+        "dueDate": { "type": "string", "maxLength": 50 },
+        "returnDate": { "type": "string", "maxLength": 50 },
+        "status": { "type": "string", "enum": ["active", "returned", "overdue"] },
+        "daysOverdue": { "type": "number" },
+        "notes": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["id", "bookId", "bookTitle", "memberId", "memberName", "memberCardNumber", "borrowDate", "dueDate", "status"]
+    },
+    "NotificationLog": {
+      "title": "NotificationLog",
+      "description": "Riwayat pengiriman notifikasi/peringatan sistem",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "memberId": { "type": "string", "maxLength": 64 },
+        "memberName": { "type": "string", "maxLength": 150 },
+        "type": { "type": "string", "enum": ["email", "whatsapp", "in_app"] },
+        "message": { "type": "string", "maxLength": 1000 },
+        "sentAt": { "type": "string", "maxLength": 50 },
+        "status": { "type": "string", "enum": ["sent", "failed"] }
+      },
+      "required": ["id", "memberId", "memberName", "type", "message", "sentAt", "status"]
+    }
+  },
+  "firestore": {
+    "/categories/{categoryId}": {
+      "schema": "BookCategory",
+      "description": "Daftar kategori buku perpustakaan"
+    },
+    "/books/{bookId}": {
+      "schema": "Book",
+      "description": "Katalog koleksi buku fisik dan ketersediaan stok"
+    },
+    "/shelves/{shelfId}": {
+      "schema": "Shelf",
+      "description": "Denah rak fisik dan penempatan koleksi buku"
+    },
+    "/members/{memberId}": {
+      "schema": "Member",
+      "description": "Data anggota perpustakaan dan status kartu member"
+    },
+    "/bookings/{bookingId}": {
+      "schema": "Booking",
+      "description": "Data booking buku reservasi 24 jam"
+    },
+    "/loans/{loanId}": {
+      "schema": "Loan",
+      "description": "Data transaksi sirkulasi peminjaman dan pengembalian buku"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "NotificationLog",
+      "description": "Log notifikasi pengingat jatuh tempo dan overdues"
+    }
+  }
+}

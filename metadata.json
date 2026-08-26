@@ -1,0 +1,6 @@
+{
+  "name": "PustakaModern PWA",
+  "description": "Progressive Web App Sistem Manajemen Perpustakaan Modern dengan fitur Peminjaman, Rak Buku, Kartu Member QR, Booking 24 Jam, Notifikasi Keterlambatan, dan Sistem Suspend.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
