@@ -10,10 +10,9 @@
           </div>
           <div>
             <div class="flex items-center gap-2">
-              <span class="font-bold text-xl tracking-tight text-white group-hover:text-blue-400 transition">BiblioTech</span>
-              <span class="px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">PWA</span>
+              <span class="font-bold text-xl tracking-tight text-white group-hover:text-blue-400 transition">LibraPulse</span>
             </div>
-            <p class="text-[11px] text-slate-400 hidden sm:block">Perpustakaan Cerdas & Sirkulasi QR</p>
+            <p class="text-[11px] text-slate-400 hidden sm:block">Perpustakaan Cerdas</p>
           </div>
         </router-link>
 
