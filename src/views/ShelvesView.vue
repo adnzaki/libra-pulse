@@ -16,14 +16,21 @@
         </p>
       </div>
 
-      <!-- Add Shelf Button -->
+      <!-- Add Shelf Button (Admin Only) -->
       <button 
+        v-if="store.isAdmin"
         @click="openAddShelfModal"
         class="w-full sm:w-auto px-4 sm:px-5 py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-200 transition flex items-center justify-center gap-2 shrink-0 cursor-pointer active:scale-95"
       >
         <Plus class="w-4 h-4" />
         Tambah Rak Baru
       </button>
+      <div v-else class="text-right">
+        <span class="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
+          <Layers class="w-3 h-3 text-slate-400" />
+          Mode Katalog Publik
+        </span>
+      </div>
     </div>
 
     <!-- Floor Selector Tabs (Zero overflow, smooth swipe on mobile) -->
@@ -121,7 +128,7 @@
             <ChevronDown class="w-3.5 h-3.5 transition-transform" :class="activeShelfId === shelf.id ? 'rotate-180' : ''" />
           </button>
 
-          <div class="flex items-center gap-1">
+          <div v-if="store.isAdmin" class="flex items-center gap-1">
             <button 
               @click="openEditShelfModal(shelf)"
               class="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs transition cursor-pointer"
@@ -209,16 +216,28 @@ const toggleShelfDetails = (shelfId: string) => {
 };
 
 const openAddShelfModal = () => {
+  if (!store.isAdmin) {
+    store.setError('Akses ditolak. Anda harus masuk sebagai Administrator untuk menambah atau mengelola rak.');
+    return;
+  }
   selectedShelfForEdit.value = null;
   isShelfModalOpen.value = true;
 };
 
 const openEditShelfModal = (shelf: Shelf) => {
+  if (!store.isAdmin) {
+    store.setError('Akses ditolak. Anda harus masuk sebagai Administrator untuk mengedit rak.');
+    return;
+  }
   selectedShelfForEdit.value = shelf;
   isShelfModalOpen.value = true;
 };
 
 const handleDeleteShelf = async (shelfId: string) => {
+  if (!store.isAdmin) {
+    store.setError('Akses ditolak. Anda harus masuk sebagai Administrator untuk menghapus rak.');
+    return;
+  }
   if (confirm(`Apakah Anda yakin ingin menghapus rak ${shelfId}?`)) {
     await store.deleteShelf(shelfId);
   }

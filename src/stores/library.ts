@@ -349,6 +349,10 @@ export const useLibraryStore = defineStore('library', {
 
     // 9. Save / Edit Book
     async saveBook(bookData: Partial<Book>) {
+      if (!this.isAdmin) {
+        this.setError('Akses ditolak. Anda harus login sebagai Administrator untuk mengelola buku.');
+        return { success: false, error: 'Akses ditolak' };
+      }
       try {
         if (bookData.id && !bookData.id.startsWith('temp_')) {
           await axios.put(`/api/books/${bookData.id}`, bookData);
@@ -367,6 +371,10 @@ export const useLibraryStore = defineStore('library', {
     },
 
     async deleteBook(bookId: string) {
+      if (!this.isAdmin) {
+        this.setError('Akses ditolak. Anda harus login sebagai Administrator untuk menghapus buku.');
+        return { success: false, error: 'Akses ditolak' };
+      }
       try {
         await axios.delete(`/api/books/${bookId}`);
         await Promise.all([this.fetchBooks(), this.fetchShelves(), this.fetchStats()]);
@@ -381,6 +389,10 @@ export const useLibraryStore = defineStore('library', {
 
     // 10. Save / Edit Shelf
     async saveShelf(shelfData: Partial<Shelf>) {
+      if (!this.isAdmin) {
+        this.setError('Akses ditolak. Anda harus login sebagai Administrator untuk mengelola rak.');
+        return { success: false, error: 'Akses ditolak' };
+      }
       try {
         const existing = this.shelves.find(s => s.id === shelfData.id);
         if (existing) {
@@ -400,6 +412,10 @@ export const useLibraryStore = defineStore('library', {
     },
 
     async deleteShelf(shelfId: string) {
+      if (!this.isAdmin) {
+        this.setError('Akses ditolak. Anda harus login sebagai Administrator untuk menghapus rak.');
+        return { success: false, error: 'Akses ditolak' };
+      }
       try {
         await axios.delete(`/api/shelves/${shelfId}`);
         await Promise.all([this.fetchShelves(), this.fetchStats()]);
@@ -414,6 +430,10 @@ export const useLibraryStore = defineStore('library', {
 
     // Category CRUD
     async createCategory(catData: Partial<BookCategory>) {
+      if (!this.isAdmin) {
+        this.setError('Akses ditolak. Anda harus login sebagai Administrator untuk mengelola kategori.');
+        return { success: false, error: 'Akses ditolak' };
+      }
       try {
         const res = await axios.post('/api/categories', catData);
         await this.fetchCategories();
@@ -427,6 +447,10 @@ export const useLibraryStore = defineStore('library', {
     },
 
     async updateCategory(categoryId: string, catData: Partial<BookCategory>) {
+      if (!this.isAdmin) {
+        this.setError('Akses ditolak. Anda harus login sebagai Administrator untuk mengelola kategori.');
+        return { success: false, error: 'Akses ditolak' };
+      }
       try {
         const res = await axios.put(`/api/categories/${categoryId}`, catData);
         await Promise.all([this.fetchCategories(), this.fetchBooks(), this.fetchShelves()]);
@@ -440,6 +464,10 @@ export const useLibraryStore = defineStore('library', {
     },
 
     async deleteCategory(categoryId: string) {
+      if (!this.isAdmin) {
+        this.setError('Akses ditolak. Anda harus login sebagai Administrator untuk menghapus kategori.');
+        return { success: false, error: 'Akses ditolak' };
+      }
       try {
         const res = await axios.delete(`/api/categories/${categoryId}`);
         await Promise.all([this.fetchCategories(), this.fetchBooks(), this.fetchShelves()]);
