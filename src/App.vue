@@ -83,17 +83,11 @@ import Navbar from './components/Navbar.vue';
 import BottomNav from './components/BottomNav.vue';
 import PwaInstallBanner from './components/PwaInstallBanner.vue';
 import { Bell, AlertCircle } from 'lucide-vue-next';
-import { testConnection } from './lib/firebase.js';
 
 const store = useLibraryStore();
 
 onMounted(async () => {
-  await Promise.all([
-    store.fetchAll(),
-    testConnection()
-  ]);
-  // Initial sync with Firestore
-  store.syncWithCloudFirestore();
+  await store.initAll();
 });
 </script>
 

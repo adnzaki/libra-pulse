@@ -5,6 +5,7 @@ import MemberCardView from '../views/MemberCardView.vue';
 import MemberPortalView from '../views/MemberPortalView.vue';
 import AdminDashboardView from '../views/AdminDashboardView.vue';
 import LoginView from '../views/LoginView.vue';
+import SettingsView from '../views/SettingsView.vue';
 import { useLibraryStore } from '../stores/library.js';
 
 const routes: RouteRecordRaw[] = [
@@ -37,6 +38,12 @@ const routes: RouteRecordRaw[] = [
     name: 'admin',
     component: AdminDashboardView,
     meta: { title: 'Admin Library Dashboard', requiresAdmin: true }
+  },
+  {
+    path: '/settings',
+    name: 'settings',
+    component: SettingsView,
+    meta: { title: 'Pengaturan Sistem & Database', requiresAdmin: true }
   },
   {
     path: '/login',

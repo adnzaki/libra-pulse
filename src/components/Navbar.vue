@@ -10,7 +10,7 @@
           </div>
           <div>
             <div class="flex items-center gap-2">
-              <span class="font-bold text-xl tracking-tight text-white group-hover:text-blue-400 transition">LibraPulse</span>
+              <span class="font-bold text-xl tracking-tight text-white group-hover:text-blue-400 transition">Libra</span>
             </div>
           </div>
         </router-link>
@@ -141,6 +141,13 @@
                   >
                     <Layers class="w-4 h-4 text-slate-400" />
                     Kelola Rak & Koleksi
+                  </router-link>
+                  <router-link 
+                    to="/settings" 
+                    class="w-full text-left px-3.5 py-2 hover:bg-slate-800 rounded-xl flex items-center gap-2.5 text-slate-200 transition"
+                  >
+                    <Settings class="w-4 h-4 text-slate-400" />
+                    Pengaturan & Database
                   </router-link>
                 </div>
 
@@ -280,7 +287,7 @@ import { ref } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import { 
   BookMarked, Layers, QrCode, UserCheck, 
-  ShieldCheck, User, ChevronDown, Menu, X, LogIn, UserPlus, LogOut
+  ShieldCheck, User, ChevronDown, Menu, X, LogIn, UserPlus, LogOut, Settings
 } from 'lucide-vue-next';
 import { logoutUser } from '../lib/firebase.js';
 
