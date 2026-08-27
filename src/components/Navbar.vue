@@ -12,7 +12,6 @@
             <div class="flex items-center gap-2">
               <span class="font-bold text-xl tracking-tight text-white group-hover:text-blue-400 transition">LibraPulse</span>
             </div>
-            <p class="text-[11px] text-slate-400 hidden sm:block">Perpustakaan Cerdas</p>
           </div>
         </router-link>
 
