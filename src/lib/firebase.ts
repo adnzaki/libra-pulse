@@ -114,3 +114,134 @@ export async function logoutUser(): Promise<void> {
     throw error;
   }
 }
+
+// Full Synchronize helper to Firestore
+export async function syncAllToFirestore(data: {
+  categories: any[];
+  shelves: any[];
+  books: any[];
+  members: any[];
+  loans: any[];
+  bookings: any[];
+  notifications: any[];
+}): Promise<{ success: boolean; message: string }> {
+  try {
+    // 1. Sync Categories
+    for (const cat of data.categories) {
+      if (cat.id) await setDoc(doc(db, 'categories', cat.id), cat, { merge: true });
+    }
+
+    // 2. Sync Shelves
+    for (const shelf of data.shelves) {
+      if (shelf.id) await setDoc(doc(db, 'shelves', shelf.id), shelf, { merge: true });
+    }
+
+    // 3. Sync Books
+    for (const book of data.books) {
+      if (book.id) await setDoc(doc(db, 'books', book.id), book, { merge: true });
+    }
+
+    // 4. Sync Members
+    for (const member of data.members) {
+      if (member.id) await setDoc(doc(db, 'members', member.id), member, { merge: true });
+    }
+
+    // 5. Sync Loans
+    for (const loan of data.loans) {
+      if (loan.id) await setDoc(doc(db, 'loans', loan.id), loan, { merge: true });
+    }
+
+    // 6. Sync Bookings
+    for (const booking of data.bookings) {
+      if (booking.id) await setDoc(doc(db, 'bookings', booking.id), booking, { merge: true });
+    }
+
+    console.log('✅ Firestore sync finished successfully.');
+    return { success: true, message: 'Semua data buku, rak, dan anggota berhasil disinkronkan ke Firestore!' };
+  } catch (err: any) {
+    console.error('Firestore sync error:', err);
+    return { success: false, message: err?.message || 'Gagal sinkronisasi ke Firestore' };
+  }
+}
+
+// Single Document Sync Helpers for Realtime Firestore Persistence
+export async function syncBookDoc(book: any) {
+  try {
+    if (book?.id) {
+      await setDoc(doc(db, 'books', book.id), book, { merge: true });
+    }
+  } catch (e) {
+    console.warn('Sync book to Firestore warning:', e);
+  }
+}
+
+export async function removeBookDoc(bookId: string) {
+  try {
+    if (bookId) {
+      await deleteDoc(doc(db, 'books', bookId));
+    }
+  } catch (e) {
+    console.warn('Delete book from Firestore warning:', e);
+  }
+}
+
+export async function syncShelfDoc(shelf: any) {
+  try {
+    if (shelf?.id) {
+      await setDoc(doc(db, 'shelves', shelf.id), shelf, { merge: true });
+    }
+  } catch (e) {
+    console.warn('Sync shelf to Firestore warning:', e);
+  }
+}
+
+export async function removeShelfDoc(shelfId: string) {
+  try {
+    if (shelfId) {
+      await deleteDoc(doc(db, 'shelves', shelfId));
+    }
+  } catch (e) {
+    console.warn('Delete shelf from Firestore warning:', e);
+  }
+}
+
+export async function syncMemberDoc(member: any) {
+  try {
+    if (member?.id) {
+      await setDoc(doc(db, 'members', member.id), member, { merge: true });
+    }
+  } catch (e) {
+    console.warn('Sync member to Firestore warning:', e);
+  }
+}
+
+export async function syncCategoryDoc(category: any) {
+  try {
+    if (category?.id) {
+      await setDoc(doc(db, 'categories', category.id), category, { merge: true });
+    }
+  } catch (e) {
+    console.warn('Sync category to Firestore warning:', e);
+  }
+}
+
+export async function syncLoanDoc(loan: any) {
+  try {
+    if (loan?.id) {
+      await setDoc(doc(db, 'loans', loan.id), loan, { merge: true });
+    }
+  } catch (e) {
+    console.warn('Sync loan to Firestore warning:', e);
+  }
+}
+
+export async function syncBookingDoc(booking: any) {
+  try {
+    if (booking?.id) {
+      await setDoc(doc(db, 'bookings', booking.id), booking, { merge: true });
+    }
+  } catch (e) {
+    console.warn('Sync booking to Firestore warning:', e);
+  }
+}
+

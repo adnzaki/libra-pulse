@@ -79,6 +79,15 @@
         </button>
 
         <button 
+          @click="handleSyncFirestore"
+          :disabled="isSyncingFirestore"
+          class="px-3.5 sm:px-4 py-2.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-semibold text-xs rounded-full shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 disabled:opacity-50"
+        >
+          <RefreshCw class="w-4 h-4 text-blue-600 shrink-0" :class="{ 'animate-spin': isSyncingFirestore }" />
+          <span class="truncate">{{ isSyncingFirestore ? 'Menyinkronkan...' : 'Sinkronkan Firestore' }}</span>
+        </button>
+
+        <button 
           @click="isChangeAdminPasswordOpen = true"
           class="px-3.5 sm:px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-full shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
         >
@@ -1230,7 +1239,7 @@ import ChangePasswordModal from '../components/ChangePasswordModal.vue';
 import { 
   ShieldCheck, BookPlus, CheckCircle2, BookOpen, CheckCircle, 
   BookMarked, Clock, AlertTriangle, UserX, Sliders, Send, 
-  Plus, Pencil, Trash2, Tag, Users, UserPlus, LogIn, KeyRound, X, Eye, EyeOff, Check 
+  Plus, Pencil, Trash2, Tag, Users, UserPlus, LogIn, KeyRound, X, Eye, EyeOff, Check, RefreshCw 
 } from 'lucide-vue-next';
 
 const store = useLibraryStore();
@@ -1241,6 +1250,7 @@ const now = ref(Date.now());
 let timerInterval: any = null;
 
 // Modals state
+const isSyncingFirestore = ref(false);
 const isDirectLoanOpen = ref(false);
 const isReturnOpen = ref(false);
 const selectedLoanForReturn = ref<Loan | null>(null);
@@ -1443,6 +1453,15 @@ const saveSuspendConfig = async () => {
 const handleUnsuspend = async (memberId: string) => {
   if (confirm('Cabut sanksi suspend dan aktifkan kembali kartu member ini?')) {
     await store.toggleMemberSuspend(memberId, false);
+  }
+};
+
+const handleSyncFirestore = async () => {
+  isSyncingFirestore.value = true;
+  try {
+    await store.syncWithCloudFirestore();
+  } finally {
+    isSyncingFirestore.value = false;
   }
 };
 

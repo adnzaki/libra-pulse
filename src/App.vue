@@ -92,6 +92,8 @@ onMounted(async () => {
     store.fetchAll(),
     testConnection()
   ]);
+  // Initial sync with Firestore
+  store.syncWithCloudFirestore();
 });
 </script>
 

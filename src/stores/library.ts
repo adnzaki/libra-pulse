@@ -354,14 +354,24 @@ export const useLibraryStore = defineStore('library', {
         return { success: false, error: 'Akses ditolak' };
       }
       try {
+        let savedBook: Book | null = null;
         if (bookData.id && !bookData.id.startsWith('temp_')) {
-          await axios.put(`/api/books/${bookData.id}`, bookData);
+          const res = await axios.put(`/api/books/${bookData.id}`, bookData);
+          savedBook = res.data;
           this.showToast('Data buku berhasil diperbarui');
         } else {
-          await axios.post('/api/books', bookData);
+          const res = await axios.post('/api/books', bookData);
+          savedBook = res.data;
           this.showToast('Buku baru berhasil ditambahkan ke katalog perpustakaan');
         }
         await Promise.all([this.fetchBooks(), this.fetchShelves(), this.fetchStats()]);
+        
+        // Direct realtime sync to Firestore
+        if (savedBook) {
+          const { syncBookDoc } = await import('../lib/firebase.js');
+          await syncBookDoc(savedBook);
+        }
+
         return { success: true };
       } catch (err: any) {
         const msg = err.response?.data?.error || 'Gagal menyimpan data buku';
@@ -378,6 +388,11 @@ export const useLibraryStore = defineStore('library', {
       try {
         await axios.delete(`/api/books/${bookId}`);
         await Promise.all([this.fetchBooks(), this.fetchShelves(), this.fetchStats()]);
+
+        // Direct sync deletion to Firestore
+        const { removeBookDoc } = await import('../lib/firebase.js');
+        await removeBookDoc(bookId);
+
         this.showToast('Buku berhasil dihapus dari sistem');
         return { success: true };
       } catch (err: any) {
@@ -395,14 +410,24 @@ export const useLibraryStore = defineStore('library', {
       }
       try {
         const existing = this.shelves.find(s => s.id === shelfData.id);
+        let savedShelf: Shelf | null = null;
         if (existing) {
-          await axios.put(`/api/shelves/${shelfData.id}`, shelfData);
+          const res = await axios.put(`/api/shelves/${shelfData.id}`, shelfData);
+          savedShelf = res.data;
           this.showToast('Data rak berhasil diperbarui');
         } else {
-          await axios.post('/api/shelves', shelfData);
+          const res = await axios.post('/api/shelves', shelfData);
+          savedShelf = res.data;
           this.showToast('Rak baru berhasil ditambahkan');
         }
         await Promise.all([this.fetchShelves(), this.fetchBooks(), this.fetchStats()]);
+
+        // Direct realtime sync to Firestore
+        if (savedShelf) {
+          const { syncShelfDoc } = await import('../lib/firebase.js');
+          await syncShelfDoc(savedShelf);
+        }
+
         return { success: true };
       } catch (err: any) {
         const msg = err.response?.data?.error || 'Gagal menyimpan rak';
@@ -419,6 +444,11 @@ export const useLibraryStore = defineStore('library', {
       try {
         await axios.delete(`/api/shelves/${shelfId}`);
         await Promise.all([this.fetchShelves(), this.fetchStats()]);
+
+        // Direct sync deletion to Firestore
+        const { removeShelfDoc } = await import('../lib/firebase.js');
+        await removeShelfDoc(shelfId);
+
         this.showToast('Rak berhasil dihapus');
         return { success: true };
       } catch (err: any) {
@@ -663,6 +693,29 @@ export const useLibraryStore = defineStore('library', {
         const msg = err.response?.data?.error || 'Gagal mereset kata sandi anggota';
         this.setError(msg);
         return { success: false, error: msg };
+      }
+    },
+
+    // 15. Cloud Firestore & Database Synchronization
+    async syncWithCloudFirestore() {
+      try {
+        const { syncAllToFirestore } = await import('../lib/firebase.js');
+        const res = await syncAllToFirestore({
+          categories: this.categories,
+          shelves: this.shelves,
+          books: this.books,
+          members: this.members,
+          loans: this.loans,
+          bookings: this.bookings,
+          notifications: this.notifications
+        });
+        if (res.success) {
+          this.showToast('✅ Data berhasil disinkronkan ke Cloud Firestore!');
+        }
+        return res;
+      } catch (err: any) {
+        console.error('Sync failed', err);
+        return { success: false, message: err?.message || 'Gagal sinkronisasi' };
       }
     }
   }
