@@ -215,6 +215,16 @@ export async function syncMemberDoc(member: any) {
   }
 }
 
+export async function removeMemberDoc(memberId: string) {
+  try {
+    if (memberId) {
+      await deleteDoc(doc(db, 'members', memberId));
+    }
+  } catch (e) {
+    console.warn('Delete member from Firestore warning:', e);
+  }
+}
+
 export async function syncCategoryDoc(category: any) {
   try {
     if (category?.id) {
@@ -222,6 +232,16 @@ export async function syncCategoryDoc(category: any) {
     }
   } catch (e) {
     console.warn('Sync category to Firestore warning:', e);
+  }
+}
+
+export async function removeCategoryDoc(categoryId: string) {
+  try {
+    if (categoryId) {
+      await deleteDoc(doc(db, 'categories', categoryId));
+    }
+  } catch (e) {
+    console.warn('Delete category from Firestore warning:', e);
   }
 }
 
@@ -244,4 +264,64 @@ export async function syncBookingDoc(booking: any) {
     console.warn('Sync booking to Firestore warning:', e);
   }
 }
+
+export async function syncConfigDoc(config: any) {
+  try {
+    await setDoc(doc(db, 'config', 'suspend_config'), config, { merge: true });
+  } catch (e) {
+    console.warn('Sync config to Firestore warning:', e);
+  }
+}
+
+export async function syncNotificationDoc(notif: any) {
+  try {
+    if (notif?.id) {
+      await setDoc(doc(db, 'notifications', notif.id), notif, { merge: true });
+    }
+  } catch (e) {
+    console.warn('Sync notification to Firestore warning:', e);
+  }
+}
+
+// Direct Firestore Fetch Collection Helpers
+export async function getFirestoreCollection<T = any>(collectionName: string): Promise<T[]> {
+  try {
+    const snap = await getDocs(collection(db, collectionName));
+    const items: T[] = [];
+    snap.forEach((d) => {
+      items.push(d.data() as T);
+    });
+    return items;
+  } catch (error) {
+    console.warn(`Firestore getDocs failed for ${collectionName}:`, error);
+    return [];
+  }
+}
+
+// Real-time Firestore Collection Listener
+export function subscribeToFirestoreCollection<T = any>(
+  collectionName: string,
+  onUpdate: (items: T[]) => void
+): () => void {
+  try {
+    const unsubscribe = onSnapshot(
+      collection(db, collectionName),
+      (snap) => {
+        const items: T[] = [];
+        snap.forEach((d) => {
+          items.push(d.data() as T);
+        });
+        onUpdate(items);
+      },
+      (error) => {
+        console.warn(`Firestore listener warning for ${collectionName}:`, error);
+      }
+    );
+    return unsubscribe;
+  } catch (err) {
+    console.warn(`Error setting up Firestore listener for ${collectionName}:`, err);
+    return () => {};
+  }
+}
+
 

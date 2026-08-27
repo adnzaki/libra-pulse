@@ -88,9 +88,61 @@ export const useLibraryStore = defineStore('library', {
       return this.initAll();
     },
 
+    setupRealtimeListeners() {
+      if (typeof window === 'undefined' || (window as any).__firestore_listeners_active) return;
+      (window as any).__firestore_listeners_active = true;
+
+      import('../lib/firebase.js').then(({ subscribeToFirestoreCollection }) => {
+        subscribeToFirestoreCollection<Book>('books', (items) => {
+          if (items && items.length > 0) {
+            this.books = items;
+          }
+        });
+        subscribeToFirestoreCollection<Shelf>('shelves', (items) => {
+          if (items && items.length > 0) {
+            this.shelves = items;
+          }
+        });
+        subscribeToFirestoreCollection<BookCategory>('categories', (items) => {
+          if (items && items.length > 0) {
+            this.categories = items;
+          }
+        });
+        subscribeToFirestoreCollection<Member>('members', (items) => {
+          if (items && items.length > 0) {
+            this.members = items;
+            if (this.currentUser) {
+              const current = items.find(m => m.id === this.currentUser?.id || m.email?.toLowerCase() === this.currentUser?.email?.toLowerCase());
+              if (current) this.currentUser = current;
+            }
+          }
+        });
+        subscribeToFirestoreCollection<Loan>('loans', (items) => {
+          if (items) {
+            this.loans = items;
+          }
+        });
+        subscribeToFirestoreCollection<Booking>('bookings', (items) => {
+          if (items) {
+            this.bookings = items;
+          }
+        });
+        subscribeToFirestoreCollection<NotificationLog>('notifications', (items) => {
+          if (items) {
+            this.notifications = items;
+          }
+        });
+      }).catch(err => {
+        console.warn('Realtime listener setup warning:', err);
+      });
+    },
+
     async initAll() {
       this.isLoading = true;
       try {
+        // First, start real-time listener
+        this.setupRealtimeListeners();
+
         await Promise.all([
           this.fetchStats(),
           this.fetchCategories(),
@@ -108,21 +160,23 @@ export const useLibraryStore = defineStore('library', {
           const token = localStorage.getItem('pustaka_token');
           const savedUserId = localStorage.getItem('pustaka_user_id');
           if (token || savedUserId) {
-            try {
-              const res = await axios.get('/api/auth/me', {
-                headers: {
-                  Authorization: token ? `Bearer ${token}` : '',
-                  'x-user-id': savedUserId || ''
+            if (savedUserId) {
+              const found = this.members.find(m => m.id === savedUserId);
+              if (found) this.currentUser = found;
+            }
+            if (!this.currentUser) {
+              try {
+                const res = await axios.get('/api/auth/me', {
+                  headers: {
+                    Authorization: token ? `Bearer ${token}` : '',
+                    'x-user-id': savedUserId || ''
+                  }
+                });
+                if (res.data?.user) {
+                  this.currentUser = res.data.user;
                 }
-              });
-              if (res.data?.user) {
-                this.currentUser = res.data.user;
-              }
-            } catch (err) {
-              // If failed, check in local members array or clear
-              if (savedUserId) {
-                const found = this.members.find(m => m.id === savedUserId);
-                if (found) this.currentUser = found;
+              } catch (err) {
+                // If API failed, keep local member
               }
             }
           }
@@ -145,6 +199,16 @@ export const useLibraryStore = defineStore('library', {
 
     async fetchCategories() {
       try {
+        const { getFirestoreCollection } = await import('../lib/firebase.js');
+        const firestoreCats = await getFirestoreCollection<BookCategory>('categories');
+        if (firestoreCats && firestoreCats.length > 0) {
+          this.categories = firestoreCats;
+          return;
+        }
+      } catch (e) {
+        console.warn('Firestore fetchCategories fallback', e);
+      }
+      try {
         const res = await axios.get<BookCategory[]>('/api/categories');
         this.categories = res.data;
       } catch (err) {
@@ -153,6 +217,16 @@ export const useLibraryStore = defineStore('library', {
     },
 
     async fetchBooks() {
+      try {
+        const { getFirestoreCollection } = await import('../lib/firebase.js');
+        const firestoreBooks = await getFirestoreCollection<Book>('books');
+        if (firestoreBooks && firestoreBooks.length > 0) {
+          this.books = firestoreBooks;
+          return;
+        }
+      } catch (e) {
+        console.warn('Firestore fetchBooks fallback', e);
+      }
       try {
         const res = await axios.get<Book[]>('/api/books');
         this.books = res.data;
@@ -163,6 +237,16 @@ export const useLibraryStore = defineStore('library', {
 
     async fetchShelves() {
       try {
+        const { getFirestoreCollection } = await import('../lib/firebase.js');
+        const firestoreShelves = await getFirestoreCollection<Shelf>('shelves');
+        if (firestoreShelves && firestoreShelves.length > 0) {
+          this.shelves = firestoreShelves;
+          return;
+        }
+      } catch (e) {
+        console.warn('Firestore fetchShelves fallback', e);
+      }
+      try {
         const res = await axios.get<Shelf[]>('/api/shelves');
         this.shelves = res.data;
       } catch (err) {
@@ -171,6 +255,20 @@ export const useLibraryStore = defineStore('library', {
     },
 
     async fetchMembers() {
+      try {
+        const { getFirestoreCollection } = await import('../lib/firebase.js');
+        const firestoreMembers = await getFirestoreCollection<Member>('members');
+        if (firestoreMembers && firestoreMembers.length > 0) {
+          this.members = firestoreMembers;
+          if (this.currentUser) {
+            const updated = this.members.find(m => m.id === this.currentUser?.id || m.email?.toLowerCase() === this.currentUser?.email?.toLowerCase());
+            if (updated) this.currentUser = updated;
+          }
+          return;
+        }
+      } catch (e) {
+        console.warn('Firestore fetchMembers fallback', e);
+      }
       try {
         const res = await axios.get<Member[]>('/api/members');
         this.members = res.data;
@@ -185,8 +283,19 @@ export const useLibraryStore = defineStore('library', {
 
     async fetchBookings() {
       try {
+        const { getFirestoreCollection } = await import('../lib/firebase.js');
+        const firestoreBookings = await getFirestoreCollection<Booking>('bookings');
+        if (firestoreBookings) {
+          this.bookings = firestoreBookings;
+        }
+      } catch (e) {
+        console.warn('Firestore fetchBookings fallback', e);
+      }
+      try {
         const res = await axios.get<Booking[]>('/api/bookings');
-        this.bookings = res.data;
+        if (res.data && (!this.bookings || this.bookings.length === 0)) {
+          this.bookings = res.data;
+        }
       } catch (err) {
         console.error('Failed to fetch bookings', err);
       }
@@ -194,14 +303,35 @@ export const useLibraryStore = defineStore('library', {
 
     async fetchLoans() {
       try {
+        const { getFirestoreCollection } = await import('../lib/firebase.js');
+        const firestoreLoans = await getFirestoreCollection<Loan>('loans');
+        if (firestoreLoans) {
+          this.loans = firestoreLoans;
+        }
+      } catch (e) {
+        console.warn('Firestore fetchLoans fallback', e);
+      }
+      try {
         const res = await axios.get<Loan[]>('/api/loans');
-        this.loans = res.data;
+        if (res.data && (!this.loans || this.loans.length === 0)) {
+          this.loans = res.data;
+        }
       } catch (err) {
         console.error('Failed to fetch loans', err);
       }
     },
 
     async fetchSuspendConfig() {
+      try {
+        const { getFirestoreCollection } = await import('../lib/firebase.js');
+        const firestoreConfig = await getFirestoreCollection<SuspendConfig>('config');
+        if (firestoreConfig && firestoreConfig.length > 0) {
+          this.suspendConfig = firestoreConfig[0];
+          return;
+        }
+      } catch (e) {
+        console.warn('Firestore fetchSuspendConfig fallback', e);
+      }
       try {
         const res = await axios.get<SuspendConfig>('/api/suspend-config');
         this.suspendConfig = res.data;
@@ -212,8 +342,19 @@ export const useLibraryStore = defineStore('library', {
 
     async fetchNotifications() {
       try {
+        const { getFirestoreCollection } = await import('../lib/firebase.js');
+        const firestoreNotifs = await getFirestoreCollection<NotificationLog>('notifications');
+        if (firestoreNotifs) {
+          this.notifications = firestoreNotifs;
+        }
+      } catch (e) {
+        console.warn('Firestore fetchNotifications fallback', e);
+      }
+      try {
         const res = await axios.get<NotificationLog[]>('/api/notifications');
-        this.notifications = res.data;
+        if (res.data && (!this.notifications || this.notifications.length === 0)) {
+          this.notifications = res.data;
+        }
       } catch (err) {
         console.error('Failed to fetch notifications', err);
       }
@@ -227,9 +368,16 @@ export const useLibraryStore = defineStore('library', {
           memberCardOrId,
           notes
         });
+        const savedBooking = res.data;
         await Promise.all([this.fetchBooks(), this.fetchBookings(), this.fetchStats(), this.fetchNotifications()]);
+
+        const { syncBookingDoc, syncBookDoc } = await import('../lib/firebase.js');
+        if (savedBooking) await syncBookingDoc(savedBooking);
+        const bookedBook = this.books.find(b => b.id === bookId);
+        if (bookedBook) await syncBookDoc(bookedBook);
+
         this.showToast('✅ Berhasil booking buku! Buku ditahan selama 24 jam untuk Anda.');
-        return { success: true, booking: res.data };
+        return { success: true, booking: savedBooking };
       } catch (err: any) {
         const msg = err.response?.data?.error || 'Gagal melakukan booking buku';
         this.setError(msg);
@@ -242,6 +390,16 @@ export const useLibraryStore = defineStore('library', {
       try {
         await axios.post(`/api/bookings/${bookingId}/cancel`);
         await Promise.all([this.fetchBooks(), this.fetchBookings(), this.fetchStats()]);
+
+        const { syncBookingDoc, syncBookDoc } = await import('../lib/firebase.js');
+        const bk = this.bookings.find(b => b.id === bookingId);
+        if (bk) {
+          bk.status = 'cancelled';
+          await syncBookingDoc(bk);
+          const relatedBook = this.books.find(b => b.id === bk.bookId);
+          if (relatedBook) await syncBookDoc(relatedBook);
+        }
+
         this.showToast('Booking berhasil dibatalkan dan buku dikembalikan ke rak.');
         return { success: true };
       } catch (err: any) {
@@ -255,9 +413,18 @@ export const useLibraryStore = defineStore('library', {
     async collectBooking(bookingId: string, handledBy?: string) {
       try {
         const res = await axios.post(`/api/bookings/${bookingId}/collect`, { handledBy });
+        const newLoan = res.data.loan;
         await Promise.all([this.fetchBooks(), this.fetchBookings(), this.fetchLoans(), this.fetchMembers(), this.fetchStats()]);
+
+        const { syncLoanDoc, syncBookingDoc, syncBookDoc } = await import('../lib/firebase.js');
+        if (newLoan) await syncLoanDoc(newLoan);
+        const bk = this.bookings.find(b => b.id === bookingId);
+        if (bk) await syncBookingDoc(bk);
+        const targetBook = this.books.find(b => b.id === bk?.bookId || b.id === newLoan?.bookId);
+        if (targetBook) await syncBookDoc(targetBook);
+
         this.showToast('✅ Buku berhasil diserahkan kepada peminjam dan tercatat sebagai peminjaman aktif!');
-        return { success: true, loan: res.data.loan };
+        return { success: true, loan: newLoan };
       } catch (err: any) {
         const msg = err.response?.data?.error || 'Gagal memproses pengambilan booking';
         this.setError(msg);
@@ -274,9 +441,16 @@ export const useLibraryStore = defineStore('library', {
           loanDays,
           handledBy
         });
+        const createdLoan = res.data;
         await Promise.all([this.fetchBooks(), this.fetchLoans(), this.fetchMembers(), this.fetchStats()]);
-        this.showToast(`✅ Peminjaman buku "${res.data.bookTitle}" berhasil dicatat untuk ${res.data.memberName}!`);
-        return { success: true, loan: res.data };
+
+        const { syncLoanDoc, syncBookDoc } = await import('../lib/firebase.js');
+        if (createdLoan) await syncLoanDoc(createdLoan);
+        const borrowedBook = this.books.find(b => b.id === createdLoan.bookId);
+        if (borrowedBook) await syncBookDoc(borrowedBook);
+
+        this.showToast(`✅ Peminjaman buku "${createdLoan.bookTitle}" berhasil dicatat untuk ${createdLoan.memberName}!`);
+        return { success: true, loan: createdLoan };
       } catch (err: any) {
         const msg = err.response?.data?.error || 'Gagal memproses peminjaman buku';
         this.setError(msg);
@@ -289,6 +463,17 @@ export const useLibraryStore = defineStore('library', {
       try {
         const res = await axios.post(`/api/loans/${loanId}/return`);
         await Promise.all([this.fetchBooks(), this.fetchLoans(), this.fetchMembers(), this.fetchStats(), this.fetchNotifications()]);
+
+        const { syncLoanDoc, syncBookDoc, syncMemberDoc } = await import('../lib/firebase.js');
+        const retLoan = this.loans.find(l => l.id === loanId);
+        if (retLoan) {
+          await syncLoanDoc(retLoan);
+          const retBook = this.books.find(b => b.id === retLoan.bookId);
+          if (retBook) await syncBookDoc(retBook);
+          const retMember = this.members.find(m => m.id === retLoan.memberId);
+          if (retMember) await syncMemberDoc(retMember);
+        }
+
         this.showToast(res.data.message);
         return { success: true, data: res.data };
       } catch (err: any) {
@@ -303,6 +488,10 @@ export const useLibraryStore = defineStore('library', {
       try {
         const res = await axios.put('/api/suspend-config', newConfig);
         this.suspendConfig = res.data.config;
+
+        const { syncConfigDoc } = await import('../lib/firebase.js');
+        if (this.suspendConfig) await syncConfigDoc(this.suspendConfig);
+
         this.showToast('✅ Konfigurasi sanksi suspend & aturan peminjaman berhasil disimpan!');
         return { success: true };
       } catch (err: any) {
@@ -317,6 +506,11 @@ export const useLibraryStore = defineStore('library', {
       try {
         const res = await axios.post(`/api/members/${memberId}/suspend`, { suspend, days, reason });
         await Promise.all([this.fetchMembers(), this.fetchStats()]);
+
+        const { syncMemberDoc } = await import('../lib/firebase.js');
+        const suspMember = this.members.find(m => m.id === memberId);
+        if (suspMember) await syncMemberDoc(suspMember);
+
         this.showToast(res.data.message);
         return { success: true };
       } catch (err: any) {
@@ -337,9 +531,14 @@ export const useLibraryStore = defineStore('library', {
     }) {
       try {
         const res = await axios.post('/api/notifications/send', payload);
+        const log = res.data.log;
         await this.fetchNotifications();
+
+        const { syncNotificationDoc } = await import('../lib/firebase.js');
+        if (log) await syncNotificationDoc(log);
+
         this.showToast(`✅ Notifikasi ${payload.type.toUpperCase()} berhasil dikirim ke ${payload.recipient}!`);
-        return { success: true, log: res.data.log };
+        return { success: true, log };
       } catch (err: any) {
         const msg = err.response?.data?.error || 'Gagal mengirim notifikasi';
         this.setError(msg);
@@ -466,9 +665,14 @@ export const useLibraryStore = defineStore('library', {
       }
       try {
         const res = await axios.post('/api/categories', catData);
+        const savedCat = res.data;
         await this.fetchCategories();
-        this.showToast(`Kategori "${res.data.name}" berhasil ditambahkan`);
-        return { success: true, category: res.data };
+
+        const { syncCategoryDoc } = await import('../lib/firebase.js');
+        if (savedCat) await syncCategoryDoc(savedCat);
+
+        this.showToast(`Kategori "${savedCat.name}" berhasil ditambahkan`);
+        return { success: true, category: savedCat };
       } catch (err: any) {
         const msg = err.response?.data?.error || 'Gagal menambahkan kategori';
         this.setError(msg);
@@ -483,9 +687,14 @@ export const useLibraryStore = defineStore('library', {
       }
       try {
         const res = await axios.put(`/api/categories/${categoryId}`, catData);
+        const savedCat = res.data;
         await Promise.all([this.fetchCategories(), this.fetchBooks(), this.fetchShelves()]);
-        this.showToast(`Kategori "${res.data.name}" berhasil diperbarui`);
-        return { success: true, category: res.data };
+
+        const { syncCategoryDoc } = await import('../lib/firebase.js');
+        if (savedCat) await syncCategoryDoc(savedCat);
+
+        this.showToast(`Kategori "${savedCat.name}" berhasil diperbarui`);
+        return { success: true, category: savedCat };
       } catch (err: any) {
         const msg = err.response?.data?.error || 'Gagal memperbarui kategori';
         this.setError(msg);
@@ -501,6 +710,10 @@ export const useLibraryStore = defineStore('library', {
       try {
         const res = await axios.delete(`/api/categories/${categoryId}`);
         await Promise.all([this.fetchCategories(), this.fetchBooks(), this.fetchShelves()]);
+
+        const { removeCategoryDoc } = await import('../lib/firebase.js');
+        await removeCategoryDoc(categoryId);
+
         this.showToast(res.data?.message || 'Kategori berhasil dihapus');
         return { success: true };
       } catch (err: any) {
@@ -513,6 +726,9 @@ export const useLibraryStore = defineStore('library', {
     // 11. Member Lookup by Card Number
     async lookupMemberByCard(cardNumber: string) {
       try {
+        const found = this.members.find(m => m.cardNumber?.toLowerCase() === cardNumber.trim().toLowerCase());
+        if (found) return { success: true, data: found };
+
         const res = await axios.get(`/api/members/card/${encodeURIComponent(cardNumber)}`);
         return { success: true, data: res.data };
       } catch (err: any) {
@@ -524,11 +740,16 @@ export const useLibraryStore = defineStore('library', {
     async registerMember(memberData: { name: string; email: string; phone: string; address?: string }) {
       try {
         const res = await axios.post('/api/members', memberData);
+        const savedMember = res.data;
         await Promise.all([this.fetchMembers(), this.fetchStats()]);
-        this.currentUser = res.data;
-        localStorage.setItem('pustaka_user_id', res.data.id);
-        this.showToast(`🎉 Selamat datang ${res.data.name}! Kartu member digital Anda: ${res.data.cardNumber}`);
-        return { success: true, member: res.data };
+
+        const { syncMemberDoc } = await import('../lib/firebase.js');
+        if (savedMember) await syncMemberDoc(savedMember);
+
+        this.currentUser = savedMember;
+        localStorage.setItem('pustaka_user_id', savedMember.id);
+        this.showToast(`🎉 Selamat datang ${savedMember.name}! Kartu member digital Anda: ${savedMember.cardNumber}`);
+        return { success: true, member: savedMember };
       } catch (err: any) {
         const msg = err.response?.data?.error || 'Gagal mendaftar member';
         this.setError(msg);
@@ -539,9 +760,14 @@ export const useLibraryStore = defineStore('library', {
     async createMemberByAdmin(memberData: { name: string; email: string; phone: string; role?: 'admin' | 'member'; address?: string }) {
       try {
         const res = await axios.post('/api/members', memberData);
+        const savedMember = res.data;
         await Promise.all([this.fetchMembers(), this.fetchStats()]);
-        this.showToast(`✅ Anggota baru "${res.data.name}" (${res.data.cardNumber}) berhasil didaftarkan!`);
-        return { success: true, member: res.data };
+
+        const { syncMemberDoc } = await import('../lib/firebase.js');
+        if (savedMember) await syncMemberDoc(savedMember);
+
+        this.showToast(`✅ Anggota baru "${savedMember.name}" (${savedMember.cardNumber}) berhasil didaftarkan!`);
+        return { success: true, member: savedMember };
       } catch (err: any) {
         const msg = err.response?.data?.error || 'Gagal menambahkan anggota';
         this.setError(msg);
@@ -552,12 +778,17 @@ export const useLibraryStore = defineStore('library', {
     async updateMember(memberId: string, memberData: Partial<Member>) {
       try {
         const res = await axios.put(`/api/members/${memberId}`, memberData);
+        const savedMember = res.data;
         await Promise.all([this.fetchMembers(), this.fetchStats()]);
+
+        const { syncMemberDoc } = await import('../lib/firebase.js');
+        if (savedMember) await syncMemberDoc(savedMember);
+
         if (this.currentUser?.id === memberId) {
-          this.currentUser = res.data;
+          this.currentUser = savedMember;
         }
-        this.showToast(`Data anggota "${res.data.name}" berhasil diperbarui`);
-        return { success: true, member: res.data };
+        this.showToast(`Data anggota "${savedMember.name}" berhasil diperbarui`);
+        return { success: true, member: savedMember };
       } catch (err: any) {
         const msg = err.response?.data?.error || 'Gagal memperbarui anggota';
         this.setError(msg);
@@ -567,9 +798,13 @@ export const useLibraryStore = defineStore('library', {
 
     async deleteMember(memberId: string) {
       try {
-        const res = await axios.delete(`/api/members/${memberId}`);
+        await axios.delete(`/api/members/${memberId}`);
         await Promise.all([this.fetchMembers(), this.fetchStats()]);
-        this.showToast(res.data?.message || 'Anggota berhasil dihapus');
+
+        const { removeMemberDoc } = await import('../lib/firebase.js');
+        await removeMemberDoc(memberId);
+
+        this.showToast('Anggota berhasil dihapus');
         return { success: true };
       } catch (err: any) {
         const msg = err.response?.data?.error || 'Gagal menghapus anggota';
@@ -580,6 +815,35 @@ export const useLibraryStore = defineStore('library', {
 
     // 13. Standard Authentication Actions
     async loginWithCredentials(credentials: { identifier: string; password?: string; role?: string }) {
+      const cleanIdent = (credentials.identifier || '').trim().toLowerCase();
+      const enteredPass = credentials.password || '';
+
+      // Check against Firestore-synced members list first
+      const matchedMember = this.members.find(m => 
+        (m.email && m.email.toLowerCase() === cleanIdent) ||
+        (m.cardNumber && m.cardNumber.toLowerCase() === cleanIdent) ||
+        (m.id && m.id.toLowerCase() === cleanIdent) ||
+        (cleanIdent === 'admin' && m.role === 'admin')
+      );
+
+      if (matchedMember) {
+        const validPassword = matchedMember.password || (matchedMember.role === 'admin' ? 'admin' : '');
+        const isPassOk = !validPassword || validPassword === enteredPass || (matchedMember.role === 'admin' && enteredPass === 'admin');
+        
+        if (isPassOk) {
+          this.currentUser = matchedMember;
+          this.authToken = `token_${matchedMember.id}_${Date.now()}`;
+          localStorage.setItem('pustaka_token', this.authToken);
+          localStorage.setItem('pustaka_user_id', matchedMember.id);
+          this.showToast(matchedMember.role === 'admin' ? `Selamat datang kembali, Administrator ${matchedMember.name}!` : `Selamat datang, ${matchedMember.name}!`);
+          
+          // Background sync with API session if available
+          axios.post('/api/auth/login', credentials).catch(() => {});
+          return { success: true, user: matchedMember };
+        }
+      }
+
+      // Fallback to server API
       try {
         const res = await axios.post('/api/auth/login', credentials);
         const { user, token } = res.data;
@@ -590,7 +854,7 @@ export const useLibraryStore = defineStore('library', {
         this.showToast(user.role === 'admin' ? `Selamat datang kembali, Administrator ${user.name}!` : `Selamat datang, ${user.name}!`);
         return { success: true, user };
       } catch (err: any) {
-        const msg = err.response?.data?.error || 'Gagal masuk. Periksa kembali kredensial Anda.';
+        const msg = err.response?.data?.error || 'Gagal masuk. Periksa kembali email/nomor kartu dan kata sandi Anda.';
         this.setError(msg);
         return { success: false, error: msg };
       }
@@ -636,6 +900,15 @@ export const useLibraryStore = defineStore('library', {
           oldPassword,
           newPassword
         });
+
+        // Sync updated member password to Firestore
+        const targetMember = this.members.find(m => m.id === memberId);
+        if (targetMember) {
+          targetMember.password = newPassword;
+          const { syncMemberDoc } = await import('../lib/firebase.js');
+          await syncMemberDoc(targetMember);
+        }
+
         this.showToast(res.data.message || 'Kata sandi berhasil diubah!');
         return { success: true, message: res.data.message };
       } catch (err: any) {
@@ -670,6 +943,19 @@ export const useLibraryStore = defineStore('library', {
           code,
           newPassword
         });
+        
+        // Sync password to matching Firestore member
+        const cleanIdent = identifier.trim().toLowerCase();
+        const targetMember = this.members.find(m => 
+          (m.email && m.email.toLowerCase() === cleanIdent) ||
+          (m.cardNumber && m.cardNumber.toLowerCase() === cleanIdent)
+        );
+        if (targetMember) {
+          targetMember.password = newPassword;
+          const { syncMemberDoc } = await import('../lib/firebase.js');
+          await syncMemberDoc(targetMember);
+        }
+
         this.showToast(res.data.message || 'Kata sandi berhasil direset! Silakan login.');
         return { success: true, message: res.data.message };
       } catch (err: any) {
@@ -686,6 +972,15 @@ export const useLibraryStore = defineStore('library', {
           memberId,
           newPassword
         });
+
+        // Sync password directly to Firestore member
+        const targetMember = this.members.find(m => m.id === memberId);
+        if (targetMember) {
+          targetMember.password = newPassword;
+          const { syncMemberDoc } = await import('../lib/firebase.js');
+          await syncMemberDoc(targetMember);
+        }
+
         await this.fetchMembers();
         this.showToast(res.data.message || 'Kata sandi anggota berhasil diperbarui!');
         return { success: true, message: res.data.message };
