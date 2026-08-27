@@ -144,6 +144,27 @@ export const useLibraryStore = defineStore('library', {
     },
 
     calculateStats() {
+      // Reconcile and calculate real-time available copies for all books
+      for (const b of this.books) {
+        const total = Math.max(1, Number(b.totalCopies) || 1);
+        const activeLoansForBook = this.loans.filter(
+          l => l.bookId === b.id && (l.status === 'active' || l.status === 'overdue')
+        ).length;
+        const activeBookingsForBook = this.bookings.filter(
+          bk => bk.bookId === b.id && 
+               (bk.status === 'active_hold' || bk.status === 'pending' || bk.status === 'active') &&
+               (!bk.expiresAt || new Date(bk.expiresAt).getTime() > Date.now())
+        ).length;
+
+        const borrowed = Math.min(total, activeLoansForBook > 0 ? activeLoansForBook : (Number(b.borrowedCopies) || 0));
+        const reserved = Math.min(Math.max(0, total - borrowed), activeBookingsForBook > 0 ? activeBookingsForBook : (Number(b.reservedCopies) || 0));
+        
+        b.totalCopies = total;
+        b.borrowedCopies = borrowed;
+        b.reservedCopies = reserved;
+        b.availableCopies = Math.max(0, total - borrowed - reserved);
+      }
+
       const totalTitles = this.books.length;
       const totalBooks = this.books.reduce((acc, b) => acc + (b.totalCopies || 0), 0);
       const availableBooks = this.books.reduce((acc, b) => acc + (b.availableCopies || 0), 0);
@@ -345,16 +366,48 @@ export const useLibraryStore = defineStore('library', {
       try {
         let savedBook: Book;
         const isEditing = !!bookData.id && this.books.some(b => b.id === bookData.id);
+        const bookId = bookData.id || `BKO-${Date.now().toString().slice(-6)}`;
+
+        // 1. Hitung jumlah aktif yang sedang dipinjam
+        const activeLoansForBook = this.loans.filter(
+          l => l.bookId === bookId && (l.status === 'active' || l.status === 'overdue')
+        ).length;
+
+        // 2. Hitung jumlah aktif yang sedang dibooking / hold
+        const activeBookingsForBook = this.bookings.filter(
+          b => b.bookId === bookId && 
+               (b.status === 'active_hold' || b.status === 'pending' || b.status === 'active') &&
+               (!b.expiresAt || new Date(b.expiresAt).getTime() > Date.now())
+        ).length;
 
         if (isEditing) {
           const index = this.books.findIndex(b => b.id === bookData.id);
+          const oldBook = this.books[index];
+          const newTotal = Math.max(1, Number(bookData.totalCopies !== undefined ? bookData.totalCopies : oldBook.totalCopies) || 1);
+
+          // Pengecekan riil buku yang sedang dipinjam dan dibooking
+          const borrowed = Math.min(newTotal, activeLoansForBook > 0 ? activeLoansForBook : (Number(oldBook.borrowedCopies) || 0));
+          const reserved = Math.min(Math.max(0, newTotal - borrowed), activeBookingsForBook > 0 ? activeBookingsForBook : (Number(oldBook.reservedCopies) || 0));
+
+          // Stok terbaru dihitung otomatis: Total - Dipinjam - Dibooking
+          const newAvailable = Math.max(0, newTotal - borrowed - reserved);
+
           savedBook = {
-            ...this.books[index],
-            ...bookData
+            ...oldBook,
+            ...bookData,
+            id: bookId,
+            totalCopies: newTotal,
+            borrowedCopies: borrowed,
+            reservedCopies: reserved,
+            availableCopies: newAvailable
           };
           this.books[index] = savedBook;
         } else {
-          const bookId = bookData.id || `BKO-${Date.now().toString().slice(-6)}`;
+          const total = Math.max(1, Number(bookData.totalCopies) || 1);
+          const borrowed = activeLoansForBook;
+          const reserved = activeBookingsForBook;
+          const available = Math.max(0, total - borrowed - reserved);
+
           savedBook = {
             id: bookId,
             isbn: bookData.isbn || `978-602-${Math.floor(1000 + Math.random() * 9000)}-01`,
@@ -368,16 +421,22 @@ export const useLibraryStore = defineStore('library', {
             shelfName: bookData.shelfName || (this.shelves[0]?.name || 'Rak A-01'),
             cover: bookData.cover || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80',
             synopsis: bookData.synopsis || '',
-            totalCopies: bookData.totalCopies || 1,
-            availableCopies: bookData.availableCopies !== undefined ? bookData.availableCopies : (bookData.totalCopies || 1),
-            borrowedCopies: 0,
-            reservedCopies: 0,
+            totalCopies: total,
+            availableCopies: available,
+            borrowedCopies: borrowed,
+            reservedCopies: reserved,
             barcode: bookData.barcode || bookData.isbn || `BC-${Date.now()}`,
             rating: bookData.rating || 4.5,
             pages: bookData.pages || 200,
             language: bookData.language || 'Indonesia',
             ...bookData
           };
+
+          savedBook.totalCopies = total;
+          savedBook.borrowedCopies = borrowed;
+          savedBook.reservedCopies = reserved;
+          savedBook.availableCopies = available;
+
           this.books.unshift(savedBook);
         }
 
