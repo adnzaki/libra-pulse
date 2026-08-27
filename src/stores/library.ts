@@ -827,8 +827,9 @@ export const useLibraryStore = defineStore('library', {
       );
 
       if (matchedMember) {
+        const { verifyPassword, hashPassword } = await import('../lib/crypto.js');
         const validPassword = matchedMember.password || (matchedMember.role === 'admin' ? 'admin' : '');
-        const isPassOk = !validPassword || validPassword === enteredPass || (matchedMember.role === 'admin' && enteredPass === 'admin');
+        const isPassOk = !validPassword || await verifyPassword(enteredPass, validPassword) || (matchedMember.role === 'admin' && enteredPass === 'admin');
         
         if (isPassOk) {
           this.currentUser = matchedMember;
@@ -837,6 +838,13 @@ export const useLibraryStore = defineStore('library', {
           localStorage.setItem('pustaka_user_id', matchedMember.id);
           this.showToast(matchedMember.role === 'admin' ? `Selamat datang kembali, Administrator ${matchedMember.name}!` : `Selamat datang, ${matchedMember.name}!`);
           
+          // Auto upgrade plaintext password in Firestore to hashed password silently
+          if (matchedMember.password && !matchedMember.password.startsWith('$sha256$')) {
+            matchedMember.password = await hashPassword(enteredPass);
+            const { syncMemberDoc } = await import('../lib/firebase.js');
+            syncMemberDoc(matchedMember).catch(() => {});
+          }
+
           // Background sync with API session if available
           axios.post('/api/auth/login', credentials).catch(() => {});
           return { success: true, user: matchedMember };

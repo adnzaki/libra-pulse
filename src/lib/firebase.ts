@@ -208,7 +208,12 @@ export async function removeShelfDoc(shelfId: string) {
 export async function syncMemberDoc(member: any) {
   try {
     if (member?.id) {
-      await setDoc(doc(db, 'members', member.id), member, { merge: true });
+      const sanitized = { ...member };
+      if (sanitized.password) {
+        const { hashPassword } = await import('./crypto.js');
+        sanitized.password = await hashPassword(sanitized.password);
+      }
+      await setDoc(doc(db, 'members', member.id), sanitized, { merge: true });
     }
   } catch (e) {
     console.warn('Sync member to Firestore warning:', e);
