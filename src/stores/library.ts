@@ -1020,12 +1020,14 @@ export const useLibraryStore = defineStore('library', {
       }
 
       if (!book || book.availableCopies <= 0) {
-        this.setError('Buku sedang tidak tersedia untuk dipinjam.');
-        return { success: false };
+        const error = 'Buku sedang tidak tersedia untuk dipinjam.';
+        this.setError(error);
+        return { success: false, error };
       }
       if (!member) {
-        this.setError('Anggota tidak ditemukan.');
-        return { success: false };
+        const error = 'Anggota tidak ditemukan. Pastikan nomor kartu atau data anggota valid.';
+        this.setError(error);
+        return { success: false, error };
       }
 
       const loanDays = days || 7;
@@ -1082,6 +1084,10 @@ export const useLibraryStore = defineStore('library', {
 
       this.showToast(`✅ Peminjaman buku "${book.title}" berhasil dicatat!`);
       return { success: true, loan: newLoan };
+    },
+
+    async issueDirectLoan(bookId: string, memberIdOrCard: string, days?: number, handledBy?: string) {
+      return this.createLoan(bookId, memberIdOrCard, days, handledBy);
     },
 
     async returnLoan(loanId: string) {

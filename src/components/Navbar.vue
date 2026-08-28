@@ -6,7 +6,7 @@
         <!-- Brand / Logo -->
         <router-link to="/" class="flex items-center gap-3 group">
           <div class="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center font-bold text-lg text-white shadow-md group-hover:scale-105 transition duration-200">
-            B
+            L
           </div>
           <div>
             <div class="flex items-center gap-2">

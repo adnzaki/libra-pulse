@@ -50,11 +50,11 @@
         
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white text-sm shadow-sm">
-            B
+            L
           </div>
           <div>
-            <div class="font-bold text-slate-800 tracking-tight">BiblioTech • PustakaModern</div>
-            <div class="text-[11px] text-slate-400">Sistem Otomasi Perpustakaan Cerdas & Sirkulasi QR (Bento Grid Edition)</div>
+            <div class="font-bold text-slate-800 tracking-tight">Libra • Smart Library</div>
+            <div class="text-[11px] text-slate-400">Sistem Otomasi & Sirkulasi Perpustakaan</div>
           </div>
         </div>
 
@@ -67,7 +67,7 @@
         </div>
 
         <div class="text-[11px] text-slate-400">
-          © {{ new Date().getFullYear() }} BiblioTech. Dilengkapi PWA Offline & Barcode Scanner.
+          © {{ new Date().getFullYear() }} SDN Pengasinan VII Kota Bekasi
         </div>
 
       </div>

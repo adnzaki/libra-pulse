@@ -369,7 +369,7 @@
                       </span>
                     </div>
                     <span v-else class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px]">
-                      Aktif (Tepat Waktu)
+                      Aktif
                     </span>
                   </td>
                   <td class="py-3 px-4 text-right space-x-2">
