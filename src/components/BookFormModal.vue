@@ -96,7 +96,7 @@
                   />
                   <div v-if="isUploading" class="flex items-center gap-2 text-blue-600 py-2">
                     <Loader2 class="w-5 h-5 animate-spin" />
-                    <span class="text-xs font-semibold">Mengunggah ke public/covers/...</span>
+                    <span class="text-xs font-semibold">Mengunggah gambar cover...</span>
                   </div>
                   <template v-else>
                     <div class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
@@ -106,15 +106,15 @@
                       Klik untuk pilih gambar atau tarik file ke sini
                     </p>
                     <p class="text-[11px] text-slate-500">
-                      PNG, JPG, WEBP hingga 5MB (disimpan otomatis di <code class="text-blue-600 font-semibold">public/covers/</code>)
+                      PNG, JPG, WEBP hingga 5MB 
                     </p>
                   </template>
                 </div>
                 
-                <div v-if="form.cover && form.cover.startsWith('/covers/')" class="flex items-center justify-between text-xs text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
+                <!-- <div v-if="form.cover && form.cover.startsWith('/covers/')" class="flex items-center justify-between text-xs text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
                   <span class="truncate font-medium">Tersimpan di: {{ form.cover }}</span>
                   <span class="font-bold text-[10px] bg-emerald-200 text-emerald-800 px-1.5 py-0.5 rounded">Lokal</span>
-                </div>
+                </div> -->
               </div>
 
               <!-- URL Mode -->
@@ -383,7 +383,7 @@ const handleFileChange = async (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files[0]) {
     await uploadCoverFile(target.files[0]);
-    target.value = '';
+    if (fileInputRef.value) fileInputRef.value.value = '';
   }
 };
 
@@ -406,39 +406,32 @@ const uploadCoverFile = async (file: File) => {
   }
 
   isUploading.value = true;
+
   try {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = async () => {
-      try {
-        const base64Data = reader.result as string;
-        const cleanName = (form.value.title || file.name.replace(/\.[^/.]+$/, '')).slice(0, 20);
+    const cleanName = (form.value.title || file.name.replace(/\.[^/.]+$/, '')).slice(0, 20);
 
-        const res = await axios.post('/api/upload-cover', {
-          image: base64Data,
-          filename: cleanName
-        });
+    // Buat FormData object
+    const formData = new FormData();
+    formData.append('cover', file);         // Harus cocok dengan field name di multer: upload.single('cover')
+    formData.append('filename', cleanName);
 
-        if (res.data?.success && res.data?.url) {
-          form.value.cover = res.data.url;
-          store.showToast('✅ Gambar sampul berhasil disimpan ke folder public/covers/!');
-        } else {
-          store.setError(res.data?.error || 'Gagal menyimpan gambar');
-        }
-      } catch (err: any) {
-        console.error('Upload cover error:', err);
-        store.setError(err.response?.data?.error || err.message || 'Gagal mengunggah cover');
-      } finally {
-        isUploading.value = false;
+    const res = await axios.post('/api/upload-cover', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
       }
-    };
-    reader.onerror = () => {
-      isUploading.value = false;
-      store.setError('Gagal membaca file gambar');
-    };
+    });
+
+    if (res.data?.success && res.data?.url) {
+      form.value.cover = res.data.url;
+      store.showToast('✅ Gambar sampul berhasil disimpan');
+    } else {
+      store.setError(res.data?.error || 'Gagal menyimpan gambar');
+    }
   } catch (err: any) {
+    console.error('Upload cover error:', err);
+    store.setError(err.response?.data?.error || err.message || 'Gagal mengunggah cover');
+  } finally {
     isUploading.value = false;
-    store.setError(err.message || 'Gagal memproses gambar');
   }
 };
 

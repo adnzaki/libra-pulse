@@ -948,7 +948,7 @@
               </div>
 
               <div class="pt-2 border-t border-slate-200 flex items-center justify-between">
-                <span class="font-mono text-[10px] text-slate-400">{{ b.barcode }}</span>
+                <span class="font-mono text-[10px] text-slate-400"></span>
                 <div class="flex items-center gap-1.5">
                   <button 
                     @click="openEditBookModal(b)"
@@ -976,7 +976,6 @@
                   <th class="py-3.5 px-4">Kategori</th>
                   <th class="py-3.5 px-4">Lokasi Rak</th>
                   <th class="py-3.5 px-4">Stok (Tersedia / Total)</th>
-                  <th class="py-3.5 px-4">Barcode</th>
                   <th class="py-3.5 px-4 text-right">Aksi</th>
                 </tr>
               </thead>
@@ -1008,7 +1007,6 @@
                   <td class="py-3 px-4 font-semibold text-slate-700">
                     <span class="text-emerald-600 font-bold">{{ b.availableCopies }}</span> / {{ b.totalCopies }} Buku
                   </td>
-                  <td class="py-3 px-4 font-mono text-slate-500 text-[11px]">{{ b.barcode }}</td>
                   <td class="py-3 px-4 text-right space-x-1">
                     <button 
                       @click="openEditBookModal(b)"
