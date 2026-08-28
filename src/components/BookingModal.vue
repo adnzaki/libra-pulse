@@ -341,7 +341,7 @@ const handleSubmitBooking = async () => {
   let targetCardNumber = '';
 
   if (store.currentUser) {
-    targetCardNumber = store.currentUser.cardNumber;
+    targetCardNumber = store.currentUser.id || store.currentUser.cardNumber || '';
   } else if (authMode.value === 'card') {
     const cleanCard = cardNumberInput.value.trim();
     if (!cleanCard) {

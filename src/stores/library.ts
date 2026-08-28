@@ -822,20 +822,48 @@ export const useLibraryStore = defineStore('library', {
     // ------------------------------------------------------------------------
     // Bookings & Loans Actions
     // ------------------------------------------------------------------------
-    async createBooking(bookId: string, memberId: string, notes?: string) {
+    async createBooking(bookId: string, memberIdOrCard?: string, notes?: string) {
       this.isLoading = true;
       try {
         const book = this.books.find(b => b.id === bookId);
-        const member = this.members.find(m => m.id === memberId);
+
+        // Cari data member: prioritaskan member terdaftar berdasarkan ID, CardNumber, atau Email, atau gunakan currentUser yang sedang login
+        let member: Member | null = null;
+
+        if (memberIdOrCard) {
+          const found = this.members.find(m => 
+            m.id === memberIdOrCard || 
+            m.cardNumber === memberIdOrCard || 
+            (m.email && m.email.toLowerCase() === memberIdOrCard.toLowerCase())
+          );
+          if (found) {
+            member = found;
+          } else if (this.currentUser && (
+            this.currentUser.id === memberIdOrCard || 
+            this.currentUser.cardNumber === memberIdOrCard || 
+            (this.currentUser.email && this.currentUser.email.toLowerCase() === memberIdOrCard.toLowerCase())
+          )) {
+            member = this.currentUser;
+          }
+        }
+
+        // Jika belum ketemu tapi ada currentUser yang sedang aktif login, gunakan currentUser
+        if (!member && this.currentUser) {
+          member = this.currentUser;
+        }
 
         if (!book || book.availableCopies <= 0) {
           throw new Error('Stok buku tidak mencukupi untuk dibooking.');
         }
         if (!member) {
-          throw new Error('Data anggota tidak ditemukan.');
+          throw new Error('Data pengguna tidak ditemukan. Silakan login atau masukkan kartu member.');
         }
 
         const bookingId = `BKG-${Date.now().toString().slice(-6)}`;
+        const resolvedCardNumber = ('cardNumber' in member && member.cardNumber) ? member.cardNumber : `LIB-${member.id.slice(-4)}`;
+        const resolvedPhone = ('phone' in member && member.phone) ? member.phone : '-';
+        const resolvedEmail = member.email || '-';
+
         const newBooking: Booking = {
           id: bookingId,
           bookId: book.id,
@@ -843,10 +871,10 @@ export const useLibraryStore = defineStore('library', {
           bookCover: book.cover,
           shelfCode: book.shelfCode || 'A-01',
           memberId: member.id,
-          memberName: member.name,
-          memberCardNumber: member.cardNumber,
-          memberPhone: member.phone,
-          memberEmail: member.email,
+          memberName: member.name || 'Anggota',
+          memberCardNumber: resolvedCardNumber,
+          memberPhone: resolvedPhone,
+          memberEmail: resolvedEmail,
           createdAt: new Date().toISOString(),
           expiresAt: new Date(Date.now() + (this.suspendConfig.maxHoldHours || 24) * 3600 * 1000).toISOString(),
           status: 'active_hold',
@@ -903,9 +931,93 @@ export const useLibraryStore = defineStore('library', {
       return { success: true };
     },
 
-    async createLoan(bookId: string, memberId: string, days?: number, handledBy?: string) {
+    async collectBooking(bookingId: string, handledBy?: string) {
+      const bk = this.bookings.find(b => b.id === bookingId);
+      if (!bk || bk.status !== 'active_hold') {
+        this.setError('Data booking tidak ditemukan atau sudah tidak aktif.');
+        return { success: false };
+      }
+
+      const book = this.books.find(b => b.id === bk.bookId);
+      if (!book) {
+        this.setError('Data buku tidak ditemukan.');
+        return { success: false };
+      }
+
+      bk.status = 'collected';
+      if (book.reservedCopies && book.reservedCopies > 0) {
+        book.reservedCopies -= 1;
+      }
+      book.borrowedCopies = (book.borrowedCopies || 0) + 1;
+
+      const loanDays = 7;
+      const newLoan: Loan = {
+        id: `LOAN-${Date.now().toString().slice(-6)}`,
+        bookId: book.id,
+        bookTitle: book.title,
+        bookCover: book.cover,
+        shelfCode: book.shelfCode || bk.shelfCode || 'A-01',
+        memberId: bk.memberId,
+        memberName: bk.memberName,
+        memberCardNumber: bk.memberCardNumber,
+        memberPhone: bk.memberPhone || '-',
+        memberEmail: bk.memberEmail || '-',
+        borrowDate: new Date().toISOString().slice(0, 10),
+        dueDate: new Date(Date.now() + loanDays * 86400000).toISOString().slice(0, 10),
+        returnDate: null,
+        status: 'active',
+        daysOverdue: 0,
+        handledBy: handledBy || 'Admin Sirkulasi'
+      };
+
+      const member = this.members.find(m => m.id === bk.memberId || m.cardNumber === bk.memberCardNumber);
+      if (member) {
+        member.activeLoansCount = (member.activeLoansCount || 0) + 1;
+        member.totalBorrowed = (member.totalBorrowed || 0) + 1;
+      }
+
+      this.loans.unshift(newLoan);
+      this.calculateStats();
+
+      try {
+        const { syncBookingDoc, syncLoanDoc, syncBookDoc, syncMemberDoc } = await import('../lib/firebase.js');
+        await Promise.all([
+          syncBookingDoc(bk),
+          syncLoanDoc(newLoan),
+          syncBookDoc(book),
+          member ? syncMemberDoc(member) : Promise.resolve()
+        ]);
+      } catch {
+        queueOfflineMutation({ action: 'saveBooking', collection: 'bookings', docId: bk.id, data: bk });
+        queueOfflineMutation({ action: 'saveLoan', collection: 'loans', docId: newLoan.id, data: newLoan });
+        queueOfflineMutation({ action: 'saveBook', collection: 'books', docId: book.id, data: book });
+        if (member) queueOfflineMutation({ action: 'saveMember', collection: 'members', docId: member.id, data: member });
+        this.pendingMutationsCount++;
+      }
+
+      this.showToast(`✅ Buku "${book.title}" berhasil diserahkan ke ${bk.memberName}!`);
+      return { success: true, loan: newLoan };
+    },
+
+    async createLoan(bookId: string, memberIdOrCard: string, days?: number, handledBy?: string) {
       const book = this.books.find(b => b.id === bookId);
-      const member = this.members.find(m => m.id === memberId);
+      let member: Member | undefined = this.members.find(m => 
+        m.id === memberIdOrCard || 
+        m.cardNumber === memberIdOrCard || 
+        (m.email && m.email.toLowerCase() === memberIdOrCard.toLowerCase())
+      );
+
+      if (!member && this.currentUser && (
+        this.currentUser.id === memberIdOrCard || 
+        this.currentUser.cardNumber === memberIdOrCard || 
+        (this.currentUser.email && this.currentUser.email.toLowerCase() === memberIdOrCard.toLowerCase())
+      )) {
+        member = this.currentUser;
+      }
+
+      if (!member && this.currentUser) {
+        member = this.currentUser;
+      }
 
       if (!book || book.availableCopies <= 0) {
         this.setError('Buku sedang tidak tersedia untuk dipinjam.');
@@ -917,6 +1029,10 @@ export const useLibraryStore = defineStore('library', {
       }
 
       const loanDays = days || 7;
+      const resolvedCardNumber = ('cardNumber' in member && member.cardNumber) ? member.cardNumber : `LIB-${member.id.slice(-4)}`;
+      const resolvedPhone = ('phone' in member && member.phone) ? member.phone : '-';
+      const resolvedEmail = member.email || '-';
+
       const newLoan: Loan = {
         id: `LOAN-${Date.now().toString().slice(-6)}`,
         bookId: book.id,
@@ -925,9 +1041,9 @@ export const useLibraryStore = defineStore('library', {
         shelfCode: book.shelfCode || 'A-01',
         memberId: member.id,
         memberName: member.name,
-        memberCardNumber: member.cardNumber,
-        memberPhone: member.phone,
-        memberEmail: member.email,
+        memberCardNumber: resolvedCardNumber,
+        memberPhone: resolvedPhone,
+        memberEmail: resolvedEmail,
         borrowDate: new Date().toISOString().slice(0, 10),
         dueDate: new Date(Date.now() + loanDays * 86400000).toISOString().slice(0, 10),
         returnDate: null,
@@ -938,19 +1054,29 @@ export const useLibraryStore = defineStore('library', {
 
       book.availableCopies -= 1;
       book.borrowedCopies = (book.borrowedCopies || 0) + 1;
-      member.activeLoansCount = (member.activeLoansCount || 0) + 1;
-      member.totalBorrowed = (member.totalBorrowed || 0) + 1;
+      if ('activeLoansCount' in member) {
+        member.activeLoansCount = (member.activeLoansCount || 0) + 1;
+      }
+      if ('totalBorrowed' in member) {
+        member.totalBorrowed = (member.totalBorrowed || 0) + 1;
+      }
 
       this.loans.unshift(newLoan);
       this.calculateStats();
 
       try {
         const { syncLoanDoc, syncBookDoc, syncMemberDoc } = await import('../lib/firebase.js');
-        await Promise.all([syncLoanDoc(newLoan), syncBookDoc(book), syncMemberDoc(member)]);
+        await Promise.all([
+          syncLoanDoc(newLoan), 
+          syncBookDoc(book), 
+          ('cardNumber' in member ? syncMemberDoc(member as Member) : Promise.resolve())
+        ]);
       } catch {
         queueOfflineMutation({ action: 'saveLoan', collection: 'loans', docId: newLoan.id, data: newLoan });
         queueOfflineMutation({ action: 'saveBook', collection: 'books', docId: book.id, data: book });
-        queueOfflineMutation({ action: 'saveMember', collection: 'members', docId: member.id, data: member });
+        if ('cardNumber' in member) {
+          queueOfflineMutation({ action: 'saveMember', collection: 'members', docId: member.id, data: member });
+        }
         this.pendingMutationsCount++;
       }
 
@@ -971,8 +1097,8 @@ export const useLibraryStore = defineStore('library', {
         if (book.borrowedCopies > 0) book.borrowedCopies -= 1;
       }
 
-      const member = this.members.find(m => m.id === loan.memberId);
-      if (member && member.activeLoansCount > 0) {
+      const member = this.members.find(m => m.id === loan.memberId || m.cardNumber === loan.memberCardNumber);
+      if (member && member.activeLoansCount && member.activeLoansCount > 0) {
         member.activeLoansCount -= 1;
       }
 
