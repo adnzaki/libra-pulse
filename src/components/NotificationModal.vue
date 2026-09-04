@@ -5,12 +5,12 @@
       <!-- Header -->
       <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
-            <BellRing class="w-5 h-5" />
+          <div class="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
+            <Mail class="w-5 h-5" />
           </div>
           <div>
-            <h3 class="font-bold text-base text-slate-900">Kirim Notifikasi Keterlambatan</h3>
-            <p class="text-xs text-slate-500">Pengiriman Pesan Peringatan via Email atau SMS / WA</p>
+            <h3 class="font-bold text-base text-slate-900">Kirim Peringatan Keterlambatan</h3>
+            <p class="text-xs text-slate-500">Kirim Surat Peringatan Resmi via Email ke Anggota</p>
           </div>
         </div>
         <button @click="$emit('close')" class="p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer">
@@ -36,57 +36,23 @@
           </select>
         </div>
 
-        <!-- Channel Type -->
-        <div>
-          <label class="block font-bold text-slate-700 mb-1.5">Saluran Notifikasi</label>
-          <div class="grid grid-cols-3 gap-2">
-            <button 
-              type="button" 
-              @click="channelType = 'email'"
-              class="py-2.5 px-3 rounded-2xl border flex items-center justify-center gap-2 transition cursor-pointer"
-              :class="channelType === 'email' ? 'bg-blue-50 border-blue-200 text-blue-700 font-bold' : 'border-slate-200 bg-slate-50 text-slate-600'"
-            >
-              <Mail class="w-4 h-4" />
-              Email
-            </button>
-            <button 
-              type="button" 
-              @click="channelType = 'sms'"
-              class="py-2.5 px-3 rounded-2xl border flex items-center justify-center gap-2 transition cursor-pointer"
-              :class="channelType === 'sms' ? 'bg-blue-50 border-blue-200 text-blue-700 font-bold' : 'border-slate-200 bg-slate-50 text-slate-600'"
-            >
-              <MessageSquare class="w-4 h-4" />
-              SMS
-            </button>
-            <button 
-              type="button" 
-              @click="channelType = 'whatsapp'"
-              class="py-2.5 px-3 rounded-2xl border flex items-center justify-center gap-2 transition cursor-pointer"
-              :class="channelType === 'whatsapp' ? 'bg-emerald-50 border-emerald-200 text-emerald-700 font-bold' : 'border-slate-200 bg-slate-50 text-slate-600'"
-            >
-              <Smartphone class="w-4 h-4" />
-              WhatsApp
-            </button>
-          </div>
-        </div>
-
         <!-- Recipient & Subject -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label class="block font-bold text-slate-700 mb-1">Penerima ({{ channelType === 'email' ? 'Email' : 'No. HP' }})</label>
+            <label class="block font-bold text-slate-700 mb-1">Email Penerima</label>
             <input 
               v-model="recipient" 
-              type="text" 
-              placeholder="budi@pustaka.id atau +6281..." 
+              type="email" 
+              placeholder="budi@example.com" 
               class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
             />
           </div>
-          <div v-if="channelType === 'email'">
+          <div>
             <label class="block font-bold text-slate-700 mb-1">Subjek Email</label>
             <input 
               v-model="subject" 
               type="text" 
-              placeholder="Peringatan Keterlambatan..." 
+              placeholder="Peringatan Keterlambatan Buku..." 
               class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
             />
           </div>
@@ -95,54 +61,88 @@
         <!-- Message Body -->
         <div>
           <div class="flex items-center justify-between mb-1.5">
-            <label class="font-bold text-slate-700">Isi Pesan Notifikasi</label>
+            <label class="font-bold text-slate-700">Isi Pesan Email Peringatan</label>
             <button 
               type="button" 
-              @click="applyTemplate('formal')" 
+              @click="applyTemplate" 
               class="text-[10px] text-blue-600 font-bold hover:underline cursor-pointer"
             >
-              Gunakan Template Standar
+              Reset ke Template Standar
             </button>
           </div>
           <textarea 
             v-model="message" 
-            rows="4" 
-            class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-800 focus:outline-none focus:border-blue-500 text-xs font-medium"
+            rows="5" 
+            class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-800 focus:outline-none focus:border-blue-500 text-xs font-medium leading-relaxed"
           ></textarea>
         </div>
 
-        <!-- Live Simulation Preview Bubble -->
-        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100">
-          <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-2 flex items-center gap-1.5">
-            <Sparkles class="w-3.5 h-3.5 text-blue-600" />
-            Live Preview Notifikasi (Tampilan di Perangkat Anggota)
+        <!-- Live Preview -->
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+          <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-2 flex items-center justify-between">
+            <span class="flex items-center gap-1.5">
+              <Sparkles class="w-3.5 h-3.5 text-blue-600" />
+              Preview Tampilan Email Anggota
+            </span>
+            <span class="text-slate-400 normal-case font-normal text-[10px]">Kepada: {{ recipient || '-' }}</span>
           </div>
-          <div class="p-3.5 rounded-xl bg-white text-slate-800 font-mono text-[11px] border border-slate-200/80 whitespace-pre-wrap shadow-sm">
-            <strong v-if="channelType === 'email'">Subjek: {{ subject }}</strong>
+          <div class="p-3.5 rounded-xl bg-white text-slate-800 text-[11px] border border-slate-200 whitespace-pre-wrap font-sans shadow-sm leading-relaxed">
+            <div class="pb-2 mb-2 border-b border-slate-100 font-bold text-slate-900 text-xs">
+              {{ subject || '(Tanpa Subjek)' }}
+            </div>
 {{ message || '(Pesan kosong)' }}
+          </div>
+        </div>
+
+        <!-- Direct Email Launch Quick Link -->
+        <div class="flex flex-wrap items-center justify-between gap-2 p-3 bg-blue-50/70 border border-blue-100 rounded-2xl text-blue-900 text-[11px]">
+          <div class="flex items-center gap-2">
+            <ExternalLink class="w-4 h-4 text-blue-600 shrink-0" />
+            <span>Kirim via akun pribadi Anda sekarang juga:</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <a 
+              :href="gmailWebUrl" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              class="px-3 py-1 bg-white hover:bg-blue-100 text-blue-700 font-bold rounded-lg border border-blue-200 transition shadow-xs flex items-center gap-1.5"
+            >
+              Buka di Gmail Web
+            </a>
+            <a 
+              :href="mailtoUrl"
+              class="px-3 py-1 bg-white hover:bg-blue-100 text-blue-700 font-bold rounded-lg border border-blue-200 transition shadow-xs flex items-center gap-1.5"
+            >
+              Buka di Mail Client
+            </a>
           </div>
         </div>
 
       </div>
 
       <!-- Footer -->
-      <div class="px-6 py-4 bg-slate-50/80 border-t border-slate-100 flex items-center justify-end gap-3">
-        <button 
-          type="button" 
-          @click="$emit('close')"
-          class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 hover:bg-slate-200/60 transition cursor-pointer"
-        >
-          Tutup
-        </button>
-        <button 
-          type="button"
-          @click="handleSendNotification"
-          :disabled="!recipient || !message || isSending"
-          class="px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
-        >
-          <Send class="w-4 h-4" />
-          {{ isSending ? 'Mengirim...' : 'Kirim Notifikasi Sekarang' }}
-        </button>
+      <div class="px-6 py-4 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between gap-3">
+        <div class="text-[11px] text-slate-400">
+          Saluran: <span class="font-bold text-slate-600">Email Resmi</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button 
+            type="button" 
+            @click="$emit('close')"
+            class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 hover:bg-slate-200/60 transition cursor-pointer"
+          >
+            Tutup
+          </button>
+          <button 
+            type="button"
+            @click="handleSendNotification"
+            :disabled="!recipient || !message || isSending"
+            class="px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+          >
+            <Send class="w-4 h-4" />
+            {{ isSending ? 'Mengirim...' : 'Kirim & Catat Email' }}
+          </button>
+        </div>
       </div>
 
     </div>
@@ -150,10 +150,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import type { Loan } from '../types.js';
-import { BellRing, Mail, MessageSquare, Smartphone, Sparkles, Send, X } from 'lucide-vue-next';
+import { Mail, Sparkles, Send, X, ExternalLink } from 'lucide-vue-next';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -164,7 +164,6 @@ const emit = defineEmits(['close', 'sent']);
 
 const store = useLibraryStore();
 const selectedLoanId = ref('');
-const channelType = ref<'email' | 'sms' | 'whatsapp'>('email');
 const recipient = ref('');
 const subject = ref('');
 const message = ref('');
@@ -181,31 +180,45 @@ function autoPopulateTemplate() {
   const loan = store.loans.find(l => l.id === selectedLoanId.value);
   if (!loan) return;
 
-  if (channelType.value === 'email') {
-    recipient.value = loan.memberEmail || 'anggota@pustaka.id';
-  } else {
-    recipient.value = loan.memberPhone || '+6281234567890';
-  }
-
-  subject.value = `⚠️ Peringatan Keterlambatan: Buku "${loan.bookTitle}"`;
-  applyTemplate('formal');
+  const member = store.members.find(m => m.id === loan.memberId || m.cardNumber === loan.memberCardNumber);
+  recipient.value = loan.memberEmail || member?.email || 'anggota@pustaka.id';
+  subject.value = `⚠️ Peringatan Keterlambatan Pengembalian: Buku "${loan.bookTitle}"`;
+  applyTemplate();
 }
 
-function applyTemplate(type: string) {
+function applyTemplate() {
   const loan = store.loans.find(l => l.id === selectedLoanId.value);
   const memberName = loan ? loan.memberName : 'Anggota';
   const bookTitle = loan ? loan.bookTitle : 'Buku Perpustakaan';
-  const days = loan ? loan.daysOverdue : 3;
+  const days = loan ? loan.daysOverdue : 1;
+  const dueDate = loan ? loan.dueDate : '-';
 
-  if (channelType.value === 'email') {
-    message.value = `Yth. ${memberName},\n\nKami menginformasikan bahwa buku "${bookTitle}" yang Anda pinjam telah melewati batas waktu pengembalian (${days} hari terlambat).\n\nSanksi penangguhan (suspend) kartu anggota aktif hingga buku dikembalikan.\n\nMohon segera mengembalikan buku ke loket sirkulasi perpustakaan.\n\nTerima kasih,\nTim Perpustakaan PustakaModern`;
-  } else {
-    message.value = `[PustakaModern] Peringatan: Halo ${memberName}, buku "${bookTitle}" terlambat ${days} hari. Segera kembalikan ke perpustakaan untuk mengaktifkan kembali status kartu member Anda.`;
-  }
+  message.value = `Yth. Sdr/i ${memberName},
+
+Kami menginformasikan bahwa buku "${bookTitle}" yang Anda pinjam telah melewati tanggal jatuh tempo (${dueDate}) dan saat ini berstatus TERLAMBAT (${days} hari).
+
+Sesuai ketentuan perpustakaan, kartu anggota Anda dalam status penangguhan (suspend) sementara hingga buku dikembalikan ke meja sirkulasi perpustakaan.
+
+Mohon segera mengembalikan buku fisik ke loket sirkulasi agar kartu anggota dapat diaktifkan kembali secara otomatis.
+
+Terima kasih atas perhatian dan kerja samanya.
+
+Salam hormat,
+Layanan Sirkulasi & Koleksi Perpustakaan`;
 }
 
-watch(channelType, () => {
-  autoPopulateTemplate();
+const gmailWebUrl = computed(() => {
+  const to = encodeURIComponent(recipient.value || '');
+  const su = encodeURIComponent(subject.value || '');
+  const body = encodeURIComponent(message.value || '');
+  return `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${su}&body=${body}`;
+});
+
+const mailtoUrl = computed(() => {
+  const to = encodeURIComponent(recipient.value || '');
+  const su = encodeURIComponent(subject.value || '');
+  const body = encodeURIComponent(message.value || '');
+  return `mailto:${to}?subject=${su}&body=${body}`;
 });
 
 const handleSendNotification = async () => {
@@ -217,7 +230,7 @@ const handleSendNotification = async () => {
     const res = await store.sendNotification({
       memberId: loan ? loan.memberId : undefined,
       recipient: recipient.value,
-      type: channelType.value,
+      type: 'email',
       subject: subject.value,
       message: message.value,
       triggerReason: 'overdue_reminder'
@@ -232,4 +245,3 @@ const handleSendNotification = async () => {
   }
 };
 </script>
-

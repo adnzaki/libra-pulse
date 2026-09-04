@@ -70,9 +70,9 @@
           </div>
 
           <!-- Verified Member Info Pill -->
-          <div v-if="matchedMember" class="p-3 rounded-2xl border flex items-center justify-between animate-in fade-in" :class="matchedMember.isSuspended ? 'bg-rose-50 border-rose-200 text-rose-900' : 'bg-emerald-50 border-emerald-200 text-emerald-900'">
+          <div v-if="matchedMember" class="p-3 rounded-2xl border flex items-center justify-between animate-in fade-in" :class="isMemberBlocked ? 'bg-rose-50 border-rose-200 text-rose-900' : 'bg-emerald-50 border-emerald-200 text-emerald-900'">
             <div class="flex items-center gap-2.5">
-              <img :src="matchedMember.avatar" class="w-8 h-8 rounded-full object-cover border" :class="matchedMember.isSuspended ? 'border-rose-300' : 'border-emerald-300'" alt="Avatar" />
+              <img :src="matchedMember.avatar" class="w-8 h-8 rounded-full object-cover border" :class="isMemberBlocked ? 'border-rose-300' : 'border-emerald-300'" alt="Avatar" />
               <div>
                 <div class="font-bold flex items-center gap-1.5">
                   {{ matchedMember.name }}
@@ -83,10 +83,27 @@
             </div>
             <span 
               class="text-[10px] font-bold px-2.5 py-0.5 rounded-full shrink-0"
-              :class="matchedMember.isSuspended ? 'bg-rose-200 text-rose-800' : 'bg-emerald-200 text-emerald-800'"
+              :class="isMemberBlocked ? 'bg-rose-200 text-rose-800' : 'bg-emerald-200 text-emerald-800'"
             >
-              {{ matchedMember.isSuspended ? '⚠️ Suspend' : 'Anggota Aktif' }}
+              {{ isMemberBlocked ? '⚠️ Suspend / Diblokir' : 'Anggota Aktif' }}
             </span>
+          </div>
+
+          <!-- Warning Banner if Member Suspended or has Overdue Loans -->
+          <div v-if="matchedMember && isMemberBlocked" class="p-3.5 rounded-2xl bg-rose-100/80 border border-rose-300 text-xs text-rose-900 space-y-1">
+            <div class="font-bold flex items-center gap-1.5 text-rose-800">
+              <AlertCircle class="w-4 h-4 text-rose-600 shrink-0" />
+              <span>Peminjaman Buku Ditolak</span>
+            </div>
+            <p v-if="matchedMember.isSuspended">
+              <strong>Status:</strong> Akun ini sedang disuspend ({{ matchedMember.suspendReason || 'Keterlambatan pengembalian buku' }}).
+              <span v-if="matchedMember.suspendedUntil" class="block font-mono text-[11px] text-rose-800 font-semibold mt-0.5">
+                Masa sanksi berlaku hingga: {{ new Date(matchedMember.suspendedUntil).toLocaleDateString('id-ID') }}
+              </span>
+            </p>
+            <p v-if="memberOverdueCount > 0" class="font-semibold text-rose-800">
+              ⚠️ Anggota memiliki {{ memberOverdueCount }} buku pinjaman yang sedang terlambat / melewati jatuh tempo. Harap kembalikan buku terlebih dahulu.
+            </p>
           </div>
         </div>
 
@@ -205,24 +222,50 @@
         </div>
 
         <!-- Loan Duration & Admin Handler -->
-        <div class="grid grid-cols-2 gap-3 pt-1">
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Durasi Peminjaman (Hari)</label>
-            <input 
-              v-model.number="loanDays" 
-              type="number" 
-              min="1" 
-              max="30" 
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
-            />
+        <div class="space-y-3 pt-1">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block font-bold text-xs sm:text-sm text-slate-700">Durasi Peminjaman (1 - 7 Hari)</label>
+                <span class="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg">{{ loanDays }} Hari</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <input 
+                  v-model.number="loanDays" 
+                  type="number" 
+                  min="1" 
+                  max="7" 
+                  class="w-20 px-3 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 text-center font-bold focus:outline-none focus:border-blue-500 text-sm"
+                />
+                <div class="flex items-center gap-1 flex-wrap">
+                  <button 
+                    v-for="d in [1, 2, 3, 5, 7]" 
+                    :key="d" 
+                    type="button"
+                    @click="loanDays = d"
+                    class="px-2 py-1 rounded-xl text-[11px] font-bold transition cursor-pointer"
+                    :class="loanDays === d ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'"
+                  >
+                    {{ d }}h{{ d === 3 ? '*' : '' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold text-xs sm:text-sm text-slate-700 mb-1">Petugas Sirkulasi</label>
+              <input 
+                v-model="handledBy" 
+                type="text" 
+                class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-blue-500 font-medium text-xs sm:text-sm"
+              />
+            </div>
           </div>
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Petugas Sirkulasi</label>
-            <input 
-              v-model="handledBy" 
-              type="text" 
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
-            />
+
+          <!-- Due Date Preview Box -->
+          <div class="p-2.5 rounded-xl bg-blue-50/70 border border-blue-100 flex items-center justify-between text-xs text-blue-900">
+            <span class="font-medium text-slate-600">Estimasi Jatuh Tempo:</span>
+            <span class="font-bold text-blue-700">{{ dueDateFormatted }}</span>
           </div>
         </div>
 
@@ -240,7 +283,7 @@
         <button 
           type="button"
           @click="handleIssueLoan"
-          :disabled="!memberCardInput || !selectedBookId || isSubmitting"
+          :disabled="!memberCardInput || !selectedBookId || isSubmitting || isMemberBlocked || loanDays < 1 || loanDays > 7"
           class="px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
         >
           <Check class="w-4 h-4" />
@@ -270,7 +313,7 @@ const emit = defineEmits(['close', 'issued']);
 const store = useLibraryStore();
 const memberCardInput = ref(props.preselectedCard || '');
 const selectedBookId = ref('');
-const loanDays = ref(7);
+const loanDays = ref(3); // Default 3 hari sesuai regulasi
 const handledBy = ref('Admin Sirkulasi');
 const isSubmitting = ref(false);
 const modalError = ref('');
@@ -295,6 +338,33 @@ const matchedMember = computed<Member | null>(() => {
     return store.members.find(m => m.cardNumber.toUpperCase() === input || m.id.toUpperCase() === input) || null;
   }
   return null;
+});
+
+const memberOverdueCount = computed(() => {
+  if (!matchedMember.value) return 0;
+  const memId = matchedMember.value.id;
+  const cardNum = matchedMember.value.cardNumber;
+  return store.loans.filter(l => 
+    (l.memberId === memId || l.memberCardNumber === cardNum) && l.status === 'overdue'
+  ).length;
+});
+
+const isMemberBlocked = computed(() => {
+  if (matchedMember.value?.isSuspended) return true;
+  if (memberOverdueCount.value > 0) return true;
+  return false;
+});
+
+const dueDateFormatted = computed(() => {
+  const days = Math.min(7, Math.max(1, Number(loanDays.value) || 3));
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toLocaleDateString('id-ID', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
 });
 
 const chosenBook = computed(() => {
@@ -447,6 +517,14 @@ const handleIssueLoan = async () => {
     modalError.value = 'Silakan pilih buku yang akan dipinjam.';
     return;
   }
+  if (isMemberBlocked.value) {
+    modalError.value = 'Peminjaman ditolak: Kartu anggota ini berstatus DISUSPEND atau memiliki buku yang sedang terlambat.';
+    return;
+  }
+  if (loanDays.value < 1 || loanDays.value > 7) {
+    modalError.value = 'Durasi peminjaman harus antara 1 sampai 7 hari.';
+    return;
+  }
 
   isSubmitting.value = true;
   try {
@@ -479,6 +557,8 @@ watch(() => props.isOpen, (newVal) => {
     memberCardInput.value = props.preselectedCard || '';
     modalError.value = '';
     selectedBookId.value = '';
+    loanDays.value = 3; // Reset to 3 days default
+    handledBy.value = 'Admin Sirkulasi';
     bookSearchQuery.value = '';
     searchResults.value = [];
     hasSearched.value = false;

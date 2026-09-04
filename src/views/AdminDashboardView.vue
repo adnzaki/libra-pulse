@@ -444,7 +444,7 @@
                   Batalkan Booking
                 </button>
                 <button 
-                  @click="handleCollectBooking(b.id)"
+                  @click="openCollectBookingModal(b)"
                   class="px-4 py-1.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-sm flex items-center gap-1.5 cursor-pointer"
                 >
                   <CheckCircle class="w-4 h-4" />
@@ -799,14 +799,14 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-5 rounded-2xl border border-slate-200/80">
             <div>
               <h3 class="font-bold text-base text-slate-900">Log & Pengiriman Notifikasi Keterlambatan</h3>
-              <p class="text-xs text-slate-500">Pengingat otomatis dan manual melalui email dan SMS/WhatsApp.</p>
+              <p class="text-xs text-slate-500">Pengingat otomatis dan pengiriman surat peringatan resmi melalui Email.</p>
             </div>
             <button 
               @click="openNotifyModal(null)"
               class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full text-xs shadow-sm transition flex items-center gap-1.5 cursor-pointer"
             >
               <Send class="w-3.5 h-3.5" />
-              Kirim Notifikasi Manual
+              Kirim Email Manual
             </button>
           </div>
 
@@ -830,9 +830,9 @@
                 </div>
                 <button 
                   @click="openNotifyModal(l)"
-                  class="px-3 py-1 rounded-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-[10px] shadow-sm"
+                  class="px-3 py-1 rounded-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-[10px] shadow-sm cursor-pointer"
                 >
-                  Kirim Notif
+                  Kirim Email
                 </button>
               </div>
             </div>
@@ -848,8 +848,7 @@
               <div class="flex items-center justify-between">
                 <span class="font-bold text-slate-900">{{ n.memberName }}</span>
                 <span 
-                  class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase" 
-                  :class="n.type === 'email' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'"
+                  class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-700" 
                 >
                   {{ n.type }}
                 </span>
@@ -884,8 +883,7 @@
                   </td>
                   <td class="py-3 px-4">
                     <span 
-                      class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase" 
-                      :class="n.type === 'email' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'"
+                      class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-700" 
                     >
                       {{ n.type }}
                     </span>
@@ -1144,6 +1142,14 @@
       @close="isChangeAdminPasswordOpen = false"
     />
 
+    <!-- Collect Booking Modal (1-7 days duration, default 3 days) -->
+    <CollectBookingModal
+      :is-open="isCollectBookingOpen"
+      :booking="selectedBookingForCollect"
+      @close="closeCollectBookingModal"
+      @collected="closeCollectBookingModal"
+    />
+
     <!-- Admin Direct Reset Member Password Modal -->
     <div v-if="isResetMemberPasswordOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div class="bg-white w-full max-w-md rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
@@ -1227,7 +1233,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
-import type { Loan, Book, BookCategory, Member } from '../types.js';
+import type { Loan, Book, BookCategory, Member, Booking } from '../types.js';
 import DirectLoanModal from '../components/DirectLoanModal.vue';
 import ReturnBookModal from '../components/ReturnBookModal.vue';
 import NotificationModal from '../components/NotificationModal.vue';
@@ -1235,6 +1241,7 @@ import BookFormModal from '../components/BookFormModal.vue';
 import CategoryFormModal from '../components/CategoryFormModal.vue';
 import MemberFormModal from '../components/MemberFormModal.vue';
 import ChangePasswordModal from '../components/ChangePasswordModal.vue';
+import CollectBookingModal from '../components/CollectBookingModal.vue';
 import { 
   ShieldCheck, BookPlus, CheckCircle2, BookOpen, CheckCircle, 
   BookMarked, Clock, AlertTriangle, UserX, Sliders, Send, 
@@ -1265,6 +1272,19 @@ const selectedCategoryForEdit = ref<BookCategory | null>(null);
 
 const isMemberFormOpen = ref(false);
 const selectedMemberForEdit = ref<Member | null>(null);
+
+const isCollectBookingOpen = ref(false);
+const selectedBookingForCollect = ref<Booking | null>(null);
+
+const openCollectBookingModal = (booking: Booking) => {
+  selectedBookingForCollect.value = booking;
+  isCollectBookingOpen.value = true;
+};
+
+const closeCollectBookingModal = () => {
+  isCollectBookingOpen.value = false;
+  selectedBookingForCollect.value = null;
+};
 
 // Password Management State
 const isChangeAdminPasswordOpen = ref(false);
@@ -1442,7 +1462,10 @@ const handleCancelBooking = async (bookingId: string) => {
 };
 
 const handleCollectBooking = async (bookingId: string) => {
-  await store.collectBooking(bookingId, 'Admin Sirkulasi');
+  const bk = store.bookings.find(b => b.id === bookingId);
+  if (bk) {
+    openCollectBookingModal(bk);
+  }
 };
 
 const saveSuspendConfig = async () => {

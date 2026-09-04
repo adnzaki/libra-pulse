@@ -114,12 +114,14 @@ export const useLibraryStore = defineStore('library', {
               if (current) this.currentUser = current;
             }
             this.calculateStats();
+            this.checkOverdueAndAutoSuspend();
           }
         });
         subscribeToFirestoreCollection<Loan>('loans', (items) => {
           if (items) {
             this.loans = items;
             this.calculateStats();
+            this.checkOverdueAndAutoSuspend();
           }
         });
         subscribeToFirestoreCollection<Booking>('bookings', (items) => {
@@ -138,6 +140,13 @@ export const useLibraryStore = defineStore('library', {
             this.suspendConfig = items[0];
           }
         });
+
+        // Periodic auto-check every 30 seconds
+        if (typeof window !== 'undefined' && !(window as any).__overdue_checker_interval) {
+          (window as any).__overdue_checker_interval = setInterval(() => {
+            this.checkOverdueAndAutoSuspend();
+          }, 30000);
+        }
       }).catch(err => {
         console.warn('Realtime listener setup warning:', err);
       });
@@ -163,6 +172,66 @@ export const useLibraryStore = defineStore('library', {
         b.borrowedCopies = borrowed;
         b.reservedCopies = reserved;
         b.availableCopies = Math.max(0, total - borrowed - reserved);
+      }
+
+      // Reconcile overdue status synchronously so statistics and badges are immediate
+      const now = new Date();
+      const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const autoSuspendEnabled = this.suspendConfig?.autoSuspendOnOverdue ?? true;
+      const overdueMemberKeys = new Set<string>();
+
+      for (const loan of this.loans) {
+        if (loan.status === 'returned' || !loan.dueDate) continue;
+        const parts = loan.dueDate.split('-');
+        let dueMidnight = 0;
+        if (parts.length === 3) {
+          dueMidnight = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])).getTime();
+        } else {
+          dueMidnight = new Date(loan.dueDate).getTime();
+        }
+
+        if (todayMidnight > dueMidnight) {
+          loan.status = 'overdue';
+          loan.daysOverdue = Math.max(1, Math.round((todayMidnight - dueMidnight) / (24 * 3600 * 1000)));
+          if (loan.memberId) overdueMemberKeys.add(loan.memberId);
+          if (loan.memberCardNumber) overdueMemberKeys.add(loan.memberCardNumber);
+          if (loan.memberEmail) overdueMemberKeys.add(loan.memberEmail.toLowerCase().trim());
+        }
+      }
+
+      // Reconcile member suspend state based on active overdue loans
+      for (const member of this.members) {
+        const hasOverdue = overdueMemberKeys.has(member.id) ||
+                           overdueMemberKeys.has(member.cardNumber) ||
+                           (member.email && overdueMemberKeys.has(member.email.toLowerCase().trim()));
+
+        if (hasOverdue && autoSuspendEnabled) {
+          member.isSuspended = true;
+          if (!member.suspendReason) {
+            const worstLoan = this.loans.find(l => l.status === 'overdue' && (l.memberId === member.id || l.memberCardNumber === member.cardNumber));
+            member.suspendReason = worstLoan
+              ? `Keterlambatan pengembalian buku "${worstLoan.bookTitle}" (Jatuh tempo: ${worstLoan.dueDate}, telat ${worstLoan.daysOverdue} hari)`
+              : 'Sanksi Keterlambatan Pengembalian Buku';
+          }
+        } else if (!hasOverdue && member.isSuspended) {
+          // If suspension was triggered by overdue loans, auto-restore
+          const reason = (member.suspendReason || '').toLowerCase();
+          const isOverdueSuspension = !reason ||
+            reason.includes('keterlambatan') ||
+            reason.includes('sanksi') ||
+            reason.includes('jatuh tempo') ||
+            reason.includes('telat') ||
+            reason.includes('buku');
+
+          if (isOverdueSuspension) {
+            member.isSuspended = false;
+            member.suspendReason = '';
+            member.suspendedUntil = null;
+            if (this.currentUser && (this.currentUser.id === member.id || this.currentUser.cardNumber === member.cardNumber)) {
+              this.currentUser = { ...member };
+            }
+          }
+        }
       }
 
       const totalTitles = this.books.length;
@@ -196,6 +265,156 @@ export const useLibraryStore = defineStore('library', {
         totalReturnedThisMonth: this.loans.filter(l => l.status === 'returned').length,
         shelvesUtilizedPercent
       };
+    },
+
+    /**
+     * Automatic Overdue Verification and Cloud Firestore Auto-Suspend Sync
+     * Evaluates all loans against current date. If overdue, marks loan status 'overdue'
+     * and sets borrower isSuspended = true with explicit reason and duration.
+     * Persists updates to Cloud Firestore and updates currentUser if affected.
+     */
+    async checkOverdueAndAutoSuspend() {
+      if (this.loans.length === 0) return;
+
+      const now = new Date();
+      const todayYear = now.getFullYear();
+      const todayMonth = now.getMonth();
+      const todayDate = now.getDate();
+      const todayMidnight = new Date(todayYear, todayMonth, todayDate).getTime();
+
+      const autoSuspendEnabled = this.suspendConfig?.autoSuspendOnOverdue ?? true;
+      const defaultSuspendDays = this.suspendConfig?.defaultSuspendDays || 7;
+
+      const modifiedLoans: Loan[] = [];
+      const modifiedMembers: Member[] = [];
+      const overdueMemberCardNumbers = new Set<string>();
+      const overdueMemberIds = new Set<string>();
+      const overdueMemberEmails = new Set<string>();
+
+      for (const loan of this.loans) {
+        if (loan.status === 'returned') continue;
+
+        if (loan.dueDate) {
+          const parts = loan.dueDate.split('-');
+          let dueMidnight = 0;
+          if (parts.length === 3) {
+            dueMidnight = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])).getTime();
+          } else {
+            dueMidnight = new Date(loan.dueDate).getTime();
+          }
+
+          if (todayMidnight > dueMidnight) {
+            const diffDays = Math.max(1, Math.round((todayMidnight - dueMidnight) / (24 * 3600 * 1000)));
+            let loanChanged = false;
+
+            if (loan.status !== 'overdue') {
+              loan.status = 'overdue';
+              loanChanged = true;
+            }
+            if (loan.daysOverdue !== diffDays) {
+              loan.daysOverdue = diffDays;
+              loanChanged = true;
+            }
+
+            if (loanChanged) {
+              modifiedLoans.push(loan);
+            }
+
+            if (loan.memberId) overdueMemberIds.add(loan.memberId);
+            if (loan.memberCardNumber) overdueMemberCardNumbers.add(loan.memberCardNumber);
+            if (loan.memberEmail) overdueMemberEmails.add(loan.memberEmail.toLowerCase().trim());
+          } else if (loan.status === 'overdue') {
+            loan.status = 'active';
+            loan.daysOverdue = 0;
+            modifiedLoans.push(loan);
+          }
+        }
+      }
+
+      if (this.members.length > 0) {
+        for (const member of this.members) {
+          const isOverdue = overdueMemberIds.has(member.id) || 
+                            overdueMemberCardNumbers.has(member.cardNumber) ||
+                            (member.email && overdueMemberEmails.has(member.email.toLowerCase().trim()));
+
+          if (isOverdue && autoSuspendEnabled) {
+            let memberChanged = false;
+
+            if (!member.isSuspended) {
+              member.isSuspended = true;
+              memberChanged = true;
+            }
+
+            const worstLoan = this.loans
+              .filter(l => l.status === 'overdue' && (l.memberId === member.id || l.memberCardNumber === member.cardNumber || (l.memberEmail && member.email && l.memberEmail.toLowerCase() === member.email.toLowerCase())))
+              .sort((a, b) => (b.daysOverdue || 0) - (a.daysOverdue || 0))[0];
+
+            const reason = worstLoan
+              ? `Keterlambatan pengembalian buku "${worstLoan.bookTitle}" (Jatuh tempo: ${worstLoan.dueDate}, telat ${worstLoan.daysOverdue} hari)`
+              : 'Sanksi Keterlambatan Pengembalian Buku';
+
+            if (member.suspendReason !== reason) {
+              member.suspendReason = reason;
+              memberChanged = true;
+            }
+
+            const minEndDate = new Date(todayMidnight + defaultSuspendDays * 86400000);
+            const minEndStr = `${minEndDate.getFullYear()}-${String(minEndDate.getMonth() + 1).padStart(2, '0')}-${String(minEndDate.getDate()).padStart(2, '0')}`;
+
+            if (!member.suspendedUntil || member.suspendedUntil < minEndStr) {
+              member.suspendedUntil = minEndStr;
+              memberChanged = true;
+            }
+
+            if (memberChanged) {
+              modifiedMembers.push(member);
+              if (this.currentUser && (this.currentUser.id === member.id || this.currentUser.cardNumber === member.cardNumber)) {
+                this.currentUser = { ...member };
+              }
+            }
+          } else if (!isOverdue && member.isSuspended) {
+            // Member has no active overdue loans; auto-restore if suspension was overdue-related
+            const reason = (member.suspendReason || '').toLowerCase();
+            const isOverdueSuspension = !reason ||
+              reason.includes('keterlambatan') ||
+              reason.includes('sanksi') ||
+              reason.includes('jatuh tempo') ||
+              reason.includes('telat') ||
+              reason.includes('buku');
+
+            if (isOverdueSuspension) {
+              member.isSuspended = false;
+              member.suspendReason = '';
+              member.suspendedUntil = null;
+              modifiedMembers.push(member);
+              if (this.currentUser && (this.currentUser.id === member.id || this.currentUser.cardNumber === member.cardNumber)) {
+                this.currentUser = { ...member };
+              }
+            }
+          }
+        }
+      }
+
+      this.calculateStats();
+
+      if (modifiedLoans.length > 0 || modifiedMembers.length > 0) {
+        try {
+          const { syncLoanDoc, syncMemberDoc } = await import('../lib/firebase.js');
+          await Promise.all([
+            ...modifiedLoans.map(l => syncLoanDoc(l)),
+            ...modifiedMembers.map(m => syncMemberDoc(m))
+          ]);
+        } catch (err) {
+          console.warn('Auto-suspend Firestore sync fallback:', err);
+          modifiedLoans.forEach(l => {
+            queueOfflineMutation({ action: 'saveLoan', collection: 'loans', docId: l.id, data: l });
+          });
+          modifiedMembers.forEach(m => {
+            queueOfflineMutation({ action: 'saveMember', collection: 'members', docId: m.id, data: m });
+          });
+          this.pendingMutationsCount += modifiedLoans.length + modifiedMembers.length;
+        }
+      }
     },
 
     restoreUserSession() {
@@ -238,6 +457,7 @@ export const useLibraryStore = defineStore('library', {
           members: this.members,
           loans: this.loans,
           bookings: this.bookings,
+          notifications: this.notifications,
           config: this.suspendConfig
         });
         this.offlineLastDownloaded = new Date().toISOString();
@@ -265,7 +485,9 @@ export const useLibraryStore = defineStore('library', {
           removeMemberDoc, 
           syncLoanDoc, 
           syncBookingDoc, 
-          syncConfigDoc 
+          syncConfigDoc,
+          syncNotificationDoc,
+          removeNotificationDoc
         } = await import('../lib/firebase.js');
 
         for (const item of queue) {
@@ -281,6 +503,8 @@ export const useLibraryStore = defineStore('library', {
             case 'saveLoan': await syncLoanDoc(item.data); break;
             case 'saveBooking': await syncBookingDoc(item.data); break;
             case 'saveConfig': await syncConfigDoc(item.data); break;
+            case 'saveNotification': await syncNotificationDoc(item.data); break;
+            case 'deleteNotification': await removeNotificationDoc(item.docId); break;
           }
         }
         clearPendingOfflineMutations();
@@ -329,6 +553,8 @@ export const useLibraryStore = defineStore('library', {
         if (fConfig && fConfig.length > 0) this.suspendConfig = fConfig[0];
 
         this.isUsingOfflineData = false;
+        this.calculateStats();
+        await this.checkOverdueAndAutoSuspend();
         this.calculateStats();
         this.restoreUserSession();
         this.flushOfflineQueue();
@@ -709,7 +935,11 @@ export const useLibraryStore = defineStore('library', {
 
       target.isSuspended = suspend;
       target.suspendedUntil = suspend && days ? new Date(Date.now() + days * 86400000).toISOString().slice(0, 10) : null;
-      target.suspendReason = suspend ? (reason || 'Sanksi Keterlambatan Pengembalian Buku') : undefined;
+      target.suspendReason = suspend ? (reason || 'Sanksi Keterlambatan Pengembalian Buku') : '';
+
+      if (this.currentUser && (this.currentUser.id === target.id || this.currentUser.cardNumber === target.cardNumber)) {
+        this.currentUser = { ...target };
+      }
 
       this.calculateStats();
 
@@ -859,6 +1089,18 @@ export const useLibraryStore = defineStore('library', {
           throw new Error('Data pengguna tidak ditemukan. Silakan login atau masukkan kartu member.');
         }
 
+        // Validate suspend status & overdue loans
+        if (member.isSuspended) {
+          throw new Error(`Booking ditolak: Akun Anda (${member.name}) sedang berstatus DISUSPEND. ${member.suspendReason || ''}`);
+        }
+
+        const memOverdue = this.loans.filter(
+          l => (l.memberId === member?.id || l.memberCardNumber === member?.cardNumber) && l.status === 'overdue'
+        );
+        if (memOverdue.length > 0) {
+          throw new Error(`Booking ditolak: Anda memiliki ${memOverdue.length} buku pinjaman yang terlambat dikembalikan. Silakan kembalikan buku terlebih dahulu.`);
+        }
+
         const bookingId = `BKG-${Date.now().toString().slice(-6)}`;
         const resolvedCardNumber = ('cardNumber' in member && member.cardNumber) ? member.cardNumber : `LIB-${member.id.slice(-4)}`;
         const resolvedPhone = ('phone' in member && member.phone) ? member.phone : '-';
@@ -931,17 +1173,40 @@ export const useLibraryStore = defineStore('library', {
       return { success: true };
     },
 
-    async collectBooking(bookingId: string, handledBy?: string) {
+    async collectBooking(bookingId: string, days?: number, handledBy?: string) {
       const bk = this.bookings.find(b => b.id === bookingId);
       if (!bk || bk.status !== 'active_hold') {
         this.setError('Data booking tidak ditemukan atau sudah tidak aktif.');
-        return { success: false };
+        return { success: false, error: 'Data booking tidak ditemukan atau sudah tidak aktif.' };
       }
 
       const book = this.books.find(b => b.id === bk.bookId);
       if (!book) {
         this.setError('Data buku tidak ditemukan.');
-        return { success: false };
+        return { success: false, error: 'Data buku tidak ditemukan.' };
+      }
+
+      // Check member status for suspend and overdue
+      const member = this.members.find(m => 
+        m.id === bk.memberId || 
+        m.cardNumber === bk.memberCardNumber ||
+        (m.email && bk.memberEmail && m.email.toLowerCase() === bk.memberEmail.toLowerCase())
+      );
+
+      if (member) {
+        if (member.isSuspended) {
+          const err = `Penyerahan dibatalkan: Anggota (${member.name}) sedang berstatus DISUSPEND. ${member.suspendReason || ''}`;
+          this.setError(err);
+          return { success: false, error: err };
+        }
+        const overdueLoans = this.loans.filter(
+          l => (l.memberId === member.id || l.memberCardNumber === member.cardNumber) && l.status === 'overdue'
+        );
+        if (overdueLoans.length > 0) {
+          const err = `Penyerahan dibatalkan: Anggota (${member.name}) memiliki ${overdueLoans.length} pinjaman buku yang sudah jatuh tempo/terlambat.`;
+          this.setError(err);
+          return { success: false, error: err };
+        }
       }
 
       bk.status = 'collected';
@@ -950,7 +1215,13 @@ export const useLibraryStore = defineStore('library', {
       }
       book.borrowedCopies = (book.borrowedCopies || 0) + 1;
 
-      const loanDays = 7;
+      // loan duration strictly 1-7 days, default 3
+      const loanDays = Math.min(7, Math.max(1, Number(days) || 3));
+      const now = new Date();
+      const borrowDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const dueObj = new Date(now.getTime() + loanDays * 86400000);
+      const dueDate = `${dueObj.getFullYear()}-${String(dueObj.getMonth() + 1).padStart(2, '0')}-${String(dueObj.getDate()).padStart(2, '0')}`;
+
       const newLoan: Loan = {
         id: `LOAN-${Date.now().toString().slice(-6)}`,
         bookId: book.id,
@@ -962,15 +1233,14 @@ export const useLibraryStore = defineStore('library', {
         memberCardNumber: bk.memberCardNumber,
         memberPhone: bk.memberPhone || '-',
         memberEmail: bk.memberEmail || '-',
-        borrowDate: new Date().toISOString().slice(0, 10),
-        dueDate: new Date(Date.now() + loanDays * 86400000).toISOString().slice(0, 10),
+        borrowDate,
+        dueDate,
         returnDate: null,
         status: 'active',
         daysOverdue: 0,
         handledBy: handledBy || 'Admin Sirkulasi'
       };
 
-      const member = this.members.find(m => m.id === bk.memberId || m.cardNumber === bk.memberCardNumber);
       if (member) {
         member.activeLoansCount = (member.activeLoansCount || 0) + 1;
         member.totalBorrowed = (member.totalBorrowed || 0) + 1;
@@ -995,11 +1265,13 @@ export const useLibraryStore = defineStore('library', {
         this.pendingMutationsCount++;
       }
 
-      this.showToast(`✅ Buku "${book.title}" berhasil diserahkan ke ${bk.memberName}!`);
+      this.showToast(`✅ Buku "${book.title}" berhasil diserahkan ke ${bk.memberName} (Durasi pinjam ${loanDays} hari)!`);
       return { success: true, loan: newLoan };
     },
 
     async createLoan(bookId: string, memberIdOrCard: string, days?: number, handledBy?: string) {
+      await this.checkOverdueAndAutoSuspend();
+
       const book = this.books.find(b => b.id === bookId);
       let member: Member | undefined = this.members.find(m => 
         m.id === memberIdOrCard || 
@@ -1030,7 +1302,28 @@ export const useLibraryStore = defineStore('library', {
         return { success: false, error };
       }
 
-      const loanDays = days || 7;
+      // Check if member is suspended or has overdue loans
+      if (member.isSuspended) {
+        const error = `Peminjaman ditolak: Kartu anggota (${member.name}) berstatus DISUSPEND. ${member.suspendReason || 'Sanksi keterlambatan pengembalian buku'}`;
+        this.setError(error);
+        return { success: false, error };
+      }
+
+      const overdueLoans = this.loans.filter(
+        l => (l.memberId === member?.id || l.memberCardNumber === member?.cardNumber) && l.status === 'overdue'
+      );
+      if (overdueLoans.length > 0) {
+        const error = `Peminjaman ditolak: Anggota (${member.name}) memiliki ${overdueLoans.length} pinjaman buku yang sudah jatuh tempo.`;
+        this.setError(error);
+        return { success: false, error };
+      }
+
+      const loanDays = Math.min(7, Math.max(1, Number(days) || 3));
+      const now = new Date();
+      const borrowDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const dueObj = new Date(now.getTime() + loanDays * 86400000);
+      const dueDate = `${dueObj.getFullYear()}-${String(dueObj.getMonth() + 1).padStart(2, '0')}-${String(dueObj.getDate()).padStart(2, '0')}`;
+
       const resolvedCardNumber = ('cardNumber' in member && member.cardNumber) ? member.cardNumber : `LIB-${member.id.slice(-4)}`;
       const resolvedPhone = ('phone' in member && member.phone) ? member.phone : '-';
       const resolvedEmail = member.email || '-';
@@ -1046,12 +1339,12 @@ export const useLibraryStore = defineStore('library', {
         memberCardNumber: resolvedCardNumber,
         memberPhone: resolvedPhone,
         memberEmail: resolvedEmail,
-        borrowDate: new Date().toISOString().slice(0, 10),
-        dueDate: new Date(Date.now() + loanDays * 86400000).toISOString().slice(0, 10),
+        borrowDate,
+        dueDate,
         returnDate: null,
         status: 'active',
         daysOverdue: 0,
-        handledBy: handledBy || 'Admin'
+        handledBy: handledBy || 'Admin Sirkulasi'
       };
 
       book.availableCopies -= 1;
@@ -1082,11 +1375,15 @@ export const useLibraryStore = defineStore('library', {
         this.pendingMutationsCount++;
       }
 
-      this.showToast(`✅ Peminjaman buku "${book.title}" berhasil dicatat!`);
+      this.showToast(`✅ Peminjaman buku "${book.title}" berhasil dicatat (Durasi pinjam ${loanDays} hari)!`);
       return { success: true, loan: newLoan };
     },
 
     async issueDirectLoan(bookId: string, memberIdOrCard: string, days?: number, handledBy?: string) {
+      return this.createLoan(bookId, memberIdOrCard, days, handledBy);
+    },
+
+    async directLoan(bookId: string, memberIdOrCard: string, days?: number, handledBy?: string) {
       return this.createLoan(bookId, memberIdOrCard, days, handledBy);
     },
 
@@ -1096,6 +1393,7 @@ export const useLibraryStore = defineStore('library', {
 
       loan.status = 'returned';
       loan.returnDate = new Date().toISOString().slice(0, 10);
+      loan.daysOverdue = 0;
 
       const book = this.books.find(b => b.id === loan.bookId);
       if (book) {
@@ -1103,24 +1401,50 @@ export const useLibraryStore = defineStore('library', {
         if (book.borrowedCopies > 0) book.borrowedCopies -= 1;
       }
 
-      const member = this.members.find(m => m.id === loan.memberId || m.cardNumber === loan.memberCardNumber);
+      const member = this.members.find(m => 
+        m.id === loan.memberId || 
+        m.cardNumber === loan.memberCardNumber ||
+        (m.email && loan.memberEmail && m.email.toLowerCase() === loan.memberEmail.toLowerCase())
+      );
       if (member && member.activeLoansCount && member.activeLoansCount > 0) {
         member.activeLoansCount -= 1;
+      }
+
+      // If member was suspended due to overdue books, check if they now have NO remaining overdue loans
+      if (member) {
+        const remainingOverdue = this.loans.filter(
+          l => l.id !== loan.id &&
+               l.status === 'overdue' &&
+               (l.memberId === member.id || l.memberCardNumber === member.cardNumber || (l.memberEmail && member.email && l.memberEmail.toLowerCase() === member.email.toLowerCase()))
+        );
+        if (remainingOverdue.length === 0 && member.isSuspended) {
+          member.isSuspended = false;
+          member.suspendReason = '';
+          member.suspendedUntil = null;
+          if (this.currentUser?.id === member.id || this.currentUser?.cardNumber === member.cardNumber) {
+            this.currentUser = { ...member };
+          }
+        }
       }
 
       this.calculateStats();
 
       try {
         const { syncLoanDoc, syncBookDoc, syncMemberDoc } = await import('../lib/firebase.js');
-        await syncLoanDoc(loan);
-        if (book) await syncBookDoc(book);
-        if (member) await syncMemberDoc(member);
+        await Promise.all([
+          syncLoanDoc(loan),
+          book ? syncBookDoc(book) : Promise.resolve(),
+          member ? syncMemberDoc(member) : Promise.resolve()
+        ]);
       } catch {
         queueOfflineMutation({ action: 'saveLoan', collection: 'loans', docId: loan.id, data: loan });
         if (book) queueOfflineMutation({ action: 'saveBook', collection: 'books', docId: book.id, data: book });
         if (member) queueOfflineMutation({ action: 'saveMember', collection: 'members', docId: member.id, data: member });
         this.pendingMutationsCount++;
       }
+
+      // Reconcile all suspensions and sync any remaining updates
+      await this.checkOverdueAndAutoSuspend();
 
       this.showToast('✅ Buku berhasil dikembalikan!');
       return { success: true };
@@ -1137,6 +1461,111 @@ export const useLibraryStore = defineStore('library', {
       }
 
       this.showToast('✅ Pengaturan sistem berhasil disimpan ke Cloud Firestore!');
+      return { success: true };
+    },
+
+    async sendNotification(payload: {
+      memberId?: string;
+      recipient: string;
+      type?: 'email';
+      subject?: string;
+      message: string;
+      triggerReason?: 'overdue_reminder' | 'due_today' | 'booking_expiry_warning' | 'suspend_notice' | 'booking_success';
+    }) {
+      let memberName = 'Anggota';
+      let memberId = payload.memberId;
+
+      if (memberId) {
+        const found = this.members.find(m => m.id === memberId || m.cardNumber === memberId);
+        if (found) {
+          memberName = found.name;
+          memberId = found.id;
+        }
+      } else {
+        const found = this.members.find(m => 
+          (m.email && payload.recipient && m.email.toLowerCase() === payload.recipient.toLowerCase()) ||
+          (m.phone && payload.recipient && m.phone === payload.recipient)
+        );
+        if (found) {
+          memberName = found.name;
+          memberId = found.id;
+        }
+      }
+
+      const notifId = `NOTIF-${Date.now().toString().slice(-6)}`;
+      const newNotif: NotificationLog = {
+        id: notifId,
+        memberId: memberId || 'GUEST',
+        memberName,
+        recipient: payload.recipient,
+        type: 'email',
+        subject: payload.subject || 'Peringatan Perpustakaan',
+        message: payload.message,
+        sentAt: new Date().toISOString(),
+        status: 'sent',
+        triggerReason: payload.triggerReason || 'overdue_reminder'
+      };
+
+      // Call backend API /api/send-email
+      let deliveryMsg = '';
+      try {
+        const response = await fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipient: payload.recipient,
+            subject: newNotif.subject,
+            message: newNotif.message
+          })
+        });
+        const result = await response.json();
+        if (result.success) {
+          if (result.mode === 'live_smtp') {
+            deliveryMsg = `✅ Email berhasil terkirim langsung ke ${payload.recipient} via SMTP server!`;
+          } else {
+            deliveryMsg = `✅ Peringatan email ke ${memberName} (${payload.recipient}) berhasil dicatat di sistem!`;
+          }
+        } else {
+          deliveryMsg = `⚠️ Notifikasi dicatat di sistem (Server SMTP: ${result.error || 'belum aktif'}).`;
+        }
+      } catch (e) {
+        console.warn('Backend email API unreachable, recorded locally:', e);
+        deliveryMsg = `✅ Peringatan email ke ${memberName} berhasil dicatat di sistem!`;
+      }
+
+      this.notifications.unshift(newNotif);
+
+      try {
+        const { syncNotificationDoc } = await import('../lib/firebase.js');
+        await syncNotificationDoc(newNotif);
+      } catch (err) {
+        console.warn('Notification sync fallback to offline queue:', err);
+        queueOfflineMutation({
+          action: 'saveNotification',
+          collection: 'notifications',
+          docId: newNotif.id,
+          data: newNotif
+        });
+        this.pendingMutationsCount++;
+      }
+
+      this.showToast(deliveryMsg);
+      return { success: true, log: newNotif };
+    },
+
+    async deleteNotification(id: string) {
+      const idx = this.notifications.findIndex(n => n.id === id);
+      if (idx !== -1) {
+        this.notifications.splice(idx, 1);
+      }
+      try {
+        const { removeNotificationDoc } = await import('../lib/firebase.js');
+        await removeNotificationDoc(id);
+      } catch {
+        queueOfflineMutation({ action: 'deleteNotification', collection: 'notifications', docId: id });
+        this.pendingMutationsCount++;
+      }
+      this.showToast('✅ Riwayat notifikasi berhasil dihapus.');
       return { success: true };
     }
   }

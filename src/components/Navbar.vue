@@ -23,7 +23,7 @@
             :class="$route.name === 'catalog' ? 'bg-blue-600 text-white shadow-md shadow-blue-900/30' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'"
           >
             <BookMarked class="w-4 h-4" />
-            Katalog Publik
+            Katalog
           </router-link>
 
           <router-link 
@@ -32,7 +32,7 @@
             :class="$route.name === 'shelves' ? 'bg-blue-600 text-white shadow-md shadow-blue-900/30' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'"
           >
             <Layers class="w-4 h-4" />
-            Peta Rak
+            Rak
           </router-link>
 
           <router-link 
@@ -41,7 +41,7 @@
             :class="$route.name === 'member-card' ? 'bg-blue-600 text-white shadow-md shadow-blue-900/30' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'"
           >
             <QrCode class="w-4 h-4" />
-            Kartu Member QR
+            Kartu Member
           </router-link>
 
           <router-link 

@@ -115,6 +115,11 @@ export async function syncMemberDoc(member: any) {
     const { hashPassword } = await import('./crypto.js');
     sanitized.password = await hashPassword(sanitized.password);
   }
+  if (!sanitized.isSuspended) {
+    sanitized.isSuspended = false;
+    sanitized.suspendReason = '';
+    sanitized.suspendedUntil = null;
+  }
   await setDoc(doc(db, 'members', member.id), sanitized, { merge: true });
 }
 
@@ -150,6 +155,10 @@ export async function syncConfigDoc(config: any) {
 export async function syncNotificationDoc(notif: any) {
   if (!notif?.id) return;
   await setDoc(doc(db, 'notifications', notif.id), notif, { merge: true });
+}
+
+export async function removeNotificationDoc(id: string) {
+  await deleteDoc(doc(db, 'notifications', id));
 }
 
 /**

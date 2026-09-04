@@ -194,10 +194,10 @@
         </div>
 
         <!-- Warning if suspended -->
-        <div v-if="isCurrentMemberSuspended" class="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-start gap-2">
+        <div v-if="isTargetMemberBlocked" class="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-start gap-2">
           <AlertCircle class="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
           <div>
-            <strong>Akun Disuspend:</strong> Anda tidak dapat melakukan booking baru karena memiliki status suspend akibat keterlambatan pengembalian buku sebelumnya.
+            <strong>Booking Ditolak:</strong> Anda tidak dapat melakukan booking baru karena akun sedang berstatus <strong>DISUSPEND</strong> atau masih memiliki pinjaman buku yang terlambat dikembalikan.
           </div>
         </div>
 
@@ -215,7 +215,7 @@
         <button 
           type="button" 
           @click="handleSubmitBooking"
-          :disabled="isSubmitting || (book && book.availableCopies <= 0)"
+          :disabled="isSubmitting || (book && book.availableCopies <= 0) || isTargetMemberBlocked"
           class="px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
         >
           <Bookmark class="w-4 h-4" />
@@ -259,9 +259,28 @@ const regForm = ref({
   phone: ''
 });
 
-const isCurrentMemberSuspended = computed(() => {
-  if (store.currentUser?.isSuspended) return true;
+const isTargetMemberBlocked = computed(() => {
+  if (store.currentUser) {
+    if (store.currentUser.isSuspended) return true;
+    const ov = store.loans.filter(l => 
+      (l.memberId === store.currentUser?.id || l.memberCardNumber === store.currentUser?.cardNumber) && 
+      l.status === 'overdue'
+    );
+    if (ov.length > 0) return true;
+  }
+  if (authMode.value === 'card' && verifiedMember.value) {
+    if (verifiedMember.value.isSuspended) return true;
+    const ov = store.loans.filter(l => 
+      (l.memberId === verifiedMember.value?.id || l.memberCardNumber === verifiedMember.value?.cardNumber) && 
+      l.status === 'overdue'
+    );
+    if (ov.length > 0) return true;
+  }
   return false;
+});
+
+const isCurrentMemberSuspended = computed(() => {
+  return isTargetMemberBlocked.value;
 });
 
 const setAuthMode = (mode: 'card' | 'register') => {
@@ -337,6 +356,11 @@ const closeModal = () => {
 const handleSubmitBooking = async () => {
   if (!props.book) return;
   modalError.value = '';
+
+  if (isTargetMemberBlocked.value) {
+    modalError.value = 'Booking ditolak: Akun anggota sedang disuspend atau memiliki pinjaman yang terlambat.';
+    return;
+  }
 
   let targetCardNumber = '';
 

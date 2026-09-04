@@ -9,13 +9,14 @@ const CACHE_KEYS = {
   LOANS: 'libra_offline_loans',
   BOOKINGS: 'libra_offline_bookings',
   CONFIG: 'libra_offline_config',
+  NOTIFICATIONS: 'libra_offline_notifications',
   OFFLINE_QUEUE: 'libra_pending_mutations_queue',
   LAST_DOWNLOADED: 'libra_offline_last_downloaded'
 };
 
 export interface PendingMutation {
   id: string;
-  action: 'saveBook' | 'deleteBook' | 'saveShelf' | 'deleteShelf' | 'saveCategory' | 'deleteCategory' | 'saveMember' | 'deleteMember' | 'saveLoan' | 'saveBooking' | 'saveConfig';
+  action: 'saveBook' | 'deleteBook' | 'saveShelf' | 'deleteShelf' | 'saveCategory' | 'deleteCategory' | 'saveMember' | 'deleteMember' | 'saveLoan' | 'saveBooking' | 'saveConfig' | 'saveNotification' | 'deleteNotification';
   collection: string;
   docId: string;
   data?: any;
@@ -47,6 +48,7 @@ export function downloadAllForOfflineAccess(data: {
   members: any[];
   loans: any[];
   bookings: any[];
+  notifications?: any[];
   config?: any;
 }) {
   saveToOfflineStorage(CACHE_KEYS.BOOKS, data.books || []);
@@ -55,6 +57,7 @@ export function downloadAllForOfflineAccess(data: {
   saveToOfflineStorage(CACHE_KEYS.MEMBERS, data.members || []);
   saveToOfflineStorage(CACHE_KEYS.LOANS, data.loans || []);
   saveToOfflineStorage(CACHE_KEYS.BOOKINGS, data.bookings || []);
+  if (data.notifications) saveToOfflineStorage(CACHE_KEYS.NOTIFICATIONS, data.notifications);
   if (data.config) saveToOfflineStorage(CACHE_KEYS.CONFIG, data.config);
   saveToOfflineStorage(CACHE_KEYS.LAST_DOWNLOADED, new Date().toISOString());
 }
@@ -71,6 +74,7 @@ export function getOfflineCachedData() {
     members: getFromOfflineStorage<any[]>(CACHE_KEYS.MEMBERS) || [],
     loans: getFromOfflineStorage<any[]>(CACHE_KEYS.LOANS) || [],
     bookings: getFromOfflineStorage<any[]>(CACHE_KEYS.BOOKINGS) || [],
+    notifications: getFromOfflineStorage<any[]>(CACHE_KEYS.NOTIFICATIONS) || [],
     config: getFromOfflineStorage<any>(CACHE_KEYS.CONFIG) || null
   };
 }
