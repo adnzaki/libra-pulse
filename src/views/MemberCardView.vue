@@ -416,10 +416,13 @@
 
             <button 
               @click="printCardDirectly"
-              class="py-3 px-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 cursor-pointer"
+              :disabled="isPrinting"
+              class="py-3 px-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 cursor-pointer disabled:opacity-50"
             >
-              <Printer class="w-4 h-4" />
-              Cetak ke Printer / PDF
+              <Loader2 v-if="isPrinting" class="w-4 h-4 animate-spin" />
+              <Printer v-else class="w-4 h-4" />
+              <span v-if="isPrinting">Menyiapkan Kartu...</span>
+              <span v-else>Cetak ke Printer / PDF</span>
             </button>
           </div>
 
@@ -436,11 +439,11 @@ import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import type { Member } from '../types.js';
 import QRCode from 'qrcode';
-import html2canvas from 'html2canvas';
+import { renderMemberCardToCanvas } from '../utils/memberCardRenderer.js';
 import MemberCardScanner from '../components/MemberCardScanner.vue';
 import { 
   QrCode, BookOpen, AlertTriangle, Copy, Printer, 
-  CreditCard, LogIn, UserPlus, Download, X, Moon, Sun
+  CreditCard, LogIn, UserPlus, Download, X, Moon, Sun, Loader2
 } from 'lucide-vue-next';
 
 const store = useLibraryStore();
@@ -455,6 +458,7 @@ const isPrintModalOpen = ref(false);
 const printTheme = ref<'dark' | 'light'>('dark');
 const cardPrintSize = ref<'cr80' | 'large'>('cr80');
 const isDownloading = ref(false);
+const isPrinting = ref(false);
 
 const activeMember = computed<Member | null>(() => {
   // If admin selected an ID
@@ -540,16 +544,12 @@ const downloadCardAsPng = async () => {
   if (!activeMember.value) return;
   isDownloading.value = true;
   try {
-    const cardEl = document.getElementById('printable-card-element');
-    if (!cardEl) throw new Error('Elemen kartu tidak ditemukan');
-
-    const canvas = await html2canvas(cardEl, {
-      scale: 3, // Crisp 300 DPI equivalent
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: null, // Transparent background around rounded corners
-      logging: false,
-    });
+    const canvas = await renderMemberCardToCanvas(
+      activeMember.value,
+      qrDataUrl.value,
+      printTheme.value,
+      getActiveLoansCount(activeMember.value.id)
+    );
 
     const dataUrl = canvas.toDataURL('image/png');
     const link = document.createElement('a');
@@ -560,100 +560,98 @@ const downloadCardAsPng = async () => {
     store.showToast(`Kartu member ${activeMember.value.cardNumber} berhasil diunduh (PNG)!`);
   } catch (err) {
     console.error('Download PNG failed', err);
-    store.showToast('Gagal mengunduh gambar kartu. Silakan gunakan opsi Cetak ke PDF.');
+    store.showToast('Gagal memproses gambar kartu member.');
   } finally {
     isDownloading.value = false;
   }
 };
 
-const printCardDirectly = () => {
+const printCardDirectly = async () => {
   if (!activeMember.value) return;
-  const cardEl = document.getElementById('printable-card-element');
-  if (!cardEl) {
-    window.print();
-    return;
-  }
+  isPrinting.value = true;
+  try {
+    const canvas = await renderMemberCardToCanvas(
+      activeMember.value,
+      qrDataUrl.value,
+      printTheme.value,
+      getActiveLoansCount(activeMember.value.id)
+    );
 
-  // Create isolated invisible iframe to guarantee only this card gets printed with background colors
-  const iframe = document.createElement('iframe');
-  iframe.style.position = 'fixed';
-  iframe.style.right = '0';
-  iframe.style.bottom = '0';
-  iframe.style.width = '0';
-  iframe.style.height = '0';
-  iframe.style.border = '0';
-  document.body.appendChild(iframe);
+    const dataUrl = canvas.toDataURL('image/png');
+    const cardWidth = cardPrintSize.value === 'cr80' ? '85.6mm' : '130mm';
 
-  const doc = iframe.contentWindow?.document;
-  if (!doc) {
-    window.print();
-    return;
-  }
+    // Create isolated print iframe
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
 
-  const cardHtml = cardEl.outerHTML;
-  const cardWidth = cardPrintSize.value === 'cr80' ? '85.6mm' : '130mm';
+    const doc = iframe.contentWindow?.document;
+    if (!doc) {
+      window.print();
+      return;
+    }
 
-  doc.open();
-  doc.write(`
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>Kartu Member - ${activeMember.value.cardNumber}</title>
-        <meta charset="utf-8">
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-        <style>
-          * { box-sizing: border-box; margin: 0; padding: 0; }
-          body {
-            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            background: #ffffff;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-          @page {
-            size: auto;
-            margin: 15mm;
-          }
-          .print-card-wrapper {
-            width: ${cardWidth};
-            max-width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-          #printable-card-element {
-            width: 100% !important;
-            max-width: 100% !important;
-            box-shadow: none !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-        </style>
-        <!-- Include Tailwind CSS inside print iframe -->
-        <link rel="stylesheet" href="${window.location.origin}/src/index.css">
-      </head>
-      <body>
-        <div class="print-card-wrapper">
-          ${cardHtml}
-        </div>
-      </body>
-    </html>
-  `);
-  doc.close();
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Kartu Member - ${activeMember.value.cardNumber}</title>
+          <meta charset="utf-8">
+          <style>
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            @page {
+              size: auto;
+              margin: 10mm;
+            }
+            body {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              min-height: 100vh;
+              background: #ffffff;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            .card-print-image {
+              width: ${cardWidth};
+              max-width: 100%;
+              height: auto;
+              border-radius: 4mm;
+              display: block;
+              margin: auto;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+          </style>
+        </head>
+        <body>
+          <img src="${dataUrl}" class="card-print-image" alt="Kartu Member" />
+        </body>
+      </html>
+    `);
+    doc.close();
 
-  setTimeout(() => {
-    iframe.contentWindow?.focus();
-    iframe.contentWindow?.print();
     setTimeout(() => {
-      if (document.body.contains(iframe)) {
-        document.body.removeChild(iframe);
-      }
-    }, 1500);
-  }, 500);
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+      setTimeout(() => {
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+        }
+      }, 1500);
+    }, 400);
+  } catch (err) {
+    console.error('Print failed', err);
+    window.print();
+  } finally {
+    isPrinting.value = false;
+  }
 };
 
 const handleScannerSelected = (member: Member) => {
