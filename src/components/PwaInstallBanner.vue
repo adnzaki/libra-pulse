@@ -5,7 +5,7 @@
         <Sparkles class="w-4 h-4" />
       </span>
       <div>
-        <span class="font-bold text-white">Install PustakaModern PWA:</span>
+        <span class="font-bold text-white">Install Libra PWA:</span>
         <span class="text-slate-300 ml-1">Akses cepat katalog, kartu digital QR & scan offline langsung dari layar utama perangkat Anda!</span>
       </div>
     </div>

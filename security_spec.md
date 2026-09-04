@@ -1,4 +1,4 @@
-# Security Specification: PustakaModern Firestore Security
+# Security Specification: Libra Firestore Security
 
 ## 1. Data Invariants
 1. **Unauthenticated Access**: Unauthenticated users can read public catalog data (`books`, `categories`, `shelves`) for general browsing, but CANNOT perform any write/delete operations.

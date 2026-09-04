@@ -1,6 +1,6 @@
 {
-  "name": "PustakaModern - Smart Library System",
-  "short_name": "PustakaModern",
+  "name": "Libra - Smart Library System",
+  "short_name": "Libra",
   "description": "Sistem Manajemen Perpustakaan Modern PWA dengan Kartu Member QR & Booking 24 Jam",
   "start_url": "/",
   "display": "standalone",

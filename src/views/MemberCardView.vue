@@ -62,7 +62,7 @@
                   <BookOpen class="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <div class="font-bold text-sm tracking-tight text-white">PustakaModern</div>
+                  <div class="font-bold text-sm tracking-tight text-white">Libra</div>
                   <div class="text-[9px] uppercase tracking-widest text-blue-300 font-mono">Digital Member Pass</div>
                 </div>
               </div>

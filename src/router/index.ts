@@ -66,7 +66,7 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to, from, next) => {
-  document.title = (to.meta.title ? `${to.meta.title} | ` : '') + 'PustakaModern';
+  document.title = (to.meta.title ? `${to.meta.title} | ` : '') + 'Libra';
   
   const store = useLibraryStore();
   

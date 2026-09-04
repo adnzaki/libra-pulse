@@ -77,7 +77,7 @@
         <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-600/30 text-blue-400 border border-blue-500/30 mb-3 shadow-inner">
           <BookOpen class="w-6 h-6" />
         </div>
-        <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight">PustakaModern</h1>
+        <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight">Libra</h1>
         <p class="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
           Sistem Informasi & Sirkulasi Perpustakaan Digital Berbasis Web & PWA
         </p>
