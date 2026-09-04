@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import express from 'express'
 import path from 'path'
 import fs from 'fs'
@@ -47,6 +48,127 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
+// Endpoint Cek Status Konfigurasi SMTP
+app.get('/api/email-status', (req, res) => {
+  const host = process.env.SMTP_HOST
+  const user = process.env.SMTP_USER
+  const pass = process.env.SMTP_PASS
+  const port = process.env.SMTP_PORT || '587'
+  const isConfigured = Boolean(host && user && pass)
+
+  // Mask email for security (e.g., az***@gmail.com)
+  let maskedUser = ''
+  if (user) {
+    const parts = user.split('@')
+    if (parts.length === 2) {
+      maskedUser = parts[0].slice(0, 2) + '***@' + parts[1]
+    } else {
+      maskedUser = user.slice(0, 3) + '***'
+    }
+  }
+
+  res.json({
+    configured: isConfigured,
+    host: host || null,
+    port: port,
+    user: maskedUser || null,
+    from: process.env.SMTP_FROM || null,
+  })
+})
+
+// Endpoint Test Kirim Email langsung dari UI Settings
+app.post('/api/test-email', async (req, res) => {
+  const { recipient } = req.body || {}
+  const targetEmail = recipient || process.env.SMTP_USER
+
+  if (!targetEmail) {
+    return res.status(400).json({
+      success: false,
+      error: 'Harap masukkan alamat email tujuan pengujian.',
+    })
+  }
+
+  const host = process.env.SMTP_HOST
+  const user = process.env.SMTP_USER
+  const rawPass = process.env.SMTP_PASS
+
+  if (!host || !user || !rawPass) {
+    return res.status(400).json({
+      success: false,
+      error:
+        'Variabel SMTP belum lengkap di server (.env). Pastikan SMTP_HOST, SMTP_USER, dan SMTP_PASS sudah diisi.',
+    })
+  }
+
+  const pass = rawPass.replace(/\s+/g, '') // Bersihkan spasi dari Google App Password jika ada
+
+  try {
+    const nodemailer = await import('nodemailer')
+    const isGmail = host.includes('gmail.com') || user.includes('@gmail.com')
+
+    const transporterOptions: any = isGmail
+      ? {
+          service: 'gmail',
+          auth: { user, pass },
+          connectionTimeout: 15000,
+          greetingTimeout: 15000,
+        }
+      : {
+          host: host,
+          port: Number(process.env.SMTP_PORT) || 587,
+          secure: process.env.SMTP_SECURE === 'true' || Number(process.env.SMTP_PORT) === 465,
+          auth: { user, pass },
+          connectionTimeout: 15000,
+          greetingTimeout: 15000,
+          tls: {
+            rejectUnauthorized: false, // Menghindari error sertifikat self-signed pada mail server sekolah lokal
+          },
+        }
+
+    const transporter = nodemailer.createTransport(transporterOptions)
+
+    // Verifikasi koneksi SMTP terlebih dahulu
+    await transporter.verify()
+
+    const info = await transporter.sendMail({
+      from: process.env.SMTP_FROM || `"Perpustakaan Libra" <${user}>`,
+      to: targetEmail,
+      subject: '✅ [Uji Coba Berhasil] Notifikasi Sistem Perpustakaan Libra',
+      text: `Halo,\n\nIni adalah email uji coba dari Sistem Perpustakaan Libra (${host}).\nKoneksi SMTP berhasil terhubung dan siap mengirimkan notifikasi pengingat keterlambatan buku kepada siswa/anggota.\n\nWaktu pengujian: ${new Date().toLocaleString('id-ID')}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 540px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <h2 style="color: #0284c7; margin: 0;">Libra Perpustakaan Digital</h2>
+            <p style="color: #64748b; font-size: 13px; margin-top: 4px;">Uji Coba Server Email SMTP</p>
+          </div>
+          <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+            <h3 style="color: #166534; margin: 0 0 8px 0; font-size: 16px;">✅ Koneksi SMTP Berhasil Aktif!</h3>
+            <p style="color: #15803d; font-size: 13px; margin: 0; line-height: 1.5;">
+              Server email berhasil mengirimkan pesan uji coba ke <strong>${targetEmail}</strong>. Sistem siap mengirimkan pengingat keterlambatan pengembalian buku dan denda otomatis kepada anggota.
+            </p>
+          </div>
+          <div style="font-size: 12px; color: #94a3b8; text-align: center;">
+            Dikirim oleh Sistem Otomasi Libra • ${new Date().toLocaleString('id-ID')}
+          </div>
+        </div>
+      `,
+    })
+
+    console.log('>>> [TEST EMAIL] Berhasil dikirim:', info.messageId)
+    return res.json({
+      success: true,
+      message: `Email uji coba berhasil dikirim ke ${targetEmail}!`,
+      messageId: info.messageId,
+    })
+  } catch (err: any) {
+    console.error('>>> [TEST EMAIL] Gagal mengirim:', err)
+    return res.status(500).json({
+      success: false,
+      error: err.message || 'Gagal mengirim email uji coba. Periksa kredensial SMTP Anda.',
+    })
+  }
+})
+
 // Endpoint Pengiriman Email Peringatan
 app.post('/api/send-email', async (req, res) => {
   const { recipient, subject, message, html } = req.body || {}
@@ -59,21 +181,38 @@ app.post('/api/send-email', async (req, res) => {
 
   const host = process.env.SMTP_HOST
   const user = process.env.SMTP_USER
-  const pass = process.env.SMTP_PASS
+  const rawPass = process.env.SMTP_PASS
 
   // Jika SMTP dikonfigurasi di environment variables, kirim real email via Nodemailer
-  if (host && user && pass) {
+  if (host && user && rawPass) {
     try {
+      const pass = rawPass.replace(/\s+/g, '') // Bersihkan spasi dari Google App Password
       const nodemailer = await import('nodemailer')
-      const transporter = nodemailer.createTransport({
-        host: host,
-        port: Number(process.env.SMTP_PORT) || 587,
-        secure: process.env.SMTP_SECURE === 'true',
-        auth: { user, pass },
-      })
+      const isGmail = host.includes('gmail.com') || user.includes('@gmail.com')
+
+      const transporterOptions: any = isGmail
+        ? {
+            service: 'gmail',
+            auth: { user, pass },
+            connectionTimeout: 15000,
+            greetingTimeout: 15000,
+          }
+        : {
+            host: host,
+            port: Number(process.env.SMTP_PORT) || 587,
+            secure: process.env.SMTP_SECURE === 'true' || Number(process.env.SMTP_PORT) === 465,
+            auth: { user, pass },
+            connectionTimeout: 15000,
+            greetingTimeout: 15000,
+            tls: {
+              rejectUnauthorized: false,
+            },
+          }
+
+      const transporter = nodemailer.createTransport(transporterOptions)
 
       const info = await transporter.sendMail({
-        from: process.env.SMTP_FROM || user,
+        from: process.env.SMTP_FROM || `"Perpustakaan Libra" <${user}>`,
         to: recipient,
         subject: subject || 'Pemberitahuan Peringatan Perpustakaan',
         text: message,

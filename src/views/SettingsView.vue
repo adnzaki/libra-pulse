@@ -184,6 +184,101 @@
       </div>
     </div>
 
+    <!-- SMTP Mail Server Status & Testing -->
+    <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-5">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
+            <Mail class="w-5 h-5" />
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+              Status Server Notifikasi Email (SMTP)
+              <span 
+                v-if="smtpStatus"
+                class="px-2 py-0.5 rounded-full text-[10px] font-extrabold"
+                :class="smtpStatus.configured ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'"
+              >
+                {{ smtpStatus.configured ? 'AKTIF (Terdeteksi)' : 'BELUM AKTIF' }}
+              </span>
+            </h3>
+            <p class="text-xs text-slate-500">
+              Digunakan untuk mengirimkan email pengingat buku terlambat & rincian denda kepada siswa/guru.
+            </p>
+          </div>
+        </div>
+        <button 
+          @click="checkSmtpStatus" 
+          :disabled="isCheckingSmtp"
+          class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition self-start sm:self-auto cursor-pointer"
+        >
+          <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': isCheckingSmtp }" />
+          <span>Segarkan Status</span>
+        </button>
+      </div>
+
+      <!-- Detail Kredensial Terdeteksi -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+        <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
+          <span class="text-slate-400 text-[10px] uppercase font-bold block">Host & Port</span>
+          <span class="font-mono font-bold text-slate-800 text-sm mt-0.5 block truncate">
+            {{ smtpStatus?.host ? `${smtpStatus.host}:${smtpStatus.port}` : 'Belum diatur' }}
+          </span>
+        </div>
+        <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
+          <span class="text-slate-400 text-[10px] uppercase font-bold block">Akun Pengirim (User)</span>
+          <span class="font-mono font-bold text-slate-800 text-sm mt-0.5 block truncate">
+            {{ smtpStatus?.user || 'Belum diatur' }}
+          </span>
+        </div>
+        <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
+          <span class="text-slate-400 text-[10px] uppercase font-bold block">Label Pengirim (From)</span>
+          <span class="font-medium text-slate-700 text-xs mt-1 block truncate">
+            {{ smtpStatus?.from || 'Perpustakaan Libra (Default)' }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Formulir Uji Coba Kirim Email -->
+      <div class="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+            <Send class="w-3.5 h-3.5 text-blue-600" />
+            Uji Coba Kirim Email (Live Test)
+          </span>
+          <span class="text-[11px] text-slate-400">Pastikan email tujuan aktif</span>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-2">
+          <input 
+            v-model="testRecipientEmail" 
+            type="email" 
+            placeholder="Masukkan email penerima tes (misal: azzackey@gmail.com)"
+            class="flex-1 px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+          />
+          <button 
+            @click="handleTestEmail" 
+            :disabled="isTestingEmail || !testRecipientEmail"
+            class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+          >
+            <Loader2 v-if="isTestingEmail" class="w-4 h-4 animate-spin" />
+            <Send v-else class="w-3.5 h-3.5" />
+            <span>{{ isTestingEmail ? 'Sedang Mengirim...' : 'Kirim Email Tes' }}</span>
+          </button>
+        </div>
+
+        <!-- Feedback Hasil Pengujian -->
+        <div v-if="testResult" class="p-3 rounded-xl text-xs flex items-start gap-2" :class="testResult.success ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'">
+          <CheckCircle2 v-if="testResult.success" class="w-4 h-4 shrink-0 text-emerald-600 mt-0.5" />
+          <AlertTriangle v-else class="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
+          <div class="leading-relaxed">
+            <p class="font-bold">{{ testResult.success ? 'Sukses!' : 'Gagal Mengirim Email' }}</p>
+            <p class="text-[11px] mt-0.5">{{ testResult.message }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal Konfirmasi Restore -->
     <div v-if="showConfirmRestoreModal && selectedBackupData" class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 z-50">
       <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-100 space-y-5 animate-in fade-in zoom-in duration-200">
@@ -247,12 +342,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import type { LibraryBackupData } from '../lib/backupManager.js';
 import { 
   Database, RefreshCw, Download, UploadCloud, Archive, 
-  Loader2, AlertTriangle, CheckCircle2 
+  Loader2, AlertTriangle, CheckCircle2, Mail, Send 
 } from 'lucide-vue-next';
 
 const store = useLibraryStore();
@@ -367,6 +462,74 @@ const cancelRestore = () => {
   showConfirmRestoreModal.value = false;
   selectedBackupData.value = null;
 };
+
+// ==================== SMTP Server Status & Testing ====================
+interface SmtpStatusResponse {
+  configured: boolean;
+  host: string | null;
+  port: string | number;
+  user: string | null;
+  from: string | null;
+}
+
+const smtpStatus = ref<SmtpStatusResponse | null>(null);
+const isCheckingSmtp = ref(false);
+const testRecipientEmail = ref('azzackey@gmail.com');
+const isTestingEmail = ref(false);
+const testResult = ref<{ success: boolean; message: string } | null>(null);
+
+const checkSmtpStatus = async () => {
+  isCheckingSmtp.value = true;
+  try {
+    const res = await fetch('/api/email-status');
+    if (res.ok) {
+      smtpStatus.value = await res.json();
+    }
+  } catch (err) {
+    console.warn('Gagal memeriksa status SMTP server:', err);
+  } finally {
+    isCheckingSmtp.value = false;
+  }
+};
+
+const handleTestEmail = async () => {
+  if (!testRecipientEmail.value) return;
+  isTestingEmail.value = true;
+  testResult.value = null;
+
+  try {
+    const res = await fetch('/api/test-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recipient: testRecipientEmail.value }),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      testResult.value = {
+        success: true,
+        message: data.message || `Email uji coba berhasil dikirim ke ${testRecipientEmail.value}! Silakan periksa kotak masuk/spam Anda.`,
+      };
+      store.showToast('✅ Email uji coba berhasil dikirim!');
+    } else {
+      testResult.value = {
+        success: false,
+        message: data.error || 'Gagal mengirim email uji coba. Periksa kredensial SMTP di server.',
+      };
+    }
+  } catch (err: any) {
+    testResult.value = {
+      success: false,
+      message: 'Koneksi ke backend server gagal: ' + (err?.message || 'Network error'),
+    };
+  } finally {
+    isTestingEmail.value = false;
+  }
+};
+
+onMounted(() => {
+  checkSmtpStatus();
+});
 
 const executeRestore = async () => {
   if (!selectedBackupData.value) return;
