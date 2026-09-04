@@ -162,7 +162,7 @@
     <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-4">
       <div class="flex items-center justify-between">
         <h3 class="font-bold text-sm text-slate-900">Ringkasan Data Saat Ini</h3>
-        <span class="text-[11px] text-slate-400">Terhubung ke: <code class="font-mono text-blue-600">ai-studio-pustakamodernpwa...</code></span>
+        <span class="text-[11px] text-slate-400">Project: <code class="font-mono text-blue-600 font-semibold">libra-5dbb6 (default)</code></span>
       </div>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
         <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">

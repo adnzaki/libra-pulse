@@ -1,12 +1,12 @@
 {
-  "projectId": "northern-app-5q6d2",
-  "appId": "1:147864159409:web:efee7429ffbedf5adb4e90",
-  "apiKey": "AIzaSyDzODftf6hfKDihLFzIq9DqFJqy5seTbqo",
-  "authDomain": "northern-app-5q6d2.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-pustakamodernpwa-c5729740-4ee7-4d8f-88e0-ba7685f3ad10",
-  "storageBucket": "northern-app-5q6d2.firebasestorage.app",
-  "messagingSenderId": "147864159409",
-  "measurementId": "",
-  "oAuthClientId": "147864159409-tl04fp2elbmlfbat60hmt2sib26jc3bq.apps.googleusercontent.com",
+  "projectId": "libra-5dbb6",
+  "appId": "1:807517203699:web:0edeb2e798abd8073e1b86",
+  "apiKey": "AIzaSyCgP0PE_oicLhonIOYVNqnvWIZQ4PjbmfQ",
+  "authDomain": "libra-5dbb6.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "libra-5dbb6.firebasestorage.app",
+  "messagingSenderId": "807517203699",
+  "measurementId": "G-0LZJV976DE",
+  "oAuthClientId": "",
   "recaptchaSiteKey": ""
 }
