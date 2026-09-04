@@ -97,3 +97,33 @@
   animation: pulse-subtle 3s infinite ease-in-out;
 }
 
+/* Print Optimization for ID Card */
+@media print {
+  @page {
+    size: auto;
+    margin: 10mm;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide regular chrome / web UI elements */
+  nav, footer, .no-print, header, aside, .pwa-banner, .toast-notification, .bottom-nav {
+    display: none !important;
+  }
+
+  /* Isolate print container */
+  .print-only-card-mode {
+    background: transparent !important;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
