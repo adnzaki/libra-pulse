@@ -570,6 +570,56 @@ export const useLibraryStore = defineStore('library', {
       return this.initAll();
     },
 
+    async exportDatabaseBackup() {
+      try {
+        const { exportFirestoreDatabase, downloadJsonFile } = await import('../lib/backupManager.js');
+        const backup = await exportFirestoreDatabase({
+          books: this.books,
+          members: this.members,
+          shelves: this.shelves,
+          categories: this.categories,
+          loans: this.loans,
+          bookings: this.bookings,
+          notifications: this.notifications,
+          config: this.suspendConfig
+        });
+
+        const dateStr = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        const filename = `libra_database_backup_${dateStr}.json`;
+        downloadJsonFile(filename, backup);
+
+        this.showToast(`✅ Database berhasil diekspor! File "${filename}" telah diunduh.`);
+        return { success: true, backup, filename };
+      } catch (err: any) {
+        console.error('Backup database failed:', err);
+        this.setError('Gagal mengekspor database: ' + (err?.message || 'Terjadi kesalahan'));
+        return { success: false, error: err?.message };
+      }
+    },
+
+    async restoreDatabaseBackup(
+      backupJson: any,
+      onProgress?: (progressText: string, percent: number) => void
+    ) {
+      this.isLoading = true;
+      try {
+        const { restoreFirestoreDatabase } = await import('../lib/backupManager.js');
+        const result = await restoreFirestoreDatabase(backupJson, onProgress);
+
+        // Reload data into store state
+        await this.initAll();
+
+        this.showToast(`✅ ${result.message}`);
+        return { success: true, result };
+      } catch (err: any) {
+        console.error('Restore database failed:', err);
+        this.setError('Gagal memulihkan database: ' + (err?.message || 'File tidak valid'));
+        return { success: false, error: err?.message };
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
     setError(msg: string) {
       this.errorMessage = msg;
       setTimeout(() => {

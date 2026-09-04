@@ -647,7 +647,16 @@ const handleGoogleSignIn = async () => {
     }
   } catch (err: any) {
     console.error('Google Sign in error', err);
-    errorMsg.value = err.message || 'Gagal masuk dengan akun Google';
+    if (err.code === 'auth/unauthorized-domain' || (err.message && err.message.includes('unauthorized-domain'))) {
+      const currentDomain = window.location.hostname;
+      errorMsg.value = `Domain "${currentDomain}" belum didaftarkan di Firebase Authentication Authorized Domains. Silakan tambahkan domain ini di Firebase Console (Authentication > Settings > Authorized domains). Untuk saat ini, Anda tetap bisa masuk menggunakan Email / Nomor Kartu Anggota di bawah.`;
+    } else if (err.code === 'auth/popup-closed-by-user') {
+      errorMsg.value = 'Jendela login Google ditutup sebelum proses selesai.';
+    } else if (err.code === 'auth/popup-blocked') {
+      errorMsg.value = 'Jendela popup login diblokir oleh browser. Izinkan pop-up untuk situs ini.';
+    } else {
+      errorMsg.value = err.message || 'Gagal masuk dengan akun Google';
+    }
   } finally {
     isLoading.value = false;
   }
