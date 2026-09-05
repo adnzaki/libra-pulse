@@ -239,13 +239,31 @@ app.post('/api/send-email', async (req, res) => {
         fromAddress = `"${displayName}" <${user}>`
       }
 
+      const formattedHtml =
+        html ||
+        `
+        <div style="font-family: Arial, Helvetica, sans-serif; max-width: 580px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff; color: #1e293b; line-height: 1.6;">
+          <div style="padding-bottom: 16px; margin-bottom: 20px; border-bottom: 2px solid #0284c7;">
+            <h2 style="color: #0369a1; margin: 0; font-size: 18px; font-weight: bold;">Perpustakaan SDN Pengasinan VII</h2>
+            <p style="color: #64748b; margin: 4px 0 0 0; font-size: 12px;">Sistem Informasi & Layanan Sirkulasi Buku Digital</p>
+          </div>
+          <div style="font-size: 14px; color: #334155; margin-bottom: 24px; white-space: pre-line;">
+${message}
+          </div>
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-top: 24px; font-size: 11px; color: #64748b; line-height: 1.5;">
+            <p style="margin: 0 0 4px 0; font-weight: bold; color: #475569;">Layanan Perpustakaan SDN Pengasinan VII</p>
+            <p style="margin: 0;">Email ini dikirim secara otomatis oleh Sistem Otomasi Sirkulasi Libra. Apabila Anda telah mengembalikan buku tersebut, mohon abaikan pemberitahuan ini.</p>
+          </div>
+        </div>
+      `
+
       const info = await transporter.sendMail({
         from: fromAddress,
         replyTo: user,
         to: recipient,
-        subject: subject || 'Pemberitahuan Peringatan Perpustakaan',
+        subject: subject || 'Pemberitahuan Sirkulasi Perpustakaan SDN Pengasinan VII',
         text: message,
-        html: html || message.replace(/\n/g, '<br/>'),
+        html: formattedHtml,
         headers: {
           'X-Priority': '3',
           'X-Mailer': 'Libra Smart Library System',

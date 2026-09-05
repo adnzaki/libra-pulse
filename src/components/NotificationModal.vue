@@ -94,26 +94,46 @@
           </div>
         </div>
 
-        <!-- Direct Email Launch Quick Link -->
-        <div class="flex flex-wrap items-center justify-between gap-2 p-3 bg-blue-50/70 border border-blue-100 rounded-2xl text-blue-900 text-[11px]">
-          <div class="flex items-center gap-2">
-            <ExternalLink class="w-4 h-4 text-blue-600 shrink-0" />
-            <span>Kirim via akun pribadi Anda sekarang juga:</span>
+        <!-- Quick Actions: WhatsApp & Direct Email -->
+        <div class="space-y-2 p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-xs">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-slate-700 flex items-center gap-1.5 text-[11px]">
+              <Share2 class="w-3.5 h-3.5 text-blue-600" />
+              Alternatif Saluran Pengingat Langsung:
+            </span>
+            <button 
+              type="button" 
+              @click="copyMessage" 
+              class="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+            >
+              <Check v-if="copied" class="w-3.5 h-3.5 text-emerald-600" />
+              <Copy v-else class="w-3.5 h-3.5" />
+              <span>{{ copied ? 'Tersalin!' : 'Salin Teks Pesan' }}</span>
+            </button>
           </div>
-          <div class="flex items-center gap-2">
+
+          <div class="flex flex-wrap items-center gap-2 pt-1">
+            <!-- WhatsApp Button -->
+            <a 
+              v-if="whatsAppUrl"
+              :href="whatsAppUrl" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition shadow-xs flex items-center gap-1.5 text-[11px]"
+            >
+              <MessageSquare class="w-3.5 h-3.5" />
+              <span>Kirim via WhatsApp ({{ memberPhoneFormatted || 'Anggota' }})</span>
+            </a>
+
+            <!-- Gmail Web -->
             <a 
               :href="gmailWebUrl" 
               target="_blank" 
               rel="noopener noreferrer"
-              class="px-3 py-1 bg-white hover:bg-blue-100 text-blue-700 font-bold rounded-lg border border-blue-200 transition shadow-xs flex items-center gap-1.5"
+              class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 font-bold rounded-xl border border-slate-200 transition shadow-xs flex items-center gap-1.5 text-[11px]"
             >
-              Buka di Gmail Web
-            </a>
-            <a 
-              :href="mailtoUrl"
-              class="px-3 py-1 bg-white hover:bg-blue-100 text-blue-700 font-bold rounded-lg border border-blue-200 transition shadow-xs flex items-center gap-1.5"
-            >
-              Buka di Mail Client
+              <ExternalLink class="w-3.5 h-3.5 text-slate-500" />
+              <span>Buka di Gmail Web</span>
             </a>
           </div>
         </div>
@@ -123,7 +143,7 @@
       <!-- Footer -->
       <div class="px-6 py-4 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between gap-3">
         <div class="text-[11px] text-slate-400">
-          Saluran: <span class="font-bold text-slate-600">Email Resmi</span>
+          Status: <span class="font-bold text-slate-600">Email Server Otomatis</span>
         </div>
         <div class="flex items-center gap-2">
           <button 
@@ -140,7 +160,7 @@
             class="px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
           >
             <Send class="w-4 h-4" />
-            {{ isSending ? 'Mengirim...' : 'Kirim & Catat Email' }}
+            {{ isSending ? 'Mengirim...' : 'Kirim Email via Server' }}
           </button>
         </div>
       </div>
@@ -153,7 +173,7 @@
 import { ref, watch, computed } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import type { Loan } from '../types.js';
-import { Mail, Sparkles, Send, X, ExternalLink } from 'lucide-vue-next';
+import { Mail, Sparkles, Send, X, ExternalLink, MessageSquare, Copy, Check, Share2 } from 'lucide-vue-next';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -168,6 +188,7 @@ const recipient = ref('');
 const subject = ref('');
 const message = ref('');
 const isSending = ref(false);
+const copied = ref(false);
 
 watch(() => props.preselectedLoan, (val) => {
   if (val) {
@@ -176,13 +197,55 @@ watch(() => props.preselectedLoan, (val) => {
   }
 }, { immediate: true });
 
+// Ambil data anggota yang meminjam buku terpilih
+const activeMember = computed(() => {
+  const loan = store.loans.find(l => l.id === selectedLoanId.value);
+  if (!loan) return null;
+  return store.members.find(m => m.id === loan.memberId || m.cardNumber === loan.memberCardNumber) || null;
+});
+
+const memberPhoneFormatted = computed(() => {
+  const phone = activeMember.value?.phone?.trim() || '';
+  return phone || null;
+});
+
+const whatsAppUrl = computed(() => {
+  const rawPhone = activeMember.value?.phone?.trim() || '';
+  if (!rawPhone) return null;
+
+  // Bersihkan format (hilangkan +, -, spasi)
+  let cleanPhone = rawPhone.replace(/\D/g, '');
+  if (cleanPhone.startsWith('0')) {
+    cleanPhone = '62' + cleanPhone.slice(1);
+  } else if (!cleanPhone.startsWith('62')) {
+    cleanPhone = '62' + cleanPhone;
+  }
+
+  const encodedText = encodeURIComponent(message.value || '');
+  return `https://wa.me/${cleanPhone}?text=${encodedText}`;
+});
+
+const copyMessage = async () => {
+  if (!message.value) return;
+  try {
+    await navigator.clipboard.writeText(message.value);
+    copied.value = true;
+    setTimeout(() => {
+      copied.value = false;
+    }, 2500);
+  } catch (err) {
+    console.warn('Gagal menyalin:', err);
+  }
+};
+
 function autoPopulateTemplate() {
   const loan = store.loans.find(l => l.id === selectedLoanId.value);
   if (!loan) return;
 
   const member = store.members.find(m => m.id === loan.memberId || m.cardNumber === loan.memberCardNumber);
   recipient.value = loan.memberEmail || member?.email || 'anggota@pustaka.id';
-  subject.value = `⚠️ Peringatan Keterlambatan Pengembalian: Buku "${loan.bookTitle}"`;
+  // Gunakan subjek resmi institusi tanpa emoji/kata spammy agar tidak masuk spam
+  subject.value = `Pemberitahuan Sirkulasi Buku: "${loan.bookTitle}" - Perpustakaan SDN Pengasinan VII`;
   applyTemplate();
 }
 
@@ -197,14 +260,14 @@ function applyTemplate() {
 
 Kami menginformasikan bahwa buku "${bookTitle}" yang Anda pinjam telah melewati tanggal jatuh tempo (${dueDate}) dan saat ini berstatus TERLAMBAT (${days} hari).
 
-Sesuai ketentuan perpustakaan, kartu anggota Anda dalam status penangguhan (suspend) sementara hingga buku dikembalikan ke meja sirkulasi perpustakaan.
+Sesuai ketentuan perpustakaan, kartu anggota Anda dalam status penangguhan (suspend) sementara hingga buku dikembalikan ke loket sirkulasi perpustakaan.
 
 Mohon segera mengembalikan buku fisik ke loket sirkulasi agar kartu anggota dapat diaktifkan kembali secara otomatis.
 
 Terima kasih atas perhatian dan kerja samanya.
 
 Salam hormat,
-Layanan Sirkulasi & Koleksi Perpustakaan`;
+Layanan Sirkulasi & Koleksi Perpustakaan SDN Pengasinan VII`;
 }
 
 const gmailWebUrl = computed(() => {
