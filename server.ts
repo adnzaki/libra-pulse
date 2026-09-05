@@ -136,10 +136,23 @@ app.post('/api/test-email', async (req, res) => {
     // Verifikasi koneksi SMTP terlebih dahulu
     await transporter.verify()
 
+    // Format sender address valid untuk Gmail
+    let fromAddress = process.env.SMTP_FROM || `"Perpustakaan Libra" <${user}>`
+    if (isGmail && !fromAddress.includes(user)) {
+      const nameMatch = fromAddress.match(/^"?(.*?)"?\s*<.*?>$/)
+      const displayName = nameMatch ? nameMatch[1] : 'Libra - SDN Pengasinan VII'
+      fromAddress = `"${displayName}" <${user}>`
+    }
+
     const info = await transporter.sendMail({
-      from: process.env.SMTP_FROM || `"Perpustakaan Libra" <${user}>`,
+      from: fromAddress,
+      replyTo: user,
       to: targetEmail,
       subject: '✅ [Uji Coba Berhasil] Notifikasi Sistem Perpustakaan Libra',
+      headers: {
+        'X-Priority': '3',
+        'X-Mailer': 'Libra Smart Library System',
+      },
       text: `Halo,\n\nIni adalah email uji coba dari Sistem Perpustakaan Libra (${host}).\nKoneksi SMTP berhasil terhubung dan siap mengirimkan notifikasi pengingat keterlambatan buku kepada siswa/anggota.\n\nWaktu pengujian: ${new Date().toLocaleString('id-ID')}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 540px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
@@ -217,12 +230,26 @@ app.post('/api/send-email', async (req, res) => {
 
       const transporter = nodemailer.createTransport(transporterOptions)
 
+      // Pastikan sender format valid untuk Gmail agar tidak dianggap spoofing/spam
+      let fromAddress = process.env.SMTP_FROM || `"Perpustakaan Libra" <${user}>`
+      if (isGmail && !fromAddress.includes(user)) {
+        // Ambil display name jika ada (misal "Libra SDN Pengasinan VII")
+        const nameMatch = fromAddress.match(/^"?(.*?)"?\s*<.*?>$/)
+        const displayName = nameMatch ? nameMatch[1] : 'Perpustakaan Libra'
+        fromAddress = `"${displayName}" <${user}>`
+      }
+
       const info = await transporter.sendMail({
-        from: process.env.SMTP_FROM || `"Perpustakaan Libra" <${user}>`,
+        from: fromAddress,
+        replyTo: user,
         to: recipient,
         subject: subject || 'Pemberitahuan Peringatan Perpustakaan',
         text: message,
         html: html || message.replace(/\n/g, '<br/>'),
+        headers: {
+          'X-Priority': '3',
+          'X-Mailer': 'Libra Smart Library System',
+        },
       })
 
       console.log('>>> Email berhasil dikirim via SMTP:', info.messageId)

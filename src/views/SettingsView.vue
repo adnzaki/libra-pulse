@@ -474,7 +474,7 @@ interface SmtpStatusResponse {
 
 const smtpStatus = ref<SmtpStatusResponse | null>(null);
 const isCheckingSmtp = ref(false);
-const testRecipientEmail = ref('azzackey@gmail.com');
+const testRecipientEmail = ref(store.currentUser?.email || '');
 const isTestingEmail = ref(false);
 const testResult = ref<{ success: boolean; message: string } | null>(null);
 
@@ -485,6 +485,9 @@ const checkSmtpStatus = async () => {
     const contentType = res.headers.get('content-type') || '';
     if (res.ok && contentType.includes('application/json')) {
       smtpStatus.value = await res.json();
+      if (!testRecipientEmail.value && store.currentUser?.email) {
+        testRecipientEmail.value = store.currentUser.email;
+      }
     } else {
       console.warn('Endpoint /api/email-status mengembalikan respons non-JSON:', res.status);
       smtpStatus.value = {
