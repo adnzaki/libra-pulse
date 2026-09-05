@@ -88,14 +88,7 @@
           <span class="truncate">{{ isDownloadingOffline ? 'Mengunduh...' : 'Unduh ke Lokal' }}</span>
         </button>
 
-        <router-link 
-          to="/settings"
-          class="px-3.5 sm:px-4 py-2.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-semibold text-xs rounded-full shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
-          title="Buka menu Backup, Restore, dan Pengaturan Database"
-        >
-          <Database class="w-4 h-4 text-blue-600 shrink-0" />
-          <span class="truncate">Backup & Database</span>
-        </router-link>
+        
 
         <button 
           @click="isChangeAdminPasswordOpen = true"
