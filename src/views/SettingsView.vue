@@ -482,11 +482,28 @@ const checkSmtpStatus = async () => {
   isCheckingSmtp.value = true;
   try {
     const res = await fetch('/api/email-status');
-    if (res.ok) {
+    const contentType = res.headers.get('content-type') || '';
+    if (res.ok && contentType.includes('application/json')) {
       smtpStatus.value = await res.json();
+    } else {
+      console.warn('Endpoint /api/email-status mengembalikan respons non-JSON:', res.status);
+      smtpStatus.value = {
+        configured: false,
+        host: null,
+        port: '-',
+        user: 'Server backend belum diperbarui (jalankan git pull & npm run build)',
+        from: null,
+      };
     }
-  } catch (err) {
+  } catch (err: any) {
     console.warn('Gagal memeriksa status SMTP server:', err);
+    smtpStatus.value = {
+      configured: false,
+      host: null,
+      port: '-',
+      user: 'Tidak dapat menghubungi server (' + (err?.message || 'Error') + ')',
+      from: null,
+    };
   } finally {
     isCheckingSmtp.value = false;
   }
