@@ -2,9 +2,8 @@
 
 @layer base {
   html {
-    overflow-x: hidden;
-    overflow-y: auto;
     scroll-behavior: smooth;
+    scroll-padding-top: 5rem;
     width: 100%;
     -webkit-tap-highlight-color: transparent;
     text-size-adjust: 100%;
@@ -16,8 +15,7 @@
     color: #0f172a;
     min-height: 100vh;
     width: 100%;
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow-x: clip;
   }
   
   .font-display {

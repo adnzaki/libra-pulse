@@ -1,5 +1,8 @@
 <template>
-  <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40 shadow-sm">
+  <header 
+    class="sticky top-0 z-50 transition-all duration-200"
+    :class="isScrolled ? 'bg-slate-900/95 backdrop-blur-md border-b border-slate-800/90 shadow-lg shadow-slate-950/25' : 'bg-slate-900 border-b border-slate-800 shadow-xs'"
+  >
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
         
@@ -283,7 +286,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { useLibraryStore } from '../stores/library.js';
 import { 
   BookMarked, Layers, QrCode, UserCheck, 
@@ -292,8 +296,29 @@ import {
 import { logoutUser } from '../lib/firebase.js';
 
 const store = useLibraryStore();
+const route = useRoute();
 const isUserMenuOpen = ref(false);
 const isMobileMenuOpen = ref(false);
+const isScrolled = ref(false);
+
+const handleScroll = () => {
+  isScrolled.value = window.scrollY > 8;
+};
+
+// Tutup menu saat berpindah rute
+watch(() => route.path, () => {
+  isUserMenuOpen.value = false;
+  isMobileMenuOpen.value = false;
+});
+
+onMounted(() => {
+  handleScroll();
+  window.addEventListener('scroll', handleScroll, { passive: true });
+});
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll);
+});
 
 const toggleUserMenu = () => {
   isUserMenuOpen.value = !isUserMenuOpen.value;
