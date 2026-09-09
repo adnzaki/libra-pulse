@@ -31,7 +31,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { Sparkles, Download, X } from 'lucide-vue-next';
+import { useLibraryStore } from '../stores/library.js';
 
+const store = useLibraryStore();
 const showBanner = ref(false);
 let deferredPrompt: any = null;
 
@@ -62,7 +64,7 @@ const installPwa = async () => {
     }
     deferredPrompt = null;
   } else {
-    alert('Untuk menginstal aplikasi: Klik tombol Menu browser (tiga titik di kanan atas) lalu pilih "Tambahkan ke Layar Utama" / "Install App".');
+    store.showToast('Panduan: Buka menu browser (ikon tiga titik atau bagikan) lalu pilih "Tambahkan ke Layar Utama"');
     showBanner.value = false;
   }
 };

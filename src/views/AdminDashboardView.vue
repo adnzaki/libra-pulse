@@ -594,8 +594,8 @@
                   </button>
                   <button 
                     v-else-if="m.role !== 'admin'"
-                    @click="promptQuickSuspend(m)"
-                    class="px-2.5 py-1 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold transition"
+                    @click="openSuspendMemberModal(m)"
+                    class="px-2.5 py-1 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold transition cursor-pointer"
                   >
                     Suspend
                   </button>
@@ -697,7 +697,7 @@
                       </button>
                       <button 
                         v-else-if="m.role !== 'admin'"
-                        @click="promptQuickSuspend(m)"
+                        @click="openSuspendMemberModal(m)"
                         class="px-2.5 py-1 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-xs transition cursor-pointer"
                       >
                         Suspend
@@ -816,7 +816,7 @@
                   <span>Tolak</span>
                 </button>
                 <button 
-                  @click="handleApproveTeacherRequest(req)"
+                  @click="promptApproveTeacherRequest(req)"
                   class="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   <Check class="w-3.5 h-3.5" />
@@ -903,7 +903,7 @@
                       </button>
 
                       <button 
-                        @click="handleApproveTeacherRequest(req)"
+                        @click="promptApproveTeacherRequest(req)"
                         class="px-4 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer flex items-center gap-1"
                         title="Setujui permohonan dan jadikan anggota sebagai Guru"
                       >
@@ -1569,6 +1569,235 @@
       </div>
     </div>
 
+    <!-- Modal Persetujuan Permintaan Status Guru -->
+    <div v-if="isApproveTeacherModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
+      <div class="bg-white w-full max-w-lg rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <!-- Header -->
+        <div class="px-6 py-4.5 bg-gradient-to-r from-emerald-600 to-teal-700 text-white flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-2xl bg-white/20 backdrop-blur-xs text-white">
+              <GraduationCap class="w-6 h-6" />
+            </div>
+            <div>
+              <h3 class="font-bold text-base leading-tight">Persetujuan Status Guru</h3>
+              <p class="text-xs text-emerald-100 mt-0.5">Konfirmasi Upgrade Hak Keanggotaan Dewan Pengajar</p>
+            </div>
+          </div>
+          <button 
+            @click="closeApproveTeacherModal"
+            class="p-1.5 rounded-xl text-emerald-100 hover:text-white hover:bg-white/20 transition cursor-pointer"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+
+        <div class="p-6 space-y-5">
+          <!-- Member Detail & Selfie Card -->
+          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center gap-4">
+            <div 
+              class="relative group cursor-pointer shrink-0"
+              @click="openSelfiePreview(selectedRequestForApprove?.selfieUrl, selectedRequestForApprove?.memberName)"
+              title="Klik untuk perbesar selfie"
+            >
+              <img 
+                :src="selectedRequestForApprove?.selfieUrl" 
+                class="w-16 h-20 rounded-xl object-cover border-2 border-emerald-500 shadow-sm"
+                alt="Selfie Pemohon"
+                referrerpolicy="no-referrer"
+              />
+              <div class="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition">
+                <Eye class="w-4 h-4" />
+              </div>
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 uppercase">
+                  Pemohon Guru
+                </span>
+                <span class="text-[10px] text-slate-400 font-mono">
+                  ID: {{ selectedRequestForApprove?.id }}
+                </span>
+              </div>
+              <h4 class="text-sm font-bold text-slate-900 mt-1 truncate">
+                {{ selectedRequestForApprove?.memberName }}
+              </h4>
+              <div class="text-xs font-mono font-bold text-blue-600 mt-0.5">
+                {{ selectedRequestForApprove?.memberCardNumber }}
+              </div>
+              <div class="text-[11px] text-slate-500 mt-0.5 truncate">
+                {{ selectedRequestForApprove?.memberEmail || '-' }} • {{ selectedRequestForApprove?.memberPhone || '-' }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Hak Istimewa Status Guru -->
+          <div class="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 space-y-2.5">
+            <div class="flex items-center gap-2 text-emerald-900 font-bold text-xs">
+              <CheckCircle2 class="w-4 h-4 text-emerald-600" />
+              <span>Hak Istimewa yang Akan Diaktifkan untuk Anggota:</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <div class="p-2.5 rounded-xl bg-white border border-emerald-100 text-slate-700">
+                <div class="text-[10px] text-emerald-700 font-semibold uppercase">Kuota Peminjaman</div>
+                <div class="font-bold text-slate-900 text-sm mt-0.5">5 Buku Sekaligus</div>
+                <div class="text-[10px] text-slate-400">Siswa hanya 2 buku</div>
+              </div>
+              <div class="p-2.5 rounded-xl bg-white border border-emerald-100 text-slate-700">
+                <div class="text-[10px] text-emerald-700 font-semibold uppercase">Durasi Peminjaman</div>
+                <div class="font-bold text-slate-900 text-sm mt-0.5">14 Hari Kalender</div>
+                <div class="text-[10px] text-slate-400">Siswa hanya 7 hari</div>
+              </div>
+            </div>
+          </div>
+
+          <p class="text-xs text-slate-500 leading-relaxed">
+            Apakah Anda yakin ingin menyetujui permohonan ini? Tipe keanggotaan <strong class="text-slate-900">{{ selectedRequestForApprove?.memberName }}</strong> akan resmi diubah menjadi <strong>Guru SDN Pengasinan VII</strong>.
+          </p>
+
+          <!-- Modal Actions -->
+          <div class="pt-2 flex items-center gap-3">
+            <button 
+              type="button"
+              @click="closeApproveTeacherModal"
+              class="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer text-xs"
+            >
+              Batal
+            </button>
+            <button 
+              type="button"
+              @click="confirmApproveTeacherRequest"
+              :disabled="isProcessingApprove"
+              class="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-md shadow-emerald-200 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              <Check class="w-4 h-4" />
+              <span>{{ isProcessingApprove ? 'Menyetujui...' : 'Ya, Setujui Jadi Guru' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Penangguhan Sanksi Anggota (Suspend) -->
+    <div v-if="isSuspendMemberModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
+      <div class="bg-white w-full max-w-md rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div class="px-6 py-4 bg-rose-600 text-white flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="p-1.5 rounded-xl bg-rose-700/50 text-white">
+              <UserX class="w-5 h-5" />
+            </div>
+            <div>
+              <h3 class="font-bold text-sm">Penangguhan Anggota (Suspend)</h3>
+              <p class="text-[11px] text-rose-100">Anggota: {{ selectedMemberForSuspend?.name }}</p>
+            </div>
+          </div>
+          <button 
+            @click="closeSuspendMemberModal"
+            class="p-1.5 rounded-xl text-rose-200 hover:text-white hover:bg-rose-700 transition cursor-pointer"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+
+        <form @submit.prevent="confirmSuspendMember" class="p-6 space-y-4">
+          <div class="p-3 rounded-2xl bg-rose-50/70 border border-rose-100 text-xs text-rose-800 space-y-1">
+            <div class="font-bold">Informasi Sanksi:</div>
+            <p class="text-[11px] text-rose-700 leading-relaxed">
+              Kartu anggota yang disuspend tidak dapat digunakan untuk meminjam buku ataupun mem-booking koleksi selama masa sanksi.
+            </p>
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="block text-xs font-bold text-slate-700">Durasi Sanksi (Hari)</label>
+            <div class="flex items-center gap-2">
+              <input 
+                v-model.number="suspendDaysInput"
+                type="number"
+                min="1"
+                max="90"
+                class="w-24 px-3.5 py-2.5 rounded-2xl border border-slate-300 text-xs font-bold focus:ring-2 focus:ring-rose-500 focus:outline-none"
+                required
+              />
+              <span class="text-xs text-slate-500">Hari dari hari ini</span>
+            </div>
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="block text-xs font-bold text-slate-700">Alasan Penangguhan / Pelanggaran</label>
+            <textarea 
+              v-model="suspendReasonInput"
+              rows="3"
+              placeholder="Contoh: Keterlambatan pengembalian buku berulang kali, pelanggaran tata tertib perpustakaan..."
+              class="w-full px-3.5 py-2.5 rounded-2xl border border-slate-300 text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
+              required
+            ></textarea>
+          </div>
+
+          <div class="pt-2 flex items-center gap-3">
+            <button 
+              type="button"
+              @click="closeSuspendMemberModal"
+              class="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer text-xs"
+            >
+              Batal
+            </button>
+            <button 
+              type="submit"
+              :disabled="isProcessingSuspend"
+              class="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shadow-md shadow-rose-200 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+            >
+              <UserX class="w-4 h-4" />
+              <span>{{ isProcessingSuspend ? 'Memproses...' : 'Terapkan Suspend' }}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal Universal Konfirmasi Aksi Admin -->
+    <div v-if="confirmDialog.isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
+      <div class="bg-white w-full max-w-md rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div class="p-6 text-center space-y-4">
+          <!-- Icon -->
+          <div 
+            class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto shadow-xs"
+            :class="confirmDialog.type === 'danger' ? 'bg-rose-100 text-rose-600' : confirmDialog.type === 'warning' ? 'bg-amber-100 text-amber-600' : confirmDialog.type === 'success' ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600'"
+          >
+            <Trash2 v-if="confirmDialog.type === 'danger'" class="w-7 h-7" />
+            <AlertTriangle v-else-if="confirmDialog.type === 'warning'" class="w-7 h-7" />
+            <CheckCircle2 v-else-if="confirmDialog.type === 'success'" class="w-7 h-7" />
+            <ShieldCheck v-else class="w-7 h-7" />
+          </div>
+
+          <div class="space-y-1.5">
+            <h3 class="text-base font-bold text-slate-900">{{ confirmDialog.title }}</h3>
+            <p class="text-xs text-slate-600 leading-relaxed">{{ confirmDialog.message }}</p>
+            <p v-if="confirmDialog.subMessage" class="text-[11px] text-slate-400">{{ confirmDialog.subMessage }}</p>
+          </div>
+
+          <!-- Buttons -->
+          <div class="pt-2 flex items-center gap-3">
+            <button 
+              type="button"
+              @click="closeConfirmDialog"
+              class="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer text-xs"
+            >
+              {{ confirmDialog.cancelText || 'Batal' }}
+            </button>
+            <button 
+              type="button"
+              @click="executeConfirmDialog"
+              :disabled="isConfirmDialogProcessing"
+              class="flex-1 py-2.5 px-4 rounded-xl text-white font-bold text-xs transition cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+              :class="confirmDialog.type === 'danger' ? 'bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-200' : confirmDialog.type === 'warning' ? 'bg-amber-600 hover:bg-amber-700 shadow-md shadow-amber-200' : confirmDialog.type === 'success' ? 'bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-200' : 'bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-200'"
+            >
+              <span>{{ isConfirmDialogProcessing ? 'Memproses...' : confirmDialog.confirmText }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     </div>
   </div>
 </template>
@@ -1638,6 +1867,107 @@ const adminResetPasswordInput = ref('');
 const showResetPass = ref(false);
 const isResettingPassword = ref(false);
 
+// Custom Universal Confirm Dialog State
+interface ConfirmDialogState {
+  isOpen: boolean;
+  title: string;
+  message: string;
+  subMessage?: string;
+  confirmText: string;
+  cancelText?: string;
+  type: 'danger' | 'warning' | 'success' | 'info';
+  onConfirm: () => Promise<void> | void;
+}
+
+const confirmDialog = ref<ConfirmDialogState>({
+  isOpen: false,
+  title: '',
+  message: '',
+  subMessage: '',
+  confirmText: 'Konfirmasi',
+  cancelText: 'Batal',
+  type: 'danger',
+  onConfirm: () => {}
+});
+const isConfirmDialogProcessing = ref(false);
+
+const openConfirmDialog = (options: {
+  title: string;
+  message: string;
+  subMessage?: string;
+  confirmText?: string;
+  cancelText?: string;
+  type?: 'danger' | 'warning' | 'success' | 'info';
+  onConfirm: () => Promise<void> | void;
+}) => {
+  confirmDialog.value = {
+    isOpen: true,
+    title: options.title,
+    message: options.message,
+    subMessage: options.subMessage || '',
+    confirmText: options.confirmText || 'Konfirmasi',
+    cancelText: options.cancelText || 'Batal',
+    type: options.type || 'danger',
+    onConfirm: options.onConfirm
+  };
+};
+
+const closeConfirmDialog = () => {
+  confirmDialog.value.isOpen = false;
+  isConfirmDialogProcessing.value = false;
+};
+
+const executeConfirmDialog = async () => {
+  if (isConfirmDialogProcessing.value) return;
+  isConfirmDialogProcessing.value = true;
+  try {
+    await confirmDialog.value.onConfirm();
+    closeConfirmDialog();
+  } catch (err) {
+    console.error('Confirm dialog execution error:', err);
+  } finally {
+    isConfirmDialogProcessing.value = false;
+  }
+};
+
+// Member Suspend Custom Modal State
+const isSuspendMemberModalOpen = ref(false);
+const selectedMemberForSuspend = ref<Member | null>(null);
+const suspendReasonInput = ref('');
+const suspendDaysInput = ref(7);
+const isProcessingSuspend = ref(false);
+
+const openSuspendMemberModal = (member: Member) => {
+  selectedMemberForSuspend.value = member;
+  suspendReasonInput.value = '';
+  suspendDaysInput.value = store.suspendConfig?.defaultSuspendDays || 7;
+  isSuspendMemberModalOpen.value = true;
+};
+
+const closeSuspendMemberModal = () => {
+  isSuspendMemberModalOpen.value = false;
+  selectedMemberForSuspend.value = null;
+  suspendReasonInput.value = '';
+};
+
+const confirmSuspendMember = async () => {
+  if (!selectedMemberForSuspend.value) return;
+  const member = selectedMemberForSuspend.value;
+  const reason = suspendReasonInput.value.trim() || 'Pelanggaran aturan tata tertib / telat peminjaman';
+  const days = suspendDaysInput.value > 0 ? suspendDaysInput.value : 7;
+  
+  isProcessingSuspend.value = true;
+  try {
+    await store.toggleMemberSuspend(member.id, true, reason, days);
+    store.showToast(`Anggota ${member.name} berhasil ditangguhkan selama ${days} hari.`);
+    closeSuspendMemberModal();
+  } catch (err) {
+    console.error('Failed to suspend member:', err);
+  } finally {
+    isProcessingSuspend.value = false;
+  }
+};
+
 // Suspend Configuration Form State
 const suspendForm = ref({
   defaultSuspendDays: 7,
@@ -1691,10 +2021,17 @@ const openEditCategoryModal = (cat: BookCategory) => {
   isCategoryModalOpen.value = true;
 };
 
-const handleDeleteCategory = async (catId: string, catName: string) => {
-  if (confirm(`Apakah Anda yakin ingin menghapus kategori "${catName}"? Buku terkait akan otomatis dialihkan ke kategori default.`)) {
-    await store.deleteCategory(catId);
-  }
+const handleDeleteCategory = (catId: string, catName: string) => {
+  openConfirmDialog({
+    title: 'Hapus Kategori Buku',
+    message: `Apakah Anda yakin ingin menghapus kategori "${catName}"?`,
+    subMessage: 'Buku terkait akan otomatis dialihkan ke kategori default perpustakaan.',
+    confirmText: 'Hapus Kategori',
+    type: 'danger',
+    onConfirm: async () => {
+      await store.deleteCategory(catId);
+    }
+  });
 };
 
 const filteredMembers = computed(() => {
@@ -1733,17 +2070,17 @@ const openEditMemberModal = (member: Member) => {
   isMemberFormOpen.value = true;
 };
 
-const handleDeleteMember = async (memberId: string, memberName: string) => {
-  if (confirm(`Apakah Anda yakin ingin menghapus anggota "${memberName}" dari database perpustakaan?`)) {
-    await store.deleteMember(memberId);
-  }
-};
-
-const promptQuickSuspend = async (member: Member) => {
-  const reason = prompt(`Masukkan alasan penangguhan sanksi (suspend) untuk ${member.name}:`, 'Pelanggaran aturan / telat peminjaman');
-  if (reason) {
-    await store.toggleMemberSuspend(member.id, true, reason, store.suspendConfig?.defaultSuspendDays || 7);
-  }
+const handleDeleteMember = (memberId: string, memberName: string) => {
+  openConfirmDialog({
+    title: 'Hapus Anggota Perpustakaan',
+    message: `Apakah Anda yakin ingin menghapus anggota "${memberName}" dari database perpustakaan?`,
+    subMessage: 'Tindakan ini permanen dan akan menghapus data keanggotaan.',
+    confirmText: 'Hapus Anggota',
+    type: 'danger',
+    onConfirm: async () => {
+      await store.deleteMember(memberId);
+    }
+  });
 };
 
 const filteredLoans = computed(() => {
@@ -1798,16 +2135,29 @@ const openEditBookModal = (book: Book) => {
   isBookFormOpen.value = true;
 };
 
-const handleDeleteBook = async (bookId: string) => {
-  if (confirm('Apakah Anda yakin ingin menghapus buku ini dari sistem perpustakaan?')) {
-    await store.deleteBook(bookId);
-  }
+const handleDeleteBook = (bookId: string) => {
+  openConfirmDialog({
+    title: 'Hapus Buku dari Katalog',
+    message: 'Apakah Anda yakin ingin menghapus buku ini dari sistem perpustakaan?',
+    subMessage: 'Data buku dan informasi stok akan dihapus secara permanen.',
+    confirmText: 'Hapus Buku',
+    type: 'danger',
+    onConfirm: async () => {
+      await store.deleteBook(bookId);
+    }
+  });
 };
 
-const handleCancelBooking = async (bookingId: string) => {
-  if (confirm('Batalkan booking ini dan kembalikan stok buku ke rak?')) {
-    await store.cancelBooking(bookingId);
-  }
+const handleCancelBooking = (bookingId: string) => {
+  openConfirmDialog({
+    title: 'Batalkan Reservasi Booking',
+    message: 'Batalkan booking ini dan kembalikan kuota buku ke rak perpustakaan?',
+    confirmText: 'Ya, Batalkan',
+    type: 'warning',
+    onConfirm: async () => {
+      await store.cancelBooking(bookingId);
+    }
+  });
 };
 
 const handleCollectBooking = async (bookingId: string) => {
@@ -1821,10 +2171,16 @@ const saveSuspendConfig = async () => {
   await store.updateSuspendConfig(suspendForm.value);
 };
 
-const handleUnsuspend = async (memberId: string) => {
-  if (confirm('Cabut sanksi suspend dan aktifkan kembali kartu member ini?')) {
-    await store.toggleMemberSuspend(memberId, false);
-  }
+const handleUnsuspend = (memberId: string) => {
+  openConfirmDialog({
+    title: 'Cabut Sanksi Penangguhan',
+    message: 'Cabut sanksi suspend dan aktifkan kembali kartu keanggotaan ini sekarang?',
+    confirmText: 'Aktifkan Kembali',
+    type: 'success',
+    onConfirm: async () => {
+      await store.toggleMemberSuspend(memberId, false);
+    }
+  });
 };
 
 const isDownloadingOffline = ref(false);
@@ -1891,10 +2247,40 @@ const filteredTeacherRequests = computed(() => {
   return list;
 });
 
-const handleApproveTeacherRequest = async (req: any) => {
-  if (confirm(`Apakah Anda yakin ingin menyetujui permohonan ini dan mengubah status anggota "${req.memberName}" menjadi Guru SDN Pengasinan VII?`)) {
-    await store.reviewTeacherRequest(req.id, true);
+// Teacher Request Approval Custom Modal State
+const isApproveTeacherModalOpen = ref(false);
+const selectedRequestForApprove = ref<any>(null);
+const isProcessingApprove = ref(false);
+
+const promptApproveTeacherRequest = (req: any) => {
+  selectedRequestForApprove.value = req;
+  isApproveTeacherModalOpen.value = true;
+};
+
+const closeApproveTeacherModal = () => {
+  isApproveTeacherModalOpen.value = false;
+  selectedRequestForApprove.value = null;
+};
+
+const confirmApproveTeacherRequest = async () => {
+  if (!selectedRequestForApprove.value) return;
+  const targetReq = selectedRequestForApprove.value;
+  isProcessingApprove.value = true;
+  try {
+    const res = await store.reviewTeacherRequest(targetReq.id, true);
+    if (res.success) {
+      store.showToast(`Permohonan ${targetReq.memberName} berhasil disetujui sebagai Guru SDN Pengasinan VII!`);
+    }
+    closeApproveTeacherModal();
+  } catch (err) {
+    console.error('Failed to approve teacher request:', err);
+  } finally {
+    isProcessingApprove.value = false;
   }
+};
+
+const handleApproveTeacherRequest = (req: any) => {
+  promptApproveTeacherRequest(req);
 };
 
 const promptRejectTeacherRequest = (req: any) => {

@@ -335,6 +335,41 @@
       @close="isEditProfileOpen = false"
     />
 
+    <!-- Modal Konfirmasi Pembatalan Booking -->
+    <div v-if="bookingToCancel" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
+      <div class="bg-white w-full max-w-sm rounded-3xl border border-slate-200 shadow-2xl p-6 text-center space-y-4 animate-in zoom-in-95 duration-200">
+        <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto shadow-xs">
+          <AlertTriangle class="w-7 h-7" />
+        </div>
+        <div class="space-y-1.5">
+          <h3 class="text-base font-bold text-slate-900">Batalkan Booking Buku</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Apakah Anda yakin ingin membatalkan reservasi booking buku ini?
+          </p>
+          <p class="text-[11px] text-slate-400">
+            Buku akan segera dikembalikan ke rak perpustakaan untuk anggota lain.
+          </p>
+        </div>
+        <div class="pt-2 flex items-center gap-3">
+          <button 
+            type="button" 
+            @click="bookingToCancel = null"
+            class="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer text-xs"
+          >
+            Kembali
+          </button>
+          <button 
+            type="button" 
+            @click="confirmCancelMyBooking"
+            :disabled="isCancellingBooking"
+            class="flex-1 py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition shadow-md shadow-amber-200 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+          >
+            <span>{{ isCancellingBooking ? 'Membatalkan...' : 'Ya, Batalkan' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -412,9 +447,21 @@ const formatCountdown = (expiresAtStr: string) => {
   return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
 };
 
-const cancelMyBooking = async (bookingId: string) => {
-  if (confirm('Apakah Anda ingin membatalkan booking ini? Buku akan dikembalikan ke rak untuk peminjam lain.')) {
-    await store.cancelBooking(bookingId);
+const bookingToCancel = ref<string | null>(null);
+const isCancellingBooking = ref(false);
+
+const cancelMyBooking = (bookingId: string) => {
+  bookingToCancel.value = bookingId;
+};
+
+const confirmCancelMyBooking = async () => {
+  if (!bookingToCancel.value) return;
+  isCancellingBooking.value = true;
+  try {
+    await store.cancelBooking(bookingToCancel.value);
+    bookingToCancel.value = null;
+  } finally {
+    isCancellingBooking.value = false;
   }
 };
 </script>

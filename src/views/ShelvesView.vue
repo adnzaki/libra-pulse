@@ -180,6 +180,41 @@
       @saved="handleShelfSaved"
     />
 
+    <!-- Delete Shelf Confirm Modal -->
+    <div v-if="shelfToDelete" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
+      <div class="bg-white w-full max-w-sm rounded-3xl border border-slate-200 shadow-2xl p-6 text-center space-y-4 animate-in zoom-in-95 duration-200">
+        <div class="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto shadow-xs">
+          <Trash2 class="w-7 h-7" />
+        </div>
+        <div class="space-y-1.5">
+          <h3 class="text-base font-bold text-slate-900">Hapus Lokasi Rak</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Apakah Anda yakin ingin menghapus rak <strong class="text-slate-900 font-mono">{{ shelfToDelete }}</strong>?
+          </p>
+          <p class="text-[11px] text-slate-400">
+            Buku yang tersimpan di rak ini akan dialihkan ke lokasi default.
+          </p>
+        </div>
+        <div class="pt-2 flex items-center gap-3">
+          <button 
+            type="button" 
+            @click="shelfToDelete = null"
+            class="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer text-xs"
+          >
+            Batal
+          </button>
+          <button 
+            type="button" 
+            @click="confirmDeleteShelf"
+            :disabled="isDeletingShelf"
+            class="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shadow-md shadow-rose-200 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+          >
+            <span>{{ isDeletingShelf ? 'Menghapus...' : 'Hapus Rak' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -233,13 +268,25 @@ const openEditShelfModal = (shelf: Shelf) => {
   isShelfModalOpen.value = true;
 };
 
-const handleDeleteShelf = async (shelfId: string) => {
+const shelfToDelete = ref<string | null>(null);
+const isDeletingShelf = ref(false);
+
+const handleDeleteShelf = (shelfId: string) => {
   if (!store.isAdmin) {
     store.setError('Akses ditolak. Anda harus masuk sebagai Administrator untuk menghapus rak.');
     return;
   }
-  if (confirm(`Apakah Anda yakin ingin menghapus rak ${shelfId}?`)) {
-    await store.deleteShelf(shelfId);
+  shelfToDelete.value = shelfId;
+};
+
+const confirmDeleteShelf = async () => {
+  if (!shelfToDelete.value) return;
+  isDeletingShelf.value = true;
+  try {
+    await store.deleteShelf(shelfToDelete.value);
+    shelfToDelete.value = null;
+  } finally {
+    isDeletingShelf.value = false;
   }
 };
 
