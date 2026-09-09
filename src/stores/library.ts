@@ -1215,7 +1215,7 @@ export const useLibraryStore = defineStore('library', {
         if (previousReqIdx !== -1) {
           const prevReq = this.teacherRequests[previousReqIdx];
           activeReq = {
-            ...prevReq,
+            id: prevReq.id,
             memberId: this.currentUser.id,
             memberName: this.currentUser.name,
             memberCardNumber: this.currentUser.cardNumber,
@@ -1224,9 +1224,9 @@ export const useLibraryStore = defineStore('library', {
             selfieUrl: payload.selfieUrl,
             status: 'pending',
             requestDate: nowIso,
-            reviewedBy: undefined,
-            reviewedDate: undefined,
-            rejectionReason: undefined
+            reviewedBy: null,
+            reviewedDate: null,
+            rejectionReason: ''
           };
 
           // Bersihkan request lain milik user yang sama jika ada duplikat
@@ -1250,7 +1250,10 @@ export const useLibraryStore = defineStore('library', {
             memberPhone: this.currentUser.phone,
             selfieUrl: payload.selfieUrl,
             status: 'pending',
-            requestDate: nowIso
+            requestDate: nowIso,
+            reviewedBy: null,
+            reviewedDate: null,
+            rejectionReason: ''
           };
           this.teacherRequests.unshift(activeReq);
         }
@@ -1286,7 +1289,7 @@ export const useLibraryStore = defineStore('library', {
           status: approve ? 'approved' : 'rejected',
           reviewedDate: new Date().toISOString(),
           reviewedBy: this.currentUser?.name || 'Administrator',
-          rejectionReason: !approve ? (rejectionReason || 'Foto selfie atau data identitas belum memenuhi syarat verifikasi Guru.') : undefined
+          rejectionReason: !approve ? (rejectionReason || 'Foto selfie atau data identitas belum memenuhi syarat verifikasi Guru.') : ''
         };
 
         this.teacherRequests[reqIdx] = updatedReq;

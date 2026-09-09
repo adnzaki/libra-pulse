@@ -90,9 +90,33 @@ export async function checkAndSeedFirestore() {
 /**
  * Direct CRUD operations to Firestore
  */
+/**
+ * Recursively remove `undefined` fields from an object before sending to Firestore.
+ * Firestore strictly forbids `undefined` values anywhere in the document payload.
+ */
+export function sanitizeForFirestore<T = any>(data: T): T {
+  if (data === null || data === undefined) {
+    return null as any;
+  }
+  if (Array.isArray(data)) {
+    return data.map(item => sanitizeForFirestore(item)) as any;
+  }
+  if (typeof data === 'object' && !(data instanceof Date)) {
+    const clean: Record<string, any> = {};
+    for (const [key, value] of Object.entries(data as Record<string, any>)) {
+      if (value !== undefined) {
+        clean[key] = sanitizeForFirestore(value);
+      }
+    }
+    return clean as any;
+  }
+  return data;
+}
+
 export async function syncBookDoc(book: any) {
   if (!book?.id) return;
-  await setDoc(doc(db, 'books', book.id), book, { merge: true });
+  const clean = sanitizeForFirestore(book);
+  await setDoc(doc(db, 'books', book.id), clean, { merge: true });
 }
 
 export async function removeBookDoc(bookId: string) {
@@ -102,7 +126,8 @@ export async function removeBookDoc(bookId: string) {
 
 export async function syncShelfDoc(shelf: any) {
   if (!shelf?.id) return;
-  await setDoc(doc(db, 'shelves', shelf.id), shelf, { merge: true });
+  const clean = sanitizeForFirestore(shelf);
+  await setDoc(doc(db, 'shelves', shelf.id), clean, { merge: true });
 }
 
 export async function removeShelfDoc(shelfId: string) {
@@ -112,7 +137,7 @@ export async function removeShelfDoc(shelfId: string) {
 
 export async function syncMemberDoc(member: any) {
   if (!member?.id) return;
-  const sanitized = { ...member };
+  const sanitized = sanitizeForFirestore({ ...member });
   if (sanitized.password && !sanitized.password.startsWith('$sha256$')) {
     const { hashPassword } = await import('./crypto.js');
     sanitized.password = await hashPassword(sanitized.password);
@@ -132,7 +157,8 @@ export async function removeMemberDoc(memberId: string) {
 
 export async function syncCategoryDoc(category: any) {
   if (!category?.id) return;
-  await setDoc(doc(db, 'categories', category.id), category, { merge: true });
+  const clean = sanitizeForFirestore(category);
+  await setDoc(doc(db, 'categories', category.id), clean, { merge: true });
 }
 
 export async function removeCategoryDoc(categoryId: string) {
@@ -142,21 +168,25 @@ export async function removeCategoryDoc(categoryId: string) {
 
 export async function syncLoanDoc(loan: any) {
   if (!loan?.id) return;
-  await setDoc(doc(db, 'loans', loan.id), loan, { merge: true });
+  const clean = sanitizeForFirestore(loan);
+  await setDoc(doc(db, 'loans', loan.id), clean, { merge: true });
 }
 
 export async function syncBookingDoc(booking: any) {
   if (!booking?.id) return;
-  await setDoc(doc(db, 'bookings', booking.id), booking, { merge: true });
+  const clean = sanitizeForFirestore(booking);
+  await setDoc(doc(db, 'bookings', booking.id), clean, { merge: true });
 }
 
 export async function syncConfigDoc(config: any) {
-  await setDoc(doc(db, 'config', 'suspend_config'), config, { merge: true });
+  const clean = sanitizeForFirestore(config);
+  await setDoc(doc(db, 'config', 'suspend_config'), clean, { merge: true });
 }
 
 export async function syncNotificationDoc(notif: any) {
   if (!notif?.id) return;
-  await setDoc(doc(db, 'notifications', notif.id), notif, { merge: true });
+  const clean = sanitizeForFirestore(notif);
+  await setDoc(doc(db, 'notifications', notif.id), clean, { merge: true });
 }
 
 export async function removeNotificationDoc(id: string) {
@@ -165,7 +195,8 @@ export async function removeNotificationDoc(id: string) {
 
 export async function syncTeacherRequestDoc(req: any) {
   if (!req?.id) return;
-  await setDoc(doc(db, 'teacher_requests', req.id), req, { merge: true });
+  const clean = sanitizeForFirestore(req);
+  await setDoc(doc(db, 'teacher_requests', req.id), clean);
 }
 
 export async function removeTeacherRequestDoc(id: string) {
