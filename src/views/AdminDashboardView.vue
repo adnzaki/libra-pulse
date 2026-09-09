@@ -1632,7 +1632,7 @@
           </div>
 
           <!-- Hak Istimewa Status Guru -->
-          <div class="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 space-y-2.5">
+          <!-- <div class="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 space-y-2.5">
             <div class="flex items-center gap-2 text-emerald-900 font-bold text-xs">
               <CheckCircle2 class="w-4 h-4 text-emerald-600" />
               <span>Hak Istimewa yang Akan Diaktifkan untuk Anggota:</span>
@@ -1649,7 +1649,7 @@
                 <div class="text-[10px] text-slate-400">Siswa hanya 7 hari</div>
               </div>
             </div>
-          </div>
+          </div> -->
 
           <p class="text-xs text-slate-500 leading-relaxed">
             Apakah Anda yakin ingin menyetujui permohonan ini? Tipe keanggotaan <strong class="text-slate-900">{{ selectedRequestForApprove?.memberName }}</strong> akan resmi diubah menjadi <strong>Guru SDN Pengasinan VII</strong>.

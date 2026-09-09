@@ -219,7 +219,7 @@
               </div>
             </div>
             <p class="text-xs text-emerald-800 leading-relaxed bg-white/60 p-3 rounded-xl border border-emerald-200/60">
-              Sebagai Guru, Anda memiliki hak istimewa peminjaman buku untuk referensi pengajaran di kelas, kuota pinjaman lebih banyak, dan durasi sirkulasi khusus perpustakaan.
+              Sebagai Guru, Anda akan memiliki akses ke fitur tambahan khusus guru yang akan dirilis <strong>pada versi mendatang.</strong> Terimakasih atas dedikasi dan kontribusi Anda dalam mendukung kegiatan belajar mengajar di SDN Pengasinan VII.
             </p>
           </div>
 
@@ -301,7 +301,7 @@
 
               <div class="p-3.5 bg-white rounded-xl border border-indigo-100 space-y-2 text-slate-600 text-[11px] leading-relaxed">
                 <p>Saat mendaftar, akun Anda berstatus default sebagai <strong class="text-blue-600">"Siswa"</strong>. Untuk meningkatkan status menjadi <strong class="text-indigo-600">"Guru"</strong>, diperlukan verifikasi identitas resmi.</p>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 font-medium text-slate-700">
+                <!-- <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 font-medium text-slate-700">
                   <div class="flex items-center gap-2">
                     <CheckCircle2 class="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                     <span>Masa pinjam buku lebih panjang</span>
@@ -310,7 +310,7 @@
                     <CheckCircle2 class="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                     <span>Akses koleksi referensi guru</span>
                   </div>
-                </div>
+                </div> -->
               </div>
 
               <div class="pt-2">
