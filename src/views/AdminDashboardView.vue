@@ -220,6 +220,37 @@
       </button>
     </div>
 
+    <!-- TEACHER UPGRADE REQUESTS NOTIFICATION BANNER (Jika ada permintaan selfie yang menunggu verifikasi) -->
+    <div 
+      v-if="store.pendingTeacherRequestsCount > 0"
+      class="bg-amber-50 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-amber-200 text-amber-900 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4 shadow-xs animate-in fade-in duration-200"
+    >
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-md shrink-0">
+          <GraduationCap class="w-5 h-5 animate-pulse" />
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 class="font-bold text-sm sm:text-base text-amber-950">
+              Ada {{ store.pendingTeacherRequestsCount }} Permintaan Verifikasi Status Guru Menunggu Peninjauan!
+            </h3>
+            <span class="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 text-[10px] font-extrabold uppercase animate-pulse">
+              Baru
+            </span>
+          </div>
+          <p class="text-xs text-amber-700 mt-0.5">
+            Anggota perpustakaan telah mengirimkan foto selfie untuk diverifikasi menjadi Guru SDN Pengasinan VII.
+          </p>
+        </div>
+      </div>
+      <button 
+        @click="activeTab = 'teacher_requests'"
+        class="w-full sm:w-auto px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-full shadow-md shadow-amber-200 transition whitespace-nowrap cursor-pointer shrink-0 text-center active:scale-95 flex items-center justify-center gap-1.5"
+      >
+        <span>Lihat & Verifikasi Foto Selfie →</span>
+      </button>
+    </div>
+
     <!-- MAIN INTERACTIVE BENTO CARD: Tabs & Circulation Tables -->
     <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
       
@@ -479,13 +510,13 @@
           <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <div class="flex flex-wrap items-center gap-1.5 py-0.5">
               <button 
-                v-for="filter in ['all', 'active', 'suspended', 'admin']" 
+                v-for="filter in ['all', 'guru', 'siswa', 'active', 'suspended', 'admin']" 
                 :key="filter"
                 @click="memberFilter = filter"
-                class="px-3.5 py-1.5 rounded-full text-xs font-semibold capitalize transition cursor-pointer"
+                class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer"
                 :class="memberFilter === filter ? 'bg-slate-900 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200/60'"
               >
-                {{ filter === 'all' ? 'Semua Anggota' : filter === 'active' ? 'Aktif' : filter === 'suspended' ? 'Disuspend' : 'Admin' }}
+                {{ filter === 'all' ? 'Semua Anggota' : filter === 'guru' ? '👨‍🏫 Guru' : filter === 'siswa' ? '🎒 Siswa' : filter === 'active' ? 'Aktif' : filter === 'suspended' ? 'Disuspend' : 'Admin' }}
               </button>
             </div>
             <div class="text-xs text-slate-500 font-mono">
@@ -504,8 +535,14 @@
                 <div class="flex items-center gap-3 min-w-0">
                   <img :src="m.avatar" class="w-11 h-11 rounded-2xl object-cover border border-slate-200 shrink-0" alt="Avatar" />
                   <div class="min-w-0">
-                    <h4 class="font-bold text-slate-900 text-sm truncate flex items-center gap-1.5">
-                      {{ m.name }}
+                    <h4 class="font-bold text-slate-900 text-sm truncate flex flex-wrap items-center gap-1.5">
+                      <span>{{ m.name }}</span>
+                      <span 
+                        class="px-2 py-0.2 rounded-full text-[9px] font-bold"
+                        :class="m.memberType === 'guru' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' : 'bg-blue-100 text-blue-800 border border-blue-200'"
+                      >
+                        {{ m.memberType === 'guru' ? '👨‍🏫 Guru' : '🎒 Siswa' }}
+                      </span>
                       <span v-if="m.role === 'admin'" class="px-1.5 py-0.2 bg-blue-100 text-blue-700 text-[9px] font-bold rounded-full">ADMIN</span>
                     </h4>
                     <div class="text-[11px] text-slate-500 truncate">{{ m.email }} • {{ m.phone }}</div>
@@ -583,6 +620,7 @@
                   <th class="py-3.5 px-4">Nama & Email</th>
                   <th class="py-3.5 px-4">No. Kartu</th>
                   <th class="py-3.5 px-4">Kontak / HP</th>
+                  <th class="py-3.5 px-4">Tipe Keanggotaan</th>
                   <th class="py-3.5 px-4">Peran</th>
                   <th class="py-3.5 px-4">Status</th>
                   <th class="py-3.5 px-4 text-center">Pinjaman</th>
@@ -603,6 +641,15 @@
                   </td>
                   <td class="py-3 px-4 font-mono font-bold text-blue-600">{{ m.cardNumber }}</td>
                   <td class="py-3 px-4 font-mono text-slate-700">{{ m.phone }}</td>
+                  <td class="py-3 px-4">
+                    <span 
+                      class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1 shadow-2xs"
+                      :class="m.memberType === 'guru' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' : 'bg-blue-100 text-blue-800 border border-blue-200'"
+                    >
+                      <span v-if="m.memberType === 'guru'">👨‍🏫 Guru</span>
+                      <span v-else>🎒 Siswa</span>
+                    </span>
+                  </td>
                   <td class="py-3 px-4">
                     <span 
                       class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
@@ -667,8 +714,208 @@
                   </td>
                 </tr>
                 <tr v-if="filteredMembers.length === 0">
-                  <td colspan="7" class="py-8 text-center text-slate-400 italic">
+                  <td colspan="8" class="py-8 text-center text-slate-400 italic">
                     Tidak ada data anggota yang cocok dengan filter atau pencarian.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tab 3.5: Verifikasi Status Guru (Permintaan Ubah Status Keanggotaan Menjadi Guru) -->
+        <div v-if="activeTab === 'teacher_requests'" class="space-y-4">
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div>
+              <h3 class="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
+                <span>Verifikasi Pengajuan Status Dewan Guru</span>
+                <span 
+                  v-if="store.pendingTeacherRequestsCount > 0" 
+                  class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold"
+                >
+                  {{ store.pendingTeacherRequestsCount }} Menunggu
+                </span>
+              </h3>
+              <p class="text-[11px] text-slate-500 mt-0.5">
+                Periksa foto selfie yang dikirimkan oleh pemohon untuk memastikan kesesuaian dengan dewan pengajar SDN Pengasinan VII.
+              </p>
+            </div>
+
+            <!-- Filter Status Permintaan -->
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button 
+                v-for="st in ['all', 'pending', 'approved', 'rejected']"
+                :key="st"
+                @click="teacherRequestFilter = st"
+                class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer"
+                :class="teacherRequestFilter === st ? 'bg-slate-900 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200/60'"
+              >
+                {{ st === 'all' ? 'Semua' : st === 'pending' ? 'Menunggu Review' : st === 'approved' ? 'Disetujui' : 'Ditolak' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div v-if="filteredTeacherRequests.length === 0" class="p-10 rounded-2xl bg-slate-50 border border-slate-100 text-center text-slate-400 text-xs space-y-2">
+            <div class="w-12 h-12 rounded-2xl bg-slate-200 text-slate-500 flex items-center justify-center mx-auto">
+              <GraduationCap class="w-6 h-6" />
+            </div>
+            <div class="font-bold text-slate-700">Belum Ada Permintaan Status Guru</div>
+            <p class="text-[11px]">Tidak ada permohonan yang sesuai dengan filter yang dipilih.</p>
+          </div>
+
+          <!-- Mobile Cards for Teacher Requests -->
+          <div v-else class="grid grid-cols-1 gap-3.5 md:hidden">
+            <div 
+              v-for="req in filteredTeacherRequests" 
+              :key="req.id"
+              class="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3"
+            >
+              <div class="flex items-start gap-3">
+                <!-- Selfie Preview (Clickable) -->
+                <div class="relative group cursor-pointer shrink-0" @click="openSelfiePreview(req.selfieUrl, req.memberName)">
+                  <img 
+                    :src="req.selfieUrl" 
+                    class="w-16 h-20 rounded-xl object-cover border border-slate-200 shadow-xs" 
+                    alt="Selfie" 
+                    referrerpolicy="no-referrer"
+                  />
+                  <div class="absolute inset-0 bg-black/30 rounded-xl flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition">
+                    <Eye class="w-4 h-4" />
+                  </div>
+                </div>
+
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between gap-1">
+                    <span class="font-mono text-[10px] text-slate-400">{{ req.id }}</span>
+                    <span 
+                      class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
+                      :class="req.status === 'pending' ? 'bg-amber-100 text-amber-800 animate-pulse' : req.status === 'approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'"
+                    >
+                      {{ req.status === 'pending' ? 'Menunggu' : req.status === 'approved' ? 'Disetujui' : 'Ditolak' }}
+                    </span>
+                  </div>
+                  <h4 class="font-bold text-slate-900 text-sm mt-0.5 truncate">{{ req.memberName }}</h4>
+                  <div class="text-[11px] text-slate-500 font-mono mt-0.5">{{ req.memberCardNumber }}</div>
+                  <div class="text-[10px] text-slate-400 mt-1">Diajukan: {{ formatDateTime(req.requestDate) }}</div>
+                </div>
+              </div>
+
+              <!-- Rejection Reason Note if rejected -->
+              <div v-if="req.status === 'rejected'" class="p-2.5 rounded-xl bg-rose-50 border border-rose-100 text-[11px] text-rose-700">
+                <strong>Alasan Penolakan:</strong> {{ req.rejectionReason || '-' }}
+              </div>
+
+              <!-- Action Buttons for Pending Requests -->
+              <div v-if="req.status === 'pending'" class="pt-2 border-t border-slate-100 grid grid-cols-2 gap-2">
+                <button 
+                  @click="promptRejectTeacherRequest(req)"
+                  class="py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <X class="w-3.5 h-3.5" />
+                  <span>Tolak</span>
+                </button>
+                <button 
+                  @click="handleApproveTeacherRequest(req)"
+                  class="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Check class="w-3.5 h-3.5" />
+                  <span>Terima (Guru)</span>
+                </button>
+              </div>
+
+              <div v-else class="pt-2 border-t border-slate-100 text-[11px] text-slate-500 flex justify-between">
+                <span>Ditinjau oleh: <strong>{{ req.reviewedBy || 'Admin' }}</strong></span>
+                <span>{{ req.reviewedDate ? formatDateTime(req.reviewedDate) : '-' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Desktop Table for Teacher Requests -->
+          <div v-if="filteredTeacherRequests.length > 0" class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100">
+            <table class="w-full text-left text-xs text-slate-600">
+              <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] tracking-wider border-b border-slate-100 font-bold">
+                <tr>
+                  <th class="py-3.5 px-4 text-center">Foto Selfie</th>
+                  <th class="py-3.5 px-4">Nama & No. Kartu</th>
+                  <th class="py-3.5 px-4">Kontak Pemohon</th>
+                  <th class="py-3.5 px-4">Waktu Pengajuan</th>
+                  <th class="py-3.5 px-4 text-center">Status</th>
+                  <th class="py-3.5 px-4 text-right">Aksi Verifikasi</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr v-for="req in filteredTeacherRequests" :key="req.id" class="hover:bg-slate-50/80">
+                  <td class="py-3 px-4 text-center">
+                    <div 
+                      class="relative inline-block group cursor-pointer" 
+                      @click="openSelfiePreview(req.selfieUrl, req.memberName)"
+                      title="Klik untuk memperbesar foto selfie"
+                    >
+                      <img 
+                        :src="req.selfieUrl" 
+                        class="w-12 h-14 rounded-xl object-cover border-2 border-slate-200 shadow-xs group-hover:scale-105 transition" 
+                        alt="Selfie"
+                        referrerpolicy="no-referrer"
+                      />
+                      <div class="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition">
+                        <Eye class="w-4 h-4" />
+                      </div>
+                    </div>
+                  </td>
+
+                  <td class="py-3 px-4">
+                    <div class="font-bold text-slate-900">{{ req.memberName }}</div>
+                    <div class="text-[11px] text-blue-600 font-mono font-medium">{{ req.memberCardNumber }}</div>
+                    <div class="text-[10px] text-slate-400 font-mono">ID: {{ req.id }}</div>
+                  </td>
+
+                  <td class="py-3 px-4">
+                    <div class="text-slate-800">{{ req.memberEmail || '-' }}</div>
+                    <div class="text-[11px] text-slate-500 font-mono">{{ req.memberPhone || '-' }}</div>
+                  </td>
+
+                  <td class="py-3 px-4 text-slate-600 font-medium">
+                    {{ formatDateTime(req.requestDate) }}
+                  </td>
+
+                  <td class="py-3 px-4 text-center">
+                    <span 
+                      class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                      :class="req.status === 'pending' ? 'bg-amber-100 text-amber-800 border border-amber-200 animate-pulse' : req.status === 'approved' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-rose-100 text-rose-800 border border-rose-200'"
+                    >
+                      {{ req.status === 'pending' ? 'Menunggu Review' : req.status === 'approved' ? 'Disetujui' : 'Ditolak' }}
+                    </span>
+                    <div v-if="req.status === 'rejected' && req.rejectionReason" class="text-[10px] text-rose-600 max-w-xs truncate mx-auto mt-0.5" :title="req.rejectionReason">
+                      {{ req.rejectionReason }}
+                    </div>
+                  </td>
+
+                  <td class="py-3 px-4 text-right">
+                    <div v-if="req.status === 'pending'" class="flex items-center justify-end gap-1.5">
+                      <button 
+                        @click="promptRejectTeacherRequest(req)"
+                        class="px-3 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs transition cursor-pointer flex items-center gap-1"
+                        title="Tolak permohonan status Guru"
+                      >
+                        <X class="w-3.5 h-3.5" />
+                        <span>Tolak</span>
+                      </button>
+
+                      <button 
+                        @click="handleApproveTeacherRequest(req)"
+                        class="px-4 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer flex items-center gap-1"
+                        title="Setujui permohonan dan jadikan anggota sebagai Guru"
+                      >
+                        <Check class="w-3.5 h-3.5" />
+                        <span>Terima Permintaan</span>
+                      </button>
+                    </div>
+
+                    <div v-else class="text-[11px] text-slate-400">
+                      <div>Oleh: {{ req.reviewedBy || 'Admin' }}</div>
+                      <div class="text-[10px]">{{ req.reviewedDate ? formatDateTime(req.reviewedDate) : '' }}</div>
+                    </div>
                   </td>
                 </tr>
               </tbody>
@@ -1228,6 +1475,100 @@
       </div>
     </div>
 
+    <!-- Modal Preview Foto Selfie Guru Ukuran Penuh -->
+    <div v-if="previewSelfieUrl" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs animate-in fade-in duration-200">
+      <div class="bg-white w-full max-w-lg rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="p-1.5 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
+              <GraduationCap class="w-5 h-5" />
+            </div>
+            <div>
+              <h3 class="font-bold text-sm">Pratinjau Foto Selfie Verifikasi</h3>
+              <p class="text-[11px] text-slate-400">Pemohon: {{ previewSelfieName }}</p>
+            </div>
+          </div>
+          <button 
+            @click="previewSelfieUrl = null"
+            class="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+        <div class="p-6 flex flex-col items-center justify-center bg-slate-100">
+          <img 
+            :src="previewSelfieUrl" 
+            class="max-h-[65vh] w-auto max-w-full rounded-2xl shadow-lg border border-slate-300 object-contain" 
+            alt="Foto Selfie Guru"
+            referrerpolicy="no-referrer"
+          />
+        </div>
+        <div class="px-6 py-4 bg-white border-t border-slate-100 flex justify-end">
+          <button 
+            @click="previewSelfieUrl = null"
+            class="px-5 py-2.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition cursor-pointer"
+          >
+            Tutup Pratinjau
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Penolakan Permintaan Status Guru -->
+    <div v-if="isRejectTeacherModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
+      <div class="bg-white w-full max-w-md rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div class="px-6 py-4 bg-rose-600 text-white flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="p-1.5 rounded-xl bg-rose-700/50 text-white">
+              <AlertTriangle class="w-5 h-5" />
+            </div>
+            <div>
+              <h3 class="font-bold text-sm">Tolak Permintaan Status Guru</h3>
+              <p class="text-[11px] text-rose-100">Pemohon: {{ selectedRequestForReject?.memberName }}</p>
+            </div>
+          </div>
+          <button 
+            @click="closeRejectTeacherModal"
+            class="p-1.5 rounded-xl text-rose-200 hover:text-white hover:bg-rose-700 transition cursor-pointer"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+
+        <form @submit.prevent="confirmRejectTeacherRequest" class="p-6 space-y-4">
+          <div class="space-y-1.5">
+            <label class="block text-xs font-bold text-slate-700">Alasan Penolakan</label>
+            <textarea 
+              v-model="rejectReasonInput"
+              rows="3"
+              placeholder="Contoh: Foto selfie kurang jelas/buram, atau data belum sesuai dengan daftar dewan guru SDN Pengasinan VII."
+              class="w-full px-3.5 py-2.5 rounded-2xl border border-slate-300 text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
+              required
+            ></textarea>
+            <p class="text-[11px] text-slate-400">Alasan ini akan ditampilkan kepada anggota di portal mereka.</p>
+          </div>
+
+          <div class="pt-2 flex items-center gap-3">
+            <button 
+              type="button"
+              @click="closeRejectTeacherModal"
+              class="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer text-xs"
+            >
+              Batal
+            </button>
+            <button 
+              type="submit"
+              :disabled="isProcessingReject"
+              class="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shadow-md shadow-rose-200 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+            >
+              <Check class="w-4 h-4" />
+              <span>{{ isProcessingReject ? 'Memproses...' : 'Konfirmasi Tolak' }}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     </div>
   </div>
 </template>
@@ -1247,7 +1588,8 @@ import CollectBookingModal from '../components/CollectBookingModal.vue';
 import { 
   ShieldCheck, BookPlus, CheckCircle2, BookOpen, CheckCircle, 
   BookMarked, Clock, AlertTriangle, UserX, Sliders, Send, 
-  Plus, Pencil, Trash2, Tag, Users, UserPlus, LogIn, KeyRound, X, Eye, EyeOff, Check, RefreshCw, Database 
+  Plus, Pencil, Trash2, Tag, Users, UserPlus, LogIn, KeyRound, X, Eye, EyeOff, Check, RefreshCw, Database,
+  GraduationCap
 } from 'lucide-vue-next';
 
 const store = useLibraryStore();
@@ -1323,6 +1665,7 @@ const adminTabs = computed(() => [
   { id: 'loans', label: 'Sirkulasi & Peminjaman Aktif', icon: BookMarked, badge: store.activeLoans.length },
   { id: 'bookings', label: 'Booking 24h (Hold)', icon: Clock, badge: store.activeHoldBookings.length },
   { id: 'members', label: 'Kelola Anggota', icon: Users, badge: store.members.length },
+  { id: 'teacher_requests', label: 'Verifikasi Guru', icon: GraduationCap, badge: store.pendingTeacherRequestsCount },
   { id: 'suspends', label: 'Sistem Suspend (1-30 Hari)', icon: Sliders, badge: store.suspendedMembers.length },
   { id: 'notifications', label: 'Notifikasi Keterlambatan', icon: Send, badge: store.overdueLoans.length },
   { id: 'books', label: 'Master Data Buku', icon: BookOpen, badge: store.books.length },
@@ -1362,6 +1705,10 @@ const filteredMembers = computed(() => {
     list = list.filter(m => m.isSuspended);
   } else if (memberFilter.value === 'admin') {
     list = list.filter(m => m.role === 'admin');
+  } else if (memberFilter.value === 'guru') {
+    list = list.filter(m => m.memberType === 'guru');
+  } else if (memberFilter.value === 'siswa') {
+    list = list.filter(m => m.memberType === 'siswa' || !m.memberType);
   }
 
   if (loanSearch.value.trim() && activeTab.value === 'members') {
@@ -1520,6 +1867,79 @@ const handleAdminResetPasswordSubmit = async () => {
   } finally {
     isResettingPassword.value = false;
   }
+};
+
+// Teacher Requests Management State & Handlers
+const teacherRequestFilter = ref('all');
+const previewSelfieUrl = ref<string | null>(null);
+const previewSelfieName = ref<string>('');
+const isRejectTeacherModalOpen = ref(false);
+const selectedRequestForReject = ref<any>(null);
+const rejectReasonInput = ref('');
+const isProcessingReject = ref(false);
+
+const openSelfiePreview = (url: string, name: string) => {
+  previewSelfieUrl.value = url;
+  previewSelfieName.value = name;
+};
+
+const filteredTeacherRequests = computed(() => {
+  let list = store.teacherRequests;
+  if (teacherRequestFilter.value !== 'all') {
+    list = list.filter(r => r.status === teacherRequestFilter.value);
+  }
+  return list;
+});
+
+const handleApproveTeacherRequest = async (req: any) => {
+  if (confirm(`Apakah Anda yakin ingin menyetujui permohonan ini dan mengubah status anggota "${req.memberName}" menjadi Guru SDN Pengasinan VII?`)) {
+    const res = await store.reviewTeacherRequest(req.id, true);
+    if (res.success) {
+      store.setSuccess(`Permintaan disetujui! Status anggota ${req.memberName} berhasil diubah menjadi Guru.`);
+    }
+  }
+};
+
+const promptRejectTeacherRequest = (req: any) => {
+  selectedRequestForReject.value = req;
+  rejectReasonInput.value = '';
+  isRejectTeacherModalOpen.value = true;
+};
+
+const closeRejectTeacherModal = () => {
+  isRejectTeacherModalOpen.value = false;
+  selectedRequestForReject.value = null;
+  rejectReasonInput.value = '';
+};
+
+const confirmRejectTeacherRequest = async () => {
+  if (!selectedRequestForReject.value) return;
+  isProcessingReject.value = true;
+  try {
+    const res = await store.reviewTeacherRequest(
+      selectedRequestForReject.value.id, 
+      false, 
+      rejectReasonInput.value.trim() || 'Permintaan verifikasi belum memenuhi syarat'
+    );
+    if (res.success) {
+      store.setSuccess(`Permintaan status guru untuk ${selectedRequestForReject.value.memberName} telah ditolak.`);
+      closeRejectTeacherModal();
+    }
+  } finally {
+    isProcessingReject.value = false;
+  }
+};
+
+const formatDateTime = (ts: number | string) => {
+  if (!ts) return '-';
+  const d = new Date(ts);
+  return d.toLocaleDateString('id-ID', { 
+    day: 'numeric', 
+    month: 'short', 
+    year: 'numeric', 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  });
 };
 </script>
 

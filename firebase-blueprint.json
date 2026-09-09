@@ -69,6 +69,7 @@
         "phone": { "type": "string", "maxLength": 50 },
         "avatar": { "type": "string", "maxLength": 500 },
         "role": { "type": "string", "enum": ["admin", "member", "staff"] },
+        "memberType": { "type": "string", "enum": ["guru", "siswa"] },
         "isSuspended": { "type": "boolean" },
         "suspendReason": { "type": "string", "maxLength": 300 },
         "suspendedUntil": { "type": "string", "maxLength": 50 },
@@ -134,6 +135,26 @@
         "status": { "type": "string", "enum": ["sent", "failed"] }
       },
       "required": ["id", "memberId", "memberName", "type", "message", "sentAt", "status"]
+    },
+    "TeacherRequest": {
+      "title": "TeacherRequest",
+      "description": "Permintaan perubahan status keanggotaan menjadi Guru dengan verifikasi selfie",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "memberId": { "type": "string", "maxLength": 64 },
+        "memberName": { "type": "string", "maxLength": 150 },
+        "memberCardNumber": { "type": "string", "maxLength": 50 },
+        "memberEmail": { "type": "string", "maxLength": 150 },
+        "memberPhone": { "type": "string", "maxLength": 50 },
+        "selfieUrl": { "type": "string", "maxLength": 500 },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "requestDate": { "type": "string", "maxLength": 50 },
+        "reviewedDate": { "type": "string", "maxLength": 50 },
+        "reviewedBy": { "type": "string", "maxLength": 100 },
+        "rejectionReason": { "type": "string", "maxLength": 300 }
+      },
+      "required": ["id", "memberId", "memberName", "memberCardNumber", "memberEmail", "selfieUrl", "status", "requestDate"]
     }
   },
   "firestore": {
@@ -164,6 +185,10 @@
     "/notifications/{notificationId}": {
       "schema": "NotificationLog",
       "description": "Log notifikasi pengingat jatuh tempo dan overdues"
+    },
+    "/teacher_requests/{requestId}": {
+      "schema": "TeacherRequest",
+      "description": "Daftar permintaan upgrade keanggotaan menjadi Guru"
     }
   }
 }

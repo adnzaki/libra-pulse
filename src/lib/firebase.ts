@@ -163,6 +163,16 @@ export async function removeNotificationDoc(id: string) {
   await deleteDoc(doc(db, 'notifications', id));
 }
 
+export async function syncTeacherRequestDoc(req: any) {
+  if (!req?.id) return;
+  await setDoc(doc(db, 'teacher_requests', req.id), req, { merge: true });
+}
+
+export async function removeTeacherRequestDoc(id: string) {
+  if (!id) return;
+  await deleteDoc(doc(db, 'teacher_requests', id));
+}
+
 /**
  * Direct Firestore Fetch Collection Helper
  */

@@ -48,8 +48,19 @@
             alt="Avatar" 
           />
           <div>
-            <div class="flex items-center gap-2.5">
+            <div class="flex flex-wrap items-center gap-2.5">
               <h1 class="font-extrabold text-2xl text-slate-900 tracking-tight">{{ store.currentUser.name }}</h1>
+              
+              <!-- Badge Tipe Anggota: Guru atau Siswa -->
+              <span 
+                class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-xs"
+                :class="store.currentUser.memberType === 'guru' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' : 'bg-blue-100 text-blue-800 border border-blue-200'"
+              >
+                <span v-if="store.currentUser.memberType === 'guru'">👨‍🏫 Guru</span>
+                <span v-else>🎒 Siswa</span>
+              </span>
+
+              <!-- Badge Status Akun -->
               <span 
                 class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
                 :class="store.currentUser.isSuspended ? 'bg-rose-100 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'"
@@ -58,15 +69,30 @@
               </span>
             </div>
             <div class="text-xs text-blue-600 font-mono font-medium mt-1">
-              No. Kartu: {{ store.currentUser.cardNumber }} • HP: {{ store.currentUser.phone }} • Email: {{ store.currentUser.email }}
+              No. Kartu: {{ store.currentUser.cardNumber }} • HP: {{ store.currentUser.phone || '-' }} • Email: {{ store.currentUser.email }}
             </div>
             <div class="text-[11px] text-slate-400 mt-1">
-              Bergabung sejak {{ new Date(store.currentUser.joinDate).toLocaleDateString('id-ID') }} • Total {{ store.currentUser.totalBorrowed }}x Meminjam Buku
+              Alamat: {{ store.currentUser.address || 'Belum diisi' }} • Bergabung sejak {{ new Date(store.currentUser.joinDate).toLocaleDateString('id-ID') }} • Total {{ store.currentUser.totalBorrowed }}x Meminjam Buku
             </div>
           </div>
         </div>
 
-        <div class="flex flex-wrap gap-2">
+        <div class="flex flex-wrap items-center gap-2">
+          <!-- Tombol Ubah Profil (Sesuai panah biru di screenshot pengguna) -->
+          <button 
+            @click="isEditProfileOpen = true"
+            class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full text-xs transition flex items-center gap-1.5 cursor-pointer shadow-md shadow-blue-200 active:scale-95"
+            title="Ubah Foto Profil, Nama, Email, HP, Alamat dan Status Keanggotaan"
+          >
+            <UserCog class="w-4 h-4" />
+            <span>Ubah Profil</span>
+            <span 
+              v-if="store.myPendingTeacherRequest" 
+              class="w-2 h-2 rounded-full bg-amber-300 animate-ping"
+              title="Pengajuan status Guru sedang diproses"
+            ></span>
+          </button>
+
           <button 
             @click="isChangePasswordOpen = true"
             class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-full text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs"
@@ -82,6 +108,26 @@
             Buka Kartu QR
           </router-link>
         </div>
+      </div>
+
+      <!-- Quick Banner: Pending Teacher Request (Jika sedang proses verifikasi selfie) -->
+      <div 
+        v-if="store.myPendingTeacherRequest" 
+        class="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-900"
+      >
+        <div class="flex items-center gap-2.5">
+          <Clock class="w-5 h-5 text-amber-600 shrink-0 animate-pulse" />
+          <div>
+            <strong class="font-bold">Pengajuan Status Guru Anda Sedang Diverifikasi Admin:</strong>
+            <p class="text-[11px] text-amber-700 mt-0.5">Foto selfie dan data identitas Anda sedang ditinjau oleh pengelola perpustakaan.</p>
+          </div>
+        </div>
+        <button 
+          @click="isEditProfileOpen = true"
+          class="px-3.5 py-1.5 bg-white hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-full font-bold text-[11px] transition shrink-0 cursor-pointer"
+        >
+          Lihat Status Pengajuan
+        </button>
       </div>
 
       <!-- Suspend Warning Notice & Countdown -->
@@ -227,6 +273,12 @@
       @close="isChangePasswordOpen = false"
     />
 
+    <!-- Modal Ubah Profil Anggota -->
+    <EditProfileModal 
+      :is-open="isEditProfileOpen"
+      @close="isEditProfileOpen = false"
+    />
+
   </div>
 </template>
 
@@ -234,15 +286,17 @@
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import ChangePasswordModal from '../components/ChangePasswordModal.vue';
+import EditProfileModal from '../components/EditProfileModal.vue';
 import { 
   UserCheck, QrCode, AlertTriangle, Clock, 
-  Timer, BookmarkCheck, BookMarked, LogIn, KeyRound 
+  Timer, BookmarkCheck, BookMarked, LogIn, KeyRound, UserCog 
 } from 'lucide-vue-next';
 
 const store = useLibraryStore();
 const now = ref(Date.now());
 const isChangePasswordOpen = ref(false);
-let timerInterval: any = null;
+const isEditProfileOpen = ref(false);
+const timerInterval: any = null;
 
 onMounted(() => {
   timerInterval = setInterval(() => {

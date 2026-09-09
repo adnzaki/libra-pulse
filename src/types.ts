@@ -50,6 +50,7 @@ export interface Member {
   email: string;
   phone: string;
   role: 'admin' | 'member';
+  memberType?: 'guru' | 'siswa';
   avatar: string;
   joinDate: string;
   isSuspended: boolean;
@@ -131,4 +132,19 @@ export interface LibraryStats {
   activeBookings: number;
   totalReturnedThisMonth: number;
   shelvesUtilizedPercent: number;
+}
+
+export interface TeacherRequest {
+  id: string;
+  memberId: string;
+  memberName: string;
+  memberCardNumber: string;
+  memberEmail: string;
+  memberPhone: string;
+  selfieUrl: string;
+  status: 'pending' | 'approved' | 'rejected';
+  requestDate: string;
+  reviewedDate?: string | null;
+  reviewedBy?: string | null;
+  rejectionReason?: string;
 }

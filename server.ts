@@ -24,7 +24,14 @@ if (!fs.existsSync(coversDir)) {
   fs.mkdirSync(coversDir, { recursive: true })
 }
 
+const avatarsDir = path.join(process.cwd(), 'uploads', 'avatar')
+if (!fs.existsSync(avatarsDir)) {
+  fs.mkdirSync(avatarsDir, { recursive: true })
+}
+
 app.use('/covers', express.static(coversDir))
+app.use('/uploads/covers', express.static(coversDir))
+app.use('/uploads/avatar', express.static(avatarsDir))
 
 // 3. Konfigurasi Multer
 const storage = multer.diskStorage({
@@ -45,6 +52,27 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+})
+
+const avatarStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, avatarsDir)
+  },
+  filename: (req, file, cb) => {
+    const rawName =
+      req.body.filename || file.originalname.replace(/\.[^/.]+$/, '')
+    const cleanName = rawName.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 30)
+    const ext = path.extname(file.originalname) || '.jpg'
+    cb(
+      null,
+      `avatar_${cleanName}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}${ext}`,
+    )
+  },
+})
+
+const avatarUpload = multer({
+  storage: avatarStorage,
   limits: { fileSize: 10 * 1024 * 1024 },
 })
 
@@ -322,6 +350,67 @@ app.post('/api/upload-cover', (req, res, next) => {
       filename: req.file.filename,
     })
   })
+})
+
+// Upload Avatar Anggota & Profil (disimpan di uploads/avatar)
+app.post('/api/upload-avatar', (req, res) => {
+  console.log('>>> API UPLOAD AVATAR DIPANGGIL <<<')
+  avatarUpload.single('avatar')(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      return res
+        .status(400)
+        .json({ success: false, error: `Multer error: ${err.message}` })
+    } else if (err) {
+      return res.status(500).json({ success: false, error: err.message })
+    }
+
+    if (!req.file) {
+      return res
+        .status(400)
+        .json({ success: false, error: 'File foto profil tidak ditemukan' })
+    }
+
+    const publicUrl = `/uploads/avatar/${req.file.filename}`
+    return res.json({
+      success: true,
+      url: publicUrl,
+      filename: req.file.filename,
+    })
+  })
+})
+
+// Upload Foto Selfie Verifikasi Guru (bisa via Base64 dari kamera atau file)
+app.post('/api/upload-selfie', (req, res) => {
+  try {
+    const { imageBase64, memberId } = req.body || {}
+    if (!imageBase64) {
+      return res.status(400).json({ success: false, error: 'Data foto selfie tidak ditemukan' })
+    }
+
+    // Ekstrak base64 data
+    const matches = imageBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/)
+    if (!matches || matches.length !== 3) {
+      return res.status(400).json({ success: false, error: 'Format data gambar tidak valid' })
+    }
+
+    const imageBuffer = Buffer.from(matches[2], 'base64')
+    const cleanMemberId = (memberId || 'member').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 20)
+    const filename = `selfie_${cleanMemberId}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.jpg`
+    const filePath = path.join(avatarsDir, filename)
+
+    fs.writeFileSync(filePath, imageBuffer)
+    const publicUrl = `/uploads/avatar/${filename}`
+
+    console.log('>>> Foto selfie verifikasi guru berhasil disimpan:', publicUrl)
+    return res.json({
+      success: true,
+      url: publicUrl,
+      filename,
+    })
+  } catch (err: any) {
+    console.error('>>> Gagal menyimpan foto selfie:', err)
+    return res.status(500).json({ success: false, error: err?.message || 'Gagal menyimpan foto selfie' })
+  }
 })
 
 // 5. Integrasi Vite / Static Server

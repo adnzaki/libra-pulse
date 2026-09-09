@@ -61,6 +61,12 @@ service cloud.firestore {
       allow write: if true;
     }
 
+    // Teacher Requests: Upgrade status to Guru
+    match /teacher_requests/{requestId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
     // System configuration (Suspend settings, limits)
     match /config/{configId} {
       allow read: if true;

@@ -69,7 +69,10 @@
           >
             <ShieldCheck class="w-4 h-4 text-blue-300" />
             Admin Panel
-            <span v-if="store.overdueLoans.length" class="px-1.5 py-0.2 text-[10px] rounded-full bg-rose-500 text-white font-bold animate-pulse">
+            <span v-if="store.pendingTeacherRequestsCount > 0" class="px-1.5 py-0.2 text-[10px] rounded-full bg-amber-500 text-white font-bold animate-pulse flex items-center gap-0.5" title="Permintaan Verifikasi Guru Menunggu Konfirmasi">
+              <span>👨‍🏫</span> {{ store.pendingTeacherRequestsCount }}
+            </span>
+            <span v-else-if="store.overdueLoans.length" class="px-1.5 py-0.2 text-[10px] rounded-full bg-rose-500 text-white font-bold animate-pulse">
               {{ store.overdueLoans.length }} Telat
             </span>
           </router-link>
@@ -269,9 +272,12 @@
         v-if="store.isAdmin"
         to="/admin" 
         @click="isMobileMenuOpen = false"
-        class="block px-3 py-2 rounded-xl text-xs font-semibold text-blue-300 bg-blue-500/10 border border-blue-500/20"
+        class="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-blue-300 bg-blue-500/10 border border-blue-500/20"
       >
-        ⚡ Admin Dashboard Console
+        <span>⚡ Admin Dashboard Console</span>
+        <span v-if="store.pendingTeacherRequestsCount > 0" class="px-2 py-0.5 rounded-full bg-amber-500 text-white font-bold text-[10px] animate-pulse">
+          👨‍🏫 {{ store.pendingTeacherRequestsCount }} Permintaan
+        </span>
       </router-link>
       <router-link 
         v-if="!store.currentUser"

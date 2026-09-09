@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { Book, Shelf, Member, Booking, Loan, SuspendConfig, NotificationLog, LibraryStats, BookCategory } from '../types.js';
+import type { Book, Shelf, Member, Booking, Loan, SuspendConfig, NotificationLog, LibraryStats, BookCategory, TeacherRequest } from '../types.js';
 import { 
   getOfflineCachedData, 
   downloadAllForOfflineAccess, 
@@ -19,6 +19,7 @@ export const useLibraryStore = defineStore('library', {
     bookings: [] as Booking[],
     loans: [] as Loan[],
     notifications: [] as NotificationLog[],
+    teacherRequests: [] as TeacherRequest[],
     stats: null as LibraryStats | null,
     suspendConfig: defaultSuspendConfig,
     
@@ -63,7 +64,18 @@ export const useLibraryStore = defineStore('library', {
       return state.bookings.filter(b => b.memberId === state.currentUser?.id);
     },
     toastMessage: (state) => state.successToast,
-    error: (state) => state.errorMessage
+    error: (state) => state.errorMessage,
+    
+    // Teacher Requests
+    pendingTeacherRequests: (state) => state.teacherRequests.filter(r => r.status === 'pending'),
+    pendingTeacherRequestsCount: (state) => state.teacherRequests.filter(r => r.status === 'pending').length,
+    myPendingTeacherRequest: (state) => state.currentUser ? state.teacherRequests.find(r => r.memberId === state.currentUser?.id && r.status === 'pending') : null,
+    myLatestTeacherRequest: (state) => {
+      if (!state.currentUser) return null;
+      const userReqs = state.teacherRequests.filter(r => r.memberId === state.currentUser?.id);
+      if (userReqs.length === 0) return null;
+      return [...userReqs].sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime())[0];
+    }
   },
 
   actions: {
@@ -133,6 +145,11 @@ export const useLibraryStore = defineStore('library', {
         subscribeToFirestoreCollection<NotificationLog>('notifications', (items) => {
           if (items) {
             this.notifications = items;
+          }
+        });
+        subscribeToFirestoreCollection<TeacherRequest>('teacher_requests', (items) => {
+          if (items) {
+            this.teacherRequests = items.sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
           }
         });
         subscribeToFirestoreCollection<SuspendConfig>('config', (items) => {
@@ -533,7 +550,7 @@ export const useLibraryStore = defineStore('library', {
           fBooks = await getFirestoreCollection<Book>('books');
         }
 
-        const [fShelves, fCats, fMembers, fLoans, fBookings, fConfig, fNotifs] = await Promise.all([
+        const [fShelves, fCats, fMembers, fLoans, fBookings, fConfig, fNotifs, fTeacherReqs] = await Promise.all([
           getFirestoreCollection<Shelf>('shelves'),
           getFirestoreCollection<BookCategory>('categories'),
           getFirestoreCollection<Member>('members'),
@@ -541,6 +558,7 @@ export const useLibraryStore = defineStore('library', {
           getFirestoreCollection<Booking>('bookings'),
           getFirestoreCollection<SuspendConfig>('config'),
           getFirestoreCollection<NotificationLog>('notifications'),
+          getFirestoreCollection<TeacherRequest>('teacher_requests'),
         ]);
 
         this.books = fBooks;
@@ -550,7 +568,21 @@ export const useLibraryStore = defineStore('library', {
         this.loans = fLoans;
         this.bookings = fBookings;
         this.notifications = fNotifs;
+        this.teacherRequests = (fTeacherReqs || []).sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
         if (fConfig && fConfig.length > 0) this.suspendConfig = fConfig[0];
+
+        // Background Check & Backfill: Setiap anggota yang belum memiliki memberType dijadikan "siswa"
+        const { syncMemberDoc } = await import('../lib/firebase.js');
+        for (const member of this.members) {
+          if (!member.memberType) {
+            member.memberType = 'siswa';
+            syncMemberDoc(member).catch(() => {});
+          }
+        }
+        if (this.currentUser && !this.currentUser.memberType) {
+          this.currentUser.memberType = 'siswa';
+          localStorage.setItem('pustaka_user', JSON.stringify(this.currentUser));
+        }
 
         this.isUsingOfflineData = false;
         this.calculateStats();
@@ -902,7 +934,8 @@ export const useLibraryStore = defineStore('library', {
           email: memberData.email || '',
           phone: memberData.phone || '',
           role: memberData.role || 'member',
-          avatar: `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80`,
+          memberType: memberData.memberType || 'siswa',
+          avatar: memberData.avatar || `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80`,
           joinDate: new Date().toISOString().slice(0, 10),
           isSuspended: false,
           totalBorrowed: 0,
@@ -1057,6 +1090,7 @@ export const useLibraryStore = defineStore('library', {
           email: email,
           phone: '',
           role: email === 'azzackey@gmail.com' ? 'admin' : 'member',
+          memberType: 'siswa',
           avatar: googleUser.photoURL || `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80`,
           joinDate: new Date().toISOString().slice(0, 10),
           isSuspended: false,
@@ -1087,8 +1121,155 @@ export const useLibraryStore = defineStore('library', {
         phone: formData.phone,
         password: formData.password,
         address: formData.address,
-        role: 'member'
+        role: 'member',
+        memberType: 'siswa'
       });
+    },
+
+    async updateCurrentMemberProfile(profileData: {
+      name: string;
+      email: string;
+      phone: string;
+      address?: string;
+      avatar?: string;
+    }) {
+      if (!this.currentUser) {
+        this.setError('Silakan masuk terlebih dahulu untuk mengubah profil.');
+        return { success: false };
+      }
+
+      this.isLoading = true;
+      try {
+        const memberId = this.currentUser.id;
+        const idx = this.members.findIndex(m => m.id === memberId);
+        
+        const updatedMember: Member = {
+          ...this.currentUser,
+          name: profileData.name.trim() || this.currentUser.name,
+          email: profileData.email.trim() || this.currentUser.email,
+          phone: profileData.phone.trim() || this.currentUser.phone,
+          address: profileData.address !== undefined ? profileData.address : this.currentUser.address,
+          avatar: profileData.avatar || this.currentUser.avatar
+        };
+
+        if (idx !== -1) {
+          this.members[idx] = updatedMember;
+        }
+        this.currentUser = updatedMember;
+        localStorage.setItem('pustaka_user', JSON.stringify(updatedMember));
+
+        const { syncMemberDoc } = await import('../lib/firebase.js');
+        await syncMemberDoc(updatedMember);
+
+        this.showToast('Profil Anda berhasil diperbarui dan tersimpan di Cloud Firestore!');
+        return { success: true, member: updatedMember };
+      } catch (err: any) {
+        console.error('Update profile error:', err);
+        this.setError(err?.message || 'Gagal memperbarui profil');
+        return { success: false, error: err?.message };
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    async submitTeacherRequest(payload: { selfieUrl: string }) {
+      if (!this.currentUser) {
+        this.setError('Anda harus masuk untuk mengajukan perubahan status keanggotaan.');
+        return { success: false };
+      }
+
+      this.isLoading = true;
+      try {
+        // Cek apakah sudah ada request pending
+        const existingPending = this.teacherRequests.find(
+          r => r.memberId === this.currentUser?.id && r.status === 'pending'
+        );
+        if (existingPending) {
+          this.setError('Anda sudah memiliki pengajuan status Guru yang sedang menunggu verifikasi Admin.');
+          return { success: false };
+        }
+
+        const requestId = `REQ-TCH-${Date.now().toString().slice(-6)}`;
+        const newReq: TeacherRequest = {
+          id: requestId,
+          memberId: this.currentUser.id,
+          memberName: this.currentUser.name,
+          memberCardNumber: this.currentUser.cardNumber,
+          memberEmail: this.currentUser.email,
+          memberPhone: this.currentUser.phone,
+          selfieUrl: payload.selfieUrl,
+          status: 'pending',
+          requestDate: new Date().toISOString()
+        };
+
+        this.teacherRequests.unshift(newReq);
+
+        const { syncTeacherRequestDoc } = await import('../lib/firebase.js');
+        await syncTeacherRequestDoc(newReq);
+
+        this.showToast('Permintaan status Guru berhasil diajukan! Admin akan segera memverifikasi foto selfie Anda.');
+        return { success: true, request: newReq };
+      } catch (err: any) {
+        console.error('Submit teacher request error:', err);
+        this.setError(err?.message || 'Gagal mengirim permintaan status Guru');
+        return { success: false, error: err?.message };
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    async reviewTeacherRequest(requestId: string, approve: boolean, rejectionReason?: string) {
+      this.isLoading = true;
+      try {
+        const reqIdx = this.teacherRequests.findIndex(r => r.id === requestId);
+        if (reqIdx === -1) {
+          throw new Error('Permintaan tidak ditemukan.');
+        }
+
+        const currentReq = this.teacherRequests[reqIdx];
+        const updatedReq: TeacherRequest = {
+          ...currentReq,
+          status: approve ? 'approved' : 'rejected',
+          reviewedDate: new Date().toISOString(),
+          reviewedBy: this.currentUser?.name || 'Administrator',
+          rejectionReason: !approve ? (rejectionReason || 'Foto selfie atau data identitas belum memenuhi syarat verifikasi Guru.') : undefined
+        };
+
+        this.teacherRequests[reqIdx] = updatedReq;
+
+        const { syncTeacherRequestDoc, syncMemberDoc } = await import('../lib/firebase.js');
+        await syncTeacherRequestDoc(updatedReq);
+
+        // Jika disetujui, ubah status memberType menjadi "guru"
+        if (approve) {
+          const memIdx = this.members.findIndex(m => m.id === currentReq.memberId);
+          if (memIdx !== -1) {
+            const updatedMember: Member = {
+              ...this.members[memIdx],
+              memberType: 'guru'
+            };
+            this.members[memIdx] = updatedMember;
+            await syncMemberDoc(updatedMember);
+
+            // Jika kebetulan currentUser adalah user ini
+            if (this.currentUser && this.currentUser.id === currentReq.memberId) {
+              this.currentUser.memberType = 'guru';
+              localStorage.setItem('pustaka_user', JSON.stringify(this.currentUser));
+            }
+          }
+          this.showToast(`Permintaan disetujui! Status keanggotaan ${currentReq.memberName} kini resmi menjadi GURU.`);
+        } else {
+          this.showToast(`Permintaan dari ${currentReq.memberName} telah ditolak.`);
+        }
+
+        return { success: true, request: updatedReq };
+      } catch (err: any) {
+        console.error('Review teacher request error:', err);
+        this.setError(err?.message || 'Gagal memproses permintaan status Guru');
+        return { success: false, error: err?.message };
+      } finally {
+        this.isLoading = false;
+      }
     },
 
     logout() {

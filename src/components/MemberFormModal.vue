@@ -32,6 +32,54 @@
       <!-- Form Body -->
       <form @submit.prevent="handleSubmit" class="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
         
+        <!-- Avatar Upload Section -->
+        <div>
+          <label class="block font-bold text-slate-700 mb-1.5">Foto Profil Anggota</label>
+          <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center gap-3.5">
+            <div class="relative shrink-0">
+              <img 
+                :src="form.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80'" 
+                alt="Avatar" 
+                class="w-14 h-14 rounded-2xl object-cover border border-slate-200 bg-white shadow-xs"
+                referrerpolicy="no-referrer"
+              />
+              <div 
+                v-if="isUploadingAvatar" 
+                class="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center text-white"
+              >
+                <Loader2 class="w-4 h-4 animate-spin" />
+              </div>
+            </div>
+
+            <div class="flex-1 space-y-1">
+              <div class="flex items-center gap-2">
+                <label 
+                  class="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold rounded-xl text-[11px] cursor-pointer shadow-2xs transition flex items-center gap-1.5"
+                  :class="{ 'opacity-50 pointer-events-none': isUploadingAvatar }"
+                >
+                  <Upload class="w-3.5 h-3.5 text-blue-600" />
+                  <span>{{ isUploadingAvatar ? 'Mengunggah...' : 'Upload Foto Profil' }}</span>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    class="hidden" 
+                    @change="handleAvatarFileSelect"
+                  />
+                </label>
+                <button 
+                  v-if="form.avatar" 
+                  type="button" 
+                  @click="form.avatar = ''"
+                  class="text-[11px] text-slate-400 hover:text-rose-600 transition"
+                >
+                  Hapus
+                </button>
+              </div>
+              <p class="text-[10px] text-slate-400">Tersimpan di folder uploads/avatar perpustakaan.</p>
+            </div>
+          </div>
+        </div>
+
         <!-- Full Name -->
         <div>
           <label class="block font-bold text-slate-700 mb-1">Nama Lengkap Anggota *</label>
@@ -42,6 +90,40 @@
             placeholder="Contoh: Muhammad Farhan"
             class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-slate-800 text-xs transition"
           />
+        </div>
+
+        <!-- Tipe Pengguna: Guru atau Siswa (Default: Siswa) -->
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Tipe Pengguna / Keanggotaan Sekolah *</label>
+          <div class="grid grid-cols-2 gap-3">
+            <label 
+              class="p-3 rounded-2xl border flex items-center gap-3 cursor-pointer transition"
+              :class="form.memberType === 'siswa' ? 'bg-blue-50/80 border-blue-500 text-blue-900 font-bold shadow-2xs' : 'bg-slate-50 border-slate-200 text-slate-600'"
+            >
+              <input type="radio" v-model="form.memberType" value="siswa" class="text-blue-600" />
+              <div>
+                <div class="text-xs flex items-center gap-1">
+                  <span>🎒</span>
+                  <span>Siswa (Default)</span>
+                </div>
+                <div class="text-[10px] text-slate-400 font-normal">Siswa-siswi sekolah</div>
+              </div>
+            </label>
+
+            <label 
+              class="p-3 rounded-2xl border flex items-center gap-3 cursor-pointer transition"
+              :class="form.memberType === 'guru' ? 'bg-indigo-50/80 border-indigo-500 text-indigo-900 font-bold shadow-2xs' : 'bg-slate-50 border-slate-200 text-slate-600'"
+            >
+              <input type="radio" v-model="form.memberType" value="guru" class="text-indigo-600" />
+              <div>
+                <div class="text-xs flex items-center gap-1">
+                  <span>👨‍🏫</span>
+                  <span>Guru</span>
+                </div>
+                <div class="text-[10px] text-slate-400 font-normal">Dewan Guru / Tenaga Pendidik</div>
+              </div>
+            </label>
+          </div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -143,7 +225,7 @@
 import { ref, watch } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import type { Member } from '../types.js';
-import { UserPlus, UserCheck, X, Check, QrCode } from 'lucide-vue-next';
+import { UserPlus, UserCheck, X, Check, QrCode, Upload, Loader2 } from 'lucide-vue-next';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -156,12 +238,15 @@ const emit = defineEmits<{
 
 const store = useLibraryStore();
 const isSubmitting = ref(false);
+const isUploadingAvatar = ref(false);
 
 const form = ref({
   name: '',
   email: '',
   phone: '',
   role: 'member' as 'admin' | 'member',
+  memberType: 'siswa' as 'guru' | 'siswa',
+  avatar: '',
   address: ''
 });
 
@@ -172,6 +257,8 @@ watch(() => props.member, (newVal) => {
       email: newVal.email,
       phone: newVal.phone,
       role: newVal.role,
+      memberType: newVal.memberType || 'siswa',
+      avatar: newVal.avatar || '',
       address: newVal.address || ''
     };
   } else {
@@ -180,10 +267,45 @@ watch(() => props.member, (newVal) => {
       email: '',
       phone: '',
       role: 'member',
+      memberType: 'siswa',
+      avatar: '',
       address: ''
     };
   }
 }, { immediate: true });
+
+async function handleAvatarFileSelect(e: Event) {
+  const target = e.target as HTMLInputElement;
+  if (!target.files || target.files.length === 0) return;
+
+  const file = target.files[0];
+  isUploadingAvatar.value = true;
+
+  try {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    formData.append('filename', `member_${Date.now()}`);
+
+    const res = await fetch('/api/upload-avatar', {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Gagal mengunggah foto profil');
+    }
+
+    form.value.avatar = data.url;
+    store.showToast('Foto profil anggota berhasil diunggah!');
+  } catch (err: any) {
+    console.error('Upload avatar error:', err);
+    store.setError(err?.message || 'Gagal mengunggah foto profil');
+  } finally {
+    isUploadingAvatar.value = false;
+    target.value = '';
+  }
+}
 
 const handleSubmit = async () => {
   if (!form.value.name || !form.value.email || !form.value.phone) return;
