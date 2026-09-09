@@ -363,6 +363,8 @@ const openEditProfile = (tab: 'profile' | 'upgrade' = 'profile') => {
 
 const myRejectedTeacherRequest = computed(() => {
   if (!store.currentUser || store.currentUser.memberType === 'guru') return null;
+  // Jika saat ini ada request berstatus pending (menunggu persetujuan admin), jangan tampilkan banner penolakan
+  if (store.myPendingTeacherRequest) return null;
   const latest = store.myLatestTeacherRequest;
   if (latest && latest.status === 'rejected') {
     return latest;

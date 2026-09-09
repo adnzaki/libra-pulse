@@ -270,7 +270,7 @@
             
             <!-- Notif jika sebelumnya pernah ditolak -->
             <div 
-              v-if="store.myLatestTeacherRequest?.status === 'rejected'"
+              v-if="store.myLatestTeacherRequest?.status === 'rejected' && upgradeStep === 'idle'"
               class="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 space-y-1.5"
             >
               <div class="flex items-center gap-2 font-bold text-xs text-rose-800">
@@ -292,7 +292,9 @@
                   <Sparkles class="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 class="font-extrabold text-sm text-indigo-950">Ubah Status Keanggotaan Menjadi Guru</h4>
+                  <h4 class="font-extrabold text-sm text-indigo-950">
+                    {{ store.myLatestTeacherRequest?.status === 'rejected' ? 'Pengajuan Ulang Status Guru' : 'Ubah Status Keanggotaan Menjadi Guru' }}
+                  </h4>
                   <p class="text-xs text-indigo-700">Khusus bagi Bapak/Ibu Dewan Guru & Pengajar SDN Pengasinan VII</p>
                 </div>
               </div>
@@ -318,7 +320,7 @@
                   class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md shadow-indigo-200 transition cursor-pointer active:scale-95"
                 >
                   <GraduationCap class="w-4 h-4" />
-                  <span>Ubah Keanggotaan Menjadi Guru</span>
+                  <span>{{ store.myLatestTeacherRequest?.status === 'rejected' ? 'Ajukan Ulang / Ambil Selfie Baru' : 'Ubah Keanggotaan Menjadi Guru' }}</span>
                 </button>
               </div>
             </div>
@@ -517,9 +519,13 @@ watch(() => props.isOpen, (newVal) => {
     form.address = store.currentUser.address || '';
     form.avatar = store.currentUser.avatar || '';
     avatarPreview.value = form.avatar;
-    upgradeStep.value = 'idle';
+    upgradeStep.value = (props.initialTab === 'upgrade' && store.myLatestTeacherRequest?.status === 'rejected')
+      ? 'confirm_prompt'
+      : 'idle';
   } else {
     stopCamera();
+    upgradeStep.value = 'idle';
+    capturedImageBase64.value = '';
   }
 });
 
@@ -694,7 +700,9 @@ async function sendTeacherRequest() {
     });
 
     if (subRes.success) {
+      stopCamera();
       upgradeStep.value = 'idle';
+      capturedImageBase64.value = '';
     }
   } catch (err: any) {
     console.error('Send teacher request error:', err);

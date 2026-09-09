@@ -69,10 +69,22 @@ export const useLibraryStore = defineStore('library', {
     // Teacher Requests
     pendingTeacherRequests: (state) => state.teacherRequests.filter(r => r.status === 'pending'),
     pendingTeacherRequestsCount: (state) => state.teacherRequests.filter(r => r.status === 'pending').length,
-    myPendingTeacherRequest: (state) => state.currentUser ? state.teacherRequests.find(r => r.memberId === state.currentUser?.id && r.status === 'pending') : null,
+    myPendingTeacherRequest: (state) => {
+      if (!state.currentUser) return null;
+      return state.teacherRequests.find(r => 
+        (r.memberId === state.currentUser?.id ||
+         (r.memberCardNumber && r.memberCardNumber === state.currentUser?.cardNumber) ||
+         (r.memberEmail && state.currentUser?.email && r.memberEmail.toLowerCase() === state.currentUser?.email.toLowerCase())
+        ) && r.status === 'pending'
+      ) || null;
+    },
     myLatestTeacherRequest: (state) => {
       if (!state.currentUser) return null;
-      const userReqs = state.teacherRequests.filter(r => r.memberId === state.currentUser?.id);
+      const userReqs = state.teacherRequests.filter(r => 
+        r.memberId === state.currentUser?.id ||
+        (r.memberCardNumber && r.memberCardNumber === state.currentUser?.cardNumber) ||
+        (r.memberEmail && state.currentUser?.email && r.memberEmail.toLowerCase() === state.currentUser?.email.toLowerCase())
+      );
       if (userReqs.length === 0) return null;
       return [...userReqs].sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime())[0];
     }
@@ -1180,35 +1192,77 @@ export const useLibraryStore = defineStore('library', {
 
       this.isLoading = true;
       try {
-        // Cek apakah sudah ada request pending
-        const existingPending = this.teacherRequests.find(
-          r => r.memberId === this.currentUser?.id && r.status === 'pending'
+        const isMyReq = (r: TeacherRequest) => (
+          r.memberId === this.currentUser?.id ||
+          (Boolean(r.memberCardNumber) && r.memberCardNumber === this.currentUser?.cardNumber) ||
+          (Boolean(r.memberEmail && this.currentUser?.email) && r.memberEmail?.toLowerCase() === this.currentUser?.email.toLowerCase())
         );
+
+        // Cek apakah sudah ada request pending
+        const existingPending = this.teacherRequests.find(r => isMyReq(r) && r.status === 'pending');
         if (existingPending) {
           this.setError('Anda sudah memiliki pengajuan status Guru yang sedang menunggu verifikasi Admin.');
           return { success: false };
         }
 
-        const requestId = `REQ-TCH-${Date.now().toString().slice(-6)}`;
-        const newReq: TeacherRequest = {
-          id: requestId,
-          memberId: this.currentUser.id,
-          memberName: this.currentUser.name,
-          memberCardNumber: this.currentUser.cardNumber,
-          memberEmail: this.currentUser.email,
-          memberPhone: this.currentUser.phone,
-          selfieUrl: payload.selfieUrl,
-          status: 'pending',
-          requestDate: new Date().toISOString()
-        };
+        const { syncTeacherRequestDoc, removeTeacherRequestDoc } = await import('../lib/firebase.js');
+        const nowIso = new Date().toISOString();
 
-        this.teacherRequests.unshift(newReq);
+        // Cari apakah ada request sebelumnya (misalnya yang berstatus rejected)
+        const previousReqIdx = this.teacherRequests.findIndex(r => isMyReq(r));
+        let activeReq: TeacherRequest;
 
-        const { syncTeacherRequestDoc } = await import('../lib/firebase.js');
-        await syncTeacherRequestDoc(newReq);
+        if (previousReqIdx !== -1) {
+          const prevReq = this.teacherRequests[previousReqIdx];
+          activeReq = {
+            ...prevReq,
+            memberId: this.currentUser.id,
+            memberName: this.currentUser.name,
+            memberCardNumber: this.currentUser.cardNumber,
+            memberEmail: this.currentUser.email,
+            memberPhone: this.currentUser.phone,
+            selfieUrl: payload.selfieUrl,
+            status: 'pending',
+            requestDate: nowIso,
+            reviewedBy: undefined,
+            reviewedDate: undefined,
+            rejectionReason: undefined
+          };
+
+          // Bersihkan request lain milik user yang sama jika ada duplikat
+          const otherReqs = this.teacherRequests.filter((r, idx) => isMyReq(r) && idx !== previousReqIdx);
+          for (const other of otherReqs) {
+            removeTeacherRequestDoc(other.id).catch(() => {});
+          }
+
+          this.teacherRequests = [
+            activeReq,
+            ...this.teacherRequests.filter(r => !isMyReq(r))
+          ];
+        } else {
+          const requestId = `REQ-TCH-${Date.now().toString().slice(-6)}`;
+          activeReq = {
+            id: requestId,
+            memberId: this.currentUser.id,
+            memberName: this.currentUser.name,
+            memberCardNumber: this.currentUser.cardNumber,
+            memberEmail: this.currentUser.email,
+            memberPhone: this.currentUser.phone,
+            selfieUrl: payload.selfieUrl,
+            status: 'pending',
+            requestDate: nowIso
+          };
+          this.teacherRequests.unshift(activeReq);
+        }
+
+        // Urutkan kembali berdasarkan requestDate terbaru
+        this.teacherRequests.sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
+
+        // Sinkronkan dokumen aktif ke Firestore
+        await syncTeacherRequestDoc(activeReq);
 
         this.showToast('Permintaan status Guru berhasil diajukan! Admin akan segera memverifikasi foto selfie Anda.');
-        return { success: true, request: newReq };
+        return { success: true, request: activeReq };
       } catch (err: any) {
         console.error('Submit teacher request error:', err);
         this.setError(err?.message || 'Gagal mengirim permintaan status Guru');

@@ -29,9 +29,15 @@ if (!fs.existsSync(avatarsDir)) {
   fs.mkdirSync(avatarsDir, { recursive: true })
 }
 
+const selfiesDir = path.join(process.cwd(), 'uploads', 'selfie')
+if (!fs.existsSync(selfiesDir)) {
+  fs.mkdirSync(selfiesDir, { recursive: true })
+}
+
 app.use('/covers', express.static(coversDir))
 app.use('/uploads/covers', express.static(coversDir))
 app.use('/uploads/avatar', express.static(avatarsDir))
+app.use('/uploads/selfie', express.static(selfiesDir))
 
 // 3. Konfigurasi Multer
 const storage = multer.diskStorage({
@@ -396,10 +402,10 @@ app.post('/api/upload-selfie', (req, res) => {
     const imageBuffer = Buffer.from(matches[2], 'base64')
     const cleanMemberId = (memberId || 'member').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 20)
     const filename = `selfie_${cleanMemberId}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.jpg`
-    const filePath = path.join(avatarsDir, filename)
+    const filePath = path.join(selfiesDir, filename)
 
     fs.writeFileSync(filePath, imageBuffer)
-    const publicUrl = `/uploads/avatar/${filename}`
+    const publicUrl = `/uploads/selfie/${filename}`
 
     console.log('>>> Foto selfie verifikasi guru berhasil disimpan:', publicUrl)
     return res.json({
