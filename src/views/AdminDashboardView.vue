@@ -1893,10 +1893,7 @@ const filteredTeacherRequests = computed(() => {
 
 const handleApproveTeacherRequest = async (req: any) => {
   if (confirm(`Apakah Anda yakin ingin menyetujui permohonan ini dan mengubah status anggota "${req.memberName}" menjadi Guru SDN Pengasinan VII?`)) {
-    const res = await store.reviewTeacherRequest(req.id, true);
-    if (res.success) {
-      store.setSuccess(`Permintaan disetujui! Status anggota ${req.memberName} berhasil diubah menjadi Guru.`);
-    }
+    await store.reviewTeacherRequest(req.id, true);
   }
 };
 
@@ -1914,18 +1911,18 @@ const closeRejectTeacherModal = () => {
 
 const confirmRejectTeacherRequest = async () => {
   if (!selectedRequestForReject.value) return;
+  const targetReq = selectedRequestForReject.value;
+  const reason = rejectReasonInput.value.trim() || 'Permintaan verifikasi belum memenuhi syarat';
   isProcessingReject.value = true;
   try {
-    const res = await store.reviewTeacherRequest(
-      selectedRequestForReject.value.id, 
-      false, 
-      rejectReasonInput.value.trim() || 'Permintaan verifikasi belum memenuhi syarat'
-    );
+    const res = await store.reviewTeacherRequest(targetReq.id, false, reason);
     if (res.success) {
-      store.setSuccess(`Permintaan status guru untuk ${selectedRequestForReject.value.memberName} telah ditolak.`);
-      closeRejectTeacherModal();
+      store.showToast(`Permintaan status guru untuk ${targetReq.memberName} telah ditolak.`);
     }
+  } catch (err) {
+    console.error('Failed to reject teacher request:', err);
   } finally {
+    closeRejectTeacherModal();
     isProcessingReject.value = false;
   }
 };

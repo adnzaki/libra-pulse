@@ -326,34 +326,41 @@
             <!-- Step 1: Prompt Konfirmasi Persetujuan Selfie -->
             <div 
               v-else-if="upgradeStep === 'confirm_prompt'"
-              class="p-5 rounded-2xl bg-white border-2 border-indigo-200 shadow-md space-y-4 animate-in fade-in duration-200"
+              class="p-5 sm:p-6 rounded-2xl bg-white border-2 border-indigo-200 shadow-lg space-y-4 animate-in fade-in duration-200"
             >
-              <div class="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center mx-auto">
-                <Camera class="w-6 h-6" />
+              <div class="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center mx-auto shadow-inner">
+                <GraduationCap class="w-6 h-6" />
               </div>
 
-              <div class="text-center space-y-1.5">
-                <h4 class="font-extrabold text-sm text-slate-900">Konfirmasi Verifikasi Wajah</h4>
-                <p class="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
-                  "Untuk mengganti status keanggotaan menjadi guru, silakan lakukan foto selfie untuk diverifikasi oleh Admin. Apakah anda setuju?"
+              <div class="text-center space-y-2">
+                <h4 class="font-extrabold text-base text-slate-900">Verifikasi Identitas Dewan Guru</h4>
+                <p class="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
+                  Untuk memvalidasi peran Bapak/Ibu sebagai <strong>Dewan Guru SDN Pengasinan VII</strong> dan mengaktifkan hak akses khusus pendidik, sistem memerlukan foto selfie langsung yang akan ditinjau oleh Admin Perpustakaan.
+                </p>
+                <div class="p-3 bg-amber-50/80 rounded-xl border border-amber-200/80 text-[11px] text-amber-800 flex items-center gap-2 text-left">
+                  <Sparkles class="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>Pastikan wajah terlihat jelas, menghadap lurus ke depan, serta pencahayaan ruangan cukup terang.</span>
+                </div>
+                <p class="text-xs font-semibold text-indigo-950 pt-1">
+                  Apakah Bapak/Ibu bersedia melanjutkan pengambilan foto sekarang?
                 </p>
               </div>
 
-              <div class="grid grid-cols-2 gap-2.5 pt-2">
+              <div class="grid grid-cols-2 gap-3 pt-2">
                 <button 
                   type="button" 
                   @click="upgradeStep = 'idle'"
-                  class="py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition cursor-pointer text-center"
+                  class="py-2.5 px-4 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold transition cursor-pointer text-center text-xs"
                 >
-                  Batal
+                  Nanti Saja
                 </button>
                 <button 
                   type="button" 
                   @click="startCameraCapture"
-                  class="py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition shadow-sm cursor-pointer text-center flex items-center justify-center gap-1.5"
+                  class="py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition shadow-md shadow-indigo-200 cursor-pointer text-center flex items-center justify-center gap-1.5 text-xs active:scale-95"
                 >
-                  <Check class="w-4 h-4" />
-                  <span>Ya, Saya Setuju</span>
+                  <Camera class="w-4 h-4" />
+                  <span>Ya, Buka Kamera</span>
                 </button>
               </div>
             </div>
@@ -466,9 +473,12 @@ import {
   MapPin, CheckCircle2, Clock, AlertCircle, Sparkles, Camera, RotateCcw, Send 
 } from 'lucide-vue-next';
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   isOpen: boolean;
-}>();
+  initialTab?: 'profile' | 'upgrade';
+}>(), {
+  initialTab: 'profile'
+});
 
 const emit = defineEmits<{
   (e: 'close'): void;
@@ -500,6 +510,7 @@ const form = reactive({
 // Watch open state to populate form
 watch(() => props.isOpen, (newVal) => {
   if (newVal && store.currentUser) {
+    activeTab.value = props.initialTab || 'profile';
     form.name = store.currentUser.name || '';
     form.email = store.currentUser.email || '';
     form.phone = store.currentUser.phone || '';

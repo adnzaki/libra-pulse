@@ -80,8 +80,8 @@
         <div class="flex flex-wrap items-center gap-2">
           <!-- Tombol Ubah Profil (Sesuai panah biru di screenshot pengguna) -->
           <button 
-            @click="isEditProfileOpen = true"
-            class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full text-xs transition flex items-center gap-1.5 cursor-pointer shadow-md shadow-blue-200 active:scale-95"
+            @click="openEditProfile('profile')"
+            class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full text-xs transition flex items-center gap-1.5 cursor-pointer shadow-md shadow-blue-200 active:scale-95 relative"
             title="Ubah Foto Profil, Nama, Email, HP, Alamat dan Status Keanggotaan"
           >
             <UserCog class="w-4 h-4" />
@@ -90,6 +90,11 @@
               v-if="store.myPendingTeacherRequest" 
               class="w-2 h-2 rounded-full bg-amber-300 animate-ping"
               title="Pengajuan status Guru sedang diproses"
+            ></span>
+            <span 
+              v-else-if="myRejectedTeacherRequest" 
+              class="w-2 h-2 rounded-full bg-rose-400"
+              title="Pengajuan status Guru ditolak"
             ></span>
           </button>
 
@@ -123,11 +128,61 @@
           </div>
         </div>
         <button 
-          @click="isEditProfileOpen = true"
+          @click="openEditProfile('upgrade')"
           class="px-3.5 py-1.5 bg-white hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-full font-bold text-[11px] transition shrink-0 cursor-pointer"
         >
           Lihat Status Pengajuan
         </button>
+      </div>
+
+      <!-- Notifikasi Langsung: Permohonan Perubahan Status Ditolak Admin (Tampil langsung tanpa harus buka ubah profil) -->
+      <div 
+        v-else-if="myRejectedTeacherRequest" 
+        class="p-4 sm:p-5 rounded-2xl bg-rose-50 border-2 border-rose-300 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 text-xs text-rose-950 animate-in fade-in duration-200"
+      >
+        <div class="flex items-start gap-3 min-w-0">
+          <div class="w-10 h-10 rounded-2xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+            <AlertCircle class="w-5 h-5" />
+          </div>
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <strong class="font-extrabold text-sm text-rose-900">Pemberitahuan: Permohonan Perubahan Status Guru Ditolak Admin</strong>
+              <span class="px-2 py-0.5 rounded-full bg-rose-200 text-rose-800 text-[10px] font-bold uppercase tracking-wider">
+                Verifikasi Ditolak
+              </span>
+            </div>
+            <p class="text-xs text-rose-800 mt-1">
+              Alasan Penolakan: <strong class="font-semibold text-rose-950">{{ myRejectedTeacherRequest.rejectionReason || 'Foto selfie atau data identitas belum memenuhi syarat verifikasi Guru.' }}</strong>
+            </p>
+            <div class="text-[11px] text-rose-600 mt-1 flex flex-wrap items-center gap-x-2">
+              <span>Ditinjau oleh: <strong>{{ myRejectedTeacherRequest.reviewedBy || 'Admin' }}</strong></span>
+              <span>•</span>
+              <span>Waktu: {{ formatDateTime(myRejectedTeacherRequest.reviewedDate) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <button 
+          @click="openEditProfile('upgrade')"
+          class="w-full sm:w-auto px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs transition shadow-md shadow-rose-200 cursor-pointer flex items-center justify-center gap-2 shrink-0 active:scale-95"
+        >
+          <Camera class="w-4 h-4" />
+          <span>Ajukan Ulang / Ambil Selfie Baru</span>
+        </button>
+      </div>
+
+      <!-- Quick Banner: Status Guru Berhasil Disetujui -->
+      <div 
+        v-else-if="store.currentUser.memberType === 'guru' && store.myLatestTeacherRequest?.status === 'approved'"
+        class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-emerald-900"
+      >
+        <div class="flex items-center gap-2.5">
+          <CheckCircle2 class="w-5 h-5 text-emerald-600 shrink-0" />
+          <div>
+            <strong class="font-bold">Status Keanggotaan Terverifikasi: Dewan Guru SDN Pengasinan VII</strong>
+            <p class="text-[11px] text-emerald-700 mt-0.5">Permohonan Anda telah disetujui. Akun Anda memiliki hak akses peminjaman khusus Guru.</p>
+          </div>
+        </div>
       </div>
 
       <!-- Suspend Warning Notice & Countdown -->
@@ -276,6 +331,7 @@
     <!-- Modal Ubah Profil Anggota -->
     <EditProfileModal 
       :is-open="isEditProfileOpen"
+      :initial-tab="editProfileInitialTab"
       @close="isEditProfileOpen = false"
     />
 
@@ -289,14 +345,42 @@ import ChangePasswordModal from '../components/ChangePasswordModal.vue';
 import EditProfileModal from '../components/EditProfileModal.vue';
 import { 
   UserCheck, QrCode, AlertTriangle, Clock, 
-  Timer, BookmarkCheck, BookMarked, LogIn, KeyRound, UserCog 
+  Timer, BookmarkCheck, BookMarked, LogIn, KeyRound, UserCog,
+  AlertCircle, CheckCircle2, Camera
 } from 'lucide-vue-next';
 
 const store = useLibraryStore();
 const now = ref(Date.now());
 const isChangePasswordOpen = ref(false);
 const isEditProfileOpen = ref(false);
-const timerInterval: any = null;
+const editProfileInitialTab = ref<'profile' | 'upgrade'>('profile');
+let timerInterval: any = null;
+
+const openEditProfile = (tab: 'profile' | 'upgrade' = 'profile') => {
+  editProfileInitialTab.value = tab;
+  isEditProfileOpen.value = true;
+};
+
+const myRejectedTeacherRequest = computed(() => {
+  if (!store.currentUser || store.currentUser.memberType === 'guru') return null;
+  const latest = store.myLatestTeacherRequest;
+  if (latest && latest.status === 'rejected') {
+    return latest;
+  }
+  return null;
+});
+
+const formatDateTime = (ts?: number | string) => {
+  if (!ts) return '-';
+  const d = new Date(ts);
+  return d.toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
 
 onMounted(() => {
   timerInterval = setInterval(() => {

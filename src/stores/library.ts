@@ -1798,6 +1798,10 @@ export const useLibraryStore = defineStore('library', {
       }
       this.showToast('✅ Riwayat notifikasi berhasil dihapus.');
       return { success: true };
+    },
+
+    setSuccess(msg: string) {
+      this.showToast(msg);
     }
   }
 });
