@@ -192,7 +192,7 @@
             <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
             Cron Aktif
           </span>
-          <span class="font-mono text-slate-400">{{ store.members.length }} Member</span>
+          <span class="font-mono text-slate-400">{{ displayedTotalMembers }} Member</span>
         </div>
       </div>
 
@@ -520,7 +520,7 @@
               </button>
             </div>
             <div class="text-xs text-slate-500 font-mono">
-              Menampilkan {{ filteredMembers.length }} dari {{ store.members.length }} Akun
+              Menampilkan {{ filteredMembers.length }} dari {{ displayedTotalMembers }} Akun
             </div>
           </div>
 
@@ -537,6 +537,7 @@
                   <div class="min-w-0">
                     <h4 class="font-bold text-slate-900 text-sm truncate flex flex-wrap items-center gap-1.5">
                       <span>{{ m.name }}</span>
+                      <span v-if="isSuperAdminAccount(m)" class="px-1.5 py-0.2 bg-blue-600 text-white text-[9px] font-bold rounded-full">SUPER ADMIN</span>
                       <span 
                         class="px-2 py-0.2 rounded-full text-[9px] font-bold"
                         :class="m.memberType === 'guru' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' : 'bg-blue-100 text-blue-800 border border-blue-200'"
@@ -600,7 +601,7 @@
                     Suspend
                   </button>
                   <button 
-                    v-if="m.role !== 'admin' && m.email !== 'azzackey@gmail.com'"
+                    v-if="m.role !== 'admin' && !isSuperAdminAccount(m)"
                     @click="handleDeleteMember(m.id, m.name)"
                     class="p-1.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 transition"
                     title="Hapus Anggota"
@@ -634,7 +635,7 @@
                     <div>
                       <div class="font-bold text-slate-900 flex items-center gap-1.5">
                         {{ m.name }}
-                        <span v-if="m.email === 'azzackey@gmail.com'" class="px-1.5 py-0.2 bg-blue-600 text-white text-[9px] font-bold rounded-full">SUPER ADMIN</span>
+                        <span v-if="isSuperAdminAccount(m)" class="px-1.5 py-0.2 bg-blue-600 text-white text-[9px] font-bold rounded-full">SUPER ADMIN</span>
                       </div>
                       <div class="text-[11px] text-slate-400 font-sans">{{ m.email }}</div>
                     </div>
@@ -703,7 +704,7 @@
                         Suspend
                       </button>
                       <button 
-                        v-if="m.role !== 'admin' && m.email !== 'azzackey@gmail.com'"
+                        v-if="m.role !== 'admin' && !isSuperAdminAccount(m)"
                         @click="handleDeleteMember(m.id, m.name)"
                         class="p-1.5 rounded-full bg-slate-100 hover:bg-rose-100 text-slate-500 hover:text-rose-700 transition cursor-pointer"
                         title="Hapus Anggota"
@@ -1943,6 +1944,10 @@ const suspendDaysInput = ref(7);
 const isProcessingSuspend = ref(false);
 
 const openSuspendMemberModal = (member: Member) => {
+  if (isSuperAdminAccount(member)) {
+    store.setError('Akun Super Admin tidak dapat disuspend.');
+    return;
+  }
   selectedMemberForSuspend.value = member;
   suspendReasonInput.value = '';
   suspendDaysInput.value = store.suspendConfig?.defaultSuspendDays || 7;
@@ -1996,10 +2001,30 @@ onBeforeUnmount(() => {
   if (timerInterval) clearInterval(timerInterval);
 });
 
+// Helper untuk mendeteksi akun Super Admin
+const isSuperAdminAccount = (m: Member | null | undefined): boolean => {
+  if (!m) return false;
+  const email = (m.email || '').toLowerCase().trim();
+  return email === 'azzackey@gmail.com' || (m as any).isSuperAdmin === true || m.role === 'superadmin';
+};
+
+// Cek apakah pengguna yang sedang login saat ini adalah Super Admin
+const isCurrentSuperAdmin = computed(() => {
+  return isSuperAdminAccount(store.currentUser);
+});
+
+// Total anggota yang boleh dilihat oleh admin saat ini (sembunyikan Super Admin jika bukan Super Admin)
+const displayedTotalMembers = computed(() => {
+  if (isCurrentSuperAdmin.value) {
+    return store.members.length;
+  }
+  return store.members.filter(m => !isSuperAdminAccount(m)).length;
+});
+
 const adminTabs = computed(() => [
   { id: 'loans', label: 'Sirkulasi & Peminjaman Aktif', icon: BookMarked, badge: store.activeLoans.length },
   { id: 'bookings', label: 'Booking 24h (Hold)', icon: Clock, badge: store.activeHoldBookings.length },
-  { id: 'members', label: 'Kelola Anggota', icon: Users, badge: store.members.length },
+  { id: 'members', label: 'Kelola Anggota', icon: Users, badge: displayedTotalMembers.value },
   { id: 'teacher_requests', label: 'Verifikasi Guru', icon: GraduationCap, badge: store.pendingTeacherRequestsCount },
   { id: 'suspends', label: 'Sistem Suspend (1-30 Hari)', icon: Sliders, badge: store.suspendedMembers.length },
   { id: 'notifications', label: 'Notifikasi Keterlambatan', icon: Send, badge: store.overdueLoans.length },
@@ -2041,6 +2066,12 @@ const handleDeleteCategory = (catId: string, catName: string) => {
 
 const filteredMembers = computed(() => {
   let list = store.members;
+
+  // Sembunyikan akun Super Admin dari admin lainnya agar tidak tampil dan tidak bisa diedit
+  if (!isCurrentSuperAdmin.value) {
+    list = list.filter(m => !isSuperAdminAccount(m));
+  }
+
   if (memberFilter.value === 'active') {
     list = list.filter(m => !m.isSuspended);
   } else if (memberFilter.value === 'suspended') {
@@ -2071,11 +2102,20 @@ const openAddMemberModal = () => {
 };
 
 const openEditMemberModal = (member: Member) => {
+  if (isSuperAdminAccount(member) && !isCurrentSuperAdmin.value) {
+    store.setError('Akses ditolak: Hanya Super Admin yang berhak mengedit akun ini.');
+    return;
+  }
   selectedMemberForEdit.value = member;
   isMemberFormOpen.value = true;
 };
 
 const handleDeleteMember = (memberId: string, memberName: string) => {
+  const target = store.members.find(m => m.id === memberId);
+  if (isSuperAdminAccount(target)) {
+    store.setError('Akun Super Admin dilindungi dan tidak dapat dihapus.');
+    return;
+  }
   openConfirmDialog({
     title: 'Hapus Anggota Perpustakaan',
     message: `Apakah Anda yakin ingin menghapus anggota "${memberName}" dari database perpustakaan?`,
@@ -2200,6 +2240,10 @@ const handleDownloadOffline = async () => {
 };
 
 const openAdminResetMemberPassword = (member: Member) => {
+  if (isSuperAdminAccount(member) && !isCurrentSuperAdmin.value) {
+    store.setError('Akses ditolak: Hanya Super Admin yang berhak mereset kata sandi akun ini.');
+    return;
+  }
   selectedMemberForPasswordReset.value = member;
   adminResetPasswordInput.value = '';
   showResetPass.value = false;

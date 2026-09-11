@@ -10,6 +10,12 @@ import {
 } from '../lib/offline-manager.js';
 import { defaultSuspendConfig } from '../lib/default-catalog.js';
 
+export const isSuperAdminMember = (m: any): boolean => {
+  if (!m) return false;
+  const email = (m.email || '').trim().toLowerCase();
+  return email === 'azzackey@gmail.com' || m.isSuperAdmin === true || m.role === 'superadmin';
+};
+
 export const useLibraryStore = defineStore('library', {
   state: () => ({
     categories: [] as BookCategory[],
@@ -1075,6 +1081,12 @@ export const useLibraryStore = defineStore('library', {
         const idx = this.members.findIndex(m => m.id === memberId);
         if (idx === -1) return { success: false };
 
+        const target = this.members[idx];
+        if (isSuperAdminMember(target) && !isSuperAdminMember(this.currentUser)) {
+          this.setError('Akses ditolak: Akun Super Admin tidak dapat diubah oleh admin lain.');
+          return { success: false, error: 'Akses ditolak' };
+        }
+
         let hashedPassword = this.members[idx].password;
         if (memberData.password) {
           const { hashPassword } = await import('../lib/crypto.js');
@@ -1104,6 +1116,12 @@ export const useLibraryStore = defineStore('library', {
 
     async deleteMember(memberId: string) {
       try {
+        const target = this.members.find(m => m.id === memberId);
+        if (target && isSuperAdminMember(target)) {
+          this.setError('Akun Super Admin dilindungi dan tidak dapat dihapus.');
+          return { success: false, error: 'Akses ditolak' };
+        }
+
         this.members = this.members.filter(m => m.id !== memberId);
         if (this.currentUser?.id === memberId) this.logout();
         this.calculateStats();
@@ -1127,6 +1145,11 @@ export const useLibraryStore = defineStore('library', {
     async toggleMemberSuspend(memberId: string, suspend: boolean, days?: number, reason?: string) {
       const target = this.members.find(m => m.id === memberId);
       if (!target) return { success: false };
+
+      if (isSuperAdminMember(target)) {
+        this.setError('Akun Super Admin tidak dapat disuspend.');
+        return { success: false, error: 'Akses ditolak' };
+      }
 
       target.isSuspended = suspend;
       target.suspendedUntil = suspend && days ? new Date(Date.now() + days * 86400000).toISOString().slice(0, 10) : null;
@@ -1161,6 +1184,12 @@ export const useLibraryStore = defineStore('library', {
         const member = this.members.find(m => m.id === memberId);
         if (!member) {
           const err = 'Anggota tidak ditemukan';
+          this.setError(err);
+          return { success: false, error: err };
+        }
+
+        if (isSuperAdminMember(member) && !isSuperAdminMember(this.currentUser)) {
+          const err = 'Akses ditolak: Hanya Super Admin yang berhak mereset kata sandi akun ini.';
           this.setError(err);
           return { success: false, error: err };
         }
