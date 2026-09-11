@@ -235,7 +235,7 @@
                   v-model="adminForm.identifier" 
                   type="text" 
                   required 
-                  placeholder="azzackey@gmail.com atau admin"
+                  placeholder="admin@sdnpengasinan7.sch.id atau admin"
                   class="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-slate-800 text-xs transition font-mono"
                 />
                 <Mail class="w-4 h-4 text-slate-400 absolute left-3 top-3" />
@@ -247,7 +247,7 @@
                 <label class="font-bold text-slate-700">Kata Sandi Administrator *</label>
                 <button 
                   type="button" 
-                  @click="openResetFor(adminForm.identifier || 'azzackey@gmail.com')"
+                  @click="openResetFor(adminForm.identifier)"
                   class="text-[11px] text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
                 >
                   Lupa kata sandi?
@@ -437,7 +437,7 @@
                   v-model="resetForm.identifier" 
                   type="text" 
                   required 
-                  placeholder="Contoh: email@anda.com / LIB-2026-... / azzackey@gmail.com"
+                  placeholder="Contoh: email@anda.com atau LIB-2026-..."
                   class="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-slate-800 text-xs transition"
                 />
                 <Mail class="w-4 h-4 text-slate-400 absolute left-3 top-3" />

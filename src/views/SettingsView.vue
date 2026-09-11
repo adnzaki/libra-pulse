@@ -253,7 +253,7 @@
           <input 
             v-model="testRecipientEmail" 
             type="email" 
-            placeholder="Masukkan email penerima tes (misal: azzackey@gmail.com)"
+            placeholder="Masukkan email penerima tes (misal: admin@sdnpengasinan7.sch.id)"
             class="flex-1 px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
           />
           <button 
