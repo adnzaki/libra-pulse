@@ -322,15 +322,65 @@
               </div>
             </div>
 
-            <div>
-              <label class="block font-bold text-slate-700 mb-1">Kata Sandi (Untuk Login) *</label>
-              <input 
-                v-model="registerForm.password" 
-                type="password" 
-                required 
-                placeholder="Buat kata sandi minimal 4 karakter"
-                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-slate-800 text-xs"
-              />
+            <!-- Password & Confirm Password Section -->
+            <div class="space-y-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
+              <div class="flex items-center justify-between">
+                <label class="block font-bold text-slate-800 text-xs">Kata Sandi Akun *</label>
+                <span class="text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                  Min. 6 Karakter
+                </span>
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Kata Sandi (Untuk Login) *</label>
+                <div class="relative">
+                  <input 
+                    v-model="registerForm.password" 
+                    :type="showRegisterPassword ? 'text' : 'password'" 
+                    required 
+                    minlength="6"
+                    placeholder="Buat kata sandi minimal 6 karakter"
+                    class="w-full pl-9 pr-9 py-2.5 rounded-xl border border-slate-200 bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-slate-800 text-xs transition"
+                  />
+                  <Lock class="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                  <button 
+                    type="button" 
+                    @click="showRegisterPassword = !showRegisterPassword"
+                    class="absolute right-2.5 top-2.5 p-0.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    tabindex="-1"
+                  >
+                    <Eye v-if="!showRegisterPassword" class="w-4 h-4" />
+                    <EyeOff v-else class="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Konfirmasi Kata Sandi *</label>
+                <div class="relative">
+                  <input 
+                    v-model="registerForm.confirmPassword" 
+                    :type="showRegisterPassword ? 'text' : 'password'" 
+                    required 
+                    minlength="6"
+                    placeholder="Ulangi kata sandi di atas"
+                    class="w-full pl-9 pr-9 py-2.5 rounded-xl border border-slate-200 bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-slate-800 text-xs transition"
+                  />
+                  <KeyRound class="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                </div>
+              </div>
+
+              <div v-if="registerForm.password || registerForm.confirmPassword" class="text-[10px] space-y-1 pt-1">
+                <div v-if="registerForm.password.length < 6" class="text-rose-500 flex items-center gap-1 font-medium">
+                  <AlertCircle class="w-3 h-3" /> Kata sandi minimal 6 karakter (saat ini: {{ registerForm.password.length }})
+                </div>
+                <div v-else-if="registerForm.confirmPassword && registerForm.password !== registerForm.confirmPassword" class="text-rose-500 flex items-center gap-1 font-medium">
+                  <AlertCircle class="w-3 h-3" /> Konfirmasi kata sandi tidak cocok
+                </div>
+                <div v-else-if="registerForm.password && registerForm.password === registerForm.confirmPassword" class="text-emerald-600 flex items-center gap-1 font-medium">
+                  <Check class="w-3 h-3 text-emerald-600" /> Kata sandi cocok dan memenuhi syarat
+                </div>
+              </div>
             </div>
 
             <div>
@@ -527,6 +577,7 @@ const isLoading = ref(false);
 const errorMsg = ref('');
 const successMsg = ref('');
 const showPassword = ref(false);
+const showRegisterPassword = ref(false);
 const isChangePasswordOpen = ref(false);
 
 const resetStep = ref<1 | 2>(1);
@@ -547,6 +598,7 @@ const registerForm = ref({
   email: '',
   phone: '',
   password: '',
+  confirmPassword: '',
   address: ''
 });
 
@@ -664,6 +716,17 @@ const handleGoogleSignIn = async () => {
 
 const handleRegister = async () => {
   if (!registerForm.value.name || !registerForm.value.email || !registerForm.value.phone) return;
+  
+  if (!registerForm.value.password || registerForm.value.password.length < 6) {
+    errorMsg.value = 'Kata sandi minimal 6 karakter.';
+    return;
+  }
+
+  if (registerForm.value.password !== registerForm.value.confirmPassword) {
+    errorMsg.value = 'Konfirmasi kata sandi tidak cocok. Pastikan kedua kolom sama.';
+    return;
+  }
+
   isLoading.value = true;
   errorMsg.value = '';
 

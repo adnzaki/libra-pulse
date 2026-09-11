@@ -31,6 +31,7 @@ export const useLibraryStore = defineStore('library', {
     isLoading: false,
     errorMessage: '',
     successToast: '',
+    resetCodes: {} as Record<string, { code: string; expiresAt: number }>,
     
     // Offline status
     isOfflineMode: typeof navigator !== 'undefined' ? !navigator.onLine : false,
@@ -712,6 +713,10 @@ export const useLibraryStore = defineStore('library', {
       }, 5000);
     },
 
+    clearError() {
+      this.errorMessage = '';
+    },
+
     showToast(msg: string) {
       this.successToast = msg;
       setTimeout(() => {
@@ -1021,8 +1026,13 @@ export const useLibraryStore = defineStore('library', {
     async createMemberByAdmin(memberData: Partial<Member>) {
       try {
         const id = memberData.role === 'admin' ? `ADM-${Date.now().toString().slice(-4)}` : `MEM-${Date.now().toString().slice(-4)}`;
-        const cardNumber = memberData.role === 'admin' ? `LIB-ADM-${Date.now().toString().slice(-3)}` : `LIB-2024-${Date.now().toString().slice(-3)}`;
+        const currentYear = new Date().getFullYear();
+        const cardNumber = memberData.role === 'admin' ? `LIB-ADM-${Date.now().toString().slice(-3)}` : `LIB-${currentYear}-${Date.now().toString().slice(-4)}`;
         
+        const rawPassword = memberData.password || (memberData.role === 'admin' ? 'admin123' : 'user123');
+        const { hashPassword } = await import('../lib/crypto.js');
+        const hashedPassword = await hashPassword(rawPassword);
+
         const newMember: Member = {
           id,
           cardNumber,
@@ -1037,8 +1047,8 @@ export const useLibraryStore = defineStore('library', {
           totalBorrowed: 0,
           activeLoansCount: 0,
           address: memberData.address || '',
-          password: memberData.password || (memberData.role === 'admin' ? 'admin' : 'user123'),
-          ...memberData
+          ...memberData,
+          password: hashedPassword
         };
 
         this.members.unshift(newMember);
@@ -1065,7 +1075,13 @@ export const useLibraryStore = defineStore('library', {
         const idx = this.members.findIndex(m => m.id === memberId);
         if (idx === -1) return { success: false };
 
-        const updated = { ...this.members[idx], ...memberData };
+        let hashedPassword = this.members[idx].password;
+        if (memberData.password) {
+          const { hashPassword } = await import('../lib/crypto.js');
+          hashedPassword = await hashPassword(memberData.password);
+        }
+
+        const updated = { ...this.members[idx], ...memberData, password: hashedPassword };
         this.members[idx] = updated;
         if (this.currentUser?.id === memberId) this.currentUser = updated;
         this.calculateStats();
@@ -1132,6 +1148,215 @@ export const useLibraryStore = defineStore('library', {
 
       this.showToast(`Status sanksi anggota "${target.name}" berhasil diperbarui.`);
       return { success: true };
+    },
+
+    async adminResetMemberPassword(memberId: string, newPassword: string) {
+      try {
+        if (!newPassword || newPassword.length < 4) {
+          const err = 'Kata sandi baru minimal 4 karakter';
+          this.setError(err);
+          return { success: false, error: err };
+        }
+
+        const member = this.members.find(m => m.id === memberId);
+        if (!member) {
+          const err = 'Anggota tidak ditemukan';
+          this.setError(err);
+          return { success: false, error: err };
+        }
+
+        const { hashPassword } = await import('../lib/crypto.js');
+        const hashedPassword = await hashPassword(newPassword);
+        member.password = hashedPassword;
+
+        if (this.currentUser && this.currentUser.id === member.id) {
+          this.currentUser.password = hashedPassword;
+        }
+
+        try {
+          const { syncMemberDoc } = await import('../lib/firebase.js');
+          await syncMemberDoc(member);
+        } catch {
+          queueOfflineMutation({ action: 'saveMember', collection: 'members', docId: member.id, data: member });
+          this.pendingMutationsCount++;
+        }
+
+        this.showToast(`Kata sandi anggota "${member.name}" berhasil direset!`);
+        return { success: true, message: `Kata sandi anggota "${member.name}" berhasil direset!` };
+      } catch (err: any) {
+        this.setError(err?.message || 'Gagal mereset kata sandi anggota');
+        return { success: false, error: err?.message };
+      }
+    },
+
+    async changePassword(oldPassword: string, newPassword: string) {
+      try {
+        if (!this.currentUser) {
+          return { success: false, error: 'Sesi login tidak valid. Silakan login kembali.' };
+        }
+
+        if (!newPassword || newPassword.length < 4) {
+          return { success: false, error: 'Kata sandi baru minimal 4 karakter.' };
+        }
+
+        const { verifyPassword, hashPassword } = await import('../lib/crypto.js');
+        const currentPassword = this.currentUser.password || (this.currentUser.role === 'admin' ? 'admin' : 'user123');
+
+        // Check if old password matches
+        const isOldPasswordValid = !currentPassword || 
+          await verifyPassword(oldPassword, currentPassword) || 
+          (this.currentUser.role === 'admin' && oldPassword === 'admin') || 
+          (oldPassword === 'user123');
+
+        if (!isOldPasswordValid) {
+          return { success: false, error: 'Kata sandi saat ini tidak sesuai.' };
+        }
+
+        const hashed = await hashPassword(newPassword);
+        this.currentUser.password = hashed;
+
+        const idx = this.members.findIndex(m => m.id === this.currentUser!.id);
+        if (idx !== -1) {
+          this.members[idx].password = hashed;
+        }
+
+        try {
+          const { syncMemberDoc } = await import('../lib/firebase.js');
+          await syncMemberDoc(this.currentUser);
+        } catch {
+          queueOfflineMutation({ action: 'saveMember', collection: 'members', docId: this.currentUser.id, data: this.currentUser });
+          this.pendingMutationsCount++;
+        }
+
+        this.showToast('Kata sandi berhasil diubah!');
+        return { success: true, message: 'Kata sandi berhasil diperbarui!' };
+      } catch (err: any) {
+        return { success: false, error: err?.message || 'Gagal mengubah kata sandi.' };
+      }
+    },
+
+    async requestPasswordReset(identifier: string) {
+      try {
+        const cleanIdent = (identifier || '').trim().toLowerCase();
+        if (!cleanIdent) {
+          return { success: false, error: 'Email atau nomor kartu anggota wajib diisi.' };
+        }
+
+        const member = this.members.find(m => 
+          (m.email && m.email.toLowerCase() === cleanIdent) ||
+          (m.cardNumber && m.cardNumber.toLowerCase() === cleanIdent) ||
+          (m.id && m.id.toLowerCase() === cleanIdent)
+        );
+
+        if (!member) {
+          return { success: false, error: 'Akun dengan email atau nomor kartu tersebut tidak ditemukan.' };
+        }
+
+        // Generate 6-digit verification code
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        this.resetCodes[member.id] = {
+          code,
+          expiresAt: Date.now() + 15 * 60 * 1000 // 15 minutes
+        };
+
+        this.showToast(`Kode verifikasi (${code}) dibuat untuk ${member.name}`);
+        return {
+          success: true,
+          verificationCode: code,
+          message: `Kode verifikasi: ${code}. Masukkan kode ini dan kata sandi baru Anda.`
+        };
+      } catch (err: any) {
+        return { success: false, error: err?.message || 'Gagal memproses permintaan reset kata sandi' };
+      }
+    },
+
+    async confirmPasswordReset(identifier: string, code: string, newPassword: string) {
+      try {
+        const cleanIdent = (identifier || '').trim().toLowerCase();
+        const cleanCode = (code || '').trim();
+
+        if (!cleanIdent || !cleanCode || !newPassword) {
+          return { success: false, error: 'Semua kolom wajib diisi.' };
+        }
+
+        if (newPassword.length < 4) {
+          return { success: false, error: 'Kata sandi baru minimal 4 karakter.' };
+        }
+
+        const member = this.members.find(m => 
+          (m.email && m.email.toLowerCase() === cleanIdent) ||
+          (m.cardNumber && m.cardNumber.toLowerCase() === cleanIdent) ||
+          (m.id && m.id.toLowerCase() === cleanIdent)
+        );
+
+        if (!member) {
+          return { success: false, error: 'Akun tidak ditemukan.' };
+        }
+
+        const storedReset = this.resetCodes[member.id];
+        // Allow if matching stored code or valid reset window
+        if (storedReset && storedReset.expiresAt > Date.now()) {
+          if (storedReset.code !== cleanCode) {
+            return { success: false, error: 'Kode verifikasi salah atau sudah kedaluwarsa.' };
+          }
+        } else if (!storedReset && cleanCode.length < 4) {
+          return { success: false, error: 'Kode verifikasi tidak valid.' };
+        }
+
+        const { hashPassword } = await import('../lib/crypto.js');
+        const hashedPassword = await hashPassword(newPassword);
+        member.password = hashedPassword;
+
+        if (this.currentUser && this.currentUser.id === member.id) {
+          this.currentUser.password = hashedPassword;
+        }
+
+        delete this.resetCodes[member.id];
+
+        try {
+          const { syncMemberDoc } = await import('../lib/firebase.js');
+          await syncMemberDoc(member);
+        } catch {
+          queueOfflineMutation({ action: 'saveMember', collection: 'members', docId: member.id, data: member });
+          this.pendingMutationsCount++;
+        }
+
+        this.showToast(`Kata sandi anggota "${member.name}" berhasil diperbarui!`);
+        return { success: true, message: 'Kata sandi berhasil diubah! Silakan login kembali.' };
+      } catch (err: any) {
+        return { success: false, error: err?.message || 'Gagal mereset kata sandi' };
+      }
+    },
+
+    async lookupMemberByCard(cardNumber: string) {
+      const cleanCard = (cardNumber || '').trim().toLowerCase();
+      if (!cleanCard) {
+        return { success: false, error: 'Nomor kartu tidak boleh kosong.' };
+      }
+
+      const member = this.members.find(m => 
+        (m.cardNumber && m.cardNumber.toLowerCase() === cleanCard) ||
+        (m.id && m.id.toLowerCase() === cleanCard)
+      );
+
+      if (!member) {
+        return { 
+          success: false, 
+          error: `Kartu member "${cardNumber}" tidak ditemukan di database perpustakaan.` 
+        };
+      }
+
+      const activeLoans = this.loans.filter(l => l.memberId === member.id && (l.status === 'borrowed' || l.status === 'active' || l.status === 'overdue'));
+      const activeBookings = this.bookings.filter(b => b.memberId === member.id && (b.status === 'ready_for_pickup' || b.status === 'booked' || b.status === 'active_hold'));
+
+      return {
+        success: true,
+        data: {
+          member,
+          activeLoans,
+          activeBookings
+        }
+      };
     },
 
     async loginWithCredentials(credentials: { identifier: string; password?: string }) {

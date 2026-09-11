@@ -162,6 +162,31 @@
                 />
               </div>
             </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Kata Sandi (Min. 6) *</label>
+                <input 
+                  v-model="regForm.password" 
+                  @input="modalError = ''"
+                  type="password" 
+                  minlength="6"
+                  placeholder="Min. 6 karakter" 
+                  class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 font-medium" 
+                />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Konfirmasi Kata Sandi *</label>
+                <input 
+                  v-model="regForm.confirmPassword" 
+                  @input="modalError = ''"
+                  type="password" 
+                  minlength="6"
+                  placeholder="Ulangi sandi" 
+                  class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 font-medium" 
+                />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -256,7 +281,9 @@ let html5QrScanner: Html5Qrcode | null = null;
 const regForm = ref({
   name: '',
   email: '',
-  phone: ''
+  phone: '',
+  password: '',
+  confirmPassword: ''
 });
 
 const isTargetMemberBlocked = computed(() => {
@@ -376,6 +403,14 @@ const handleSubmitBooking = async () => {
   } else if (authMode.value === 'register') {
     if (!regForm.value.name.trim() || !regForm.value.email.trim() || !regForm.value.phone.trim()) {
       modalError.value = 'Silakan lengkapi nama, email, dan nomor HP untuk pendaftaran member baru.';
+      return;
+    }
+    if (!regForm.value.password || regForm.value.password.length < 6) {
+      modalError.value = 'Kata sandi minimal 6 karakter.';
+      return;
+    }
+    if (regForm.value.password !== regForm.value.confirmPassword) {
+      modalError.value = 'Konfirmasi kata sandi tidak cocok.';
       return;
     }
     isSubmitting.value = true;

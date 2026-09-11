@@ -191,6 +191,118 @@
           ></textarea>
         </div>
 
+        <!-- Section: Kata Sandi Akun & Konfirmasi -->
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <KeyRound class="w-4 h-4 text-blue-600" />
+              <label class="block font-bold text-slate-800 text-xs">
+                {{ member ? 'Ganti Kata Sandi Akun (Opsional)' : 'Kata Sandi Akun Anggota *' }}
+              </label>
+            </div>
+            <span class="text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+              Min. 6 Karakter
+            </span>
+          </div>
+
+          <p class="text-[11px] text-slate-500">
+            {{ member ? 'Biarkan kosong jika tidak ingin mengubah kata sandi akun anggota ini.' : 'Kata sandi akan digunakan oleh anggota untuk login ke portal web atau kartu digital.' }}
+          </p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- Input Password -->
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-700 mb-1">
+                {{ member ? 'Kata Sandi Baru' : 'Kata Sandi *' }}
+              </label>
+              <div class="relative">
+                <input 
+                  v-model="form.password" 
+                  :type="showPassword ? 'text' : 'password'" 
+                  :required="!member"
+                  minlength="6"
+                  placeholder="Minimal 6 karakter"
+                  class="w-full pl-9 pr-9 py-2.5 rounded-xl border bg-white focus:ring-2 outline-none text-slate-800 text-xs transition"
+                  :class="passwordError && (!member || form.password) ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-100' : 'border-slate-200 focus:border-blue-500 focus:ring-blue-100'"
+                />
+                <Lock class="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <button 
+                  type="button" 
+                  @click="showPassword = !showPassword"
+                  class="absolute right-2.5 top-2.5 p-0.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  tabindex="-1"
+                >
+                  <Eye v-if="!showPassword" class="w-4 h-4" />
+                  <EyeOff v-else class="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <!-- Input Konfirmasi Password -->
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-700 mb-1">
+                Konfirmasi Kata Sandi {{ !member ? '*' : '' }}
+              </label>
+              <div class="relative">
+                <input 
+                  v-model="form.confirmPassword" 
+                  :type="showConfirmPassword ? 'text' : 'password'" 
+                  :required="!member || !!form.password"
+                  minlength="6"
+                  placeholder="Ulangi kata sandi"
+                  class="w-full pl-9 pr-9 py-2.5 rounded-xl border bg-white focus:ring-2 outline-none text-slate-800 text-xs transition"
+                  :class="passwordError && (!member || form.password) ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-100' : 'border-slate-200 focus:border-blue-500 focus:ring-blue-100'"
+                />
+                <KeyRound class="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <button 
+                  type="button" 
+                  @click="showConfirmPassword = !showConfirmPassword"
+                  class="absolute right-2.5 top-2.5 p-0.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  tabindex="-1"
+                >
+                  <Eye v-if="!showConfirmPassword" class="w-4 h-4" />
+                  <EyeOff v-else class="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Indikator Validasi & Kekuatan Kata Sandi -->
+          <div v-if="form.password || form.confirmPassword || passwordError" class="space-y-1.5 pt-1">
+            <div v-if="passwordError" class="text-[11px] text-rose-600 flex items-center gap-1.5 font-semibold bg-rose-50 p-2 rounded-xl border border-rose-100">
+              <AlertCircle class="w-3.5 h-3.5 shrink-0" />
+              <span>{{ passwordError }}</span>
+            </div>
+
+            <div v-else-if="form.password && form.confirmPassword && form.password === form.confirmPassword && form.password.length >= 6" class="text-[11px] text-emerald-700 flex items-center gap-1.5 font-semibold bg-emerald-50 p-2 rounded-xl border border-emerald-100">
+              <CheckCircle2 class="w-3.5 h-3.5 shrink-0 text-emerald-600" />
+              <span>Kata sandi cocok dan memenuhi syarat ({{ form.password.length }} karakter)</span>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 text-[10px] text-slate-500 pt-0.5">
+              <span class="inline-flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full" :class="form.password.length >= 6 ? 'bg-emerald-500' : 'bg-slate-300'"></span>
+                Min. 6 karakter
+              </span>
+              <span>•</span>
+              <span class="inline-flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full" :class="/[0-9]/.test(form.password) ? 'bg-emerald-500' : 'bg-slate-300'"></span>
+                Ada angka
+              </span>
+              <span>•</span>
+              <span class="inline-flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full" :class="/[a-zA-Z]/.test(form.password) ? 'bg-emerald-500' : 'bg-slate-300'"></span>
+                Ada huruf
+              </span>
+              <span>•</span>
+              <span class="inline-flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full" :class="form.password && form.confirmPassword && form.password === form.confirmPassword ? 'bg-emerald-500' : 'bg-slate-300'"></span>
+                Konfirmasi cocok
+              </span>
+            </div>
+          </div>
+        </div>
+
         <!-- Info Card -->
         <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-2.5 text-[11px] text-slate-600">
           <QrCode class="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
@@ -225,7 +337,10 @@
 import { ref, watch } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import type { Member } from '../types.js';
-import { UserPlus, UserCheck, X, Check, QrCode, Upload, Loader2 } from 'lucide-vue-next';
+import { 
+  UserPlus, UserCheck, X, Check, QrCode, Upload, Loader2,
+  Lock, KeyRound, Eye, EyeOff, AlertCircle, CheckCircle2 
+} from 'lucide-vue-next';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -240,6 +355,10 @@ const store = useLibraryStore();
 const isSubmitting = ref(false);
 const isUploadingAvatar = ref(false);
 
+const showPassword = ref(false);
+const showConfirmPassword = ref(false);
+const passwordError = ref('');
+
 const form = ref({
   name: '',
   email: '',
@@ -247,10 +366,16 @@ const form = ref({
   role: 'member' as 'admin' | 'member',
   memberType: 'siswa' as 'guru' | 'siswa',
   avatar: '',
-  address: ''
+  address: '',
+  password: '',
+  confirmPassword: ''
 });
 
 watch(() => props.member, (newVal) => {
+  passwordError.value = '';
+  showPassword.value = false;
+  showConfirmPassword.value = false;
+
   if (newVal) {
     form.value = {
       name: newVal.name,
@@ -259,7 +384,9 @@ watch(() => props.member, (newVal) => {
       role: newVal.role,
       memberType: newVal.memberType || 'siswa',
       avatar: newVal.avatar || '',
-      address: newVal.address || ''
+      address: newVal.address || '',
+      password: '',
+      confirmPassword: ''
     };
   } else {
     form.value = {
@@ -269,7 +396,9 @@ watch(() => props.member, (newVal) => {
       role: 'member',
       memberType: 'siswa',
       avatar: '',
-      address: ''
+      address: '',
+      password: '',
+      confirmPassword: ''
     };
   }
 }, { immediate: true });
@@ -309,13 +438,56 @@ async function handleAvatarFileSelect(e: Event) {
 
 const handleSubmit = async () => {
   if (!form.value.name || !form.value.email || !form.value.phone) return;
+
+  passwordError.value = '';
+
+  // Validasi password untuk anggota baru
+  if (!props.member) {
+    if (!form.value.password) {
+      passwordError.value = 'Kata sandi wajib diisi untuk pendaftaran anggota baru.';
+      return;
+    }
+    if (form.value.password.length < 6) {
+      passwordError.value = 'Kata sandi minimal 6 karakter.';
+      return;
+    }
+    if (form.value.password !== form.value.confirmPassword) {
+      passwordError.value = 'Konfirmasi kata sandi tidak cocok. Pastikan kedua kolom sama.';
+      return;
+    }
+  } else if (form.value.password) {
+    // Validasi jika admin mengganti password saat edit data anggota
+    if (form.value.password.length < 6) {
+      passwordError.value = 'Kata sandi baru minimal 6 karakter.';
+      return;
+    }
+    if (form.value.password !== form.value.confirmPassword) {
+      passwordError.value = 'Konfirmasi kata sandi baru tidak cocok.';
+      return;
+    }
+  }
+
   isSubmitting.value = true;
 
   try {
+    const payload: any = {
+      name: form.value.name.trim(),
+      email: form.value.email.trim(),
+      phone: form.value.phone.trim(),
+      role: form.value.role,
+      memberType: form.value.memberType,
+      avatar: form.value.avatar,
+      address: form.value.address
+    };
+
+    if (form.value.password) {
+      payload.password = form.value.password;
+    }
+
     if (props.member) {
-      await store.updateMember(props.member.id, form.value);
+      await store.updateMember(props.member.id, payload);
     } else {
-      await store.createMemberByAdmin(form.value);
+      await store.createMemberByAdmin(payload);
     }
     emit('close');
   } finally {
