@@ -70,15 +70,23 @@
             <ShieldAlert v-if="isMemberBlocked" class="w-4 h-4 text-rose-600 shrink-0" />
             <CheckCircle v-else class="w-4 h-4 text-emerald-600 shrink-0" />
             <div>
-              <span class="font-bold">Status Member:</span>
-              <span class="ml-1 font-semibold" :class="isMemberBlocked ? 'text-rose-700' : 'text-emerald-700'">
-                {{ isMemberBlocked ? 'TERKENA SANKSI / SUSPEND' : 'Aktif (Dapat Meminjam)' }}
-              </span>
+              <div class="flex items-center gap-2">
+                <span class="font-bold">Status Member:</span>
+                <span class="font-semibold" :class="isMemberBlocked ? 'text-rose-700' : 'text-emerald-700'">
+                  {{ isMemberBlocked ? 'TERKENA SANKSI / SUSPEND' : 'Aktif (Dapat Meminjam)' }}
+                </span>
+                <span class="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase" :class="isGuru ? 'bg-indigo-100 text-indigo-800' : 'bg-blue-100 text-blue-800'">
+                  {{ isGuru ? '👨‍🏫 Guru (Maks 14 Hari)' : '🎒 Siswa (Maks 7 Hari)' }}
+                </span>
+              </div>
               <div v-if="matchedMember.isSuspended" class="text-[11px] text-rose-600 mt-0.5">
                 Alasan: {{ matchedMember.suspendReason || 'Keterlambatan pengembalian' }}
               </div>
-              <div v-if="overdueLoansCount > 0" class="text-[11px] text-rose-600 mt-0.5 font-bold">
+              <div v-if="overdueLoansCount > 0 && !isGuru" class="text-[11px] text-rose-600 mt-0.5 font-bold">
                 ⚠️ Memiliki {{ overdueLoansCount }} buku pinjaman yang sedang terlambat!
+              </div>
+              <div v-if="isGuru && overdueLoansCount > 0" class="text-[11px] text-amber-700 mt-0.5">
+                ℹ️ Memiliki {{ overdueLoansCount }} buku melewati tenggat, namun bebas penalti suspend (Fasilitas Khusus Guru).
               </div>
             </div>
           </div>
@@ -92,12 +100,12 @@
 
         <!-- Form: Duration & Officer -->
         <div class="space-y-4">
-          <!-- Loan Duration (1-7 days, default 3) -->
+          <!-- Loan Duration (1-14 days for teacher, 1-7 for student) -->
           <div>
             <div class="flex items-center justify-between mb-1.5">
               <label class="font-bold text-xs sm:text-sm text-slate-800 flex items-center gap-1.5">
                 <Clock class="w-4 h-4 text-blue-600" />
-                Durasi Peminjaman (1 - 7 Hari)
+                Durasi Peminjaman (1 - {{ maxLoanDays }} Hari)
               </label>
               <span class="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg">
                 {{ loanDays }} Hari
@@ -109,24 +117,24 @@
                 v-model.number="loanDays"
                 type="number"
                 min="1"
-                max="7"
+                :max="maxLoanDays"
                 class="w-24 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-center font-bold text-slate-900 text-sm focus:outline-none focus:border-blue-500"
               />
               <div class="flex flex-wrap items-center gap-1.5 flex-1">
                 <button 
-                  v-for="d in [1, 2, 3, 5, 7]" 
+                  v-for="d in quickOptions" 
                   :key="d" 
                   type="button"
                   @click="loanDays = d"
                   class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer"
                   :class="loanDays === d ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'"
                 >
-                  {{ d }} Hari{{ d === 3 ? ' (Default)' : '' }}
+                  {{ d }} Hari{{ (isGuru ? d === 14 : d === 3) ? ' (Rekomendasi)' : '' }}
                 </button>
               </div>
             </div>
-            <p class="text-[11px] text-slate-400 mt-1.5">
-              Batas regulasi sirkulasi perpustakaan adalah 1 hingga maksimal 7 hari pinjam.
+            <p class="text-[11px] text-slate-500 mt-1.5">
+              {{ isGuru ? 'Benefit Guru: Diizinkan durasi peminjaman hingga maksimal 14 hari.' : 'Batas regulasi sirkulasi siswa adalah 1 hingga maksimal 7 hari pinjam.' }}
             </p>
           </div>
 
@@ -170,7 +178,7 @@
         <button 
           type="button" 
           @click="handleConfirmCollection"
-          :disabled="isSubmitting || isMemberBlocked || loanDays < 1 || loanDays > 7"
+          :disabled="isSubmitting || isMemberBlocked || loanDays < 1 || loanDays > maxLoanDays"
           class="px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
         >
           <CheckCircle class="w-4 h-4" />
@@ -197,7 +205,7 @@ const props = defineProps<{
 const emit = defineEmits(['close', 'collected']);
 
 const store = useLibraryStore();
-const loanDays = ref(3); // Default 3 hari sesuai instruksi
+const loanDays = ref(3); // Default 3 hari untuk siswa, 14 untuk guru
 const handledBy = ref('Admin Sirkulasi');
 const isSubmitting = ref(false);
 const modalError = ref('');
@@ -212,6 +220,10 @@ const matchedMember = computed<Member | null>(() => {
   ) || null;
 });
 
+const isGuru = computed(() => matchedMember.value?.memberType === 'guru');
+const maxLoanDays = computed(() => isGuru.value ? 14 : 7);
+const quickOptions = computed(() => isGuru.value ? [1, 3, 7, 10, 14] : [1, 2, 3, 5, 7]);
+
 const overdueLoansCount = computed(() => {
   if (!matchedMember.value) return 0;
   const memId = matchedMember.value.id;
@@ -223,12 +235,13 @@ const overdueLoansCount = computed(() => {
 
 const isMemberBlocked = computed(() => {
   if (matchedMember.value?.isSuspended) return true;
-  if (overdueLoansCount.value > 0) return true;
+  // Guru dikecualikan dari sanksi blokir keterlambatan
+  if (!isGuru.value && overdueLoansCount.value > 0) return true;
   return false;
 });
 
 const calculatedDueDate = computed(() => {
-  const days = Math.min(7, Math.max(1, Number(loanDays.value) || 3));
+  const days = Math.min(maxLoanDays.value, Math.max(1, Number(loanDays.value) || (isGuru.value ? 14 : 3)));
   const date = new Date();
   date.setDate(date.getDate() + days);
   return date;
@@ -260,8 +273,8 @@ const handleConfirmCollection = async () => {
   if (!props.booking) return;
   modalError.value = '';
 
-  if (loanDays.value < 1 || loanDays.value > 7) {
-    modalError.value = 'Durasi peminjaman harus antara 1 sampai 7 hari.';
+  if (loanDays.value < 1 || loanDays.value > maxLoanDays.value) {
+    modalError.value = `Durasi peminjaman untuk ${isGuru.value ? 'Guru' : 'Siswa'} harus antara 1 sampai ${maxLoanDays.value} hari.`;
     return;
   }
 
@@ -298,7 +311,7 @@ const handleConfirmCollection = async () => {
 
 watch(() => props.isOpen, (newVal) => {
   if (newVal) {
-    loanDays.value = 3; // Reset to default 3 days
+    loanDays.value = isGuru.value ? 14 : 3;
     handledBy.value = 'Admin Sirkulasi';
     modalError.value = '';
   }

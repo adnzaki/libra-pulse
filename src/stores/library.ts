@@ -233,14 +233,34 @@ export const useLibraryStore = defineStore('library', {
         const hasOverdue = overdueMemberKeys.has(member.id) ||
                            overdueMemberKeys.has(member.cardNumber) ||
                            (member.email && overdueMemberKeys.has(member.email.toLowerCase().trim()));
+        const isGuru = member.memberType === 'guru';
 
-        if (hasOverdue && autoSuspendEnabled) {
+        // Akun guru berhak atas benefit bebas auto-suspend jika terlambat
+        if (hasOverdue && autoSuspendEnabled && !isGuru) {
           member.isSuspended = true;
           if (!member.suspendReason) {
             const worstLoan = this.loans.find(l => l.status === 'overdue' && (l.memberId === member.id || l.memberCardNumber === member.cardNumber));
             member.suspendReason = worstLoan
               ? `Keterlambatan pengembalian buku "${worstLoan.bookTitle}" (Jatuh tempo: ${worstLoan.dueDate}, telat ${worstLoan.daysOverdue} hari)`
               : 'Sanksi Keterlambatan Pengembalian Buku';
+          }
+        } else if (isGuru && member.isSuspended) {
+          // Bebaskan guru dari suspend keterlambatan
+          const reason = (member.suspendReason || '').toLowerCase();
+          const isOverdueSuspension = !reason ||
+            reason.includes('keterlambatan') ||
+            reason.includes('sanksi') ||
+            reason.includes('jatuh tempo') ||
+            reason.includes('telat') ||
+            reason.includes('buku');
+
+          if (isOverdueSuspension) {
+            member.isSuspended = false;
+            member.suspendReason = '';
+            member.suspendedUntil = null;
+            if (this.currentUser && (this.currentUser.id === member.id || this.currentUser.cardNumber === member.cardNumber)) {
+              this.currentUser = { ...member };
+            }
           }
         } else if (!hasOverdue && member.isSuspended) {
           // If suspension was triggered by overdue loans, auto-restore
@@ -365,8 +385,10 @@ export const useLibraryStore = defineStore('library', {
           const isOverdue = overdueMemberIds.has(member.id) || 
                             overdueMemberCardNumbers.has(member.cardNumber) ||
                             (member.email && overdueMemberEmails.has(member.email.toLowerCase().trim()));
+          const isGuru = member.memberType === 'guru';
 
-          if (isOverdue && autoSuspendEnabled) {
+          // Akun berstatus Guru bebas dari sanksi auto-suspend jika terlambat
+          if (isOverdue && autoSuspendEnabled && !isGuru) {
             let memberChanged = false;
 
             if (!member.isSuspended) {
@@ -396,6 +418,25 @@ export const useLibraryStore = defineStore('library', {
             }
 
             if (memberChanged) {
+              modifiedMembers.push(member);
+              if (this.currentUser && (this.currentUser.id === member.id || this.currentUser.cardNumber === member.cardNumber)) {
+                this.currentUser = { ...member };
+              }
+            }
+          } else if (isGuru && member.isSuspended) {
+            // Guru berhak mendapatkan proteksi bebas auto-suspend; lepaskan suspend akibat keterlambatan jika ada
+            const reason = (member.suspendReason || '').toLowerCase();
+            const isOverdueSuspension = !reason ||
+              reason.includes('keterlambatan') ||
+              reason.includes('sanksi') ||
+              reason.includes('jatuh tempo') ||
+              reason.includes('telat') ||
+              reason.includes('buku');
+
+            if (isOverdueSuspension) {
+              member.isSuspended = false;
+              member.suspendReason = '';
+              member.suspendedUntil = null;
               modifiedMembers.push(member);
               if (this.currentUser && (this.currentUser.id === member.id || this.currentUser.cardNumber === member.cardNumber)) {
                 this.currentUser = { ...member };
@@ -1382,11 +1423,31 @@ export const useLibraryStore = defineStore('library', {
           throw new Error(`Booking ditolak: Akun Anda (${member.name}) sedang berstatus DISUSPEND. ${member.suspendReason || ''}`);
         }
 
+        const isGuru = member.memberType === 'guru';
+
+        // Pengecekan keterlambatan untuk siswa (guru dikecualikan dari pemblokiran auto)
         const memOverdue = this.loans.filter(
           l => (l.memberId === member?.id || l.memberCardNumber === member?.cardNumber) && l.status === 'overdue'
         );
-        if (memOverdue.length > 0) {
+        if (memOverdue.length > 0 && !isGuru) {
           throw new Error(`Booking ditolak: Anda memiliki ${memOverdue.length} buku pinjaman yang terlambat dikembalikan. Silakan kembalikan buku terlebih dahulu.`);
+        }
+
+        // Pengecekan limit maksimal kuota pinjam & booking: Siswa 3 buku, Guru 6 buku
+        const maxQuota = isGuru ? 6 : 3;
+        const activeLoansCount = this.loans.filter(
+          l => (l.memberId === member?.id || l.memberCardNumber === member?.cardNumber) && (l.status === 'active' || l.status === 'overdue')
+        ).length;
+        const activeBookingsCount = this.bookings.filter(
+          b => (b.memberId === member?.id || b.memberCardNumber === member?.cardNumber) && b.status === 'active_hold'
+        ).length;
+        const totalActive = activeLoansCount + activeBookingsCount;
+
+        if (totalActive >= maxQuota) {
+          const roleTitle = isGuru ? 'Dewan Guru' : 'Siswa';
+          throw new Error(
+            `Booking ditolak: Anda telah mencapai batas maksimal peminjaman buku (${maxQuota} buku untuk ${roleTitle}). Saat ini Anda memiliki ${activeLoansCount} buku pinjaman aktif dan ${activeBookingsCount} buku reservasi/booking aktif. Silakan kembalikan buku sebelumnya terlebih dahulu.`
+          );
         }
 
         const bookingId = `BKG-${Date.now().toString().slice(-6)}`;
@@ -1487,10 +1548,11 @@ export const useLibraryStore = defineStore('library', {
           this.setError(err);
           return { success: false, error: err };
         }
+        const isGuru = member.memberType === 'guru';
         const overdueLoans = this.loans.filter(
           l => (l.memberId === member.id || l.memberCardNumber === member.cardNumber) && l.status === 'overdue'
         );
-        if (overdueLoans.length > 0) {
+        if (overdueLoans.length > 0 && !isGuru) {
           const err = `Penyerahan dibatalkan: Anggota (${member.name}) memiliki ${overdueLoans.length} pinjaman buku yang sudah jatuh tempo/terlambat.`;
           this.setError(err);
           return { success: false, error: err };
@@ -1503,8 +1565,10 @@ export const useLibraryStore = defineStore('library', {
       }
       book.borrowedCopies = (book.borrowedCopies || 0) + 1;
 
-      // loan duration strictly 1-7 days, default 3
-      const loanDays = Math.min(7, Math.max(1, Number(days) || 3));
+      // Durasi peminjaman: Guru hingga 14 hari, Siswa hingga 7 hari
+      const isMemberGuru = member?.memberType === 'guru';
+      const maxDaysAllowed = isMemberGuru ? 14 : 7;
+      const loanDays = Math.min(maxDaysAllowed, Math.max(1, Number(days) || (isMemberGuru ? 14 : 3)));
       const now = new Date();
       const borrowDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       const dueObj = new Date(now.getTime() + loanDays * 86400000);
@@ -1597,16 +1661,37 @@ export const useLibraryStore = defineStore('library', {
         return { success: false, error };
       }
 
+      const isGuru = member.memberType === 'guru';
+
       const overdueLoans = this.loans.filter(
         l => (l.memberId === member?.id || l.memberCardNumber === member?.cardNumber) && l.status === 'overdue'
       );
-      if (overdueLoans.length > 0) {
+      if (overdueLoans.length > 0 && !isGuru) {
         const error = `Peminjaman ditolak: Anggota (${member.name}) memiliki ${overdueLoans.length} pinjaman buku yang sudah jatuh tempo.`;
         this.setError(error);
         return { success: false, error };
       }
 
-      const loanDays = Math.min(7, Math.max(1, Number(days) || 3));
+      // Pengecekan limit kuota pinjaman & booking: Siswa maks 3 buku, Guru maks 6 buku
+      const maxQuota = isGuru ? 6 : 3;
+      const activeLoansCount = this.loans.filter(
+        l => (l.memberId === member?.id || l.memberCardNumber === member?.cardNumber) && (l.status === 'active' || l.status === 'overdue')
+      ).length;
+      const activeBookingsCount = this.bookings.filter(
+        b => (b.memberId === member?.id || b.memberCardNumber === member?.cardNumber) && b.status === 'active_hold'
+      ).length;
+      const totalActive = activeLoansCount + activeBookingsCount;
+
+      if (totalActive >= maxQuota) {
+        const roleTitle = isGuru ? 'Dewan Guru' : 'Siswa';
+        const error = `Peminjaman ditolak: ${roleTitle} (${member.name}) telah mencapai batas maksimal peminjaman (${maxQuota} buku). Saat ini memiliki ${activeLoansCount} pinjaman aktif dan ${activeBookingsCount} reservasi/booking. Tidak dapat meminjam buku lagi sebelum mengembalikan buku sebelumnya.`;
+        this.setError(error);
+        return { success: false, error };
+      }
+
+      // Durasi peminjaman: Guru hingga 14 hari, Siswa hingga 7 hari
+      const maxDaysAllowed = isGuru ? 14 : 7;
+      const loanDays = Math.min(maxDaysAllowed, Math.max(1, Number(days) || (isGuru ? 14 : 3)));
       const now = new Date();
       const borrowDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       const dueObj = new Date(now.getTime() + loanDays * 86400000);

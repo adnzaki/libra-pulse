@@ -218,9 +218,31 @@
                 <p class="text-xs text-emerald-700">Peran Anda diakui sebagai Dewan Guru / Pengajar SDN Pengasinan VII.</p>
               </div>
             </div>
-            <p class="text-xs text-emerald-800 leading-relaxed bg-white/60 p-3 rounded-xl border border-emerald-200/60">
-              Sebagai Guru, Anda akan memiliki akses ke fitur tambahan khusus guru yang akan dirilis <strong>pada versi mendatang.</strong> Terimakasih atas dedikasi dan kontribusi Anda dalam mendukung kegiatan belajar mengajar di SDN Pengasinan VII.
-            </p>
+
+            <!-- Rincian Hak Istimewa Dewan Guru -->
+            <div class="p-3.5 bg-white/80 rounded-2xl border border-emerald-200/80 space-y-2.5">
+              <div class="font-extrabold text-xs text-emerald-950 flex items-center gap-1.5">
+                <Sparkles class="w-4 h-4 text-emerald-600" />
+                <span>Benefit & Fasilitas Khusus Akun Guru:</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                <div class="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-100 text-emerald-950">
+                  <div class="text-[10px] text-emerald-700 font-bold uppercase tracking-wider">Batas Pinjam</div>
+                  <div class="font-extrabold text-sm mt-0.5 text-slate-900">Maksimal 6 Buku</div>
+                  <div class="text-[10px] text-slate-500 mt-0.5">Siswa maks 3 buku</div>
+                </div>
+                <div class="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-100 text-emerald-950">
+                  <div class="text-[10px] text-emerald-700 font-bold uppercase tracking-wider">Durasi Sirkulasi</div>
+                  <div class="font-extrabold text-sm mt-0.5 text-slate-900">Hingga 14 Hari</div>
+                  <div class="text-[10px] text-slate-500 mt-0.5">Siswa hanya 7 hari</div>
+                </div>
+                <div class="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-100 text-emerald-950">
+                  <div class="text-[10px] text-emerald-700 font-bold uppercase tracking-wider">Auto-Suspend</div>
+                  <div class="font-extrabold text-sm mt-0.5 text-emerald-700">Bebas Sanksi</div>
+                  <div class="text-[10px] text-slate-500 mt-0.5">Tidak terkena penangguhan</div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Case B: Sedang Menunggu Verifikasi Admin (Status: Pending) -->
@@ -300,17 +322,21 @@
               </div>
 
               <div class="p-3.5 bg-white rounded-xl border border-indigo-100 space-y-2 text-slate-600 text-[11px] leading-relaxed">
-                <p>Saat mendaftar, akun Anda berstatus default sebagai <strong class="text-blue-600">"Siswa"</strong>. Untuk meningkatkan status menjadi <strong class="text-indigo-600">"Guru"</strong>, diperlukan verifikasi identitas resmi.</p>
-                <!-- <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 font-medium text-slate-700">
-                  <div class="flex items-center gap-2">
-                    <CheckCircle2 class="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span>Masa pinjam buku lebih panjang</span>
+                <p>Saat mendaftar, akun Anda berstatus default sebagai <strong class="text-blue-600">"Siswa"</strong> (kuota maks. 3 buku, pinjam 7 hari). Tingkatkan ke <strong class="text-indigo-600">"Guru"</strong> untuk memperoleh hak istimewa:</p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 font-medium text-slate-700 text-[11px]">
+                  <div class="p-2 rounded-lg bg-indigo-50/60 border border-indigo-100">
+                    <div class="font-bold text-indigo-800">📚 Maks 6 Buku</div>
+                    <div class="text-[10px] text-slate-500">Kuota pinjam 2x lipat</div>
                   </div>
-                  <div class="flex items-center gap-2">
-                    <CheckCircle2 class="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span>Akses koleksi referensi guru</span>
+                  <div class="p-2 rounded-lg bg-indigo-50/60 border border-indigo-100">
+                    <div class="font-bold text-indigo-800">⏱️ Durasi 14 Hari</div>
+                    <div class="text-[10px] text-slate-500">2 minggu masa pinjam</div>
                   </div>
-                </div> -->
+                  <div class="p-2 rounded-lg bg-indigo-50/60 border border-indigo-100">
+                    <div class="font-bold text-emerald-700">🛡️ Bebas Auto-Suspend</div>
+                    <div class="text-[10px] text-slate-500">Bebas sanksi telat</div>
+                  </div>
+                </div>
               </div>
 
               <div class="pt-2">

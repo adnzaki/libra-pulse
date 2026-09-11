@@ -185,6 +185,99 @@
         </div>
       </div>
 
+      <!-- Bento Card: Hak Istimewa & Benefit Status Dewan Guru -->
+      <div 
+        v-if="isGuru" 
+        class="p-6 rounded-3xl bg-gradient-to-br from-indigo-50/80 via-white to-blue-50/40 border border-indigo-200/80 shadow-sm space-y-4 animate-in fade-in duration-200"
+      >
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold shadow-md shadow-indigo-200 shrink-0">
+              <Award class="w-5 h-5" />
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="font-extrabold text-base text-slate-900">Fasilitas Khusus Akun Dewan Guru</h3>
+                <span class="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-bold uppercase tracking-wider">
+                  Hak Istimewa Aktif
+                </span>
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5">
+                Privilese khusus pendidik untuk mendukung pengajaran dan literasi di SDN Pengasinan VII.
+              </p>
+            </div>
+          </div>
+
+          <!-- Quota Indicator Pill -->
+          <div class="px-4 py-2 rounded-2xl bg-white border border-indigo-100 shadow-xs flex items-center gap-2.5 self-start sm:self-auto shrink-0">
+            <div class="text-right">
+              <div class="text-[10px] text-slate-400 font-bold uppercase">Penggunaan Kuota</div>
+              <div class="text-xs font-mono font-extrabold" :class="isQuotaFull ? 'text-amber-600' : 'text-indigo-600'">
+                {{ currentUsedQuota }} / {{ maxQuota }} Buku
+              </div>
+            </div>
+            <div class="w-2.5 h-2.5 rounded-full" :class="isQuotaFull ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'"></div>
+          </div>
+        </div>
+
+        <!-- 3 Pillars of Teacher Privileges -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-xs">
+          <div class="p-3.5 rounded-2xl bg-white border border-indigo-100 shadow-xs space-y-1">
+            <div class="flex items-center gap-2 text-indigo-700 font-bold">
+              <BookOpen class="w-4 h-4 text-indigo-600 shrink-0" />
+              <span>Batas Pinjam 6 Buku</span>
+            </div>
+            <p class="text-[11px] text-slate-600 leading-relaxed">
+              Dapat meminjam dan me-reserve hingga 6 buku sekaligus (Siswa maks. 3 buku).
+            </p>
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-white border border-indigo-100 shadow-xs space-y-1">
+            <div class="flex items-center gap-2 text-indigo-700 font-bold">
+              <Clock class="w-4 h-4 text-indigo-600 shrink-0" />
+              <span>Durasi Pinjam 14 Hari</span>
+            </div>
+            <p class="text-[11px] text-slate-600 leading-relaxed">
+              Masa sirkulasi peminjaman diperpanjang hingga 14 hari kalender (Siswa maks. 7 hari).
+            </p>
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-white border border-indigo-100 shadow-xs space-y-1">
+            <div class="flex items-center gap-2 text-emerald-700 font-bold">
+              <ShieldCheck class="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Bebas Auto-Suspend</span>
+            </div>
+            <p class="text-[11px] text-slate-600 leading-relaxed">
+              Akun guru diproteksi bebas penangguhan otomatis (auto-suspend) jika ada keterlambatan pengembalian.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Info Bar for Siswa -->
+      <div 
+        v-else 
+        class="p-4 rounded-3xl bg-blue-50/60 border border-blue-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs"
+      >
+        <div class="flex items-center gap-2.5">
+          <BookOpen class="w-4 h-4 text-blue-600 shrink-0" />
+          <span class="text-slate-700">
+            Status Akun: <strong class="font-bold text-slate-900">Siswa</strong> • Batas Peminjaman: <strong class="text-blue-700 font-bold">3 Buku</strong> • Durasi: <strong class="text-slate-900 font-bold">7 Hari</strong>.
+          </span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-[11px] font-mono font-bold text-slate-600">
+            Terpakai: {{ currentUsedQuota }} / 3 Buku
+          </span>
+          <button 
+            @click="openEditProfile('upgrade')"
+            class="text-[11px] font-bold text-blue-600 hover:text-blue-700 underline cursor-pointer"
+          >
+            Guru Pengajar? Ajukan Upgrade →
+          </button>
+        </div>
+      </div>
+
       <!-- Suspend Warning Notice & Countdown -->
       <div v-if="store.currentUser.isSuspended" class="p-5 rounded-3xl bg-rose-50 border border-rose-200 text-xs text-rose-800 space-y-2">
         <div class="flex items-center gap-2 font-bold text-sm text-rose-900">
@@ -381,7 +474,7 @@ import EditProfileModal from '../components/EditProfileModal.vue';
 import { 
   UserCheck, QrCode, AlertTriangle, Clock, 
   Timer, BookmarkCheck, BookMarked, LogIn, KeyRound, UserCog,
-  AlertCircle, CheckCircle2, Camera
+  AlertCircle, CheckCircle2, Camera, Award, ShieldCheck, BookOpen, Sparkles
 } from 'lucide-vue-next';
 
 const store = useLibraryStore();
@@ -390,6 +483,11 @@ const isChangePasswordOpen = ref(false);
 const isEditProfileOpen = ref(false);
 const editProfileInitialTab = ref<'profile' | 'upgrade'>('profile');
 let timerInterval: any = null;
+
+const isGuru = computed(() => store.currentUser?.memberType === 'guru');
+const maxQuota = computed(() => isGuru.value ? 6 : 3);
+const currentUsedQuota = computed(() => (store.myActiveLoans?.length || 0) + (activeHoldBookings.value?.length || 0));
+const isQuotaFull = computed(() => currentUsedQuota.value >= maxQuota.value);
 
 const openEditProfile = (tab: 'profile' | 'upgrade' = 'profile') => {
   editProfileInitialTab.value = tab;

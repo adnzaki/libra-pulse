@@ -70,23 +70,49 @@
           </div>
 
           <!-- Verified Member Info Pill -->
-          <div v-if="matchedMember" class="p-3 rounded-2xl border flex items-center justify-between animate-in fade-in" :class="isMemberBlocked ? 'bg-rose-50 border-rose-200 text-rose-900' : 'bg-emerald-50 border-emerald-200 text-emerald-900'">
+          <div v-if="matchedMember" class="p-3 rounded-2xl border flex items-center justify-between animate-in fade-in" :class="isMemberBlocked ? 'bg-rose-50 border-rose-200 text-rose-900' : (isMemberAtQuotaLimit ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-emerald-50 border-emerald-200 text-emerald-900')">
             <div class="flex items-center gap-2.5">
-              <img :src="matchedMember.avatar" class="w-8 h-8 rounded-full object-cover border" :class="isMemberBlocked ? 'border-rose-300' : 'border-emerald-300'" alt="Avatar" />
+              <img :src="matchedMember.avatar" class="w-8 h-8 rounded-full object-cover border" :class="isMemberBlocked ? 'border-rose-300' : (isMemberAtQuotaLimit ? 'border-amber-300' : 'border-emerald-300')" alt="Avatar" />
               <div>
                 <div class="font-bold flex items-center gap-1.5">
                   {{ matchedMember.name }}
                   <span class="text-[10px] font-mono opacity-75">({{ matchedMember.cardNumber }})</span>
+                  <span class="text-[9px] px-1.5 py-0.2 rounded-full font-bold uppercase" :class="isMatchedGuru ? 'bg-indigo-100 text-indigo-800' : 'bg-blue-100 text-blue-800'">
+                    {{ isMatchedGuru ? '👨‍🏫 Guru' : '🎒 Siswa' }}
+                  </span>
                 </div>
-                <div class="text-[10px] opacity-75">{{ matchedMember.email }} • Pinjaman Aktif: {{ getActiveLoansCount(matchedMember.id) }}</div>
+                <div class="text-[10px] opacity-75">
+                  Kuota: {{ memberTotalBorrowed }} / {{ memberMaxQuota }} Buku ({{ memberActiveLoansCount }} dipinjam, {{ memberActiveBookingsCount }} booking)
+                </div>
               </div>
             </div>
             <span 
               class="text-[10px] font-bold px-2.5 py-0.5 rounded-full shrink-0"
-              :class="isMemberBlocked ? 'bg-rose-200 text-rose-800' : 'bg-emerald-200 text-emerald-800'"
+              :class="isMemberBlocked ? 'bg-rose-200 text-rose-800' : (isMemberAtQuotaLimit ? 'bg-amber-200 text-amber-800' : 'bg-emerald-200 text-emerald-800')"
             >
-              {{ isMemberBlocked ? '⚠️ Suspend / Diblokir' : 'Anggota Aktif' }}
+              {{ isMemberBlocked ? '⚠️ Suspend / Diblokir' : (isMemberAtQuotaLimit ? '⚠️ Kuota Penuh' : 'Anggota Aktif') }}
             </span>
+          </div>
+
+          <!-- Warning Banner if Member reached Max Borrowing Quota -->
+          <div v-if="matchedMember && isMemberAtQuotaLimit" class="p-3.5 rounded-2xl bg-amber-50 border-2 border-amber-300 text-xs text-amber-950 space-y-1.5 animate-in fade-in">
+            <div class="font-bold flex items-center gap-1.5 text-amber-800 text-sm">
+              <AlertCircle class="w-4 h-4 text-amber-600 shrink-0" />
+              <span>Batas Maksimal Kuota Buku Tercapai</span>
+            </div>
+            <p class="leading-relaxed">
+              Anggota <strong class="text-slate-900">{{ matchedMember.name }}</strong> ({{ isMatchedGuru ? 'Dewan Guru' : 'Siswa' }}) telah mencapai batas maksimal peminjaman & reservasi <strong>{{ memberMaxQuota }} buku</strong>.
+            </p>
+            <div class="p-2 bg-white/90 rounded-xl border border-amber-200 text-[11px] text-slate-700 flex flex-wrap items-center gap-3">
+              <span>Pinjaman Aktif: <strong>{{ memberActiveLoansCount }} buku</strong></span>
+              <span>•</span>
+              <span>Booking Aktif: <strong>{{ memberActiveBookingsCount }} buku</strong></span>
+              <span>•</span>
+              <span class="text-amber-800 font-bold">Total: {{ memberTotalBorrowed }} / {{ memberMaxQuota }} Buku</span>
+            </div>
+            <p class="text-[11px] text-amber-800 font-medium">
+              ⛔ Anggota tidak dapat meminjam buku lagi sebelum mengembalikan buku pinjaman sebelumnya.
+            </p>
           </div>
 
           <!-- Warning Banner if Member Suspended or has Overdue Loans -->
@@ -101,7 +127,7 @@
                 Masa sanksi berlaku hingga: {{ new Date(matchedMember.suspendedUntil).toLocaleDateString('id-ID') }}
               </span>
             </p>
-            <p v-if="memberOverdueCount > 0" class="font-semibold text-rose-800">
+            <p v-if="memberOverdueCount > 0 && !isMatchedGuru" class="font-semibold text-rose-800">
               ⚠️ Anggota memiliki {{ memberOverdueCount }} buku pinjaman yang sedang terlambat / melewati jatuh tempo. Harap kembalikan buku terlebih dahulu.
             </p>
           </div>
@@ -226,7 +252,7 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <div class="flex items-center justify-between mb-1">
-                <label class="block font-bold text-xs sm:text-sm text-slate-700">Durasi Peminjaman (1 - 7 Hari)</label>
+                <label class="block font-bold text-xs sm:text-sm text-slate-700">Durasi Peminjaman (1 - {{ maxLoanDaysAllowed }} Hari)</label>
                 <span class="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg">{{ loanDays }} Hari</span>
               </div>
               <div class="flex items-center gap-2">
@@ -234,22 +260,25 @@
                   v-model.number="loanDays" 
                   type="number" 
                   min="1" 
-                  max="7" 
+                  :max="maxLoanDaysAllowed" 
                   class="w-20 px-3 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 text-center font-bold focus:outline-none focus:border-blue-500 text-sm"
                 />
                 <div class="flex items-center gap-1 flex-wrap">
                   <button 
-                    v-for="d in [1, 2, 3, 5, 7]" 
+                    v-for="d in quickLoanDayOptions" 
                     :key="d" 
                     type="button"
                     @click="loanDays = d"
                     class="px-2 py-1 rounded-xl text-[11px] font-bold transition cursor-pointer"
                     :class="loanDays === d ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'"
                   >
-                    {{ d }}h{{ d === 3 ? '*' : '' }}
+                    {{ d }}h{{ (isMatchedGuru ? d === 14 : d === 3) ? '*' : '' }}
                   </button>
                 </div>
               </div>
+              <p class="text-[10px] text-slate-400 mt-1">
+                {{ isMatchedGuru ? 'Benefit Guru: Durasi sirkulasi hingga maksimal 14 hari.' : 'Regulasi Siswa: Durasi pinjam maksimal 7 hari.' }}
+              </p>
             </div>
 
             <div>
@@ -283,7 +312,7 @@
         <button 
           type="button"
           @click="handleIssueLoan"
-          :disabled="!memberCardInput || !selectedBookId || isSubmitting || isMemberBlocked || loanDays < 1 || loanDays > 7"
+          :disabled="!memberCardInput || !selectedBookId || isSubmitting || isMemberBlocked || isMemberAtQuotaLimit || loanDays < 1 || loanDays > maxLoanDaysAllowed"
           class="px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
         >
           <Check class="w-4 h-4" />
@@ -340,6 +369,39 @@ const matchedMember = computed<Member | null>(() => {
   return null;
 });
 
+const isMatchedGuru = computed(() => matchedMember.value?.memberType === 'guru');
+const memberMaxQuota = computed(() => isMatchedGuru.value ? 6 : 3);
+
+const memberActiveLoansCount = computed(() => {
+  if (!matchedMember.value) return 0;
+  const memId = matchedMember.value.id;
+  const cardNum = matchedMember.value.cardNumber;
+  return store.loans.filter(l => 
+    (l.memberId === memId || l.memberCardNumber === cardNum) && (l.status === 'active' || l.status === 'overdue')
+  ).length;
+});
+
+const memberActiveBookingsCount = computed(() => {
+  if (!matchedMember.value) return 0;
+  const memId = matchedMember.value.id;
+  const cardNum = matchedMember.value.cardNumber;
+  return store.bookings.filter(b => 
+    (b.memberId === memId || b.memberCardNumber === cardNum) && b.status === 'active_hold'
+  ).length;
+});
+
+const memberTotalBorrowed = computed(() => {
+  return memberActiveLoansCount.value + memberActiveBookingsCount.value;
+});
+
+const isMemberAtQuotaLimit = computed(() => {
+  if (!matchedMember.value) return false;
+  return memberTotalBorrowed.value >= memberMaxQuota.value;
+});
+
+const maxLoanDaysAllowed = computed(() => isMatchedGuru.value ? 14 : 7);
+const quickLoanDayOptions = computed(() => isMatchedGuru.value ? [1, 3, 7, 10, 14] : [1, 2, 3, 5, 7]);
+
 const memberOverdueCount = computed(() => {
   if (!matchedMember.value) return 0;
   const memId = matchedMember.value.id;
@@ -351,12 +413,13 @@ const memberOverdueCount = computed(() => {
 
 const isMemberBlocked = computed(() => {
   if (matchedMember.value?.isSuspended) return true;
-  if (memberOverdueCount.value > 0) return true;
+  // Akun berstatus Guru dikecualikan dari sanksi auto-suspend / blokir keterlambatan
+  if (!isMatchedGuru.value && memberOverdueCount.value > 0) return true;
   return false;
 });
 
 const dueDateFormatted = computed(() => {
-  const days = Math.min(7, Math.max(1, Number(loanDays.value) || 3));
+  const days = Math.min(maxLoanDaysAllowed.value, Math.max(1, Number(loanDays.value) || (isMatchedGuru.value ? 14 : 3)));
   const d = new Date();
   d.setDate(d.getDate() + days);
   return d.toLocaleDateString('id-ID', {
@@ -400,8 +463,19 @@ const startCamera = async () => {
       (decodedText) => {
         memberCardInput.value = decodedText.trim();
         modalError.value = '';
-        store.showToast(`Kartu member ${decodedText} berhasil dipindai!`);
         stopCamera();
+        nextTick(() => {
+          if (matchedMember.value) {
+            if (isMemberAtQuotaLimit.value) {
+              const roleTitle = isMatchedGuru.value ? 'Guru' : 'Siswa';
+              store.showToast(`⚠️ ${roleTitle} ${matchedMember.value.name} telah mencapai batas limit pinjam (${memberMaxQuota.value} buku)!`);
+            } else {
+              store.showToast(`Kartu member ${decodedText} berhasil dipindai!`);
+            }
+          } else {
+            store.showToast(`Kartu member ${decodedText} berhasil dipindai!`);
+          }
+        });
       },
       () => {}
     );
@@ -521,8 +595,13 @@ const handleIssueLoan = async () => {
     modalError.value = 'Peminjaman ditolak: Kartu anggota ini berstatus DISUSPEND atau memiliki buku yang sedang terlambat.';
     return;
   }
-  if (loanDays.value < 1 || loanDays.value > 7) {
-    modalError.value = 'Durasi peminjaman harus antara 1 sampai 7 hari.';
+  if (isMemberAtQuotaLimit.value) {
+    const roleTitle = isMatchedGuru.value ? 'Dewan Guru' : 'Siswa';
+    modalError.value = `Peminjaman ditolak: ${roleTitle} (${matchedMember.value?.name}) telah mencapai batas kuota peminjaman (${memberMaxQuota.value} buku). Selesaikan pengembalian buku sebelumnya terlebih dahulu.`;
+    return;
+  }
+  if (loanDays.value < 1 || loanDays.value > maxLoanDaysAllowed.value) {
+    modalError.value = `Durasi peminjaman untuk ${isMatchedGuru.value ? 'Guru' : 'Siswa'} harus antara 1 sampai ${maxLoanDaysAllowed.value} hari.`;
     return;
   }
 
@@ -564,6 +643,18 @@ watch(() => props.isOpen, (newVal) => {
     hasSearched.value = false;
   } else {
     stopCamera();
+  }
+});
+
+watch(isMatchedGuru, (newIsGuru) => {
+  if (newIsGuru) {
+    if (loanDays.value <= 3) {
+      loanDays.value = 14;
+    }
+  } else {
+    if (loanDays.value > 7) {
+      loanDays.value = 3;
+    }
   }
 });
 

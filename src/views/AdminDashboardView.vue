@@ -1632,24 +1632,29 @@
           </div>
 
           <!-- Hak Istimewa Status Guru -->
-          <!-- <div class="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 space-y-2.5">
-            <div class="flex items-center gap-2 text-emerald-900 font-bold text-xs">
-              <CheckCircle2 class="w-4 h-4 text-emerald-600" />
-              <span>Hak Istimewa yang Akan Diaktifkan untuk Anggota:</span>
+          <div class="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200/80 space-y-2.5">
+            <div class="flex items-center gap-2 text-indigo-950 font-bold text-xs">
+              <CheckCircle2 class="w-4 h-4 text-indigo-600" />
+              <span>Hak Istimewa yang Akan Diaktifkan untuk Guru:</span>
             </div>
-            <div class="grid grid-cols-2 gap-2 text-xs">
-              <div class="p-2.5 rounded-xl bg-white border border-emerald-100 text-slate-700">
-                <div class="text-[10px] text-emerald-700 font-semibold uppercase">Kuota Peminjaman</div>
-                <div class="font-bold text-slate-900 text-sm mt-0.5">5 Buku Sekaligus</div>
-                <div class="text-[10px] text-slate-400">Siswa hanya 2 buku</div>
+            <div class="grid grid-cols-3 gap-2 text-xs">
+              <div class="p-2.5 rounded-xl bg-white border border-indigo-100 text-slate-700 text-center">
+                <div class="text-[10px] text-indigo-700 font-semibold uppercase">Kuota Pinjam</div>
+                <div class="font-bold text-slate-900 text-sm mt-0.5">6 Buku</div>
+                <div class="text-[10px] text-slate-400">Siswa maks 3 buku</div>
               </div>
-              <div class="p-2.5 rounded-xl bg-white border border-emerald-100 text-slate-700">
-                <div class="text-[10px] text-emerald-700 font-semibold uppercase">Durasi Peminjaman</div>
-                <div class="font-bold text-slate-900 text-sm mt-0.5">14 Hari Kalender</div>
-                <div class="text-[10px] text-slate-400">Siswa hanya 7 hari</div>
+              <div class="p-2.5 rounded-xl bg-white border border-indigo-100 text-slate-700 text-center">
+                <div class="text-[10px] text-indigo-700 font-semibold uppercase">Durasi Pinjam</div>
+                <div class="font-bold text-slate-900 text-sm mt-0.5">14 Hari</div>
+                <div class="text-[10px] text-slate-400">Siswa maks 7 hari</div>
+              </div>
+              <div class="p-2.5 rounded-xl bg-white border border-indigo-100 text-slate-700 text-center">
+                <div class="text-[10px] text-emerald-700 font-semibold uppercase">Auto-Suspend</div>
+                <div class="font-bold text-emerald-700 text-sm mt-0.5">Bebas Sanksi</div>
+                <div class="text-[10px] text-slate-400">Proteksi akun guru</div>
               </div>
             </div>
-          </div> -->
+          </div>
 
           <p class="text-xs text-slate-500 leading-relaxed">
             Apakah Anda yakin ingin menyetujui permohonan ini? Tipe keanggotaan <strong class="text-slate-900">{{ selectedRequestForApprove?.memberName }}</strong> akan resmi diubah menjadi <strong>Guru SDN Pengasinan VII</strong>.

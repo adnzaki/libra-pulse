@@ -67,13 +67,21 @@
                 </div>
               </div>
 
-              <!-- Status Pill on Card -->
-              <div 
-                class="px-3.5 py-1 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5"
-                :class="activeMember.isSuspended ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'"
-              >
-                <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
-                {{ activeMember.isSuspended ? 'DISUSPEND' : 'AKTIF' }}
+              <!-- Role & Status Pills on Card -->
+              <div class="flex items-center gap-1.5">
+                <span 
+                  class="px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-wider shadow-sm"
+                  :class="activeMember.memberType === 'guru' ? 'bg-indigo-600 text-white' : 'bg-blue-600 text-white'"
+                >
+                  {{ activeMember.memberType === 'guru' ? '👨‍🏫 GURU' : '🎒 SISWA' }}
+                </span>
+                <div 
+                  class="px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5"
+                  :class="activeMember.isSuspended ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'"
+                >
+                  <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                  {{ activeMember.isSuspended ? 'DISUSPEND' : 'AKTIF' }}
+                </div>
               </div>
             </div>
 
@@ -118,11 +126,33 @@
               <div class="text-right">
                 <div class="text-[9px] uppercase tracking-widest text-slate-400 font-mono font-medium">PINJAMAN AKTIF</div>
                 <div class="font-black text-xs sm:text-sm text-white">
-                  {{ getActiveLoansCount(activeMember.id) }} Buku
+                  {{ getActiveLoansCount(activeMember.id) }} / {{ activeMember.memberType === 'guru' ? 6 : 3 }} Buku
                 </div>
               </div>
             </div>
 
+          </div>
+
+          <!-- Special Teacher Benefit Banner on Member Card View -->
+          <div v-if="activeMember.memberType === 'guru'" class="p-4 rounded-3xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-950 space-y-2 shadow-xs animate-in fade-in">
+            <div class="font-bold flex items-center gap-2 text-indigo-900 text-sm">
+              <Award class="w-4 h-4 text-indigo-600 shrink-0" />
+              <span>Fasilitas Khusus Akun Dewan Guru</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center font-medium">
+              <div class="p-2 rounded-2xl bg-white border border-indigo-100">
+                <div class="text-[10px] text-slate-500">Kuota Pinjam</div>
+                <div class="text-xs font-bold text-indigo-700">Maks 6 Buku</div>
+              </div>
+              <div class="p-2 rounded-2xl bg-white border border-indigo-100">
+                <div class="text-[10px] text-slate-500">Durasi Pinjam</div>
+                <div class="text-xs font-bold text-indigo-700">Hingga 14 Hari</div>
+              </div>
+              <div class="p-2 rounded-2xl bg-white border border-indigo-100">
+                <div class="text-[10px] text-slate-500">Auto-Suspend</div>
+                <div class="text-xs font-bold text-emerald-700">Bebas Sanksi</div>
+              </div>
+            </div>
           </div>
 
           <!-- Suspend Warning Notice if Suspended -->
@@ -287,13 +317,21 @@
                 </div>
               </div>
 
-              <!-- Status Pill on Card -->
-              <div 
-                class="px-3.5 py-1 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5"
-                :class="activeMember.isSuspended ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'"
-              >
-                <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
-                {{ activeMember.isSuspended ? 'DISUSPEND' : 'AKTIF' }}
+              <!-- Status & Role Pills on Card -->
+              <div class="flex items-center gap-1.5">
+                <span 
+                  class="px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-wider shadow-sm"
+                  :class="activeMember.memberType === 'guru' ? 'bg-indigo-600 text-white' : 'bg-blue-600 text-white'"
+                >
+                  {{ activeMember.memberType === 'guru' ? '👨‍🏫 GURU' : '🎒 SISWA' }}
+                </span>
+                <div 
+                  class="px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5"
+                  :class="activeMember.isSuspended ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'"
+                >
+                  <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                  {{ activeMember.isSuspended ? 'DISUSPEND' : 'AKTIF' }}
+                </div>
               </div>
             </div>
 
@@ -351,7 +389,7 @@
                   PINJAMAN AKTIF
                 </div>
                 <div class="font-black text-xs sm:text-sm" :class="printTheme === 'light' ? 'text-slate-900' : 'text-white'">
-                  {{ getActiveLoansCount(activeMember.id) }} Buku
+                  {{ getActiveLoansCount(activeMember.id) }} / {{ activeMember.memberType === 'guru' ? 6 : 3 }} Buku
                 </div>
               </div>
             </div>
@@ -443,7 +481,7 @@ import { renderMemberCardToCanvas } from '../utils/memberCardRenderer.js';
 import MemberCardScanner from '../components/MemberCardScanner.vue';
 import { 
   QrCode, BookOpen, AlertTriangle, Copy, Printer, 
-  CreditCard, LogIn, UserPlus, Download, X, Moon, Sun, Loader2
+  CreditCard, LogIn, UserPlus, Download, X, Moon, Sun, Loader2, Award
 } from 'lucide-vue-next';
 
 const store = useLibraryStore();

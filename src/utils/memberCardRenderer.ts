@@ -177,6 +177,24 @@ export async function renderMemberCardToCanvas(
   ctx.font = '900 14px "Plus Jakarta Sans", system-ui, sans-serif';
   ctx.fillText(isSuspended ? 'DISUSPEND' : 'AKTIF', pillX + 32, pillY + pillH / 2);
 
+  // 4b. Role Pill (Guru / Siswa)
+  const isGuru = member.memberType === 'guru';
+  const roleText = isGuru ? 'GURU' : 'SISWA';
+  const rolePillW = isGuru ? 90 : 80;
+  const rolePillH = 38;
+  const rolePillX = pillX - rolePillW - 10;
+  const rolePillY = 62;
+
+  drawRoundedRect(ctx, rolePillX, rolePillY, rolePillW, rolePillH, 19);
+  ctx.fillStyle = isGuru ? '#4f46e5' : '#2563eb';
+  ctx.fill();
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '900 13px "Plus Jakarta Sans", system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(roleText, rolePillX + rolePillW / 2, rolePillY + rolePillH / 2);
+  ctx.textAlign = 'left';
+
   // 5. Middle Row: Avatar, Member Info & QR Code
   // 5a. Avatar Loading & Drawing
   const avatarX = 52;
@@ -284,6 +302,7 @@ export async function renderMemberCardToCanvas(
   ctx.fillText(member.cardNumber, 52, 595);
 
   // Right: Pinjaman Aktif
+  const maxQuota = isGuru ? 6 : 3;
   ctx.textAlign = 'right';
   ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
   ctx.font = '600 13px monospace';
@@ -291,7 +310,7 @@ export async function renderMemberCardToCanvas(
 
   ctx.fillStyle = isDark ? '#ffffff' : '#0f172a';
   ctx.font = '800 24px "Plus Jakarta Sans", system-ui, sans-serif';
-  ctx.fillText(`${activeLoansCount} Buku`, width - 52, 595);
+  ctx.fillText(`${activeLoansCount} / ${maxQuota} Buku`, width - 52, 595);
 
   ctx.restore();
   return canvas;
