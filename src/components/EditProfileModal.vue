@@ -186,7 +186,7 @@
               <button 
                 type="button" 
                 @click="handleClose"
-                class="px-4 py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition cursor-pointer"
+                class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 hover:bg-slate-200/60 transition cursor-pointer"
               >
                 Batal
               </button>
@@ -194,7 +194,7 @@
               <button 
                 type="submit" 
                 :disabled="isSaving"
-                class="px-6 py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold transition shadow-sm cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-sm cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 <Check class="w-4 h-4" />
                 <span>{{ isSaving ? 'Menyimpan...' : 'Simpan Perubahan' }}</span>

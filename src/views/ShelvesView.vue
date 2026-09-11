@@ -196,11 +196,11 @@
             Buku yang tersimpan di rak ini akan dialihkan ke lokasi default.
           </p>
         </div>
-        <div class="pt-2 flex items-center gap-3">
+        <div class="pt-2 flex items-center justify-center gap-3">
           <button 
             type="button" 
             @click="shelfToDelete = null"
-            class="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer text-xs"
+            class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full border border-slate-200 font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer text-xs"
           >
             Batal
           </button>
@@ -208,7 +208,7 @@
             type="button" 
             @click="confirmDeleteShelf"
             :disabled="isDeletingShelf"
-            class="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shadow-md shadow-rose-200 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+            class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shadow-md shadow-rose-200 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
           >
             <span>{{ isDeletingShelf ? 'Menghapus...' : 'Hapus Rak' }}</span>
           </button>

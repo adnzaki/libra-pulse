@@ -110,14 +110,14 @@
           <button 
             type="button"
             @click="$emit('close')"
-            class="px-4 py-2.5 rounded-full border border-slate-200 font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+            class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 hover:bg-slate-200/60 transition cursor-pointer"
           >
             Batal
           </button>
           <button 
             type="submit"
             :disabled="isLoading"
-            class="flex-1 sm:flex-initial py-2.5 px-5 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold transition shadow-md shadow-blue-200 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+            class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
           >
             <Check class="w-4 h-4" />
             <span>{{ isLoading ? 'Menyimpan...' : 'Simpan Sandi' }}</span>

@@ -339,14 +339,14 @@
           <button 
             @click="cancelRestore"
             type="button"
-            class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold transition cursor-pointer"
+            class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 hover:bg-slate-200/60 transition cursor-pointer"
           >
             Batal
           </button>
           <button 
             @click="executeRestore"
             type="button"
-            class="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow-md shadow-emerald-600/30 transition flex items-center justify-center gap-2 cursor-pointer"
+            class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/30 transition flex items-center justify-center gap-2 cursor-pointer"
           >
             <CheckCircle2 class="w-4 h-4" />
             Ya, Pulihkan Sekarang

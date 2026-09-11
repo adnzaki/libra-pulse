@@ -1459,18 +1459,18 @@
             </div>
           </div>
 
-          <div class="pt-4 flex gap-2.5 border-t border-slate-100 mt-4 shrink-0">
+          <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100 mt-4 shrink-0">
             <button 
               type="button"
               @click="isResetMemberPasswordOpen = false"
-              class="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+              class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 hover:bg-slate-200/60 transition cursor-pointer"
             >
               Batal
             </button>
             <button 
               type="submit"
               :disabled="isResettingPassword"
-              class="flex-1 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition shadow-md shadow-blue-200 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+              class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
             >
               <Check class="w-4 h-4" />
               <span>{{ isResettingPassword ? 'Menyimpan...' : 'Perbarui Kata Sandi' }}</span>
@@ -1557,18 +1557,18 @@
             <p class="text-[11px] text-slate-400">Alasan ini akan ditampilkan kepada anggota di portal mereka.</p>
           </div>
 
-          <div class="pt-4 flex items-center gap-3 border-t border-slate-100 shrink-0">
+          <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100 shrink-0">
             <button 
               type="button"
               @click="closeRejectTeacherModal"
-              class="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer text-xs"
+              class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 hover:bg-slate-200/60 transition cursor-pointer"
             >
               Batal
             </button>
             <button 
               type="submit"
               :disabled="isProcessingReject"
-              class="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shadow-md shadow-rose-200 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+              class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-rose-200 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
             >
               <Check class="w-4 h-4" />
               <span>{{ isProcessingReject ? 'Memproses...' : 'Konfirmasi Tolak' }}</span>
@@ -1673,11 +1673,11 @@
         </div>
 
         <!-- Sticky Footer Actions -->
-        <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-white/95 backdrop-blur-md border-t border-slate-100 flex items-center gap-3 shrink-0 sticky bottom-0 z-20">
+        <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-white/95 backdrop-blur-md border-t border-slate-100 flex items-center justify-end gap-3 shrink-0 sticky bottom-0 z-20">
           <button 
             type="button" 
             @click="closeApproveTeacherModal"
-            class="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer text-xs"
+            class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 hover:bg-slate-200/60 transition cursor-pointer"
           >
             Batal
           </button>
@@ -1685,7 +1685,7 @@
             type="button" 
             @click="confirmApproveTeacherRequest"
             :disabled="isProcessingApprove"
-            class="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-md shadow-emerald-200 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+            class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-200 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
           >
             <Check class="w-4 h-4" />
             <span>{{ isProcessingApprove ? 'Menyetujui...' : 'Ya, Setujui Jadi Guru' }}</span>
@@ -1753,18 +1753,18 @@
             </div>
           </div>
 
-          <div class="pt-4 flex items-center gap-3 border-t border-slate-100 shrink-0">
+          <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100 shrink-0">
             <button 
               type="button"
               @click="closeSuspendMemberModal"
-              class="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer text-xs"
+              class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 hover:bg-slate-200/60 transition cursor-pointer"
             >
               Batal
             </button>
             <button 
               type="submit"
               :disabled="isProcessingSuspend"
-              class="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shadow-md shadow-rose-200 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+              class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-rose-200 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
             >
               <UserX class="w-4 h-4" />
               <span>{{ isProcessingSuspend ? 'Memproses...' : 'Terapkan Suspend' }}</span>
@@ -1804,11 +1804,11 @@
           </div>
 
           <!-- Buttons -->
-          <div class="pt-2 flex items-center gap-3">
+          <div class="pt-2 flex items-center justify-center gap-3">
             <button 
               type="button"
               @click="closeConfirmDialog"
-              class="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer text-xs"
+              class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold text-slate-600 hover:bg-slate-200/60 transition cursor-pointer border border-slate-200"
             >
               {{ confirmDialog.cancelText || 'Batal' }}
             </button>
@@ -1816,7 +1816,7 @@
               type="button"
               @click="executeConfirmDialog"
               :disabled="isConfirmDialogProcessing"
-              class="flex-1 py-2.5 px-4 rounded-xl text-white font-bold text-xs transition cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+              class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-white text-xs font-bold transition cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
               :class="confirmDialog.type === 'danger' ? 'bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-200' : confirmDialog.type === 'warning' ? 'bg-amber-600 hover:bg-amber-700 shadow-md shadow-amber-200' : confirmDialog.type === 'success' ? 'bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-200' : 'bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-200'"
             >
               <span>{{ isConfirmDialogProcessing ? 'Memproses...' : confirmDialog.confirmText }}</span>

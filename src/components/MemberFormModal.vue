@@ -319,14 +319,14 @@
         <button 
           type="button" 
           @click="$emit('close')"
-          class="px-4 py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition cursor-pointer"
+          class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 hover:bg-slate-200/60 transition cursor-pointer"
         >
           Batal
         </button>
         <button 
           type="submit" 
           :disabled="isSubmitting"
-          class="flex-1 sm:flex-initial px-6 py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold transition shadow-sm cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+          class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
         >
           <Check class="w-4 h-4" />
           {{ member ? 'Simpan Perubahan' : 'Daftarkan Anggota' }}
