@@ -1,11 +1,11 @@
 <template>
-  <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
-    <div class="bg-white w-full max-w-md rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+  <div v-if="isOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/60 backdrop-blur-xs overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200">
+    <div class="bg-white w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-md sm:rounded-3xl rounded-none border-0 sm:border sm:border-slate-200 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
       
-      <!-- Modal Header -->
-      <div class="px-6 py-5 bg-slate-900 text-white flex items-center justify-between">
+      <!-- Sticky Modal Header -->
+      <div class="px-4 sm:px-6 py-3.5 sm:py-5 bg-slate-900 text-white flex items-center justify-between shrink-0 sticky top-0 z-20">
         <div class="flex items-center gap-3">
-          <div class="p-2 rounded-xl bg-blue-600/30 text-blue-400 border border-blue-500/30">
+          <div class="p-2 rounded-xl bg-blue-600/30 text-blue-400 border border-blue-500/30 shrink-0">
             <KeyRound class="w-5 h-5" />
           </div>
           <div>
@@ -15,104 +15,109 @@
         </div>
         <button 
           @click="$emit('close')"
-          class="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+          type="button"
+          aria-label="Tutup modal kata sandi"
+          class="p-2 sm:p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer flex items-center justify-center shrink-0"
         >
           <X class="w-5 h-5" />
         </button>
       </div>
 
-      <!-- Modal Body -->
-      <form @submit.prevent="handleSubmit" class="p-6 space-y-4 text-xs">
-        
-        <div v-if="errorMsg" class="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 flex items-start gap-2">
-          <AlertCircle class="w-4 h-4 shrink-0 mt-0.5" />
-          <span>{{ errorMsg }}</span>
-        </div>
-
-        <div v-if="successMsg" class="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-start gap-2">
-          <CheckCircle class="w-4 h-4 shrink-0 mt-0.5" />
-          <span>{{ successMsg }}</span>
-        </div>
-
-        <div>
-          <label class="block font-bold text-slate-700 mb-1">Kata Sandi Saat Ini / Lama</label>
-          <div class="relative">
-            <input 
-              v-model="form.oldPassword"
-              :type="showOld ? 'text' : 'password'"
-              placeholder="Masukkan kata sandi lama Anda"
-              class="w-full pl-9 pr-10 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-slate-800 text-xs"
-            />
-            <Lock class="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-            <button 
-              type="button" 
-              @click="showOld = !showOld"
-              class="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
-            >
-              <Eye v-if="!showOld" class="w-4 h-4" />
-              <EyeOff v-else class="w-4 h-4" />
-            </button>
+      <!-- Modal Body Form -->
+      <form @submit.prevent="handleSubmit" class="flex flex-col flex-1 overflow-hidden">
+        <div class="p-4 sm:p-6 space-y-4 text-xs overflow-y-auto flex-1">
+          
+          <div v-if="errorMsg" class="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 flex items-start gap-2">
+            <AlertCircle class="w-4 h-4 shrink-0 mt-0.5" />
+            <span>{{ errorMsg }}</span>
           </div>
-          <div class="text-[10px] text-slate-400 mt-1">Kosongkan jika sebelumnya Anda belum memiliki kata sandi.</div>
-        </div>
 
-        <div>
-          <label class="block font-bold text-slate-700 mb-1">Kata Sandi Baru *</label>
-          <div class="relative">
-            <input 
-              v-model="form.newPassword"
-              :type="showNew ? 'text' : 'password'"
-              required
-              minlength="4"
-              placeholder="Minimal 4 karakter"
-              class="w-full pl-9 pr-10 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-slate-800 text-xs"
-            />
-            <KeyRound class="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-            <button 
-              type="button" 
-              @click="showNew = !showNew"
-              class="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
-            >
-              <Eye v-if="!showNew" class="w-4 h-4" />
-              <EyeOff v-else class="w-4 h-4" />
-            </button>
+          <div v-if="successMsg" class="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-start gap-2">
+            <CheckCircle class="w-4 h-4 shrink-0 mt-0.5" />
+            <span>{{ successMsg }}</span>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Kata Sandi Saat Ini / Lama</label>
+            <div class="relative">
+              <input 
+                v-model="form.oldPassword"
+                :type="showOld ? 'text' : 'password'"
+                placeholder="Masukkan kata sandi lama Anda"
+                class="w-full pl-9 pr-10 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-slate-800 text-xs"
+              />
+              <Lock class="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+              <button 
+                type="button" 
+                @click="showOld = !showOld"
+                class="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
+              >
+                <Eye v-if="!showOld" class="w-4 h-4" />
+                <EyeOff v-else class="w-4 h-4" />
+              </button>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-1">Kosongkan jika sebelumnya Anda belum memiliki kata sandi.</div>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Kata Sandi Baru *</label>
+            <div class="relative">
+              <input 
+                v-model="form.newPassword"
+                :type="showNew ? 'text' : 'password'"
+                required
+                minlength="4"
+                placeholder="Minimal 4 karakter"
+                class="w-full pl-9 pr-10 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-slate-800 text-xs"
+              />
+              <KeyRound class="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+              <button 
+                type="button" 
+                @click="showNew = !showNew"
+                class="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
+              >
+                <Eye v-if="!showNew" class="w-4 h-4" />
+                <EyeOff v-else class="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Konfirmasi Kata Sandi Baru *</label>
+            <div class="relative">
+              <input 
+                v-model="form.confirmPassword"
+                :type="showConfirm ? 'text' : 'password'"
+                required
+                placeholder="Ulangi kata sandi baru"
+                class="w-full pl-9 pr-10 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-slate-800 text-xs"
+              />
+              <Lock class="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+              <button 
+                type="button" 
+                @click="showConfirm = !showConfirm"
+                class="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
+              >
+                <Eye v-if="!showConfirm" class="w-4 h-4" />
+                <EyeOff v-else class="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
 
-        <div>
-          <label class="block font-bold text-slate-700 mb-1">Konfirmasi Kata Sandi Baru *</label>
-          <div class="relative">
-            <input 
-              v-model="form.confirmPassword"
-              :type="showConfirm ? 'text' : 'password'"
-              required
-              placeholder="Ulangi kata sandi baru"
-              class="w-full pl-9 pr-10 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-slate-800 text-xs"
-            />
-            <Lock class="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-            <button 
-              type="button" 
-              @click="showConfirm = !showConfirm"
-              class="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
-            >
-              <Eye v-if="!showConfirm" class="w-4 h-4" />
-              <EyeOff v-else class="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        <div class="pt-2 flex gap-2.5">
+        <!-- Sticky Footer -->
+        <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 backdrop-blur-md border-t border-slate-100 flex items-center justify-end gap-3 shrink-0 sticky bottom-0 z-20">
           <button 
             type="button"
             @click="$emit('close')"
-            class="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+            class="px-4 py-2.5 rounded-full border border-slate-200 font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
           >
             Batal
           </button>
           <button 
             type="submit"
             :disabled="isLoading"
-            class="flex-1 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition shadow-md shadow-blue-200 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+            class="flex-1 sm:flex-initial py-2.5 px-5 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold transition shadow-md shadow-blue-200 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
           >
             <Check class="w-4 h-4" />
             <span>{{ isLoading ? 'Menyimpan...' : 'Simpan Sandi' }}</span>
@@ -126,15 +131,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, toRef } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import { KeyRound, Lock, Eye, EyeOff, X, AlertCircle, CheckCircle, Check } from 'lucide-vue-next';
+import { useModalBack } from '../composables/useModalBack.js';
 
-defineProps<{
+const props = defineProps<{
   isOpen: boolean;
 }>();
 
 const emit = defineEmits(['close']);
+
+useModalBack(toRef(props, 'isOpen'), () => emit('close'), 'change_password_modal');
+
 const store = useLibraryStore();
 
 const form = ref({

@@ -1,27 +1,33 @@
 <template>
-  <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
-    <div class="bg-white border border-slate-100 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+  <div v-if="isOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-hidden sm:overflow-y-auto">
+    <div class="bg-white border-0 sm:border sm:border-slate-100 w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-lg sm:rounded-3xl rounded-none shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
       
-      <!-- Header -->
-      <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between">
+      <!-- Sticky Header -->
+      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 backdrop-blur-md border-b border-slate-100 flex items-center justify-between shrink-0 sticky top-0 z-20">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
+          <div class="w-9 sm:w-10 h-9 sm:h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
             <Layers class="w-5 h-5" />
           </div>
           <div>
-            <h3 class="font-bold text-base text-slate-900">{{ shelf ? 'Edit Data Rak' : 'Tambah Rak Baru' }}</h3>
-            <p class="text-xs text-slate-500">Manajemen Lokasi & Kapasitas Fisik Rak</p>
+            <h3 class="font-bold text-sm sm:text-base text-slate-900">{{ shelf ? 'Edit Data Rak' : 'Tambah Rak Baru' }}</h3>
+            <p class="text-[11px] sm:text-xs text-slate-500">Manajemen Lokasi & Kapasitas Fisik Rak</p>
           </div>
         </div>
-        <button @click="$emit('close')" class="p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer">
+        <button 
+          @click="$emit('close')" 
+          type="button"
+          aria-label="Tutup modal rak"
+          class="p-2 sm:p-2.5 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-200/70 active:scale-95 transition cursor-pointer flex items-center justify-center shrink-0"
+        >
           <X class="w-5 h-5" />
         </button>
       </div>
 
-      <!-- Form -->
-      <div class="p-6 space-y-4 text-xs">
+      <!-- Scrollable Form Body -->
+      <div class="p-4 sm:p-6 space-y-4 text-xs flex-1 overflow-y-auto">
         
-        <div class="grid grid-cols-2 gap-3">
+        <!-- Kode Rak & Lantai (100% on mobile, 2 cols on sm+) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block font-bold text-slate-700 mb-1">Kode Rak (Unik)</label>
             <input 
@@ -54,7 +60,8 @@
           />
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <!-- Zona Perpustakaan & Kategori Buku Dominan (100% on mobile, 2 cols on sm+) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block font-bold text-slate-700 mb-1">Zona Perpustakaan</label>
             <input 
@@ -68,7 +75,7 @@
             <label class="block font-bold text-slate-700 mb-1">Kategori Buku Dominan</label>
             <select 
               v-model="form.category" 
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
+              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-blue-500 font-medium truncate"
             >
               <option v-for="c in store.categories" :key="c.id" :value="c.name">
                 {{ c.name }}
@@ -77,7 +84,8 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-3 gap-3">
+        <!-- Kapasitas, Posisi Baris, dan Warna Indikator (100% on mobile, 3 cols on sm+) -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label class="block font-bold text-slate-700 mb-1">Kapasitas (Buku)</label>
             <input 
@@ -99,11 +107,14 @@
           </div>
           <div>
             <label class="block font-bold text-slate-700 mb-1">Warna Indikator</label>
-            <input 
-              v-model="form.color" 
-              type="color" 
-              class="w-full h-10 p-1 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer"
-            />
+            <div class="flex items-center gap-2">
+              <input 
+                v-model="form.color" 
+                type="color" 
+                class="w-12 h-10 p-1 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer shrink-0"
+              />
+              <span class="text-xs font-mono font-bold text-slate-600 uppercase">{{ form.color }}</span>
+            </div>
           </div>
         </div>
 
@@ -111,7 +122,7 @@
           <label class="block font-bold text-slate-700 mb-1">Deskripsi Rak</label>
           <textarea 
             v-model="form.description" 
-            rows="2" 
+            rows="3" 
             placeholder="Informasi koleksi atau petunjuk pencarian di rak ini..." 
             class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
           ></textarea>
@@ -119,8 +130,8 @@
 
       </div>
 
-      <!-- Footer -->
-      <div class="px-6 py-4 bg-slate-50/80 border-t border-slate-100 flex items-center justify-end gap-3">
+      <!-- Sticky Footer -->
+      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 backdrop-blur-md border-t border-slate-100 flex items-center justify-end gap-3 shrink-0 sticky bottom-0 z-20">
         <button 
           type="button" 
           @click="$emit('close')"
@@ -132,7 +143,7 @@
           type="button"
           @click="handleSaveShelf"
           :disabled="!form.code || !form.name || isSubmitting"
-          class="px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+          class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
         >
           <Save class="w-4 h-4" />
           {{ isSubmitting ? 'Menyimpan...' : 'Simpan Rak' }}
@@ -144,10 +155,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, toRef } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import type { Shelf } from '../types.js';
 import { Layers, X, Save } from 'lucide-vue-next';
+import { useModalBack } from '../composables/useModalBack.js';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -158,6 +170,8 @@ const emit = defineEmits(['close', 'saved']);
 
 const store = useLibraryStore();
 const isSubmitting = ref(false);
+
+useModalBack(toRef(props, 'isOpen'), () => emit('close'), 'shelf_modal');
 
 const form = ref<Partial<Shelf>>({
   code: '',

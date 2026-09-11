@@ -471,6 +471,7 @@ import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import ChangePasswordModal from '../components/ChangePasswordModal.vue';
 import EditProfileModal from '../components/EditProfileModal.vue';
+import { useModalBack } from '../composables/useModalBack.js';
 import { 
   UserCheck, QrCode, AlertTriangle, Clock, 
   Timer, BookmarkCheck, BookMarked, LogIn, KeyRound, UserCog,
@@ -551,6 +552,8 @@ const isCancellingBooking = ref(false);
 const cancelMyBooking = (bookingId: string) => {
   bookingToCancel.value = bookingId;
 };
+
+useModalBack(computed(() => !!bookingToCancel.value), () => { bookingToCancel.value = null; }, 'member_cancel_booking');
 
 const confirmCancelMyBooking = async () => {
   if (!bookingToCancel.value) return;

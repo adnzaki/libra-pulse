@@ -1,25 +1,30 @@
 <template>
-  <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
-    <div class="bg-white border border-slate-100 w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+  <div v-if="isOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-hidden sm:overflow-y-auto">
+    <div class="bg-white border-0 sm:border sm:border-slate-100 w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-xl sm:rounded-3xl rounded-none shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
       
-      <!-- Header -->
-      <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between">
+      <!-- Sticky Header -->
+      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 backdrop-blur-md border-b border-slate-100 flex items-center justify-between shrink-0 sticky top-0 z-20">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+          <div class="w-9 sm:w-10 h-9 sm:h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
             <CheckCircle2 class="w-5 h-5" />
           </div>
           <div>
-            <h3 class="font-bold text-base text-slate-900">Proses Pengembalian Buku</h3>
-            <p class="text-xs text-slate-500">Sirkulasi & Pelaporan Otomatis Terintegrasi</p>
+            <h3 class="font-bold text-sm sm:text-base text-slate-900">Proses Pengembalian Buku</h3>
+            <p class="text-[11px] sm:text-xs text-slate-500">Sirkulasi & Pelaporan Otomatis Terintegrasi</p>
           </div>
         </div>
-        <button @click="$emit('close')" class="p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer">
+        <button 
+          @click="$emit('close')" 
+          type="button"
+          aria-label="Tutup modal pengembalian"
+          class="p-2 sm:p-2.5 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-200/70 active:scale-95 transition cursor-pointer flex items-center justify-center shrink-0"
+        >
           <X class="w-5 h-5" />
         </button>
       </div>
 
-      <!-- Body -->
-      <div class="p-6 space-y-4">
+      <!-- Body (Scrollable) -->
+      <div class="p-4 sm:p-6 space-y-4 flex-1 overflow-y-auto">
         
         <!-- Loan Selection if not preselected -->
         <div v-if="!selectedLoan">
@@ -77,8 +82,8 @@
 
       </div>
 
-      <!-- Footer -->
-      <div class="px-6 py-4 bg-slate-50/80 border-t border-slate-100 flex items-center justify-end gap-3">
+      <!-- Sticky Footer -->
+      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 backdrop-blur-md border-t border-slate-100 flex items-center justify-end gap-3 shrink-0 sticky bottom-0 z-20">
         <button 
           type="button" 
           @click="$emit('close')"
@@ -90,7 +95,7 @@
           type="button"
           @click="handleReturnSubmit"
           :disabled="!currentLoan || isSubmitting"
-          class="px-5 py-2.5 rounded-full text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-200 transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+          class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-200 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
         >
           <CheckCircle class="w-4 h-4" />
           {{ isSubmitting ? 'Memproses Pengembalian...' : 'Konfirmasi Terima Pengembalian' }}
@@ -102,11 +107,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, toRef } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import type { Loan } from '../types.js';
 import { CheckCircle2, CheckCircle, X } from 'lucide-vue-next';
 import confetti from 'canvas-confetti';
+import { useModalBack } from '../composables/useModalBack.js';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -114,6 +120,8 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits(['close', 'returned']);
+
+useModalBack(toRef(props, 'isOpen'), () => emit('close'), 'return_book_modal');
 
 const store = useLibraryStore();
 const chosenLoanId = ref('');

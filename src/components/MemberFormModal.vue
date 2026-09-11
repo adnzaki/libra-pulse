@@ -1,36 +1,40 @@
 <template>
   <div 
     v-if="isOpen" 
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200"
+    class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-sm overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200"
   >
-    <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
+    <div class="bg-white w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-lg sm:rounded-3xl rounded-none shadow-2xl border-0 sm:border sm:border-slate-100 overflow-hidden flex flex-col">
       
-      <!-- Modal Header -->
-      <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+      <!-- Sticky Modal Header -->
+      <div class="px-4 sm:px-6 py-3.5 sm:py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/95 backdrop-blur-md shrink-0 sticky top-0 z-20">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold shadow-sm">
+          <div class="w-9 sm:w-10 h-9 sm:h-10 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold shadow-sm shrink-0">
             <UserPlus v-if="!member" class="w-5 h-5" />
             <UserCheck v-else class="w-5 h-5" />
           </div>
           <div>
-            <h3 class="text-base font-bold text-slate-900">
+            <h3 class="text-sm sm:text-base font-bold text-slate-900">
               {{ member ? 'Edit Data Anggota' : 'Daftarkan Anggota Baru' }}
             </h3>
-            <p class="text-xs text-slate-500">
+            <p class="text-[11px] sm:text-xs text-slate-500">
               {{ member ? `Perbarui informasi ${member.name}` : 'Buat kartu digital & QR anggota baru perpustakaan' }}
             </p>
           </div>
         </div>
         <button 
           @click="$emit('close')"
-          class="p-2 rounded-full hover:bg-slate-200/80 text-slate-400 hover:text-slate-700 transition cursor-pointer"
+          type="button"
+          aria-label="Tutup modal anggota"
+          class="p-2 sm:p-2.5 rounded-full hover:bg-slate-200/80 text-slate-500 hover:text-slate-800 transition cursor-pointer flex items-center justify-center shrink-0"
         >
           <X class="w-5 h-5" />
         </button>
       </div>
 
-      <!-- Form Body -->
-      <form @submit.prevent="handleSubmit" class="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
+      <!-- Form -->
+      <form @submit.prevent="handleSubmit" class="flex flex-col flex-1 overflow-hidden">
+        <!-- Form Body (Scrollable) -->
+        <div class="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 text-xs">
         
         <!-- Avatar Upload Section -->
         <div>
@@ -95,7 +99,7 @@
         <!-- Tipe Pengguna: Guru atau Siswa (Default: Siswa) -->
         <div>
           <label class="block font-bold text-slate-700 mb-1">Tipe Pengguna / Keanggotaan Sekolah *</label>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <label 
               class="p-3 rounded-2xl border flex items-center gap-3 cursor-pointer transition"
               :class="form.memberType === 'siswa' ? 'bg-blue-50/80 border-blue-500 text-blue-900 font-bold shadow-2xs' : 'bg-slate-50 border-slate-200 text-slate-600'"
@@ -155,7 +159,7 @@
         <!-- Role -->
         <div>
           <label class="block font-bold text-slate-700 mb-1">Hak Akses / Peran</label>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <label 
               class="p-3 rounded-2xl border flex items-center gap-3 cursor-pointer transition"
               :class="form.role === 'member' ? 'bg-blue-50/70 border-blue-500 text-blue-900 font-bold' : 'bg-slate-50 border-slate-200 text-slate-600'"
@@ -308,39 +312,41 @@
           <QrCode class="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
           <p>Nomor Kartu Anggota (misal: <strong class="text-slate-800 font-mono">LIB-2026-XXXX</strong>) dan barcode QR digital akan otomatis dibuat dan siap dicetak/di-scan.</p>
         </div>
+      </div>
 
-        <!-- Action Buttons -->
-        <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
-          <button 
-            type="button" 
-            @click="$emit('close')"
-            class="px-4 py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition cursor-pointer"
-          >
-            Batal
-          </button>
-          <button 
-            type="submit" 
-            :disabled="isSubmitting"
-            class="px-6 py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold transition shadow-sm cursor-pointer disabled:opacity-50 flex items-center gap-2"
-          >
-            <Check class="w-4 h-4" />
-            {{ member ? 'Simpan Perubahan' : 'Daftarkan Anggota' }}
-          </button>
-        </div>
-      </form>
+      <!-- Sticky Action Buttons Footer -->
+      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 backdrop-blur-md border-t border-slate-100 flex items-center justify-end gap-3 shrink-0 sticky bottom-0 z-20">
+        <button 
+          type="button" 
+          @click="$emit('close')"
+          class="px-4 py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition cursor-pointer"
+        >
+          Batal
+        </button>
+        <button 
+          type="submit" 
+          :disabled="isSubmitting"
+          class="flex-1 sm:flex-initial px-6 py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold transition shadow-sm cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          <Check class="w-4 h-4" />
+          {{ member ? 'Simpan Perubahan' : 'Daftarkan Anggota' }}
+        </button>
+      </div>
+    </form>
 
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, toRef } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import type { Member } from '../types.js';
 import { 
   UserPlus, UserCheck, X, Check, QrCode, Upload, Loader2,
   Lock, KeyRound, Eye, EyeOff, AlertCircle, CheckCircle2 
 } from 'lucide-vue-next';
+import { useModalBack } from '../composables/useModalBack.js';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -350,6 +356,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'close'): void;
 }>();
+
+useModalBack(toRef(props, 'isOpen'), () => emit('close'), 'member_form_modal');
 
 const store = useLibraryStore();
 const isSubmitting = ref(false);

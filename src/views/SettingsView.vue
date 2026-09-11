@@ -280,57 +280,73 @@
     </div>
 
     <!-- Modal Konfirmasi Restore -->
-    <div v-if="showConfirmRestoreModal && selectedBackupData" class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-100 space-y-5 animate-in fade-in zoom-in duration-200">
-        <div class="flex items-center gap-3 text-amber-600">
-          <div class="w-10 h-10 rounded-2xl bg-amber-50 flex items-center justify-center shrink-0">
-            <AlertTriangle class="w-5 h-5 text-amber-600" />
-          </div>
-          <div>
-            <h3 class="font-bold text-slate-900 text-base">Konfirmasi Pemulihan Database</h3>
-            <p class="text-xs text-slate-500">Periksa ringkasan berkas cadangan sebelum melanjutkan.</p>
-          </div>
-        </div>
-
-        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 text-xs space-y-2.5">
-          <div class="flex justify-between py-1 border-b border-slate-200">
-            <span class="text-slate-500">Tanggal Ekspor File:</span>
-            <span class="font-mono font-semibold text-slate-800">{{ formatDate(selectedBackupData.exportedAt) }}</span>
-          </div>
-          <div class="grid grid-cols-2 gap-2 pt-1 text-[11px]">
-            <div class="bg-white p-2 rounded-xl border border-slate-200">
-              <span class="text-slate-500 block">Koleksi Buku:</span>
-              <span class="font-extrabold text-sm text-blue-600">{{ selectedBackupData.summary?.totalBooks ?? selectedBackupData.collections?.books?.length ?? 0 }}</span>
+    <div v-if="showConfirmRestoreModal && selectedBackupData" class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 z-50 overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200">
+      <div class="bg-white w-full h-full sm:h-auto sm:max-h-[92vh] sm:rounded-3xl sm:max-w-lg rounded-none shadow-2xl border-0 sm:border sm:border-slate-100 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+        <!-- Sticky Header -->
+        <div class="px-4 sm:px-6 py-4 bg-slate-900 text-white flex items-center justify-between shrink-0 sticky top-0 z-20">
+          <div class="flex items-center gap-2.5 text-amber-400">
+            <div class="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center shrink-0">
+              <AlertTriangle class="w-4 h-4 text-amber-400" />
             </div>
-            <div class="bg-white p-2 rounded-xl border border-slate-200">
-              <span class="text-slate-500 block">Anggota / Siswa:</span>
-              <span class="font-extrabold text-sm text-emerald-600">{{ selectedBackupData.summary?.totalMembers ?? selectedBackupData.collections?.members?.length ?? 0 }}</span>
-            </div>
-            <div class="bg-white p-2 rounded-xl border border-slate-200">
-              <span class="text-slate-500 block">Rak Koleksi:</span>
-              <span class="font-extrabold text-sm text-indigo-600">{{ selectedBackupData.summary?.totalShelves ?? selectedBackupData.collections?.shelves?.length ?? 0 }}</span>
-            </div>
-            <div class="bg-white p-2 rounded-xl border border-slate-200">
-              <span class="text-slate-500 block">Riwayat Peminjaman:</span>
-              <span class="font-extrabold text-sm text-purple-600">{{ selectedBackupData.summary?.totalLoans ?? selectedBackupData.collections?.loans?.length ?? 0 }}</span>
+            <div>
+              <h3 class="font-bold text-white text-sm">Konfirmasi Pemulihan Database</h3>
+              <p class="text-[11px] text-slate-400">Periksa ringkasan berkas cadangan sebelum melanjutkan.</p>
             </div>
           </div>
-        </div>
-
-        <p class="text-xs text-slate-600 leading-relaxed">
-          Semua data dari berkas cadangan ini akan disinkronkan dan disimpan ke Cloud Firestore. Apakah Anda ingin melanjutkan proses pemulihan sekarang?
-        </p>
-
-        <div class="flex items-center justify-end gap-3 pt-2">
           <button 
             @click="cancelRestore"
-            class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold transition cursor-pointer"
+            type="button"
+            aria-label="Tutup modal konfirmasi pemulihan"
+            class="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer shrink-0"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+
+        <div class="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
+          <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 text-xs space-y-2.5">
+            <div class="flex justify-between py-1 border-b border-slate-200">
+              <span class="text-slate-500">Tanggal Ekspor File:</span>
+              <span class="font-mono font-semibold text-slate-800">{{ formatDate(selectedBackupData.exportedAt) }}</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 pt-1 text-[11px]">
+              <div class="bg-white p-2.5 rounded-xl border border-slate-200">
+                <span class="text-slate-500 block">Koleksi Buku:</span>
+                <span class="font-extrabold text-sm text-blue-600">{{ selectedBackupData.summary?.totalBooks ?? selectedBackupData.collections?.books?.length ?? 0 }}</span>
+              </div>
+              <div class="bg-white p-2.5 rounded-xl border border-slate-200">
+                <span class="text-slate-500 block">Anggota / Siswa:</span>
+                <span class="font-extrabold text-sm text-emerald-600">{{ selectedBackupData.summary?.totalMembers ?? selectedBackupData.collections?.members?.length ?? 0 }}</span>
+              </div>
+              <div class="bg-white p-2.5 rounded-xl border border-slate-200">
+                <span class="text-slate-500 block">Rak Koleksi:</span>
+                <span class="font-extrabold text-sm text-indigo-600">{{ selectedBackupData.summary?.totalShelves ?? selectedBackupData.collections?.shelves?.length ?? 0 }}</span>
+              </div>
+              <div class="bg-white p-2.5 rounded-xl border border-slate-200">
+                <span class="text-slate-500 block">Riwayat Peminjaman:</span>
+                <span class="font-extrabold text-sm text-purple-600">{{ selectedBackupData.summary?.totalLoans ?? selectedBackupData.collections?.loans?.length ?? 0 }}</span>
+              </div>
+            </div>
+          </div>
+
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Semua data dari berkas cadangan ini akan disinkronkan dan disimpan ke Cloud Firestore. Apakah Anda ingin melanjutkan proses pemulihan sekarang?
+          </p>
+        </div>
+
+        <!-- Sticky Footer -->
+        <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-white border-t border-slate-100 flex items-center justify-end gap-3 shrink-0 sticky bottom-0 z-20">
+          <button 
+            @click="cancelRestore"
+            type="button"
+            class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold transition cursor-pointer"
           >
             Batal
           </button>
           <button 
             @click="executeRestore"
-            class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow-md shadow-emerald-600/30 transition flex items-center gap-2 cursor-pointer"
+            type="button"
+            class="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow-md shadow-emerald-600/30 transition flex items-center justify-center gap-2 cursor-pointer"
           >
             <CheckCircle2 class="w-4 h-4" />
             Ya, Pulihkan Sekarang
@@ -360,9 +376,10 @@ import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useLibraryStore } from '../stores/library.js';
 import type { LibraryBackupData } from '../lib/backupManager.js';
+import { useModalBack } from '../composables/useModalBack.js';
 import { 
   Database, RefreshCw, Download, UploadCloud, Archive, 
-  Loader2, AlertTriangle, CheckCircle2, Mail, Send, ShieldAlert 
+  Loader2, AlertTriangle, CheckCircle2, Mail, Send, ShieldAlert, X
 } from 'lucide-vue-next';
 
 const store = useLibraryStore();
@@ -477,6 +494,8 @@ const cancelRestore = () => {
   showConfirmRestoreModal.value = false;
   selectedBackupData.value = null;
 };
+
+useModalBack(showConfirmRestoreModal, cancelRestore, 'settings_restore_backup');
 
 // ==================== SMTP Server Status & Testing ====================
 interface SmtpStatusResponse {

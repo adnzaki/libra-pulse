@@ -1,32 +1,34 @@
 <template>
   <div 
     v-if="isOpen && booking" 
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
+    class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200"
   >
     <div 
-      class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
+      class="bg-white border-0 sm:border sm:border-slate-100 w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-lg sm:rounded-3xl rounded-none shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
     >
-      <!-- Header -->
-      <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+      <!-- Sticky Header -->
+      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 backdrop-blur-md border-b border-slate-100 flex items-center justify-between shrink-0 sticky top-0 z-20">
         <div class="flex items-center gap-2.5">
-          <div class="w-9 h-9 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+          <div class="w-9 h-9 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold shrink-0">
             <CheckCircle class="w-5 h-5" />
           </div>
           <div>
-            <h3 class="font-bold text-slate-900 text-base">Penyerahan Buku Booking</h3>
-            <p class="text-xs text-slate-500">Konfirmasi serah-terima buku & tentukan durasi pinjam</p>
+            <h3 class="font-bold text-slate-900 text-sm sm:text-base">Penyerahan Buku Booking</h3>
+            <p class="text-[11px] sm:text-xs text-slate-500">Konfirmasi serah-terima buku & durasi pinjam</p>
           </div>
         </div>
         <button 
           @click="closeModal" 
-          class="text-slate-400 hover:text-slate-700 p-1.5 rounded-full hover:bg-slate-200/50 transition cursor-pointer"
+          type="button"
+          aria-label="Tutup modal penyerahan buku"
+          class="p-2 sm:p-2.5 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-200/70 active:scale-95 transition cursor-pointer flex items-center justify-center shrink-0"
         >
           <X class="w-5 h-5" />
         </button>
       </div>
 
-      <!-- Body -->
-      <div class="p-6 overflow-y-auto space-y-5">
+      <!-- Body (Scrollable) -->
+      <div class="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
         
         <!-- Error Alert -->
         <div v-if="modalError" class="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2">
@@ -166,8 +168,8 @@
 
       </div>
 
-      <!-- Footer -->
-      <div class="px-6 py-4 bg-slate-50/80 border-t border-slate-100 flex items-center justify-end gap-3">
+      <!-- Sticky Footer -->
+      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 backdrop-blur-md border-t border-slate-100 flex items-center justify-end gap-3 shrink-0 sticky bottom-0 z-20">
         <button 
           type="button" 
           @click="closeModal"
@@ -179,7 +181,7 @@
           type="button" 
           @click="handleConfirmCollection"
           :disabled="isSubmitting || isMemberBlocked || loanDays < 1 || loanDays > maxLoanDays"
-          class="px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+          class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
         >
           <CheckCircle class="w-4 h-4" />
           {{ isSubmitting ? 'Memproses...' : 'Konfirmasi & Serahkan Buku' }}
@@ -191,11 +193,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, toRef } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import type { Booking, Member } from '../types.js';
 import { CheckCircle, X, AlertCircle, Clock, Calendar, ShieldAlert } from 'lucide-vue-next';
 import confetti from 'canvas-confetti';
+import { useModalBack } from '../composables/useModalBack.js';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -203,6 +206,8 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits(['close', 'collected']);
+
+useModalBack(toRef(props, 'isOpen'), () => emit('close'), 'collect_booking_modal');
 
 const store = useLibraryStore();
 const loanDays = ref(3); // Default 3 hari untuk siswa, 14 untuk guru

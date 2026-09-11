@@ -1,31 +1,33 @@
 <template>
   <div 
     v-if="isOpen" 
-    class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200"
+    class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-sm overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200"
   >
-    <div class="bg-white w-full max-w-xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh]">
+    <div class="bg-white w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-xl sm:rounded-3xl rounded-none shadow-2xl border-0 sm:border sm:border-slate-100 overflow-hidden flex flex-col">
       
-      <!-- Modal Header -->
-      <div class="px-5 sm:px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+      <!-- Sticky Modal Header -->
+      <div class="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/95 backdrop-blur-md shrink-0 sticky top-0 z-20">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold shadow-sm">
+          <div class="w-9 sm:w-10 h-9 sm:h-10 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold shadow-sm shrink-0">
             <UserCog class="w-5 h-5" />
           </div>
           <div>
-            <h3 class="text-base font-bold text-slate-900">Ubah Profil Anggota</h3>
-            <p class="text-xs text-slate-500">Perbarui identitas kontak dan pengajuan status keanggotaan</p>
+            <h3 class="text-sm sm:text-base font-bold text-slate-900">Ubah Profil Anggota</h3>
+            <p class="text-[11px] sm:text-xs text-slate-500">Perbarui identitas kontak dan pengajuan status keanggotaan</p>
           </div>
         </div>
         <button 
           @click="handleClose"
-          class="p-2 rounded-full hover:bg-slate-200/80 text-slate-400 hover:text-slate-700 transition cursor-pointer"
+          type="button"
+          aria-label="Tutup modal profil"
+          class="p-2 sm:p-2.5 rounded-full hover:bg-slate-200/80 text-slate-500 hover:text-slate-800 transition cursor-pointer flex items-center justify-center shrink-0"
         >
           <X class="w-5 h-5" />
         </button>
       </div>
 
       <!-- Navigation Tabs Inside Modal -->
-      <div class="flex border-b border-slate-100 bg-slate-50/40 px-5 sm:px-6 pt-2 gap-2 text-xs">
+      <div class="flex border-b border-slate-100 bg-slate-50/90 px-4 sm:px-6 pt-2 gap-2 text-xs shrink-0">
         <button 
           @click="activeTab = 'profile'"
           class="pb-2.5 px-3 font-bold transition flex items-center gap-1.5 cursor-pointer relative"
@@ -51,7 +53,7 @@
       </div>
 
       <!-- Modal Body -->
-      <div class="p-5 sm:p-6 overflow-y-auto flex-1 text-xs">
+      <div class="p-4 sm:p-6 overflow-y-auto flex-1 text-xs">
         
         <!-- TAB 1: FORM UBAH PROFIL UTAMA -->
         <div v-if="activeTab === 'profile'" class="space-y-4">
@@ -494,12 +496,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, onBeforeUnmount } from 'vue';
+import { ref, reactive, watch, onBeforeUnmount, toRef } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import { 
   UserCog, User, GraduationCap, X, Upload, Loader2, Check, Mail, Phone, 
   MapPin, CheckCircle2, Clock, AlertCircle, Sparkles, Camera, RotateCcw, Send 
 } from 'lucide-vue-next';
+import { useModalBack } from '../composables/useModalBack.js';
 
 const props = withDefaults(defineProps<{
   isOpen: boolean;
@@ -511,6 +514,8 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   (e: 'close'): void;
 }>();
+
+useModalBack(toRef(props, 'isOpen'), () => handleClose(), 'edit_profile_modal');
 
 const store = useLibraryStore();
 

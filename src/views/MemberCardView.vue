@@ -258,14 +258,14 @@
     <!-- Dedicated Print & Card Showcase Modal (Matches image.png with pixel perfection!) -->
     <div 
       v-if="isPrintModalOpen && activeMember" 
-      class="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-6 overflow-y-auto bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200"
+      class="fixed inset-0 z-[200] flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 overflow-hidden sm:overflow-y-auto bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200"
       @click.self="isPrintModalOpen = false"
     >
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col my-auto animate-in zoom-in-95 duration-200">
-        <!-- Modal Header -->
-        <div class="px-5 py-4 border-b border-slate-800/80 flex items-center justify-between">
+      <div class="bg-slate-900 border-0 sm:border sm:border-slate-800 sm:rounded-3xl rounded-none w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-xl overflow-hidden shadow-2xl flex flex-col my-auto animate-in zoom-in-95 duration-200">
+        <!-- Sticky Modal Header -->
+        <div class="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-800/80 flex items-center justify-between bg-slate-900/95 backdrop-blur-md shrink-0 sticky top-0 z-20">
           <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm">
+            <div class="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm shrink-0">
               <Printer class="w-4 h-4" />
             </div>
             <div>
@@ -275,14 +275,16 @@
           </div>
           <button 
             @click="isPrintModalOpen = false"
-            class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition cursor-pointer"
+            type="button"
+            aria-label="Tutup modal cetak"
+            class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition cursor-pointer shrink-0"
           >
             <X class="w-4 h-4" />
           </button>
         </div>
 
         <!-- Modal Body: The Card Display (Matching image.png pixel for pixel!) -->
-        <div class="p-4 sm:p-8 flex flex-col items-center justify-center bg-slate-950/70 select-none">
+        <div class="p-4 sm:p-8 flex flex-col items-center justify-center bg-slate-950/70 select-none flex-1 overflow-y-auto">
           
           <!-- Wrapper container for capturing or printing -->
           <div 
@@ -401,8 +403,8 @@
           </div>
         </div>
 
-        <!-- Modal Controls & Actions -->
-        <div class="p-5 sm:p-6 border-t border-slate-800 space-y-4 bg-slate-900">
+        <!-- Sticky Modal Controls & Actions Footer -->
+        <div class="p-4 sm:p-6 border-t border-slate-800 space-y-4 bg-slate-900/95 backdrop-blur-md shrink-0 sticky bottom-0 z-20">
           
           <!-- Customization Bar: Theme & Size -->
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
@@ -483,6 +485,7 @@ import {
   QrCode, BookOpen, AlertTriangle, Copy, Printer, 
   CreditCard, LogIn, UserPlus, Download, X, Moon, Sun, Loader2, Award
 } from 'lucide-vue-next';
+import { useModalBack } from '../composables/useModalBack.js';
 
 const store = useLibraryStore();
 const selectedMemberId = ref('');
@@ -493,6 +496,7 @@ const qrDataUrl = ref('');
 
 // Print & Download Modal State
 const isPrintModalOpen = ref(false);
+useModalBack(isPrintModalOpen, () => { isPrintModalOpen.value = false; }, 'member_card_print_modal');
 const printTheme = ref<'dark' | 'light'>('dark');
 const cardPrintSize = ref<'cr80' | 'large'>('cr80');
 const isDownloading = ref(false);

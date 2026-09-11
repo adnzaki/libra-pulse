@@ -1,33 +1,35 @@
 <template>
-  <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
-    <div class="bg-white border border-slate-100 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+  <div v-if="isOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-hidden sm:overflow-y-auto">
+    <div class="bg-white border-0 sm:border sm:border-slate-100 w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-lg sm:rounded-3xl rounded-none shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
       
-      <!-- Header -->
-      <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between">
+      <!-- Sticky Header -->
+      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 backdrop-blur-md border-b border-slate-100 flex items-center justify-between shrink-0 sticky top-0 z-20">
         <div class="flex items-center gap-3">
           <div 
-            class="w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-sm"
+            class="w-9 sm:w-10 h-9 sm:h-10 rounded-2xl flex items-center justify-center text-white shadow-sm shrink-0"
             :style="{ backgroundColor: form.color || '#3b82f6' }"
           >
             <Tag class="w-5 h-5" />
           </div>
           <div>
-            <h3 class="font-bold text-base text-slate-900">
+            <h3 class="font-bold text-sm sm:text-base text-slate-900">
               {{ category ? 'Edit Kategori Buku' : 'Tambah Kategori Baru' }}
             </h3>
-            <p class="text-xs text-slate-500">Klasifikasi & Taksonomi Koleksi Pustaka</p>
+            <p class="text-[11px] sm:text-xs text-slate-500">Klasifikasi & Taksonomi Koleksi Pustaka</p>
           </div>
         </div>
         <button 
           @click="$emit('close')" 
-          class="p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+          type="button"
+          aria-label="Tutup modal kategori"
+          class="p-2 sm:p-2.5 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-200/70 active:scale-95 transition cursor-pointer flex items-center justify-center shrink-0"
         >
           <X class="w-5 h-5" />
         </button>
       </div>
 
-      <!-- Form -->
-      <div class="p-6 space-y-4 text-xs">
+      <!-- Form (Scrollable) -->
+      <div class="p-4 sm:p-6 space-y-4 text-xs flex-1 overflow-y-auto">
         
         <div>
           <label class="block font-bold text-slate-700 mb-1">Nama Kategori *</label>
@@ -88,8 +90,8 @@
 
       </div>
 
-      <!-- Footer -->
-      <div class="px-6 py-4 bg-slate-50/80 border-t border-slate-100 flex items-center justify-end gap-3">
+      <!-- Sticky Footer -->
+      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 backdrop-blur-md border-t border-slate-100 flex items-center justify-end gap-3 shrink-0 sticky bottom-0 z-20">
         <button 
           type="button"
           @click="$emit('close')" 
@@ -101,7 +103,7 @@
           type="button"
           @click="handleSave"
           :disabled="!form.name || isSubmitting"
-          class="px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+          class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
         >
           <Save class="w-4 h-4" />
           {{ isSubmitting ? 'Menyimpan...' : 'Simpan Kategori' }}
@@ -113,10 +115,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, toRef } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import type { BookCategory } from '../types.js';
 import { Tag, X, Save } from 'lucide-vue-next';
+import { useModalBack } from '../composables/useModalBack.js';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -124,6 +127,8 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits(['close', 'saved']);
+
+useModalBack(toRef(props, 'isOpen'), () => emit('close'), 'category_form_modal');
 
 const store = useLibraryStore();
 const isSubmitting = ref(false);

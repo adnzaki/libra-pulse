@@ -1,25 +1,30 @@
 <template>
-  <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
-    <div class="bg-white border border-slate-100 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+  <div v-if="isOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-hidden sm:overflow-y-auto">
+    <div class="bg-white border-0 sm:border sm:border-slate-100 w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-2xl sm:rounded-3xl rounded-none shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
       
-      <!-- Header -->
-      <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between">
+      <!-- Sticky Header -->
+      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 backdrop-blur-md border-b border-slate-100 flex items-center justify-between shrink-0 sticky top-0 z-20">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
+          <div class="w-9 sm:w-10 h-9 sm:h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
             <BookMarked class="w-5 h-5" />
           </div>
           <div>
-            <h3 class="font-bold text-base text-slate-900">{{ book ? 'Edit Data Buku' : 'Tambah Buku Baru' }}</h3>
-            <p class="text-xs text-slate-500">Katalogisasi, Penempatan Rak & Manajemen Stok</p>
+            <h3 class="font-bold text-sm sm:text-base text-slate-900">{{ book ? 'Edit Data Buku' : 'Tambah Buku Baru' }}</h3>
+            <p class="text-[11px] sm:text-xs text-slate-500">Katalogisasi, Penempatan Rak & Manajemen Stok</p>
           </div>
         </div>
-        <button @click="$emit('close')" class="p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer">
+        <button 
+          @click="$emit('close')" 
+          type="button"
+          aria-label="Tutup modal form buku"
+          class="p-2 sm:p-2.5 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-200/70 active:scale-95 transition cursor-pointer flex items-center justify-center shrink-0"
+        >
           <X class="w-5 h-5" />
         </button>
       </div>
 
-      <!-- Form -->
-      <div class="p-6 space-y-4 text-xs max-h-[75vh] overflow-y-auto">
+      <!-- Form Body (Scrollable) -->
+      <div class="p-4 sm:p-6 space-y-4 text-xs flex-1 overflow-y-auto">
         
         <!-- Cover Upload / Input Box -->
         <div class="p-4 rounded-2xl bg-slate-50/90 border border-slate-200/80 space-y-3">
@@ -110,11 +115,6 @@
                     </p>
                   </template>
                 </div>
-                
-                <!-- <div v-if="form.cover && form.cover.startsWith('/covers/')" class="flex items-center justify-between text-xs text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
-                  <span class="truncate font-medium">Tersimpan di: {{ form.cover }}</span>
-                  <span class="font-bold text-[10px] bg-emerald-200 text-emerald-800 px-1.5 py-0.5 rounded">Lokal</span>
-                </div> -->
               </div>
 
               <!-- URL Mode -->
@@ -161,7 +161,8 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-3 gap-3">
+        <!-- Penerbit, Tahun Terbit, ISBN: 100% width each on mobile, 3 cols on sm+ -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label class="block font-bold text-slate-700 mb-1">Penerbit</label>
             <input 
@@ -244,7 +245,7 @@
             <input 
               v-model="form.language" 
               type="text" 
-              placeholder="Bahasa Indonesia" 
+              placeholder="Indonesia" 
               class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
             />
           </div>
@@ -262,8 +263,8 @@
 
       </div>
 
-      <!-- Footer -->
-      <div class="px-6 py-4 bg-slate-50/80 border-t border-slate-100 flex items-center justify-end gap-3">
+      <!-- Sticky Footer -->
+      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 backdrop-blur-md border-t border-slate-100 flex items-center justify-end gap-3 shrink-0 sticky bottom-0 z-20">
         <button 
           type="button" 
           @click="$emit('close')"
@@ -275,7 +276,7 @@
           type="button"
           @click="handleSaveBook"
           :disabled="!form.title || !form.author || isSubmitting || isUploading"
-          class="px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+          class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
         >
           <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin" />
           <Save v-else class="w-4 h-4" />
@@ -288,10 +289,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, toRef } from 'vue';
 import axios from 'axios';
 import { useLibraryStore } from '../stores/library.js';
 import type { Book } from '../types.js';
+import { useModalBack } from '../composables/useModalBack.js';
 import { 
   BookMarked, 
   X, 
@@ -299,7 +301,7 @@ import {
   Upload, 
   UploadCloud, 
   Link as LinkIcon, 
-  Image as ImageIcon,
+  Image as ImageIcon, 
   Loader2 
 } from 'lucide-vue-next';
 
@@ -309,6 +311,8 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits(['close', 'saved']);
+
+useModalBack(toRef(props, 'isOpen'), () => emit('close'), 'book_form_modal');
 
 const store = useLibraryStore();
 const isSubmitting = ref(false);

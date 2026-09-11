@@ -1401,11 +1401,11 @@
     />
 
     <!-- Admin Direct Reset Member Password Modal -->
-    <div v-if="isResetMemberPasswordOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div class="bg-white w-full max-w-md rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-        <div class="px-6 py-5 bg-slate-900 text-white flex items-center justify-between">
+    <div v-if="isResetMemberPasswordOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/60 backdrop-blur-xs overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200">
+      <div class="bg-white w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-md sm:rounded-3xl rounded-none border-0 sm:border sm:border-slate-200 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+        <div class="px-4 sm:px-6 py-4 sm:py-5 bg-slate-900 text-white flex items-center justify-between shrink-0 sticky top-0 z-20">
           <div class="flex items-center gap-3">
-            <div class="p-2 rounded-xl bg-blue-600/30 text-blue-400 border border-blue-500/30">
+            <div class="p-2 rounded-xl bg-blue-600/30 text-blue-400 border border-blue-500/30 shrink-0">
               <KeyRound class="w-5 h-5" />
             </div>
             <div>
@@ -1415,47 +1415,51 @@
           </div>
           <button 
             @click="isResetMemberPasswordOpen = false"
-            class="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+            type="button"
+            aria-label="Tutup modal reset password"
+            class="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer shrink-0"
           >
             <X class="w-5 h-5" />
           </button>
         </div>
 
-        <form @submit.prevent="handleAdminResetPasswordSubmit" class="p-6 space-y-4 text-xs">
-          <div v-if="selectedMemberForPasswordReset" class="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-3">
-            <img :src="selectedMemberForPasswordReset.avatar" class="w-10 h-10 rounded-full object-cover border border-slate-200" alt="Avatar" />
+        <form @submit.prevent="handleAdminResetPasswordSubmit" class="p-4 sm:p-6 space-y-4 text-xs overflow-y-auto flex-1 flex flex-col justify-between">
+          <div class="space-y-4">
+            <div v-if="selectedMemberForPasswordReset" class="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-3">
+              <img :src="selectedMemberForPasswordReset.avatar" class="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0" alt="Avatar" />
+              <div class="min-w-0 flex-1">
+                <div class="font-bold text-slate-900 truncate">{{ selectedMemberForPasswordReset.name }}</div>
+                <div class="text-[11px] font-mono text-blue-600 font-bold">{{ selectedMemberForPasswordReset.cardNumber }}</div>
+                <div class="text-[10px] text-slate-400 truncate">{{ selectedMemberForPasswordReset.email }}</div>
+              </div>
+            </div>
+
             <div>
-              <div class="font-bold text-slate-900">{{ selectedMemberForPasswordReset.name }}</div>
-              <div class="text-[11px] font-mono text-blue-600 font-bold">{{ selectedMemberForPasswordReset.cardNumber }}</div>
-              <div class="text-[10px] text-slate-400">{{ selectedMemberForPasswordReset.email }}</div>
+              <label class="block font-bold text-slate-700 mb-1">Kata Sandi Baru *</label>
+              <div class="relative">
+                <input 
+                  v-model="adminResetPasswordInput"
+                  :type="showResetPass ? 'text' : 'password'"
+                  required
+                  minlength="4"
+                  placeholder="Minimal 4 karakter (Contoh: 123456 atau member123)"
+                  class="w-full pl-9 pr-10 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-slate-800 text-xs"
+                />
+                <KeyRound class="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <button 
+                  type="button" 
+                  @click="showResetPass = !showResetPass"
+                  class="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
+                >
+                  <Eye v-if="!showResetPass" class="w-4 h-4" />
+                  <EyeOff v-else class="w-4 h-4" />
+                </button>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-1">Kata sandi baru akan langsung berlaku untuk login anggota ini.</div>
             </div>
           </div>
 
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Kata Sandi Baru *</label>
-            <div class="relative">
-              <input 
-                v-model="adminResetPasswordInput"
-                :type="showResetPass ? 'text' : 'password'"
-                required
-                minlength="4"
-                placeholder="Minimal 4 karakter (Contoh: 123456 atau member123)"
-                class="w-full pl-9 pr-10 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-slate-800 text-xs"
-              />
-              <KeyRound class="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-              <button 
-                type="button" 
-                @click="showResetPass = !showResetPass"
-                class="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
-              >
-                <Eye v-if="!showResetPass" class="w-4 h-4" />
-                <EyeOff v-else class="w-4 h-4" />
-              </button>
-            </div>
-            <div class="text-[10px] text-slate-400 mt-1">Kata sandi baru akan langsung berlaku untuk login anggota ini.</div>
-          </div>
-
-          <div class="pt-2 flex gap-2.5">
+          <div class="pt-4 flex gap-2.5 border-t border-slate-100 mt-4 shrink-0">
             <button 
               type="button"
               @click="isResetMemberPasswordOpen = false"
@@ -1477,11 +1481,11 @@
     </div>
 
     <!-- Modal Preview Foto Selfie Guru Ukuran Penuh -->
-    <div v-if="previewSelfieUrl" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs animate-in fade-in duration-200">
-      <div class="bg-white w-full max-w-lg rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-        <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+    <div v-if="previewSelfieUrl" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-xs overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200">
+      <div class="bg-white w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-lg sm:rounded-3xl rounded-none border-0 sm:border sm:border-slate-200 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+        <div class="px-4 sm:px-6 py-4 bg-slate-900 text-white flex items-center justify-between shrink-0 sticky top-0 z-20">
           <div class="flex items-center gap-2.5">
-            <div class="p-1.5 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
+            <div class="p-1.5 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 shrink-0">
               <GraduationCap class="w-5 h-5" />
             </div>
             <div>
@@ -1491,12 +1495,14 @@
           </div>
           <button 
             @click="previewSelfieUrl = null"
-            class="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+            type="button"
+            aria-label="Tutup pratinjau selfie"
+            class="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer shrink-0"
           >
             <X class="w-5 h-5" />
           </button>
         </div>
-        <div class="p-6 flex flex-col items-center justify-center bg-slate-100">
+        <div class="p-4 sm:p-6 flex flex-col items-center justify-center bg-slate-100 flex-1 overflow-y-auto">
           <img 
             :src="previewSelfieUrl" 
             class="max-h-[65vh] w-auto max-w-full rounded-2xl shadow-lg border border-slate-300 object-contain" 
@@ -1504,10 +1510,10 @@
             referrerpolicy="no-referrer"
           />
         </div>
-        <div class="px-6 py-4 bg-white border-t border-slate-100 flex justify-end">
+        <div class="px-4 sm:px-6 py-3 sm:py-4 bg-white border-t border-slate-100 flex justify-end shrink-0 sticky bottom-0 z-20">
           <button 
             @click="previewSelfieUrl = null"
-            class="px-5 py-2.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition cursor-pointer"
+            class="w-full sm:w-auto px-5 py-2.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition cursor-pointer"
           >
             Tutup Pratinjau
           </button>
@@ -1516,11 +1522,11 @@
     </div>
 
     <!-- Modal Penolakan Permintaan Status Guru -->
-    <div v-if="isRejectTeacherModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
-      <div class="bg-white w-full max-w-md rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-        <div class="px-6 py-4 bg-rose-600 text-white flex items-center justify-between">
+    <div v-if="isRejectTeacherModalOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200">
+      <div class="bg-white w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-md sm:rounded-3xl rounded-none border-0 sm:border sm:border-slate-200 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+        <div class="px-4 sm:px-6 py-4 bg-rose-600 text-white flex items-center justify-between shrink-0 sticky top-0 z-20">
           <div class="flex items-center gap-2.5">
-            <div class="p-1.5 rounded-xl bg-rose-700/50 text-white">
+            <div class="p-1.5 rounded-xl bg-rose-700/50 text-white shrink-0">
               <AlertTriangle class="w-5 h-5" />
             </div>
             <div>
@@ -1530,18 +1536,20 @@
           </div>
           <button 
             @click="closeRejectTeacherModal"
-            class="p-1.5 rounded-xl text-rose-200 hover:text-white hover:bg-rose-700 transition cursor-pointer"
+            type="button"
+            aria-label="Tutup modal tolak guru"
+            class="p-2 rounded-xl text-rose-200 hover:text-white hover:bg-rose-700 transition cursor-pointer shrink-0"
           >
             <X class="w-5 h-5" />
           </button>
         </div>
 
-        <form @submit.prevent="confirmRejectTeacherRequest" class="p-6 space-y-4">
+        <form @submit.prevent="confirmRejectTeacherRequest" class="p-4 sm:p-6 space-y-4 flex-1 flex flex-col justify-between overflow-y-auto">
           <div class="space-y-1.5">
             <label class="block text-xs font-bold text-slate-700">Alasan Penolakan</label>
             <textarea 
               v-model="rejectReasonInput"
-              rows="3"
+              rows="4"
               placeholder="Contoh: Foto selfie kurang jelas/buram, atau data belum sesuai dengan daftar dewan guru SDN Pengasinan VII."
               class="w-full px-3.5 py-2.5 rounded-2xl border border-slate-300 text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
               required
@@ -1549,7 +1557,7 @@
             <p class="text-[11px] text-slate-400">Alasan ini akan ditampilkan kepada anggota di portal mereka.</p>
           </div>
 
-          <div class="pt-2 flex items-center gap-3">
+          <div class="pt-4 flex items-center gap-3 border-t border-slate-100 shrink-0">
             <button 
               type="button"
               @click="closeRejectTeacherModal"
@@ -1571,28 +1579,30 @@
     </div>
 
     <!-- Modal Persetujuan Permintaan Status Guru -->
-    <div v-if="isApproveTeacherModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
-      <div class="bg-white w-full max-w-lg rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-        <!-- Header -->
-        <div class="px-6 py-4.5 bg-gradient-to-r from-emerald-600 to-teal-700 text-white flex items-center justify-between">
+    <div v-if="isApproveTeacherModalOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200">
+      <div class="bg-white w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-lg sm:rounded-3xl rounded-none border-0 sm:border sm:border-slate-200 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+        <!-- Sticky Header -->
+        <div class="px-4 sm:px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-700 text-white flex items-center justify-between shrink-0 sticky top-0 z-20">
           <div class="flex items-center gap-3">
-            <div class="p-2 rounded-2xl bg-white/20 backdrop-blur-xs text-white">
+            <div class="p-2 rounded-2xl bg-white/20 backdrop-blur-xs text-white shrink-0">
               <GraduationCap class="w-6 h-6" />
             </div>
             <div>
-              <h3 class="font-bold text-base leading-tight">Persetujuan Status Guru</h3>
-              <p class="text-xs text-emerald-100 mt-0.5">Konfirmasi Upgrade Hak Keanggotaan Dewan Pengajar</p>
+              <h3 class="font-bold text-sm sm:text-base leading-tight">Persetujuan Status Guru</h3>
+              <p class="text-[11px] sm:text-xs text-emerald-100 mt-0.5">Konfirmasi Upgrade Hak Keanggotaan Dewan Pengajar</p>
             </div>
           </div>
           <button 
             @click="closeApproveTeacherModal"
-            class="p-1.5 rounded-xl text-emerald-100 hover:text-white hover:bg-white/20 transition cursor-pointer"
+            type="button"
+            aria-label="Tutup modal persetujuan guru"
+            class="p-2 rounded-xl text-emerald-100 hover:text-white hover:bg-white/20 transition cursor-pointer shrink-0"
           >
             <X class="w-5 h-5" />
           </button>
         </div>
 
-        <div class="p-6 space-y-5">
+        <div class="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto flex-1">
           <!-- Member Detail & Selfie Card -->
           <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center gap-4">
             <div 
@@ -1635,10 +1645,10 @@
           <!-- Hak Istimewa Status Guru -->
           <div class="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200/80 space-y-2.5">
             <div class="flex items-center gap-2 text-indigo-950 font-bold text-xs">
-              <CheckCircle2 class="w-4 h-4 text-indigo-600" />
+              <CheckCircle2 class="w-4 h-4 text-indigo-600 shrink-0" />
               <span>Hak Istimewa yang Akan Diaktifkan untuk Guru:</span>
             </div>
-            <div class="grid grid-cols-3 gap-2 text-xs">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
               <div class="p-2.5 rounded-xl bg-white border border-indigo-100 text-slate-700 text-center">
                 <div class="text-[10px] text-indigo-700 font-semibold uppercase">Kuota Pinjam</div>
                 <div class="font-bold text-slate-900 text-sm mt-0.5">6 Buku</div>
@@ -1660,36 +1670,36 @@
           <p class="text-xs text-slate-500 leading-relaxed">
             Apakah Anda yakin ingin menyetujui permohonan ini? Tipe keanggotaan <strong class="text-slate-900">{{ selectedRequestForApprove?.memberName }}</strong> akan resmi diubah menjadi <strong>Guru SDN Pengasinan VII</strong>.
           </p>
+        </div>
 
-          <!-- Modal Actions -->
-          <div class="pt-2 flex items-center gap-3">
-            <button 
-              type="button"
-              @click="closeApproveTeacherModal"
-              class="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer text-xs"
-            >
-              Batal
-            </button>
-            <button 
-              type="button"
-              @click="confirmApproveTeacherRequest"
-              :disabled="isProcessingApprove"
-              class="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-md shadow-emerald-200 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              <Check class="w-4 h-4" />
-              <span>{{ isProcessingApprove ? 'Menyetujui...' : 'Ya, Setujui Jadi Guru' }}</span>
-            </button>
-          </div>
+        <!-- Sticky Footer Actions -->
+        <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-white/95 backdrop-blur-md border-t border-slate-100 flex items-center gap-3 shrink-0 sticky bottom-0 z-20">
+          <button 
+            type="button" 
+            @click="closeApproveTeacherModal"
+            class="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer text-xs"
+          >
+            Batal
+          </button>
+          <button 
+            type="button" 
+            @click="confirmApproveTeacherRequest"
+            :disabled="isProcessingApprove"
+            class="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-md shadow-emerald-200 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            <Check class="w-4 h-4" />
+            <span>{{ isProcessingApprove ? 'Menyetujui...' : 'Ya, Setujui Jadi Guru' }}</span>
+          </button>
         </div>
       </div>
     </div>
 
     <!-- Modal Penangguhan Sanksi Anggota (Suspend) -->
-    <div v-if="isSuspendMemberModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
-      <div class="bg-white w-full max-w-md rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-        <div class="px-6 py-4 bg-rose-600 text-white flex items-center justify-between">
+    <div v-if="isSuspendMemberModalOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200">
+      <div class="bg-white w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-md sm:rounded-3xl rounded-none border-0 sm:border sm:border-slate-200 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+        <div class="px-4 sm:px-6 py-4 bg-rose-600 text-white flex items-center justify-between shrink-0 sticky top-0 z-20">
           <div class="flex items-center gap-2.5">
-            <div class="p-1.5 rounded-xl bg-rose-700/50 text-white">
+            <div class="p-1.5 rounded-xl bg-rose-700/50 text-white shrink-0">
               <UserX class="w-5 h-5" />
             </div>
             <div>
@@ -1699,47 +1709,51 @@
           </div>
           <button 
             @click="closeSuspendMemberModal"
-            class="p-1.5 rounded-xl text-rose-200 hover:text-white hover:bg-rose-700 transition cursor-pointer"
+            type="button"
+            aria-label="Tutup modal suspend"
+            class="p-2 rounded-xl text-rose-200 hover:text-white hover:bg-rose-700 transition cursor-pointer shrink-0"
           >
             <X class="w-5 h-5" />
           </button>
         </div>
 
-        <form @submit.prevent="confirmSuspendMember" class="p-6 space-y-4">
-          <div class="p-3 rounded-2xl bg-rose-50/70 border border-rose-100 text-xs text-rose-800 space-y-1">
-            <div class="font-bold">Informasi Sanksi:</div>
-            <p class="text-[11px] text-rose-700 leading-relaxed">
-              Kartu anggota yang disuspend tidak dapat digunakan untuk meminjam buku ataupun mem-booking koleksi selama masa sanksi.
-            </p>
-          </div>
+        <form @submit.prevent="confirmSuspendMember" class="p-4 sm:p-6 space-y-4 flex-1 flex flex-col justify-between overflow-y-auto">
+          <div class="space-y-4">
+            <div class="p-3 rounded-2xl bg-rose-50/70 border border-rose-100 text-xs text-rose-800 space-y-1">
+              <div class="font-bold">Informasi Sanksi:</div>
+              <p class="text-[11px] text-rose-700 leading-relaxed">
+                Kartu anggota yang disuspend tidak dapat digunakan untuk meminjam buku ataupun mem-booking koleksi selama masa sanksi.
+              </p>
+            </div>
 
-          <div class="space-y-1.5">
-            <label class="block text-xs font-bold text-slate-700">Durasi Sanksi (Hari)</label>
-            <div class="flex items-center gap-2">
-              <input 
-                v-model.number="suspendDaysInput"
-                type="number"
-                min="1"
-                max="90"
-                class="w-24 px-3.5 py-2.5 rounded-2xl border border-slate-300 text-xs font-bold focus:ring-2 focus:ring-rose-500 focus:outline-none"
+            <div class="space-y-1.5">
+              <label class="block text-xs font-bold text-slate-700">Durasi Sanksi (Hari)</label>
+              <div class="flex items-center gap-2">
+                <input 
+                  v-model.number="suspendDaysInput"
+                  type="number"
+                  min="1"
+                  max="90"
+                  class="w-full sm:w-28 px-3.5 py-2.5 rounded-2xl border border-slate-300 text-xs font-bold focus:ring-2 focus:ring-rose-500 focus:outline-none"
+                  required
+                />
+                <span class="text-xs text-slate-500 shrink-0">Hari dari sekarang</span>
+              </div>
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="block text-xs font-bold text-slate-700">Alasan Penangguhan / Pelanggaran</label>
+              <textarea 
+                v-model="suspendReasonInput"
+                rows="3"
+                placeholder="Contoh: Keterlambatan pengembalian buku berulang kali, pelanggaran tata tertib perpustakaan..."
+                class="w-full px-3.5 py-2.5 rounded-2xl border border-slate-300 text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
                 required
-              />
-              <span class="text-xs text-slate-500">Hari dari hari ini</span>
+              ></textarea>
             </div>
           </div>
 
-          <div class="space-y-1.5">
-            <label class="block text-xs font-bold text-slate-700">Alasan Penangguhan / Pelanggaran</label>
-            <textarea 
-              v-model="suspendReasonInput"
-              rows="3"
-              placeholder="Contoh: Keterlambatan pengembalian buku berulang kali, pelanggaran tata tertib perpustakaan..."
-              class="w-full px-3.5 py-2.5 rounded-2xl border border-slate-300 text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
-              required
-            ></textarea>
-          </div>
-
-          <div class="pt-2 flex items-center gap-3">
+          <div class="pt-4 flex items-center gap-3 border-t border-slate-100 shrink-0">
             <button 
               type="button"
               @click="closeSuspendMemberModal"
@@ -1762,7 +1776,15 @@
 
     <!-- Modal Universal Konfirmasi Aksi Admin -->
     <div v-if="confirmDialog.isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
-      <div class="bg-white w-full max-w-md rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+      <div class="bg-white w-full max-w-sm sm:max-w-md rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 relative">
+        <button 
+          @click="closeConfirmDialog"
+          type="button"
+          aria-label="Tutup dialog konfirmasi"
+          class="absolute top-4 right-4 p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+        >
+          <X class="w-5 h-5" />
+        </button>
         <div class="p-6 text-center space-y-4">
           <!-- Icon -->
           <div 
@@ -1820,6 +1842,7 @@ import CategoryFormModal from '../components/CategoryFormModal.vue';
 import MemberFormModal from '../components/MemberFormModal.vue';
 import ChangePasswordModal from '../components/ChangePasswordModal.vue';
 import CollectBookingModal from '../components/CollectBookingModal.vue';
+import { useModalBack } from '../composables/useModalBack.js';
 import { 
   ShieldCheck, BookPlus, CheckCircle2, BookOpen, CheckCircle, 
   BookMarked, Clock, AlertTriangle, UserX, Sliders, Send, 
@@ -2373,5 +2396,13 @@ const formatDateTime = (ts: number | string) => {
     minute: '2-digit' 
   });
 };
+
+// Hardware / Browser Back button support for Admin modals
+useModalBack(isResetMemberPasswordOpen, () => { isResetMemberPasswordOpen.value = false; }, 'admin_reset_pass');
+useModalBack(computed(() => !!previewSelfieUrl.value), () => { previewSelfieUrl.value = null; }, 'admin_preview_selfie');
+useModalBack(isRejectTeacherModalOpen, () => { closeRejectTeacherModal(); }, 'admin_reject_teacher');
+useModalBack(isApproveTeacherModalOpen, () => { closeApproveTeacherModal(); }, 'admin_approve_teacher');
+useModalBack(isSuspendMemberModalOpen, () => { closeSuspendMemberModal(); }, 'admin_suspend_member');
+useModalBack(computed(() => confirmDialog.value.isOpen), () => { closeConfirmDialog(); }, 'admin_confirm_dialog');
 </script>
 

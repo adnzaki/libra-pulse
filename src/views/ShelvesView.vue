@@ -224,6 +224,7 @@ import { ref, computed } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import type { Shelf } from '../types.js';
 import ShelfModal from '../components/ShelfModal.vue';
+import { useModalBack } from '../composables/useModalBack.js';
 import { Layers, Plus, Building2, ChevronDown, Pencil, Trash2 } from 'lucide-vue-next';
 
 const store = useLibraryStore();
@@ -286,6 +287,8 @@ const openEditShelfModal = (shelf: Shelf) => {
 
 const shelfToDelete = ref<string | null>(null);
 const isDeletingShelf = ref(false);
+
+useModalBack(computed(() => !!shelfToDelete.value), () => { shelfToDelete.value = null; }, 'shelf_delete_confirm');
 
 const handleDeleteShelf = (shelfId: string) => {
   if (!store.isAdmin) {
