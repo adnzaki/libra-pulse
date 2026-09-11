@@ -68,10 +68,11 @@
           <div class="flex items-start justify-between gap-2">
             <div class="flex items-center gap-3">
               <div 
-                class="w-11 h-11 rounded-2xl flex items-center justify-center font-mono font-extrabold text-sm shadow-sm"
+                class="w-11 h-11 rounded-2xl flex items-center justify-center font-mono font-extrabold text-sm shadow-xs shrink-0 border select-none transition-transform hover:scale-105"
                 :style="{ backgroundColor: `${shelf.color}15`, color: shelf.color, borderColor: `${shelf.color}30` }"
+                :title="`Kode Lengkap Rak: ${shelf.code}`"
               >
-                {{ shelf.code }}
+                {{ getShortShelfCode(shelf.code) }}
               </div>
               <div>
                 <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
@@ -236,6 +237,21 @@ const displayedShelves = computed(() => {
   if (selectedFloor.value === 0) return store.shelves;
   return store.shelves.filter(s => s.floor === selectedFloor.value);
 });
+
+const getShortShelfCode = (code?: string) => {
+  if (!code) return '';
+  const trimmed = code.trim();
+  // Extract trailing code segment (e.g. 'RAK-A1' -> 'A1', 'RAK-B2' -> 'B2')
+  if (trimmed.includes('-')) {
+    const parts = trimmed.split('-');
+    return parts[parts.length - 1].trim();
+  }
+  if (trimmed.includes('_')) {
+    const parts = trimmed.split('_');
+    return parts[parts.length - 1].trim();
+  }
+  return trimmed.replace(/^RAK\s*/i, '').trim() || trimmed;
+};
 
 const getBooksOnShelf = (shelfId: string) => {
   return store.books.filter(b => b.shelfId === shelfId);
