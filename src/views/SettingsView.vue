@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6 max-w-4xl mx-auto pb-12">
+  <div v-if="store.isSuperAdmin" class="space-y-6 max-w-4xl mx-auto pb-12">
     <!-- Header -->
     <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-sm">
       <div class="flex items-center justify-between flex-wrap gap-4">
@@ -339,15 +339,30 @@
       </div>
     </div>
   </div>
+
+  <!-- Fallback jika bukan Super Admin -->
+  <div v-else class="max-w-md mx-auto my-12 p-8 bg-white rounded-3xl border border-slate-200 text-center space-y-4 shadow-sm">
+    <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+      <ShieldAlert class="w-6 h-6" />
+    </div>
+    <h2 class="text-lg font-bold text-slate-900">Akses Dibatasi (Khusus Super Admin)</h2>
+    <p class="text-xs text-slate-500 leading-relaxed">
+      Menu Pengaturan & Database dikunci dan hanya dapat diakses oleh akun Super Administrator perpustakaan.
+    </p>
+    <router-link to="/admin" class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 transition">
+      Kembali ke Admin Console
+    </router-link>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import { useLibraryStore } from '../stores/library.js';
 import type { LibraryBackupData } from '../lib/backupManager.js';
 import { 
   Database, RefreshCw, Download, UploadCloud, Archive, 
-  Loader2, AlertTriangle, CheckCircle2, Mail, Send 
+  Loader2, AlertTriangle, CheckCircle2, Mail, Send, ShieldAlert 
 } from 'lucide-vue-next';
 
 const store = useLibraryStore();
@@ -547,8 +562,22 @@ const handleTestEmail = async () => {
   }
 };
 
+const router = useRouter();
+
 onMounted(() => {
+  if (!store.isSuperAdmin) {
+    store.setError('Akses Ditolak: Halaman Pengaturan & Database hanya dapat diakses oleh Super Admin.');
+    router.replace(store.currentUser?.role === 'admin' ? '/admin' : '/login');
+    return;
+  }
   checkSmtpStatus();
+});
+
+watch(() => store.isSuperAdmin, (isSuper) => {
+  if (!isSuper) {
+    store.setError('Akses Ditolak: Halaman Pengaturan & Database hanya dapat diakses oleh Super Admin.');
+    router.replace(store.currentUser?.role === 'admin' ? '/admin' : '/login');
+  }
 });
 
 const executeRestore = async () => {

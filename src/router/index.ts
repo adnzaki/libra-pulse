@@ -43,7 +43,7 @@ const routes: RouteRecordRaw[] = [
     path: '/settings',
     name: 'settings',
     component: SettingsView,
-    meta: { title: 'Pengaturan Sistem & Database', requiresAdmin: true }
+    meta: { title: 'Pengaturan Sistem & Database', requiresAdmin: true, requiresSuperAdmin: true }
   },
   {
     path: '/login',
@@ -71,11 +71,33 @@ router.beforeEach(async (to, from, next) => {
   const store = useLibraryStore();
   
   // If store is still initializing, wait briefly or check localStorage
-  if (!store.currentUser && (localStorage.getItem('pustaka_token') || localStorage.getItem('pustaka_user_id'))) {
-    const savedUserId = localStorage.getItem('pustaka_user_id');
-    const member = store.members.find(m => m.id === savedUserId);
-    if (member) {
-      store.currentUser = member;
+  if (!store.currentUser) {
+    const rawUser = localStorage.getItem('pustaka_user');
+    if (rawUser) {
+      try {
+        store.currentUser = JSON.parse(rawUser);
+      } catch {
+        // ignore parse error
+      }
+    }
+    if (!store.currentUser && (localStorage.getItem('pustaka_token') || localStorage.getItem('pustaka_user_id'))) {
+      const savedUserId = localStorage.getItem('pustaka_user_id');
+      const member = store.members.find(m => m.id === savedUserId);
+      if (member) {
+        store.currentUser = member;
+      }
+    }
+  }
+
+  // Check Super Admin route protection (e.g. /settings)
+  if (to.meta.requiresSuperAdmin) {
+    if (!store.currentUser || store.currentUser.role !== 'admin') {
+      store.setError('Akses Terbatas: Anda harus masuk sebagai Super Administrator terlebih dahulu.');
+      return next({ path: '/login', query: { mode: 'admin', redirect: to.fullPath } });
+    }
+    if (!store.isSuperAdmin) {
+      store.setError('Akses Ditolak: Halaman Pengaturan & Database hanya dapat diakses oleh Super Admin.');
+      return next({ path: '/admin' });
     }
   }
 

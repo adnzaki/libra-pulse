@@ -56,6 +56,7 @@ export const useLibraryStore = defineStore('library', {
 
   getters: {
     isAdmin: (state) => state.currentUser?.role === 'admin',
+    isSuperAdmin: (state) => isSuperAdminMember(state.currentUser),
     isMember: (state) => state.currentUser?.role === 'member',
     activeHoldBookings: (state) => state.bookings.filter(b => b.status === 'active_hold'),
     activeLoans: (state) => state.loans.filter(l => l.status === 'active' || l.status === 'overdue'),

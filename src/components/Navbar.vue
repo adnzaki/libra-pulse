@@ -149,6 +149,7 @@
                     Kelola Rak & Koleksi
                   </router-link>
                   <router-link 
+                    v-if="store.isSuperAdmin"
                     to="/settings" 
                     class="w-full text-left px-3.5 py-2 hover:bg-slate-800 rounded-xl flex items-center gap-2.5 text-slate-200 transition"
                   >
