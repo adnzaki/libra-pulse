@@ -496,10 +496,32 @@ export const useLibraryStore = defineStore('library', {
     },
 
     restoreUserSession() {
+      const savedToken = localStorage.getItem('pustaka_token');
       const savedUserId = localStorage.getItem('pustaka_user_id');
+
+      // Keamanan sesi: HANYA pulihkan jika token & user_id aktif tersimpan bersamaan
+      if (!savedToken || !savedUserId) {
+        this.currentUser = null;
+        this.authToken = '';
+        localStorage.removeItem('pustaka_token');
+        localStorage.removeItem('pustaka_user_id');
+        localStorage.removeItem('pustaka_user');
+        return;
+      }
+
       if (savedUserId && this.members.length > 0) {
         const found = this.members.find(m => m.id === savedUserId);
-        if (found) this.currentUser = found;
+        if (found) {
+          this.currentUser = found;
+          localStorage.setItem('pustaka_user', JSON.stringify(found));
+        } else {
+          // Kredensial tidak valid di database: hapus residu sesi
+          this.currentUser = null;
+          this.authToken = '';
+          localStorage.removeItem('pustaka_token');
+          localStorage.removeItem('pustaka_user_id');
+          localStorage.removeItem('pustaka_user');
+        }
       }
     },
 
@@ -1124,7 +1146,7 @@ export const useLibraryStore = defineStore('library', {
         }
 
         this.members = this.members.filter(m => m.id !== memberId);
-        if (this.currentUser?.id === memberId) this.logout();
+        if (this.currentUser?.id === memberId) await this.logout();
         this.calculateStats();
 
         try {
@@ -1410,6 +1432,7 @@ export const useLibraryStore = defineStore('library', {
           this.authToken = `token_${matchedMember.id}_${Date.now()}`;
           localStorage.setItem('pustaka_token', this.authToken);
           localStorage.setItem('pustaka_user_id', matchedMember.id);
+          localStorage.setItem('pustaka_user', JSON.stringify(matchedMember));
           this.showToast(matchedMember.role === 'admin' ? `Selamat datang, Admin ${matchedMember.name}!` : `Selamat datang, ${matchedMember.name}!`);
 
           if (matchedMember.password && !matchedMember.password.startsWith('$sha256$')) {
@@ -1461,6 +1484,7 @@ export const useLibraryStore = defineStore('library', {
       this.authToken = `token_google_${matched.id}_${Date.now()}`;
       localStorage.setItem('pustaka_token', this.authToken);
       localStorage.setItem('pustaka_user_id', matched.id);
+      localStorage.setItem('pustaka_user', JSON.stringify(matched));
       this.showToast(`Selamat datang, ${matched.name}!`);
       return { success: true, user: matched };
     },
@@ -1668,11 +1692,33 @@ export const useLibraryStore = defineStore('library', {
       }
     },
 
-    logout() {
+    async logout() {
       this.currentUser = null;
       this.authToken = '';
-      localStorage.removeItem('pustaka_token');
-      localStorage.removeItem('pustaka_user_id');
+
+      // Bersihkan seluruh kredensial dan residu sesi dari penyimpanan lokal browser
+      try {
+        localStorage.removeItem('pustaka_token');
+        localStorage.removeItem('pustaka_user_id');
+        localStorage.removeItem('pustaka_user');
+      } catch (e) {
+        console.warn('Gagal membersihkan localStorage kredensial:', e);
+      }
+
+      try {
+        sessionStorage.clear();
+      } catch (e) {
+        console.warn('Gagal membersihkan sessionStorage:', e);
+      }
+
+      // Pastikan sesi Firebase Auth juga logout agar tidak ada token Firebase tersisa
+      try {
+        const { logoutUser } = await import('../lib/firebase.js');
+        await logoutUser();
+      } catch (e) {
+        console.warn('Firebase logout pada store.logout gagal:', e);
+      }
+
       this.showToast('Anda telah berhasil keluar.');
     },
 

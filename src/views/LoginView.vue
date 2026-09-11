@@ -589,7 +589,7 @@ const memberForm = ref({
 });
 
 const adminForm = ref({
-  identifier: 'azzackey@gmail.com',
+  identifier: '',
   password: ''
 });
 
@@ -808,7 +808,14 @@ const handleConfirmReset = async () => {
 };
 
 const handleLogout = async () => {
-  await logoutUser().catch(() => {});
-  store.logout();
+  try {
+    await logoutUser().catch(() => {});
+  } finally {
+    await store.logout();
+    errorMsg.value = '';
+    successMsg.value = '';
+    memberForm.value = { identifier: '', password: '' };
+    adminForm.value = { identifier: '', password: '' };
+  }
 };
 </script>

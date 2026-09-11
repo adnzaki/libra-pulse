@@ -294,7 +294,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useLibraryStore } from '../stores/library.js';
 import { 
   BookMarked, Layers, QrCode, UserCheck, 
@@ -327,6 +327,8 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll);
 });
 
+const router = useRouter();
+
 const toggleUserMenu = () => {
   isUserMenuOpen.value = !isUserMenuOpen.value;
 };
@@ -335,8 +337,12 @@ const handleLogoutClick = async () => {
   try {
     await logoutUser().catch(() => {});
   } finally {
-    store.logout();
+    await store.logout();
     isUserMenuOpen.value = false;
+    isMobileMenuOpen.value = false;
+    if (route.meta.requiresAdmin || route.meta.requiresSuperAdmin || route.path.startsWith('/admin') || route.path.startsWith('/settings') || route.path.startsWith('/member-portal')) {
+      router.push('/login');
+    }
   }
 };
 </script>

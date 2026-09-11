@@ -70,22 +70,37 @@ router.beforeEach(async (to, from, next) => {
   
   const store = useLibraryStore();
   
-  // If store is still initializing, wait briefly or check localStorage
+  // Verifikasi keabsahan sesi: HANYA jika token dan user_id aktif tersimpan di browser
   if (!store.currentUser) {
-    const rawUser = localStorage.getItem('pustaka_user');
-    if (rawUser) {
-      try {
-        store.currentUser = JSON.parse(rawUser);
-      } catch {
-        // ignore parse error
-      }
-    }
-    if (!store.currentUser && (localStorage.getItem('pustaka_token') || localStorage.getItem('pustaka_user_id'))) {
-      const savedUserId = localStorage.getItem('pustaka_user_id');
+    const savedToken = localStorage.getItem('pustaka_token');
+    const savedUserId = localStorage.getItem('pustaka_user_id');
+
+    if (savedToken && savedUserId) {
       const member = store.members.find(m => m.id === savedUserId);
       if (member) {
         store.currentUser = member;
+      } else {
+        const rawUser = localStorage.getItem('pustaka_user');
+        if (rawUser) {
+          try {
+            const parsed = JSON.parse(rawUser);
+            if (parsed && parsed.id === savedUserId) {
+              store.currentUser = parsed;
+            } else {
+              localStorage.removeItem('pustaka_user');
+            }
+          } catch {
+            localStorage.removeItem('pustaka_user');
+          }
+        }
       }
+    } else {
+      // Tidak ada token aktif / user ID di browser: pastikan sesi kosong total
+      store.currentUser = null;
+      store.authToken = '';
+      localStorage.removeItem('pustaka_user');
+      localStorage.removeItem('pustaka_token');
+      localStorage.removeItem('pustaka_user_id');
     }
   }
 
