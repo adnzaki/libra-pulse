@@ -920,8 +920,25 @@ export const useLibraryStore = defineStore('library', {
 
         if (isEditing) {
           const idx = this.categories.findIndex(c => c.id === catData.id);
-          savedCat = { ...this.categories[idx], ...catData };
+          const oldCat = this.categories[idx];
+          const oldCatName = oldCat?.name;
+          savedCat = { ...oldCat, ...catData };
           this.categories[idx] = savedCat;
+
+          // Cascade rename to books if category name changed
+          if (oldCatName && catData.name && oldCatName !== catData.name) {
+            this.books.forEach(async (b) => {
+              if (b.category === oldCatName) {
+                b.category = catData.name!;
+                try {
+                  const { syncBookDoc } = await import('../lib/firebase.js');
+                  await syncBookDoc(b);
+                } catch {
+                  queueOfflineMutation({ action: 'saveBook', collection: 'books', docId: b.id, data: b });
+                }
+              }
+            });
+          }
         } else {
           savedCat = {
             id: catData.id || `CAT-${Date.now().toString().slice(-4)}`,
@@ -947,14 +964,40 @@ export const useLibraryStore = defineStore('library', {
         return { success: true, category: savedCat };
       } catch (err: any) {
         this.setError(err?.message || 'Gagal menyimpan kategori');
-        return { success: false };
+        return { success: false, error: err?.message };
       }
+    },
+
+    async createCategory(catData: Partial<BookCategory>) {
+      return this.saveCategory(catData);
+    },
+
+    async updateCategory(categoryId: string, catData: Partial<BookCategory>) {
+      return this.saveCategory({ ...catData, id: categoryId });
     },
 
     async deleteCategory(categoryId: string) {
       try {
+        const target = this.categories.find(c => c.id === categoryId);
+        const oldName = target?.name;
         this.categories = this.categories.filter(c => c.id !== categoryId);
         this.calculateStats();
+
+        // Reassign affected books to fallback category
+        if (oldName) {
+          const fallback = this.categories[0]?.name || 'Umum';
+          this.books.forEach(async (b) => {
+            if (b.category === oldName) {
+              b.category = fallback;
+              try {
+                const { syncBookDoc } = await import('../lib/firebase.js');
+                await syncBookDoc(b);
+              } catch {
+                queueOfflineMutation({ action: 'saveBook', collection: 'books', docId: b.id, data: b });
+              }
+            }
+          });
+        }
 
         try {
           const { removeCategoryDoc } = await import('../lib/firebase.js');
@@ -968,7 +1011,7 @@ export const useLibraryStore = defineStore('library', {
         return { success: true };
       } catch (err: any) {
         this.setError(err?.message || 'Gagal menghapus kategori');
-        return { success: false };
+        return { success: false, error: err?.message };
       }
     },
 

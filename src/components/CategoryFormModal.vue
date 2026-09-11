@@ -164,7 +164,10 @@ const handleSave = async () => {
   try {
     let res;
     if (props.category?.id) {
-      res = await store.updateCategory(props.category.id, form.value);
+      res = await store.updateCategory(props.category.id, {
+        ...form.value,
+        id: props.category.id
+      });
     } else {
       res = await store.createCategory(form.value);
     }
@@ -173,6 +176,8 @@ const handleSave = async () => {
       emit('saved');
       emit('close');
     }
+  } catch (err: any) {
+    store.setError(err?.message || 'Gagal menyimpan data kategori');
   } finally {
     isSubmitting.value = false;
   }
