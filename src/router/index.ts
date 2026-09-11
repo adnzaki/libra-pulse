@@ -60,7 +60,20 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
-  scrollBehavior() {
+  scrollBehavior(to, from, savedPosition) {
+    // 1. Jika URL/path sama (misal modal buka/tutup via history state popstate), jangan scroll sama sekali!
+    if (to.fullPath === from.fullPath || to.path === from.path) {
+      return false;
+    }
+    // 2. Jika ada anchor / hash
+    if (to.hash) {
+      return { el: to.hash, behavior: 'smooth' };
+    }
+    // 3. Jika berpindah halaman lewat back/forward browser dan posisi sebelumnya tersimpan
+    if (savedPosition) {
+      return savedPosition;
+    }
+    // 4. Navigasi standar ke rute halaman baru: bawa ke paling atas
     return { top: 0 };
   }
 });

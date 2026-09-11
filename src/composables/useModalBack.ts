@@ -3,8 +3,10 @@ import { watch, onUnmounted, type Ref } from 'vue';
 /**
  * Composable untuk menangani tombol Back pada HP/browser saat modal terbuka:
  * - Ketika modal terbuka, push state sementara ke history tanpa mengubah route URL.
+ * - Mencatat posisi scroll saat ini agar posisi membaca/menjelajah pengguna tidak terlempar ke atas.
  * - Ketika pengguna menekan tombol Back di smartphone/browser, modal akan ditutup (bukan berpindah halaman).
- * - Ketika pengguna menutup modal lewat tombol X, tombol batal, atau backdrop, state history dibersihkan kembali secara rapi.
+ * - Ketika pengguna menutup modal lewat tombol X, tombol batal, atau backdrop, state history dibersihkan kembali
+ *   dan posisi scroll pengguna dipulihkan secara instan tanpa loncat ke navbar.
  */
 export function useModalBack(
   isOpenSource: Ref<boolean> | (() => boolean),
@@ -13,14 +15,31 @@ export function useModalBack(
 ) {
   let isBackTriggeredByPopState = false;
   let hasPushedState = false;
+  let savedScrollY = 0;
 
   const getIsOpen = () => (typeof isOpenSource === 'function' ? isOpenSource() : isOpenSource.value);
+
+  const restoreScroll = () => {
+    if (typeof window === 'undefined') return;
+    const targetY = savedScrollY;
+    const applyScroll = () => {
+      if (typeof window !== 'undefined' && Math.abs(window.scrollY - targetY) > 1) {
+        window.scrollTo({ top: targetY, left: 0, behavior: 'instant' as ScrollBehavior });
+      }
+    };
+    applyScroll();
+    requestAnimationFrame(applyScroll);
+    setTimeout(applyScroll, 20);
+    setTimeout(applyScroll, 80);
+    setTimeout(applyScroll, 160);
+  };
 
   const handlePopState = () => {
     if (getIsOpen()) {
       isBackTriggeredByPopState = true;
       hasPushedState = false;
       onClose();
+      restoreScroll();
     }
   };
 
@@ -29,14 +48,23 @@ export function useModalBack(
   watch(watchSource, (newVal) => {
     if (newVal) {
       isBackTriggeredByPopState = false;
-      // Pertahankan state bawaan vue-router
+      // Catat posisi scroll sebelum modal muncul
+      savedScrollY = typeof window !== 'undefined' ? window.scrollY : 0;
+
+      // Pertahankan state bawaan vue-router dan sertakan informasi scroll
       const currentHistoryState = (typeof window !== 'undefined' && window.history && window.history.state) 
         ? { ...window.history.state } 
         : {};
       
       try {
         window.history.pushState(
-          { ...currentHistoryState, [modalKey]: true, activeModal: modalKey, ts: Date.now() },
+          { 
+            ...currentHistoryState, 
+            [modalKey]: true, 
+            activeModal: modalKey, 
+            ts: Date.now(),
+            scroll: { left: 0, top: savedScrollY }
+          },
           '',
           window.location.href
         );
@@ -58,6 +86,7 @@ export function useModalBack(
       }
       isBackTriggeredByPopState = false;
       hasPushedState = false;
+      restoreScroll();
     }
   });
 
@@ -72,3 +101,4 @@ export function useModalBack(
     }
   });
 }
+
