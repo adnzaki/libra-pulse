@@ -331,6 +331,119 @@ ${message}
   })
 })
 
+// Endpoint Pengiriman Kode Verifikasi Perangkat Utama
+app.post('/api/send-device-verification', async (req, res) => {
+  const { email, memberName, deviceName, code } = req.body || {}
+  if (!email || !code) {
+    return res.status(400).json({
+      success: false,
+      error: 'Email tujuan dan kode verifikasi wajib disertakan.',
+    })
+  }
+
+  const host = process.env.SMTP_HOST
+  const user = process.env.SMTP_USER
+  const rawPass = process.env.SMTP_PASS
+
+  const formattedHtml = `
+    <div style="font-family: Arial, Helvetica, sans-serif; max-width: 540px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; color: #1e293b;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div style="display: inline-block; width: 48px; height: 48px; line-height: 48px; border-radius: 14px; background-color: #2563eb; color: #ffffff; font-weight: bold; font-size: 24px; margin-bottom: 8px;">L</div>
+        <h2 style="color: #0f172a; margin: 0; font-size: 20px; font-weight: bold;">Perpustakaan Libra</h2>
+        <p style="color: #64748b; font-size: 13px; margin: 4px 0 0 0;">Verifikasi Perangkat Utama (Main Device)</p>
+      </div>
+
+      <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+        <p style="margin: 0 0 12px 0; font-size: 14px; color: #334155;">Halo <strong>${memberName || 'Pengguna'}</strong>,</p>
+        <p style="margin: 0 0 16px 0; font-size: 13px; color: #475569; line-height: 1.5;">
+          Kami menerima permintaan untuk menetapkan perangkat <strong>${deviceName || 'Perangkat Baru'}</strong> sebagai <strong>Perangkat Utama (Main Device)</strong> untuk akun perpustakaan Anda.
+        </p>
+
+        <div style="text-align: center; margin: 24px 0;">
+          <div style="display: inline-block; background-color: #eff6ff; border: 2px dashed #3b82f6; border-radius: 12px; padding: 14px 28px;">
+            <span style="font-family: 'Courier New', Courier, monospace; font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #1d4ed8;">${code}</span>
+          </div>
+          <p style="font-size: 11px; color: #64748b; margin-top: 8px;">Kode ini berlaku selama <strong>10 menit</strong>.</p>
+        </div>
+
+        <p style="margin: 0; font-size: 12px; color: #64748b; line-height: 1.5;">
+          Setelah perangkat ini menjadi Perangkat Utama, Anda dapat mengontrol sesi aktif dan mencabut login akun dari perangkat lain demi keamanan.
+        </p>
+      </div>
+
+      <div style="border-top: 1px solid #f1f5f9; padding-top: 16px; font-size: 11px; color: #94a3b8; text-align: center; line-height: 1.4;">
+        <p style="margin: 0 0 4px 0;">Jika Anda tidak merasa melakukan permintaan ini, segera amankan akun Anda atau abaikan email ini.</p>
+        <p style="margin: 0;">Sistem Otomasi Perpustakaan Digital Libra • ${new Date().toLocaleString('id-ID')}</p>
+      </div>
+    </div>
+  `
+
+  if (host && user && rawPass) {
+    try {
+      const pass = rawPass.replace(/\s+/g, '')
+      const nodemailer = await import('nodemailer')
+      const isGmail = host.includes('gmail.com') || user.includes('@gmail.com')
+
+      const transporterOptions: any = isGmail
+        ? {
+            service: 'gmail',
+            auth: { user, pass },
+            connectionTimeout: 15000,
+            greetingTimeout: 15000,
+          }
+        : {
+            host: host,
+            port: Number(process.env.SMTP_PORT) || 587,
+            secure: process.env.SMTP_SECURE === 'true' || Number(process.env.SMTP_PORT) === 465,
+            auth: { user, pass },
+            connectionTimeout: 15000,
+            greetingTimeout: 15000,
+            tls: { rejectUnauthorized: false },
+          }
+
+      const transporter = nodemailer.createTransport(transporterOptions)
+      let fromAddress = process.env.SMTP_FROM || `"Perpustakaan Libra" <${user}>`
+      if (isGmail && !fromAddress.includes(user)) {
+        fromAddress = `"Perpustakaan Libra" <${user}>`
+      }
+
+      const info = await transporter.sendMail({
+        from: fromAddress,
+        replyTo: user,
+        to: email,
+        subject: `🔐 Kode Verifikasi Perangkat Utama: ${code}`,
+        text: `Halo ${memberName || 'Pengguna'},\n\nKode verifikasi untuk menetapkan perangkat ${deviceName || 'Anda'} sebagai Perangkat Utama adalah: ${code}\n\nKode berlaku selama 10 menit. Jangan berikan kode ini kepada siapa pun.`,
+        html: formattedHtml,
+      })
+
+      console.log('>>> [DEVICE VERIFICATION] Email terkirim via SMTP:', info.messageId)
+      return res.json({
+        success: true,
+        mode: 'live_smtp',
+        message: `Kode verifikasi telah dikirim ke ${email}`,
+      })
+    } catch (err: any) {
+      console.error('>>> [DEVICE VERIFICATION] Gagal via SMTP:', err)
+      // Fallback response with simulated code if SMTP fails so user is not blocked
+      return res.json({
+        success: true,
+        mode: 'smtp_error_fallback',
+        code,
+        message: `SMTP bermasalah (${err.message}). Kode verifikasi telah dicatat untuk pengujian: ${code}`,
+      })
+    }
+  }
+
+  // Jika SMTP belum aktif di .env:
+  console.log(`>>> [SIMULATED VERIFICATION CODE] Untuk ${email} (${memberName}): ${code}`)
+  return res.json({
+    success: true,
+    mode: 'simulated_no_smtp',
+    code,
+    message: `Kode verifikasi telah dikirim ke ${email} (Mode simulasi aktif).`,
+  })
+})
+
 // Wrap Multer di dalam Handler agar tidak tertelan oleh Vite Middleware
 app.post('/api/upload-cover', (req, res, next) => {
   console.log('>>> API UPLOAD COVER DIPANGGIL <<<')

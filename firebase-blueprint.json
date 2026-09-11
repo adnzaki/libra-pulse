@@ -155,6 +155,28 @@
         "rejectionReason": { "type": "string", "maxLength": 300 }
       },
       "required": ["id", "memberId", "memberName", "memberCardNumber", "memberEmail", "selfieUrl", "status", "requestDate"]
+    },
+    "DeviceSession": {
+      "title": "DeviceSession",
+      "description": "Sesi login aktif perangkat anggota dan perangkat utama (main device)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "memberId": { "type": "string", "maxLength": 64 },
+        "memberEmail": { "type": "string", "maxLength": 150 },
+        "memberName": { "type": "string", "maxLength": 150 },
+        "deviceId": { "type": "string", "maxLength": 128 },
+        "deviceName": { "type": "string", "maxLength": 150 },
+        "deviceType": { "type": "string", "enum": ["desktop", "mobile", "tablet", "unknown"] },
+        "browser": { "type": "string", "maxLength": 100 },
+        "os": { "type": "string", "maxLength": 100 },
+        "ipAddress": { "type": "string", "maxLength": 50 },
+        "isMainDevice": { "type": "boolean" },
+        "createdAt": { "type": "string", "maxLength": 50 },
+        "lastActive": { "type": "string", "maxLength": 50 },
+        "status": { "type": "string", "enum": ["active", "revoked"] }
+      },
+      "required": ["id", "memberId", "memberEmail", "deviceId", "deviceName", "deviceType", "isMainDevice", "createdAt", "lastActive", "status"]
     }
   },
   "firestore": {
@@ -189,6 +211,10 @@
     "/teacher_requests/{requestId}": {
       "schema": "TeacherRequest",
       "description": "Daftar permintaan upgrade keanggotaan menjadi Guru"
+    },
+    "/device_sessions/{sessionId}": {
+      "schema": "DeviceSession",
+      "description": "Manajemen sesi dan perangkat login aktif anggota dan penentuan main device"
     }
   }
 }

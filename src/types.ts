@@ -148,3 +148,20 @@ export interface TeacherRequest {
   reviewedBy?: string | null;
   rejectionReason?: string;
 }
+
+export interface UserDeviceSession {
+  id: string;
+  memberId: string;
+  memberEmail: string;
+  memberName: string;
+  deviceId: string;
+  deviceName: string;
+  deviceType: 'desktop' | 'mobile' | 'tablet' | 'unknown';
+  browser: string;
+  os: string;
+  ipAddress?: string;
+  isMainDevice: boolean;
+  createdAt: string;
+  lastActive: string;
+  status: 'active' | 'revoked';
+}

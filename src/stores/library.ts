@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { Book, Shelf, Member, Booking, Loan, SuspendConfig, NotificationLog, LibraryStats, BookCategory, TeacherRequest } from '../types.js';
+import type { Book, Shelf, Member, Booking, Loan, SuspendConfig, NotificationLog, LibraryStats, BookCategory, TeacherRequest, UserDeviceSession } from '../types.js';
 import { 
   getOfflineCachedData, 
   downloadAllForOfflineAccess, 
@@ -9,6 +9,7 @@ import {
   clearPendingOfflineMutations
 } from '../lib/offline-manager.js';
 import { defaultSuspendConfig } from '../lib/default-catalog.js';
+import { getCurrentDeviceId, detectCurrentDeviceInfo } from '../utils/deviceDetector.js';
 
 export const isSuperAdminMember = (m: any): boolean => {
   if (!m) return false;
@@ -26,12 +27,15 @@ export const useLibraryStore = defineStore('library', {
     loans: [] as Loan[],
     notifications: [] as NotificationLog[],
     teacherRequests: [] as TeacherRequest[],
+    deviceSessions: [] as UserDeviceSession[],
     stats: null as LibraryStats | null,
     suspendConfig: defaultSuspendConfig,
     
     // Auth & Role
     currentUser: null as Member | null,
     authToken: localStorage.getItem('pustaka_token') || '',
+    deviceVerificationCode: null as { code: string; deviceId: string; expiresAt: number } | null,
+    isDeviceRevokedNotice: false,
     
     // UI Loading & feedback
     isLoading: false,
@@ -95,6 +99,47 @@ export const useLibraryStore = defineStore('library', {
       );
       if (userReqs.length === 0) return null;
       return [...userReqs].sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime())[0];
+    },
+
+    // Manajemen Sesi & Perangkat
+    currentDeviceId: () => getCurrentDeviceId(),
+    myDeviceSessions: (state) => {
+      if (!state.currentUser) return [];
+      const currentDevId = getCurrentDeviceId();
+      return state.deviceSessions
+        .filter(s => s.memberId === state.currentUser?.id && s.status === 'active')
+        .map(s => ({
+          ...s,
+          isCurrentDevice: s.deviceId === currentDevId
+        }))
+        .sort((a, b) => {
+          if (a.isCurrentDevice) return -1;
+          if (b.isCurrentDevice) return 1;
+          if (a.isMainDevice && !b.isMainDevice) return -1;
+          if (!a.isMainDevice && b.isMainDevice) return 1;
+          return new Date(b.lastActive || b.createdAt).getTime() - new Date(a.lastActive || a.createdAt).getTime();
+        });
+    },
+    currentDeviceSession: (state) => {
+      if (!state.currentUser) return null;
+      const currentDevId = getCurrentDeviceId();
+      return state.deviceSessions.find(
+        s => s.memberId === state.currentUser?.id && s.deviceId === currentDevId && s.status === 'active'
+      ) || null;
+    },
+    isCurrentDeviceMain: (state) => {
+      if (!state.currentUser) return false;
+      const currentDevId = getCurrentDeviceId();
+      const current = state.deviceSessions.find(
+        s => s.memberId === state.currentUser?.id && s.deviceId === currentDevId && s.status === 'active'
+      );
+      return Boolean(current?.isMainDevice);
+    },
+    userHasMainDevice: (state) => {
+      if (!state.currentUser) return false;
+      return state.deviceSessions.some(
+        s => s.memberId === state.currentUser?.id && s.status === 'active' && s.isMainDevice
+      );
     }
   },
 
@@ -177,12 +222,27 @@ export const useLibraryStore = defineStore('library', {
             this.suspendConfig = items[0];
           }
         });
+        subscribeToFirestoreCollection<UserDeviceSession>('device_sessions', (items) => {
+          if (items) {
+            this.deviceSessions = items;
+            this.checkCurrentDeviceSessionStatus();
+            this.checkAndAutoRegisterCurrentDevice();
+          }
+        });
 
         // Periodic auto-check every 30 seconds
         if (typeof window !== 'undefined' && !(window as any).__overdue_checker_interval) {
           (window as any).__overdue_checker_interval = setInterval(() => {
             this.checkOverdueAndAutoSuspend();
           }, 30000);
+        }
+
+        // Periodic heartbeat sesi perangkat setiap 60 detik
+        if (typeof window !== 'undefined' && !(window as any).__session_heartbeat_interval) {
+          (window as any).__session_heartbeat_interval = setInterval(() => {
+            this.checkAndAutoRegisterCurrentDevice(true);
+            this.checkCurrentDeviceSessionStatus();
+          }, 60000);
         }
       }).catch(err => {
         console.warn('Realtime listener setup warning:', err);
@@ -514,6 +574,7 @@ export const useLibraryStore = defineStore('library', {
         if (found) {
           this.currentUser = found;
           localStorage.setItem('pustaka_user', JSON.stringify(found));
+          this.checkAndAutoRegisterCurrentDevice();
         } else {
           // Kredensial tidak valid di database: hapus residu sesi
           this.currentUser = null;
@@ -633,7 +694,7 @@ export const useLibraryStore = defineStore('library', {
           fBooks = await getFirestoreCollection<Book>('books');
         }
 
-        const [fShelves, fCats, fMembers, fLoans, fBookings, fConfig, fNotifs, fTeacherReqs] = await Promise.all([
+        const [fShelves, fCats, fMembers, fLoans, fBookings, fConfig, fNotifs, fTeacherReqs, fDeviceSessions] = await Promise.all([
           getFirestoreCollection<Shelf>('shelves'),
           getFirestoreCollection<BookCategory>('categories'),
           getFirestoreCollection<Member>('members'),
@@ -642,6 +703,7 @@ export const useLibraryStore = defineStore('library', {
           getFirestoreCollection<SuspendConfig>('config'),
           getFirestoreCollection<NotificationLog>('notifications'),
           getFirestoreCollection<TeacherRequest>('teacher_requests'),
+          getFirestoreCollection<UserDeviceSession>('device_sessions'),
         ]);
 
         this.books = fBooks;
@@ -652,6 +714,7 @@ export const useLibraryStore = defineStore('library', {
         this.bookings = fBookings;
         this.notifications = fNotifs;
         this.teacherRequests = (fTeacherReqs || []).sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
+        this.deviceSessions = fDeviceSessions || [];
         if (fConfig && fConfig.length > 0) this.suspendConfig = fConfig[0];
 
         // Background Check & Backfill: Setiap anggota yang belum memiliki memberType dijadikan "siswa"
@@ -672,6 +735,8 @@ export const useLibraryStore = defineStore('library', {
         await this.checkOverdueAndAutoSuspend();
         this.calculateStats();
         this.restoreUserSession();
+        this.checkCurrentDeviceSessionStatus();
+        await this.checkAndAutoRegisterCurrentDevice();
         this.flushOfflineQueue();
       } catch (err) {
         console.warn('Direct Firestore fetch error, switching to offline fallback:', err);
@@ -1441,6 +1506,8 @@ export const useLibraryStore = defineStore('library', {
             syncMemberDoc(matchedMember).catch(() => {});
           }
 
+          await this.checkAndAutoRegisterCurrentDevice();
+
           return { success: true, user: matchedMember };
         }
       }
@@ -1485,6 +1552,7 @@ export const useLibraryStore = defineStore('library', {
       localStorage.setItem('pustaka_token', this.authToken);
       localStorage.setItem('pustaka_user_id', matched.id);
       localStorage.setItem('pustaka_user', JSON.stringify(matched));
+      await this.checkAndAutoRegisterCurrentDevice();
       this.showToast(`Selamat datang, ${matched.name}!`);
       return { success: true, user: matched };
     },
@@ -1720,6 +1788,269 @@ export const useLibraryStore = defineStore('library', {
       }
 
       this.showToast('Anda telah berhasil keluar.');
+    },
+
+    // ------------------------------------------------------------------------
+    // Manajemen Sesi & Perangkat (Device Sessions & Main Device)
+    // ------------------------------------------------------------------------
+    async checkAndAutoRegisterCurrentDevice(isHeartbeat = false) {
+      if (!this.currentUser) return;
+      const deviceId = getCurrentDeviceId();
+      const details = detectCurrentDeviceInfo();
+
+      // Cari sesi aktif saat ini untuk user ini dan deviceId ini
+      const existing = this.deviceSessions.find(
+        s => s.memberId === this.currentUser?.id && s.deviceId === deviceId
+      );
+
+      const nowIso = new Date().toISOString();
+
+      if (existing) {
+        // Jika status sesi sudah dicabut oleh Perangkat Utama, jangan re-aktivasi
+        if (existing.status === 'revoked') {
+          return;
+        }
+
+        // Jika interval heartbeat atau info peramban berubah, perbarui lastActive
+        const diffMs = Date.now() - new Date(existing.lastActive || existing.createdAt).getTime();
+        if (diffMs > 2 * 60 * 1000 || !isHeartbeat) {
+          existing.lastActive = nowIso;
+          existing.deviceName = details.deviceName;
+          existing.browser = details.browser;
+          existing.os = details.os;
+          existing.deviceType = details.deviceType;
+          try {
+            const { syncDeviceSessionDoc } = await import('../lib/firebase.js');
+            await syncDeviceSessionDoc(existing);
+          } catch (e) {
+            console.warn('Gagal update lastActive device session:', e);
+          }
+        }
+        return;
+      }
+
+      // Deteksi otomatis jika perangkat yang dipakai user belum ada di manajemen sesi
+      const sessionId = `SES_${this.currentUser.id}_${deviceId.slice(-8)}`;
+      const newSession: UserDeviceSession = {
+        id: sessionId,
+        memberId: this.currentUser.id,
+        memberEmail: this.currentUser.email || '',
+        memberName: this.currentUser.name || '',
+        deviceId: deviceId,
+        deviceName: details.deviceName,
+        deviceType: details.deviceType,
+        browser: details.browser,
+        os: details.os,
+        isMainDevice: false, // Ditentukan melalui menu Jadikan Perangkat Utama dengan verifikasi email
+        createdAt: nowIso,
+        lastActive: nowIso,
+        status: 'active'
+      };
+
+      this.deviceSessions.unshift(newSession);
+      try {
+        const { syncDeviceSessionDoc } = await import('../lib/firebase.js');
+        await syncDeviceSessionDoc(newSession);
+        console.log(`[SESSION] Perangkat "${details.deviceName}" berhasil didaftarkan otomatis ke manajemen sesi.`);
+      } catch (err) {
+        console.warn('Gagal auto-register device session:', err);
+      }
+    },
+
+    async checkCurrentDeviceSessionStatus() {
+      if (!this.currentUser) return;
+      const deviceId = getCurrentDeviceId();
+      const thisSession = this.deviceSessions.find(
+        s => s.memberId === this.currentUser?.id && s.deviceId === deviceId
+      );
+
+      // Jika sesi perangkat ini ditandai 'revoked' oleh Perangkat Utama:
+      if (thisSession && thisSession.status === 'revoked') {
+        console.warn('Sesi perangkat saat ini telah dicabut oleh Perangkat Utama.');
+        this.isDeviceRevokedNotice = true;
+        await this.logout();
+        this.setError('Sesi login pada perangkat ini telah dicabut oleh Perangkat Utama. Silakan masuk kembali jika ingin mengakses perpustakaan.');
+      }
+    },
+
+    async requestMainDeviceVerificationCode() {
+      if (!this.currentUser || !this.currentUser.email) {
+        const err = 'Alamat email akun tidak ditemukan.';
+        this.setError(err);
+        return { success: false, error: err };
+      }
+
+      this.isLoading = true;
+      try {
+        const deviceId = getCurrentDeviceId();
+        const details = detectCurrentDeviceInfo();
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+        this.deviceVerificationCode = {
+          code,
+          deviceId,
+          expiresAt: Date.now() + 10 * 60 * 1000 // 10 menit
+        };
+
+        const response = await fetch('/api/send-device-verification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: this.currentUser.email,
+            memberName: this.currentUser.name,
+            deviceName: details.deviceName,
+            code: code,
+          }),
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data?.error || 'Gagal mengirim email verifikasi');
+        }
+
+        this.showToast(`Kode verifikasi telah dikirim ke ${this.currentUser.email}`);
+        return {
+          success: true,
+          email: this.currentUser.email,
+          simulatedCode: data.code || (data.mode?.includes('simulated') ? code : undefined)
+        };
+      } catch (err: any) {
+        console.error('Request main device verification failed:', err);
+        this.setError(err?.message || 'Gagal mengirim kode verifikasi ke email');
+        return { success: false, error: err?.message };
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    async verifyAndSetMainDevice(enteredCode: string) {
+      if (!this.currentUser) return { success: false, error: 'User belum login' };
+      if (!this.deviceVerificationCode) {
+        return { success: false, error: 'Silakan minta kode verifikasi terlebih dahulu.' };
+      }
+
+      if (Date.now() > this.deviceVerificationCode.expiresAt) {
+        this.deviceVerificationCode = null;
+        return { success: false, error: 'Kode verifikasi telah kadaluarsa. Silakan minta kode baru.' };
+      }
+
+      const cleanEntered = (enteredCode || '').trim();
+      if (cleanEntered !== this.deviceVerificationCode.code) {
+        return { success: false, error: 'Kode verifikasi tidak sesuai. Periksa kembali kotak masuk email Anda.' };
+      }
+
+      this.isLoading = true;
+      try {
+        const deviceId = getCurrentDeviceId();
+        const { syncDeviceSessionDoc } = await import('../lib/firebase.js');
+
+        // Pastikan perangkat saat ini terdaftar
+        await this.checkAndAutoRegisterCurrentDevice();
+
+        // 1. Reset isMainDevice pada semua sesi milik user ini
+        for (const s of this.deviceSessions) {
+          if (s.memberId === this.currentUser.id) {
+            const shouldBeMain = s.deviceId === deviceId;
+            if (s.isMainDevice !== shouldBeMain) {
+              s.isMainDevice = shouldBeMain;
+              await syncDeviceSessionDoc(s);
+            }
+          }
+        }
+
+        this.deviceVerificationCode = null;
+        this.showToast('🎉 Selamat! Perangkat ini sekarang resmi menjadi Perangkat Utama Anda.');
+        return { success: true };
+      } catch (err: any) {
+        console.error('Set main device failed:', err);
+        this.setError(err?.message || 'Gagal menetapkan Perangkat Utama');
+        return { success: false, error: err?.message };
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    async revokeDeviceSession(sessionId: string) {
+      if (!this.currentUser) return { success: false, error: 'User belum login' };
+
+      const currentDeviceId = getCurrentDeviceId();
+      const currentSession = this.deviceSessions.find(
+        s => s.memberId === this.currentUser?.id && s.deviceId === currentDeviceId && s.status === 'active'
+      );
+
+      // Validasi: Hanya Perangkat Utama yang boleh mencabut sesi login aktif perangkat lain!
+      if (!currentSession?.isMainDevice) {
+        const msg = 'Hanya Perangkat Utama yang memiliki hak untuk mencabut sesi login perangkat lain.';
+        this.setError(msg);
+        return { success: false, error: msg };
+      }
+
+      const targetSession = this.deviceSessions.find(s => s.id === sessionId);
+      if (!targetSession) {
+        return { success: false, error: 'Sesi perangkat tidak ditemukan.' };
+      }
+
+      if (targetSession.deviceId === currentDeviceId) {
+        return { success: false, error: 'Tidak dapat mencabut sesi pada perangkat yang sedang aktif digunakan. Gunakan tombol Keluar jika ingin logout.' };
+      }
+
+      this.isLoading = true;
+      try {
+        targetSession.status = 'revoked';
+        targetSession.lastActive = new Date().toISOString();
+
+        const { syncDeviceSessionDoc } = await import('../lib/firebase.js');
+        await syncDeviceSessionDoc(targetSession);
+
+        this.showToast(`Sesi login pada "${targetSession.deviceName}" berhasil dicabut.`);
+        return { success: true };
+      } catch (err: any) {
+        console.error('Revoke device session failed:', err);
+        this.setError(err?.message || 'Gagal mencabut sesi perangkat');
+        return { success: false, error: err?.message };
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    async revokeAllOtherDeviceSessions() {
+      if (!this.currentUser) return { success: false, error: 'User belum login' };
+
+      const currentDeviceId = getCurrentDeviceId();
+      const currentSession = this.deviceSessions.find(
+        s => s.memberId === this.currentUser?.id && s.deviceId === currentDeviceId && s.status === 'active'
+      );
+
+      if (!currentSession?.isMainDevice) {
+        const msg = 'Hanya Perangkat Utama yang dapat mencabut semua sesi perangkat lain.';
+        this.setError(msg);
+        return { success: false, error: msg };
+      }
+
+      this.isLoading = true;
+      try {
+        const { syncDeviceSessionDoc } = await import('../lib/firebase.js');
+        let count = 0;
+        const nowIso = new Date().toISOString();
+
+        for (const s of this.deviceSessions) {
+          if (s.memberId === this.currentUser.id && s.deviceId !== currentDeviceId && s.status === 'active') {
+            s.status = 'revoked';
+            s.lastActive = nowIso;
+            await syncDeviceSessionDoc(s);
+            count++;
+          }
+        }
+
+        this.showToast(`Berhasil mencabut ${count} sesi perangkat aktif lainnya.`);
+        return { success: true, count };
+      } catch (err: any) {
+        console.error('Revoke all other device sessions failed:', err);
+        this.setError(err?.message || 'Gagal mencabut semua sesi perangkat');
+        return { success: false, error: err?.message };
+      } finally {
+        this.isLoading = false;
+      }
     },
 
     // ------------------------------------------------------------------------

@@ -176,6 +176,22 @@
                   </router-link>
                 </div>
 
+                <!-- Device Session Management for all logged in users -->
+                <div v-if="store.currentUser" class="p-1 border-t border-slate-800">
+                  <button 
+                    @click="isUserMenuOpen = false; isDeviceModalOpen = true"
+                    class="w-full text-left px-3.5 py-2 hover:bg-slate-800 rounded-xl flex items-center justify-between text-slate-200 transition text-xs font-semibold cursor-pointer"
+                  >
+                    <div class="flex items-center gap-2.5">
+                      <Laptop class="w-4 h-4 text-cyan-400" />
+                      <span>Manajemen Sesi & Perangkat</span>
+                    </div>
+                    <span v-if="store.isCurrentDeviceMain" class="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">
+                      👑 Utama
+                    </span>
+                  </button>
+                </div>
+
                 <!-- If Guest / Not Logged In -->
                 <div v-if="!store.currentUser" class="p-2 space-y-1.5">
                   <div class="px-2 py-1 text-[10px] uppercase font-bold tracking-wider text-slate-400">
@@ -280,6 +296,19 @@
           👨‍🏫 {{ store.pendingTeacherRequestsCount }} Permintaan
         </span>
       </router-link>
+      <button 
+        v-if="store.currentUser"
+        @click="isMobileMenuOpen = false; isDeviceModalOpen = true"
+        class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-200 hover:bg-slate-800 flex items-center justify-between cursor-pointer"
+      >
+        <span class="flex items-center gap-2">
+          <Laptop class="w-4 h-4 text-cyan-400" />
+          <span>Manajemen Sesi & Perangkat</span>
+        </span>
+        <span v-if="store.isCurrentDeviceMain" class="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">
+          👑 Utama
+        </span>
+      </button>
       <router-link 
         v-if="!store.currentUser"
         to="/login" 
@@ -289,6 +318,12 @@
         🔑 Masuk / Daftar Akun
       </router-link>
     </div>
+
+    <!-- Device Sessions Modal -->
+    <DeviceSessionsModal 
+      :isOpen="isDeviceModalOpen" 
+      @close="isDeviceModalOpen = false" 
+    />
   </header>
 </template>
 
@@ -298,15 +333,17 @@ import { useRoute, useRouter } from 'vue-router';
 import { useLibraryStore } from '../stores/library.js';
 import { 
   BookMarked, Layers, QrCode, UserCheck, 
-  ShieldCheck, User, ChevronDown, Menu, X, LogIn, UserPlus, LogOut, Settings
+  ShieldCheck, User, ChevronDown, Menu, X, LogIn, UserPlus, LogOut, Settings, Laptop
 } from 'lucide-vue-next';
 import { logoutUser } from '../lib/firebase.js';
+import DeviceSessionsModal from './DeviceSessionsModal.vue';
 
 const store = useLibraryStore();
 const route = useRoute();
 const isUserMenuOpen = ref(false);
 const isMobileMenuOpen = ref(false);
 const isScrolled = ref(false);
+const isDeviceModalOpen = ref(false);
 
 const handleScroll = () => {
   isScrolled.value = window.scrollY > 8;

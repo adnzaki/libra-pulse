@@ -204,6 +204,17 @@ export async function removeTeacherRequestDoc(id: string) {
   await deleteDoc(doc(db, 'teacher_requests', id));
 }
 
+export async function syncDeviceSessionDoc(session: any) {
+  if (!session?.id) return;
+  const clean = sanitizeForFirestore(session);
+  await setDoc(doc(db, 'device_sessions', session.id), clean, { merge: true });
+}
+
+export async function removeDeviceSessionDoc(sessionId: string) {
+  if (!sessionId) return;
+  await deleteDoc(doc(db, 'device_sessions', sessionId));
+}
+
 /**
  * Direct Firestore Fetch Collection Helper
  */

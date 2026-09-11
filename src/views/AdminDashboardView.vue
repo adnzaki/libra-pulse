@@ -97,6 +97,18 @@
           <KeyRound class="w-4 h-4 text-blue-400 shrink-0" />
           <span class="truncate">Ganti Sandi Admin</span>
         </button>
+
+        <button 
+          @click="isDeviceSessionsOpen = true"
+          class="px-3.5 sm:px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs rounded-full shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+          title="Kelola sesi login perangkat & status Perangkat Utama"
+        >
+          <Laptop class="w-4 h-4 text-blue-600 shrink-0" />
+          <span class="truncate">Sesi & Perangkat</span>
+          <span v-if="store.isCurrentDeviceMain" class="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+            👑
+          </span>
+        </button>
       </div>
     </div>
 
@@ -1826,6 +1838,12 @@
       </div>
     </div>
 
+    <!-- Modal Manajemen Sesi & Perangkat -->
+    <DeviceSessionsModal 
+      :isOpen="isDeviceSessionsOpen" 
+      @close="isDeviceSessionsOpen = false" 
+    />
+
     </div>
   </div>
 </template>
@@ -1842,15 +1860,17 @@ import CategoryFormModal from '../components/CategoryFormModal.vue';
 import MemberFormModal from '../components/MemberFormModal.vue';
 import ChangePasswordModal from '../components/ChangePasswordModal.vue';
 import CollectBookingModal from '../components/CollectBookingModal.vue';
+import DeviceSessionsModal from '../components/DeviceSessionsModal.vue';
 import { useModalBack } from '../composables/useModalBack.js';
 import { 
   ShieldCheck, BookPlus, CheckCircle2, BookOpen, CheckCircle, 
   BookMarked, Clock, AlertTriangle, UserX, Sliders, Send, 
   Plus, Pencil, Trash2, Tag, Users, UserPlus, LogIn, KeyRound, X, Eye, EyeOff, Check, RefreshCw, Database,
-  GraduationCap
+  GraduationCap, Laptop
 } from 'lucide-vue-next';
 
 const store = useLibraryStore();
+const isDeviceSessionsOpen = ref(false);
 const activeTab = ref('loans');
 const loanSearch = ref('');
 const memberFilter = ref('all');

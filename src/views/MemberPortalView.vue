@@ -105,6 +105,20 @@
             <KeyRound class="w-4 h-4 text-slate-500" />
             Ganti Password
           </button>
+          
+          <!-- Tombol Manajemen Sesi & Perangkat -->
+          <button 
+            @click="isDeviceSessionsOpen = true"
+            class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-full text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+            title="Kelola sesi login perangkat & Perangkat Utama"
+          >
+            <Laptop class="w-4 h-4 text-blue-600" />
+            <span>Sesi & Perangkat</span>
+            <span v-if="store.isCurrentDeviceMain" class="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold flex items-center gap-0.5">
+              👑 Utama
+            </span>
+          </button>
+
           <router-link 
             to="/member-card"
             class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-full text-xs transition flex items-center gap-2 shadow-sm"
@@ -463,6 +477,12 @@
       </div>
     </div>
 
+    <!-- Device Sessions Modal -->
+    <DeviceSessionsModal 
+      :isOpen="isDeviceSessionsOpen" 
+      @close="isDeviceSessionsOpen = false" 
+    />
+
   </div>
 </template>
 
@@ -471,17 +491,19 @@ import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import ChangePasswordModal from '../components/ChangePasswordModal.vue';
 import EditProfileModal from '../components/EditProfileModal.vue';
+import DeviceSessionsModal from '../components/DeviceSessionsModal.vue';
 import { useModalBack } from '../composables/useModalBack.js';
 import { 
   UserCheck, QrCode, AlertTriangle, Clock, 
   Timer, BookmarkCheck, BookMarked, LogIn, KeyRound, UserCog,
-  AlertCircle, CheckCircle2, Camera, Award, ShieldCheck, BookOpen, Sparkles
+  AlertCircle, CheckCircle2, Camera, Award, ShieldCheck, BookOpen, Sparkles, Laptop
 } from 'lucide-vue-next';
 
 const store = useLibraryStore();
 const now = ref(Date.now());
 const isChangePasswordOpen = ref(false);
 const isEditProfileOpen = ref(false);
+const isDeviceSessionsOpen = ref(false);
 const editProfileInitialTab = ref<'profile' | 'upgrade'>('profile');
 let timerInterval: any = null;
 
