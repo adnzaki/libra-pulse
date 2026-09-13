@@ -119,6 +119,16 @@
             </span>
           </button>
 
+          <!-- Tombol Catatan Rilis (Changelog) -->
+          <button 
+            @click="store.openChangelog()"
+            class="px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-bold rounded-full text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+            title="Lihat riwayat pembaruan sistem dan fitur terbaru"
+          >
+            <Sparkles class="w-4 h-4 text-blue-600" />
+            <span>Catatan Rilis (v{{ store.currentAppVersion }})</span>
+          </button>
+
           <router-link 
             to="/member-card"
             class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-full text-xs transition flex items-center gap-2 shadow-sm"

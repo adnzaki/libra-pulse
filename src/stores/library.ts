@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { Book, Shelf, Member, Booking, Loan, SuspendConfig, NotificationLog, LibraryStats, BookCategory, TeacherRequest, UserDeviceSession } from '../types.js';
+import type { Book, Shelf, Member, Booking, Loan, SuspendConfig, NotificationLog, LibraryStats, BookCategory, TeacherRequest, UserDeviceSession, AppVersionConfig } from '../types.js';
 import { 
   getOfflineCachedData, 
   downloadAllForOfflineAccess, 
@@ -10,6 +10,7 @@ import {
 } from '../lib/offline-manager.js';
 import { initialBooks, initialCategories, initialShelves, initialMembers, defaultSuspendConfig } from '../lib/default-catalog.js';
 import { getCurrentDeviceId, detectCurrentDeviceInfo } from '../utils/deviceDetector.js';
+import { CURRENT_APP_VERSION, DEFAULT_APP_VERSION_CONFIG, isNewerVersion } from '../config/version.js';
 
 export const isSuperAdminMember = (m: any): boolean => {
   if (!m) return false;
@@ -57,7 +58,16 @@ export const useLibraryStore = defineStore('library', {
       category: 'all',
       shelfId: 'all',
       availability: 'all'
-    }
+    },
+
+    // App Versioning & Real-time Update System
+    currentAppVersion: CURRENT_APP_VERSION,
+    remoteAppVersion: CURRENT_APP_VERSION,
+    appVersionConfig: DEFAULT_APP_VERSION_CONFIG as AppVersionConfig,
+    hasNewVersionAvailable: false,
+    isChangelogModalOpen: false,
+    isVersionUpdateModalOpen: false,
+    isDismissedUpdateBanner: false
   }),
 
   getters: {
@@ -171,6 +181,8 @@ export const useLibraryStore = defineStore('library', {
 
       import('../lib/firebase.js').then(({ 
         subscribeToFirestoreCollection, 
+        subscribeToFirestoreDoc,
+        syncAppVersionDoc,
         isFirestoreQuotaExhausted,
         onFirestoreQuotaChange 
       }) => {
@@ -245,10 +257,27 @@ export const useLibraryStore = defineStore('library', {
             this.teacherRequests = items.sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
           }
         });
-        subscribeToFirestoreCollection<SuspendConfig>('config', (items) => {
+        subscribeToFirestoreCollection<any>('config', (items) => {
           if (items && items.length > 0) {
-            this.suspendConfig = items[0];
-            this.persistToLocalCache();
+            const susp = items.find(i => (i as any).maxActiveLoans !== undefined || (i as any).id === 'suspend_config');
+            if (susp) {
+              this.suspendConfig = susp;
+              this.persistToLocalCache();
+            }
+          }
+        });
+        subscribeToFirestoreDoc<AppVersionConfig>('config', 'app_version', (versionData) => {
+          if (versionData && versionData.version) {
+            this.appVersionConfig = { ...DEFAULT_APP_VERSION_CONFIG, ...versionData };
+            this.remoteAppVersion = versionData.version;
+            const isNewer = isNewerVersion(versionData.version, this.currentAppVersion);
+            this.hasNewVersionAvailable = isNewer;
+            if (isNewer) {
+              this.isDismissedUpdateBanner = false;
+            }
+          } else {
+            // Inisialisasi awal dokumen versi di Firestore jika belum ada
+            syncAppVersionDoc(DEFAULT_APP_VERSION_CONFIG).catch(() => {});
           }
         });
         subscribeToFirestoreCollection<UserDeviceSession>('device_sessions', (items) => {
@@ -615,13 +644,24 @@ export const useLibraryStore = defineStore('library', {
           this.notifications = fNotifs || [];
           this.teacherRequests = (fTeacherReqs || []).sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
           this.deviceSessions = fDeviceSessions || [];
-          if (fConfig && fConfig.length > 0) this.suspendConfig = fConfig[0];
+          if (fConfig && fConfig.length > 0) {
+            const susp = fConfig.find(c => (c as any).maxActiveLoans !== undefined || (c as any).id === 'suspend_config');
+            if (susp) this.suspendConfig = susp;
+          }
 
           this.isUsingOfflineData = false;
           this.persistToLocalCache();
         } else {
           // If Firestore is unreachable or quota exhausted, maintain local fallback
           this.loadOfflineFallback();
+        }
+
+        // Cek apakah versi aplikasi saat ini sudah pernah dilihat catatan rilisnya (Changelog)
+        if (typeof localStorage !== 'undefined') {
+          const seenVersion = localStorage.getItem('libra_seen_version');
+          if (seenVersion !== CURRENT_APP_VERSION) {
+            this.isChangelogModalOpen = true;
+          }
         }
 
         this.calculateStats();
@@ -2583,6 +2623,55 @@ export const useLibraryStore = defineStore('library', {
 
     setSuccess(msg: string) {
       this.showToast(msg);
+    },
+
+    // ------------------------------------------------------------------------
+    // App Versioning & Changelog Actions
+    // ------------------------------------------------------------------------
+    markChangelogSeen() {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('libra_seen_version', this.currentAppVersion);
+      }
+      this.isChangelogModalOpen = false;
+    },
+
+    openChangelog() {
+      this.isChangelogModalOpen = true;
+    },
+
+    closeChangelog() {
+      this.isChangelogModalOpen = false;
+    },
+
+    openVersionUpdateModal() {
+      this.isVersionUpdateModalOpen = true;
+    },
+
+    closeVersionUpdateModal() {
+      this.isVersionUpdateModalOpen = false;
+    },
+
+    dismissUpdateBanner() {
+      this.isDismissedUpdateBanner = true;
+    },
+
+    reloadApplication() {
+      if (typeof window !== 'undefined') {
+        window.location.reload();
+      }
+    },
+
+    async broadcastNewAppVersion(newVersion: string, updateMessage?: string) {
+      const payload: AppVersionConfig = {
+        version: newVersion,
+        releaseDate: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+        updateMessage: updateMessage || `Pembaruan sistem Libra versi ${newVersion} telah tersedia. Silakan muat ulang halaman untuk menggunakan fitur terbaru.`,
+        forceReload: false
+      };
+      const { syncAppVersionDoc } = await import('../lib/firebase.js');
+      await syncAppVersionDoc(payload);
+      this.showToast(`📢 Versi baru (${newVersion}) berhasil disiarkan ke seluruh pengguna via Cloud Firestore!`);
+      return { success: true };
     }
   }
 });

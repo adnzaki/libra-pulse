@@ -165,3 +165,23 @@ export interface UserDeviceSession {
   lastActive: string;
   status: 'active' | 'revoked';
 }
+
+export interface AppVersionConfig {
+  version: string;
+  releaseDate: string;
+  forceReload?: boolean;
+  minSupportedVersion?: string;
+  updateMessage?: string;
+  changelogSummary?: string;
+}
+
+export interface ChangelogItem {
+  id: string;
+  title: string;
+  description: string;
+  targetAudience: 'all' | 'member' | 'admin';
+  targetAudienceLabel: string;
+  category: 'feature' | 'improvement' | 'fix' | 'security';
+  badge: string;
+  iconName?: string;
+}

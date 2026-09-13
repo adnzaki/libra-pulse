@@ -7,16 +7,30 @@
       <div class="flex items-center justify-between h-16">
         
         <!-- Brand / Logo -->
-        <router-link to="/" class="flex items-center gap-3 group">
-          <div class="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center font-bold text-lg text-white shadow-md group-hover:scale-105 transition duration-200">
-            L
-          </div>
-          <div>
-            <div class="flex items-center gap-2">
-              <span class="font-bold text-xl tracking-tight text-white group-hover:text-blue-400 transition">Libra</span>
+        <div class="flex items-center gap-3">
+          <router-link to="/" class="flex items-center gap-2.5 group">
+            <div class="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center font-bold text-lg text-white shadow-md group-hover:scale-105 transition duration-200">
+              L
             </div>
-          </div>
-        </router-link>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-xl tracking-tight text-white group-hover:text-blue-400 transition">Libra</span>
+              </div>
+            </div>
+          </router-link>
+
+          <!-- Clickable Version Badge to Open Changelog -->
+          <button 
+            @click="store.openChangelog()"
+            type="button"
+            class="px-2 py-0.5 rounded-full bg-blue-500/20 hover:bg-blue-500/35 text-blue-300 hover:text-white border border-blue-400/30 text-[10px] font-mono font-bold transition flex items-center gap-1 cursor-pointer"
+            title="Buka Catatan Rilis & Riwayat Pembaruan (Changelog)"
+          >
+            <Sparkles class="w-2.5 h-2.5 text-amber-300" />
+            <span>v{{ store.currentAppVersion }}</span>
+            <span v-if="store.hasNewVersionAvailable" class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+          </button>
+        </div>
 
         <!-- Desktop Navigation -->
         <nav class="hidden md:flex items-center gap-1.5">
@@ -192,6 +206,22 @@
                   </button>
                 </div>
 
+                <!-- Changelog Menu Item for All Users -->
+                <div class="p-1 border-t border-slate-800">
+                  <button 
+                    @click="isUserMenuOpen = false; store.openChangelog()"
+                    class="w-full text-left px-3.5 py-2 hover:bg-slate-800 rounded-xl flex items-center justify-between text-slate-200 transition text-xs font-semibold cursor-pointer"
+                  >
+                    <div class="flex items-center gap-2.5">
+                      <Sparkles class="w-4 h-4 text-amber-400" />
+                      <span>Catatan Rilis (Changelog)</span>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-mono font-bold">
+                      v{{ store.currentAppVersion }}
+                    </span>
+                  </button>
+                </div>
+
                 <!-- If Guest / Not Logged In -->
                 <div v-if="!store.currentUser" class="p-2 space-y-1.5">
                   <div class="px-2 py-1 text-[10px] uppercase font-bold tracking-wider text-slate-400">
@@ -309,6 +339,21 @@
           👑 Utama
         </span>
       </button>
+
+      <!-- Changelog button for mobile drawer -->
+      <button 
+        @click="isMobileMenuOpen = false; store.openChangelog()"
+        class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-200 hover:bg-slate-800 flex items-center justify-between cursor-pointer"
+      >
+        <span class="flex items-center gap-2">
+          <Sparkles class="w-4 h-4 text-amber-400" />
+          <span>Catatan Rilis (Changelog)</span>
+        </span>
+        <span class="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-mono font-bold">
+          v{{ store.currentAppVersion }}
+        </span>
+      </button>
+
       <router-link 
         v-if="!store.currentUser"
         to="/login" 
@@ -333,7 +378,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useLibraryStore } from '../stores/library.js';
 import { 
   BookMarked, Layers, QrCode, UserCheck, 
-  ShieldCheck, User, ChevronDown, Menu, X, LogIn, UserPlus, LogOut, Settings, Laptop
+  ShieldCheck, User, ChevronDown, Menu, X, LogIn, UserPlus, LogOut, Settings, Laptop, Sparkles
 } from 'lucide-vue-next';
 import { logoutUser } from '../lib/firebase.js';
 import DeviceSessionsModal from './DeviceSessionsModal.vue';

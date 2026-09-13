@@ -68,6 +68,11 @@
     <!-- Bottom Navigation Bar for Mobile -->
     <BottomNav />
 
+    <!-- Real-time App Version Notification & Modals -->
+    <NewVersionBanner />
+    <VersionCacheGuideModal />
+    <ChangelogModal />
+
     <!-- Footer (Hidden on small mobile screens to keep clean native app feel, shown on tablet/desktop) -->
     <footer class="hidden md:block border-t border-slate-200/80 bg-white mt-auto py-8 text-xs text-slate-500">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
@@ -82,7 +87,6 @@
           </div>
         </div>
 
-        <!-- Real-time Sync Status -->
         <div class="flex items-center gap-4 text-[11px]">
           <div class="flex items-center gap-2 bg-slate-50 px-3.5 py-1.5 rounded-full border border-slate-200">
             <span 
@@ -93,6 +97,15 @@
               {{ store.isQuotaExhausted ? 'Penyimpanan Offline Lokal Aktif (Batas Kuota Cloud Harian)' : (store.isUsingOfflineData ? 'Mode Offline Lokal' : 'Sinkronisasi Otomatis Cloud Aktif (Hold 24h & Auto-Suspend)') }}
             </span>
           </div>
+
+          <button 
+            @click="store.openChangelog()"
+            class="px-3 py-1 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold border border-blue-200 transition cursor-pointer flex items-center gap-1.5"
+            title="Buka Catatan Rilis & Riwayat Pembaruan"
+          >
+            <Sparkles class="w-3.5 h-3.5 text-blue-600" />
+            <span>v{{ store.currentAppVersion }} • Catatan Rilis</span>
+          </button>
         </div>
 
         <div class="text-[11px] text-slate-400">
@@ -111,7 +124,10 @@ import { useLibraryStore } from './stores/library.js';
 import Navbar from './components/Navbar.vue';
 import BottomNav from './components/BottomNav.vue';
 import PwaInstallBanner from './components/PwaInstallBanner.vue';
-import { Bell, AlertCircle, Database, Download } from 'lucide-vue-next';
+import NewVersionBanner from './components/NewVersionBanner.vue';
+import VersionCacheGuideModal from './components/VersionCacheGuideModal.vue';
+import ChangelogModal from './components/ChangelogModal.vue';
+import { Bell, AlertCircle, Database, Download, Sparkles } from 'lucide-vue-next';
 
 const store = useLibraryStore();
 

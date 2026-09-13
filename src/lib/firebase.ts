@@ -10,6 +10,7 @@ import {
 import { 
   getFirestore, 
   doc, 
+  getDoc,
   getDocFromServer,
   collection,
   getDocs,
@@ -255,6 +256,22 @@ export async function syncConfigDoc(config: any) {
   await withTimeout(setDoc(doc(db, 'config', 'suspend_config'), clean, { merge: true }), 7000);
 }
 
+export async function syncAppVersionDoc(versionConfig: any) {
+  const clean = sanitizeForFirestore(versionConfig);
+  await withTimeout(setDoc(doc(db, 'config', 'app_version'), clean, { merge: true }), 7000);
+}
+
+export async function getAppVersionDoc(): Promise<any | null> {
+  if (quotaExhausted) return null;
+  try {
+    const snap = await withTimeout(getDoc(doc(db, 'config', 'app_version')), 7000);
+    return snap.exists() ? snap.data() : null;
+  } catch (err) {
+    handlePossibleQuotaError(err);
+    return null;
+  }
+}
+
 export async function syncNotificationDoc(notif: any) {
   if (!notif?.id) return;
   const clean = sanitizeForFirestore(notif);
@@ -361,6 +378,59 @@ export function subscribeToFirestoreCollection<T = any>(
   } catch (err) {
     handlePossibleQuotaError(err);
     console.warn(`Error setting up Firestore listener for ${collectionName}:`, err);
+    return () => {};
+  }
+}
+
+/**
+ * Real-time Single Document Listener with quota protection
+ */
+export function subscribeToFirestoreDoc<T = any>(
+  collectionName: string,
+  docId: string,
+  onUpdate: (data: T | null) => void,
+  onError?: (err: any) => void
+): () => void {
+  if (quotaExhausted) {
+    return () => {};
+  }
+  try {
+    let hasUnsubscribed = false;
+    let unsubSnapshot: (() => void) | null = null;
+
+    const cleanup = () => {
+      if (hasUnsubscribed) return;
+      hasUnsubscribed = true;
+      if (unsubSnapshot) {
+        try { unsubSnapshot(); } catch {}
+        unsubSnapshot = null;
+      }
+      activeListeners.delete(cleanup);
+    };
+
+    unsubSnapshot = onSnapshot(
+      doc(db, collectionName, docId),
+      (snap) => {
+        if (hasUnsubscribed) return;
+        onUpdate(snap.exists() ? (snap.data() as T) : null);
+      },
+      (error) => {
+        if (hasUnsubscribed) return;
+        if (isQuotaError(error)) {
+          cleanup();
+          handlePossibleQuotaError(error);
+        } else {
+          console.warn(`Firestore doc listener warning for ${collectionName}/${docId}:`, error);
+        }
+        if (onError) onError(error);
+      }
+    );
+
+    activeListeners.add(cleanup);
+    return cleanup;
+  } catch (err) {
+    handlePossibleQuotaError(err);
+    console.warn(`Error setting up Firestore doc listener for ${collectionName}/${docId}:`, err);
     return () => {};
   }
 }

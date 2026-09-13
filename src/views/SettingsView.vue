@@ -283,6 +283,127 @@
       </div>
     </div>
 
+    <!-- Real-time Version Management & OTA Update Section -->
+    <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-sm space-y-5">
+      <div class="flex items-start justify-between flex-wrap gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold shadow-xs">
+            <Sparkles class="w-6 h-6 text-amber-500" />
+          </div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h2 class="text-base sm:text-lg font-extrabold text-slate-900">Manajemen Versi Sistem & Pembaruan OTA (Real-time)</h2>
+              <span class="px-2.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-mono font-bold shadow-xs">
+                v{{ store.currentAppVersion }}
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 mt-0.5">
+              Pantau versi aktif aplikasi secara terpusat. Ketika versi baru disiarkan ke Cloud Firestore, pengguna aktif akan langsung menerima notifikasi dan opsi reload halaman.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button 
+            @click="store.openChangelog()"
+            class="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-xl text-xs transition flex items-center gap-1.5 border border-blue-200 cursor-pointer shadow-xs"
+          >
+            <Bookmark class="w-3.5 h-3.5" />
+            <span>Lihat Catatan Rilis (Changelog)</span>
+          </button>
+          <button 
+            @click="store.openVersionUpdateModal()"
+            class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+          >
+            <HelpCircle class="w-3.5 h-3.5" />
+            <span>Panduan Cache</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Version Status Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+        <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
+          <span class="text-slate-400 text-[10px] uppercase font-bold block">Versi Bundel Aplikasi (Client)</span>
+          <span class="font-mono font-bold text-slate-800 text-sm block">v{{ store.currentAppVersion }}</span>
+          <span class="text-[11px] text-slate-500">Versi kode yang terpasang di peramban saat ini.</span>
+        </div>
+
+        <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
+          <span class="text-slate-400 text-[10px] uppercase font-bold block">Versi Terdaftar di Cloud</span>
+          <span class="font-mono font-bold text-blue-700 text-sm block">v{{ store.appVersionConfig.version }}</span>
+          <span class="text-[11px] text-slate-500">Target versi yang disiarkan ke seluruh pengguna.</span>
+        </div>
+
+        <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
+          <span class="text-slate-400 text-[10px] uppercase font-bold block">Status Pembaruan Pengguna</span>
+          <div class="flex items-center gap-1.5 pt-0.5">
+            <span 
+              class="w-2.5 h-2.5 rounded-full"
+              :class="store.hasNewVersionAvailable ? 'bg-amber-500 animate-ping' : 'bg-emerald-500'"
+            ></span>
+            <span class="font-bold text-xs" :class="store.hasNewVersionAvailable ? 'text-amber-700' : 'text-emerald-700'">
+              {{ store.hasNewVersionAvailable ? 'Pembaruan Tersedia!' : 'Sinkron & Terbaru' }}
+            </span>
+          </div>
+          <span class="text-[11px] text-slate-500">
+            {{ store.hasNewVersionAvailable ? 'Banner reload aktif di layar pengguna' : 'Klien sudah versi terbaru' }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Form Siarkan Pembaruan Versi (Broadcast OTA) -->
+      <div class="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+            <Radio class="w-3.5 h-3.5 text-blue-600 animate-pulse" />
+            Siarkan Versi Baru ke Seluruh Klien (Simulasi / Rilis OTA)
+          </span>
+          <span class="text-[11px] text-slate-400">Otomatis memicu notifikasi pembaruan di semua pengguna</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div class="sm:col-span-1">
+            <input 
+              v-model="newVersionInput" 
+              type="text" 
+              placeholder="Misal: 1.0.0-beta.2"
+              class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 font-mono focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div class="sm:col-span-2">
+            <input 
+              v-model="newVersionMessage" 
+              type="text" 
+              placeholder="Pesan pembaruan untuk pengguna..."
+              class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 pt-1">
+          <button 
+            @click="handleBroadcastVersion"
+            :disabled="isBroadcastingVersion || !newVersionInput"
+            class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+          >
+            <Loader2 v-if="isBroadcastingVersion" class="w-4 h-4 animate-spin" />
+            <Radio v-else class="w-3.5 h-3.5" />
+            <span>{{ isBroadcastingVersion ? 'Menyiarkan...' : 'Siarkan Versi Ini' }}</span>
+          </button>
+
+          <button 
+            @click="resetToCurrentVersion"
+            :disabled="isBroadcastingVersion"
+            class="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs rounded-xl transition cursor-pointer"
+            title="Kembalikan versi cloud ke versi aplikasi ini (1.0.0-beta.1)"
+          >
+            Reset Cloud ke v{{ store.currentAppVersion }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal Konfirmasi Restore -->
     <div v-if="showConfirmRestoreModal && selectedBackupData" class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 z-50 overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200">
       <div class="bg-white w-full h-full sm:h-auto sm:max-h-[92vh] sm:rounded-3xl sm:max-w-lg rounded-none shadow-2xl border-0 sm:border sm:border-slate-100 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
@@ -383,7 +504,8 @@ import type { LibraryBackupData } from '../lib/backupManager.js';
 import { useModalBack } from '../composables/useModalBack.js';
 import { 
   Database, RefreshCw, Download, UploadCloud, Archive, 
-  Loader2, AlertTriangle, CheckCircle2, Mail, Send, ShieldAlert, X
+  Loader2, AlertTriangle, CheckCircle2, Mail, Send, ShieldAlert, X,
+  Sparkles, Bookmark, HelpCircle, Radio
 } from 'lucide-vue-next';
 
 const store = useLibraryStore();
@@ -602,6 +724,31 @@ watch(() => store.isSuperAdmin, (isSuper) => {
     router.replace(store.currentUser?.role === 'admin' ? '/admin' : '/login');
   }
 });
+
+// Version Management & OTA Broadcast
+const newVersionInput = ref('1.0.0-beta.2');
+const newVersionMessage = ref('Pembaruan sistem Libra telah tersedia. Silakan muat ulang halaman.');
+const isBroadcastingVersion = ref(false);
+
+const handleBroadcastVersion = async () => {
+  if (!newVersionInput.value.trim()) return;
+  isBroadcastingVersion.value = true;
+  try {
+    await store.broadcastNewAppVersion(newVersionInput.value.trim(), newVersionMessage.value.trim());
+  } finally {
+    isBroadcastingVersion.value = false;
+  }
+};
+
+const resetToCurrentVersion = async () => {
+  isBroadcastingVersion.value = true;
+  try {
+    await store.broadcastNewAppVersion(store.currentAppVersion, `Aplikasi berjalan pada versi resmi v${store.currentAppVersion}.`);
+    newVersionInput.value = '1.0.0-beta.2';
+  } finally {
+    isBroadcastingVersion.value = false;
+  }
+};
 
 const executeRestore = async () => {
   if (!selectedBackupData.value) return;
