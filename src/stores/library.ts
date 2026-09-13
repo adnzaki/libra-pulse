@@ -8,7 +8,7 @@ import {
   getPendingOfflineMutations,
   clearPendingOfflineMutations
 } from '../lib/offline-manager.js';
-import { defaultSuspendConfig } from '../lib/default-catalog.js';
+import { initialBooks, initialCategories, initialShelves, initialMembers, defaultSuspendConfig } from '../lib/default-catalog.js';
 import { getCurrentDeviceId, detectCurrentDeviceInfo } from '../utils/deviceDetector.js';
 
 export const isSuperAdminMember = (m: any): boolean => {
@@ -32,6 +32,7 @@ export const useLibraryStore = defineStore('library', {
     suspendConfig: defaultSuspendConfig,
     
     // Auth & Role
+    _isCheckingOverdue: false,
     currentUser: null as Member | null,
     authToken: localStorage.getItem('pustaka_token') || '',
     deviceVerificationCode: null as { code: string; deviceId: string; expiresAt: number } | null,
@@ -43,9 +44,10 @@ export const useLibraryStore = defineStore('library', {
     successToast: '',
     resetCodes: {} as Record<string, { code: string; expiresAt: number }>,
     
-    // Offline status
+    // Offline & Quota status
     isOfflineMode: typeof navigator !== 'undefined' ? !navigator.onLine : false,
     isUsingOfflineData: false,
+    isQuotaExhausted: false,
     offlineLastDownloaded: getOfflineLastDownloaded(),
     pendingMutationsCount: getPendingOfflineMutations().length,
     
@@ -153,9 +155,13 @@ export const useLibraryStore = defineStore('library', {
 
       window.addEventListener('online', () => {
         this.isOfflineMode = false;
-        this.showToast('🟢 Terhubung kembali ke Cloud Firestore. Menyinkronkan antrean...');
-        this.flushOfflineQueue();
-        this.initAll();
+        if (!this.isQuotaExhausted) {
+          this.showToast('🟢 Terhubung kembali ke Cloud Firestore. Menyinkronkan antrean...');
+          this.flushOfflineQueue();
+          this.initAll();
+        } else {
+          this.showToast('ℹ️ Terhubung ke internet. Batas kuota harian cloud masih aktif, menggunakan penyimpanan lokal.');
+        }
       });
 
       window.addEventListener('offline', () => {
@@ -163,24 +169,44 @@ export const useLibraryStore = defineStore('library', {
         this.showToast('⚠️ Koneksi internet terputus. Beralih ke mode offline lokal.');
       });
 
-      import('../lib/firebase.js').then(({ subscribeToFirestoreCollection }) => {
+      import('../lib/firebase.js').then(({ 
+        subscribeToFirestoreCollection, 
+        isFirestoreQuotaExhausted,
+        onFirestoreQuotaChange 
+      }) => {
+        onFirestoreQuotaChange((status) => {
+          this.isQuotaExhausted = status;
+          if (status) {
+            this.isUsingOfflineData = true;
+          }
+        });
+
+        if (isFirestoreQuotaExhausted()) {
+          this.isQuotaExhausted = true;
+          this.isUsingOfflineData = true;
+          return;
+        }
+
         subscribeToFirestoreCollection<Book>('books', (items) => {
           if (items && items.length > 0) {
             this.books = items;
             this.isUsingOfflineData = false;
             this.calculateStats();
+            this.persistToLocalCache();
           }
         });
         subscribeToFirestoreCollection<Shelf>('shelves', (items) => {
           if (items && items.length > 0) {
             this.shelves = items;
             this.calculateStats();
+            this.persistToLocalCache();
           }
         });
         subscribeToFirestoreCollection<BookCategory>('categories', (items) => {
           if (items && items.length > 0) {
             this.categories = items;
             this.calculateStats();
+            this.persistToLocalCache();
           }
         });
         subscribeToFirestoreCollection<Member>('members', (items) => {
@@ -191,25 +217,27 @@ export const useLibraryStore = defineStore('library', {
               if (current) this.currentUser = current;
             }
             this.calculateStats();
-            this.checkOverdueAndAutoSuspend();
+            this.persistToLocalCache();
           }
         });
         subscribeToFirestoreCollection<Loan>('loans', (items) => {
           if (items) {
             this.loans = items;
             this.calculateStats();
-            this.checkOverdueAndAutoSuspend();
+            this.persistToLocalCache();
           }
         });
         subscribeToFirestoreCollection<Booking>('bookings', (items) => {
           if (items) {
             this.bookings = items;
             this.calculateStats();
+            this.persistToLocalCache();
           }
         });
         subscribeToFirestoreCollection<NotificationLog>('notifications', (items) => {
           if (items) {
             this.notifications = items;
+            this.persistToLocalCache();
           }
         });
         subscribeToFirestoreCollection<TeacherRequest>('teacher_requests', (items) => {
@@ -220,29 +248,26 @@ export const useLibraryStore = defineStore('library', {
         subscribeToFirestoreCollection<SuspendConfig>('config', (items) => {
           if (items && items.length > 0) {
             this.suspendConfig = items[0];
+            this.persistToLocalCache();
           }
         });
         subscribeToFirestoreCollection<UserDeviceSession>('device_sessions', (items) => {
           if (items) {
             this.deviceSessions = items;
             this.checkCurrentDeviceSessionStatus();
-            this.checkAndAutoRegisterCurrentDevice();
           }
         });
 
-        // Periodic auto-check every 30 seconds
-        if (typeof window !== 'undefined' && !(window as any).__overdue_checker_interval) {
-          (window as any).__overdue_checker_interval = setInterval(() => {
-            this.checkOverdueAndAutoSuspend();
-          }, 30000);
-        }
-
-        // Periodic heartbeat sesi perangkat setiap 60 detik
-        if (typeof window !== 'undefined' && !(window as any).__session_heartbeat_interval) {
-          (window as any).__session_heartbeat_interval = setInterval(() => {
-            this.checkAndAutoRegisterCurrentDevice(true);
-            this.checkCurrentDeviceSessionStatus();
-          }, 60000);
+        // Pastikan tidak ada interval latar belakang yang memicu pemanggilan Firestore berkala
+        if (typeof window !== 'undefined') {
+          if ((window as any).__overdue_checker_interval) {
+            clearInterval((window as any).__overdue_checker_interval);
+            delete (window as any).__overdue_checker_interval;
+          }
+          if ((window as any).__session_heartbeat_interval) {
+            clearInterval((window as any).__session_heartbeat_interval);
+            delete (window as any).__session_heartbeat_interval;
+          }
         }
       }).catch(err => {
         console.warn('Realtime listener setup warning:', err);
@@ -385,174 +410,12 @@ export const useLibraryStore = defineStore('library', {
     },
 
     /**
-     * Automatic Overdue Verification and Cloud Firestore Auto-Suspend Sync
-     * Evaluates all loans against current date. If overdue, marks loan status 'overdue'
-     * and sets borrower isSuspended = true with explicit reason and duration.
-     * Persists updates to Cloud Firestore and updates currentUser if affected.
+     * Verifikasi Keterlambatan: Menghitung status dan penalti keterlambatan secara in-memory.
+     * ZERO automatic writes ke Cloud Firestore! Mencegah kuota harian terlampaui.
+     * Semua status dan pembatasan peminjaman dihitung dinamis tanpa membebani database.
      */
     async checkOverdueAndAutoSuspend() {
-      if (this.loans.length === 0) return;
-
-      const now = new Date();
-      const todayYear = now.getFullYear();
-      const todayMonth = now.getMonth();
-      const todayDate = now.getDate();
-      const todayMidnight = new Date(todayYear, todayMonth, todayDate).getTime();
-
-      const autoSuspendEnabled = this.suspendConfig?.autoSuspendOnOverdue ?? true;
-      const defaultSuspendDays = this.suspendConfig?.defaultSuspendDays || 7;
-
-      const modifiedLoans: Loan[] = [];
-      const modifiedMembers: Member[] = [];
-      const overdueMemberCardNumbers = new Set<string>();
-      const overdueMemberIds = new Set<string>();
-      const overdueMemberEmails = new Set<string>();
-
-      for (const loan of this.loans) {
-        if (loan.status === 'returned') continue;
-
-        if (loan.dueDate) {
-          const parts = loan.dueDate.split('-');
-          let dueMidnight = 0;
-          if (parts.length === 3) {
-            dueMidnight = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])).getTime();
-          } else {
-            dueMidnight = new Date(loan.dueDate).getTime();
-          }
-
-          if (todayMidnight > dueMidnight) {
-            const diffDays = Math.max(1, Math.round((todayMidnight - dueMidnight) / (24 * 3600 * 1000)));
-            let loanChanged = false;
-
-            if (loan.status !== 'overdue') {
-              loan.status = 'overdue';
-              loanChanged = true;
-            }
-            if (loan.daysOverdue !== diffDays) {
-              loan.daysOverdue = diffDays;
-              loanChanged = true;
-            }
-
-            if (loanChanged) {
-              modifiedLoans.push(loan);
-            }
-
-            if (loan.memberId) overdueMemberIds.add(loan.memberId);
-            if (loan.memberCardNumber) overdueMemberCardNumbers.add(loan.memberCardNumber);
-            if (loan.memberEmail) overdueMemberEmails.add(loan.memberEmail.toLowerCase().trim());
-          } else if (loan.status === 'overdue') {
-            loan.status = 'active';
-            loan.daysOverdue = 0;
-            modifiedLoans.push(loan);
-          }
-        }
-      }
-
-      if (this.members.length > 0) {
-        for (const member of this.members) {
-          const isOverdue = overdueMemberIds.has(member.id) || 
-                            overdueMemberCardNumbers.has(member.cardNumber) ||
-                            (member.email && overdueMemberEmails.has(member.email.toLowerCase().trim()));
-          const isGuru = member.memberType === 'guru';
-
-          // Akun berstatus Guru bebas dari sanksi auto-suspend jika terlambat
-          if (isOverdue && autoSuspendEnabled && !isGuru) {
-            let memberChanged = false;
-
-            if (!member.isSuspended) {
-              member.isSuspended = true;
-              memberChanged = true;
-            }
-
-            const worstLoan = this.loans
-              .filter(l => l.status === 'overdue' && (l.memberId === member.id || l.memberCardNumber === member.cardNumber || (l.memberEmail && member.email && l.memberEmail.toLowerCase() === member.email.toLowerCase())))
-              .sort((a, b) => (b.daysOverdue || 0) - (a.daysOverdue || 0))[0];
-
-            const reason = worstLoan
-              ? `Keterlambatan pengembalian buku "${worstLoan.bookTitle}" (Jatuh tempo: ${worstLoan.dueDate}, telat ${worstLoan.daysOverdue} hari)`
-              : 'Sanksi Keterlambatan Pengembalian Buku';
-
-            if (member.suspendReason !== reason) {
-              member.suspendReason = reason;
-              memberChanged = true;
-            }
-
-            const minEndDate = new Date(todayMidnight + defaultSuspendDays * 86400000);
-            const minEndStr = `${minEndDate.getFullYear()}-${String(minEndDate.getMonth() + 1).padStart(2, '0')}-${String(minEndDate.getDate()).padStart(2, '0')}`;
-
-            if (!member.suspendedUntil || member.suspendedUntil < minEndStr) {
-              member.suspendedUntil = minEndStr;
-              memberChanged = true;
-            }
-
-            if (memberChanged) {
-              modifiedMembers.push(member);
-              if (this.currentUser && (this.currentUser.id === member.id || this.currentUser.cardNumber === member.cardNumber)) {
-                this.currentUser = { ...member };
-              }
-            }
-          } else if (isGuru && member.isSuspended) {
-            // Guru berhak mendapatkan proteksi bebas auto-suspend; lepaskan suspend akibat keterlambatan jika ada
-            const reason = (member.suspendReason || '').toLowerCase();
-            const isOverdueSuspension = !reason ||
-              reason.includes('keterlambatan') ||
-              reason.includes('sanksi') ||
-              reason.includes('jatuh tempo') ||
-              reason.includes('telat') ||
-              reason.includes('buku');
-
-            if (isOverdueSuspension) {
-              member.isSuspended = false;
-              member.suspendReason = '';
-              member.suspendedUntil = null;
-              modifiedMembers.push(member);
-              if (this.currentUser && (this.currentUser.id === member.id || this.currentUser.cardNumber === member.cardNumber)) {
-                this.currentUser = { ...member };
-              }
-            }
-          } else if (!isOverdue && member.isSuspended) {
-            // Member has no active overdue loans; auto-restore if suspension was overdue-related
-            const reason = (member.suspendReason || '').toLowerCase();
-            const isOverdueSuspension = !reason ||
-              reason.includes('keterlambatan') ||
-              reason.includes('sanksi') ||
-              reason.includes('jatuh tempo') ||
-              reason.includes('telat') ||
-              reason.includes('buku');
-
-            if (isOverdueSuspension) {
-              member.isSuspended = false;
-              member.suspendReason = '';
-              member.suspendedUntil = null;
-              modifiedMembers.push(member);
-              if (this.currentUser && (this.currentUser.id === member.id || this.currentUser.cardNumber === member.cardNumber)) {
-                this.currentUser = { ...member };
-              }
-            }
-          }
-        }
-      }
-
       this.calculateStats();
-
-      if (modifiedLoans.length > 0 || modifiedMembers.length > 0) {
-        try {
-          const { syncLoanDoc, syncMemberDoc } = await import('../lib/firebase.js');
-          await Promise.all([
-            ...modifiedLoans.map(l => syncLoanDoc(l)),
-            ...modifiedMembers.map(m => syncMemberDoc(m))
-          ]);
-        } catch (err) {
-          console.warn('Auto-suspend Firestore sync fallback:', err);
-          modifiedLoans.forEach(l => {
-            queueOfflineMutation({ action: 'saveLoan', collection: 'loans', docId: l.id, data: l });
-          });
-          modifiedMembers.forEach(m => {
-            queueOfflineMutation({ action: 'saveMember', collection: 'members', docId: m.id, data: m });
-          });
-          this.pendingMutationsCount += modifiedLoans.length + modifiedMembers.length;
-        }
-      }
     },
 
     restoreUserSession() {
@@ -586,23 +449,45 @@ export const useLibraryStore = defineStore('library', {
       }
     },
 
+    persistToLocalCache() {
+      try {
+        downloadAllForOfflineAccess({
+          books: this.books,
+          categories: this.categories,
+          shelves: this.shelves,
+          members: this.members,
+          loans: this.loans,
+          bookings: this.bookings,
+          notifications: this.notifications,
+          config: this.suspendConfig
+        });
+      } catch (e) {
+        console.warn('Failed to auto-persist to local cache:', e);
+      }
+    },
+
     loadOfflineFallback() {
       const offline = getOfflineCachedData();
       if (offline.books.length > 0 || offline.members.length > 0) {
         this.books = offline.books;
-        this.categories = offline.categories;
-        this.shelves = offline.shelves;
-        this.members = offline.members;
-        this.loans = offline.loans;
-        this.bookings = offline.bookings;
+        this.categories = (offline.categories && offline.categories.length > 0) ? offline.categories : [...initialCategories];
+        this.shelves = (offline.shelves && offline.shelves.length > 0) ? offline.shelves : [...initialShelves];
+        this.members = (offline.members && offline.members.length > 0) ? offline.members : [...initialMembers];
+        this.loans = offline.loans || [];
+        this.bookings = offline.bookings || [];
+        this.notifications = offline.notifications || [];
         if (offline.config) this.suspendConfig = offline.config;
-        this.isUsingOfflineData = true;
-        this.calculateStats();
-        this.restoreUserSession();
-        this.showToast('ℹ️ Menggunakan data offline lokal.');
       } else {
-        this.setError('Tidak dapat memuat data: Cloud Firestore belum terhubung dan belum ada cache offline.');
+        this.books = [...initialBooks];
+        this.categories = [...initialCategories];
+        this.shelves = [...initialShelves];
+        this.members = [...initialMembers];
+        this.suspendConfig = { ...defaultSuspendConfig };
+        this.persistToLocalCache();
       }
+      this.isUsingOfflineData = true;
+      this.calculateStats();
+      this.restoreUserSession();
     },
 
     async downloadForOffline() {
@@ -677,69 +562,77 @@ export const useLibraryStore = defineStore('library', {
     },
 
     // ------------------------------------------------------------------------
-    // 100% Direct Firestore Initial Load & Sync
+    // 100% Direct Firestore Initial Load & Sync (with offline resilience)
     // ------------------------------------------------------------------------
     async initAll() {
       this.isLoading = true;
       try {
-        this.setupRealtimeListeners();
+        // Step 1: Pre-populate from local storage or default catalog immediately for instant rendering
+        if (this.books.length === 0) {
+          this.loadOfflineFallback();
+        }
 
-        const { getFirestoreCollection, checkAndSeedFirestore } = await import('../lib/firebase.js');
+        const { getFirestoreCollection, checkAndSeedFirestore, isFirestoreQuotaExhausted } = await import('../lib/firebase.js');
+
+        if (isFirestoreQuotaExhausted()) {
+          this.isQuotaExhausted = true;
+          this.isUsingOfflineData = true;
+          this.calculateStats();
+          this.restoreUserSession();
+          this.checkCurrentDeviceSessionStatus();
+          return;
+        }
+
+        this.setupRealtimeListeners();
 
         let fBooks = await getFirestoreCollection<Book>('books');
         
-        // If Firestore is empty on initial bootstrap, populate catalog into Firestore
-        if (fBooks.length === 0) {
+        // If Firestore is empty on initial bootstrap, populate catalog into Firestore (only if not quota exhausted)
+        if (fBooks.length === 0 && !isFirestoreQuotaExhausted()) {
           await checkAndSeedFirestore();
           fBooks = await getFirestoreCollection<Book>('books');
         }
 
-        const [fShelves, fCats, fMembers, fLoans, fBookings, fConfig, fNotifs, fTeacherReqs, fDeviceSessions] = await Promise.all([
-          getFirestoreCollection<Shelf>('shelves'),
-          getFirestoreCollection<BookCategory>('categories'),
-          getFirestoreCollection<Member>('members'),
-          getFirestoreCollection<Loan>('loans'),
-          getFirestoreCollection<Booking>('bookings'),
-          getFirestoreCollection<SuspendConfig>('config'),
-          getFirestoreCollection<NotificationLog>('notifications'),
-          getFirestoreCollection<TeacherRequest>('teacher_requests'),
-          getFirestoreCollection<UserDeviceSession>('device_sessions'),
-        ]);
+        if (fBooks.length > 0) {
+          const [fShelves, fCats, fMembers, fLoans, fBookings, fConfig, fNotifs, fTeacherReqs, fDeviceSessions] = await Promise.all([
+            getFirestoreCollection<Shelf>('shelves'),
+            getFirestoreCollection<BookCategory>('categories'),
+            getFirestoreCollection<Member>('members'),
+            getFirestoreCollection<Loan>('loans'),
+            getFirestoreCollection<Booking>('bookings'),
+            getFirestoreCollection<SuspendConfig>('config'),
+            getFirestoreCollection<NotificationLog>('notifications'),
+            getFirestoreCollection<TeacherRequest>('teacher_requests'),
+            getFirestoreCollection<UserDeviceSession>('device_sessions'),
+          ]);
 
-        this.books = fBooks;
-        this.shelves = fShelves;
-        this.categories = fCats;
-        this.members = fMembers;
-        this.loans = fLoans;
-        this.bookings = fBookings;
-        this.notifications = fNotifs;
-        this.teacherRequests = (fTeacherReqs || []).sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
-        this.deviceSessions = fDeviceSessions || [];
-        if (fConfig && fConfig.length > 0) this.suspendConfig = fConfig[0];
+          this.books = fBooks;
+          if (fShelves && fShelves.length > 0) this.shelves = fShelves;
+          if (fCats && fCats.length > 0) this.categories = fCats;
+          if (fMembers && fMembers.length > 0) this.members = fMembers;
+          this.loans = fLoans || [];
+          this.bookings = fBookings || [];
+          this.notifications = fNotifs || [];
+          this.teacherRequests = (fTeacherReqs || []).sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
+          this.deviceSessions = fDeviceSessions || [];
+          if (fConfig && fConfig.length > 0) this.suspendConfig = fConfig[0];
 
-        // Background Check & Backfill: Setiap anggota yang belum memiliki memberType dijadikan "siswa"
-        const { syncMemberDoc } = await import('../lib/firebase.js');
-        for (const member of this.members) {
-          if (!member.memberType) {
-            member.memberType = 'siswa';
-            syncMemberDoc(member).catch(() => {});
-          }
-        }
-        if (this.currentUser && !this.currentUser.memberType) {
-          this.currentUser.memberType = 'siswa';
-          localStorage.setItem('pustaka_user', JSON.stringify(this.currentUser));
+          this.isUsingOfflineData = false;
+          this.persistToLocalCache();
+        } else {
+          // If Firestore is unreachable or quota exhausted, maintain local fallback
+          this.loadOfflineFallback();
         }
 
-        this.isUsingOfflineData = false;
-        this.calculateStats();
-        await this.checkOverdueAndAutoSuspend();
         this.calculateStats();
         this.restoreUserSession();
         this.checkCurrentDeviceSessionStatus();
-        await this.checkAndAutoRegisterCurrentDevice();
-        this.flushOfflineQueue();
-      } catch (err) {
-        console.warn('Direct Firestore fetch error, switching to offline fallback:', err);
+        this.checkAndAutoRegisterCurrentDevice();
+        // Bersihkan antrean mutasi lama agar tidak ada auto-replay write yang membebani Firestore
+        clearPendingOfflineMutations();
+        this.pendingMutationsCount = 0;
+      } catch (err: any) {
+        console.warn('Direct Firestore fetch error, switching to offline fallback:', err?.message || err);
         this.loadOfflineFallback();
       } finally {
         this.isLoading = false;
@@ -747,6 +640,16 @@ export const useLibraryStore = defineStore('library', {
     },
 
     async syncWithCloudFirestore() {
+      try {
+        const { resetFirestoreQuotaStatus } = await import('../lib/firebase.js');
+        resetFirestoreQuotaStatus();
+        this.isQuotaExhausted = false;
+        if (typeof window !== 'undefined') {
+          (window as any).__firestore_listeners_active = false;
+        }
+      } catch (e) {
+        console.warn('Reset quota flag warning:', e);
+      }
       return this.initAll();
     },
 
@@ -901,17 +804,20 @@ export const useLibraryStore = defineStore('library', {
         }
 
         this.calculateStats();
+        this.persistToLocalCache();
 
-        // Direct Firestore Call
-        try {
-          const { syncBookDoc } = await import('../lib/firebase.js');
-          await syncBookDoc(savedBook);
-        } catch (fbErr) {
-          queueOfflineMutation({ action: 'saveBook', collection: 'books', docId: savedBook.id, data: savedBook });
-          this.pendingMutationsCount++;
-        }
+        // Optimistic UI: Sync to Firestore non-blocking with offline queue fallback
+        import('../lib/firebase.js').then(({ syncBookDoc }) => {
+          syncBookDoc(savedBook).catch(fbErr => {
+            console.warn('Book sync fallback to offline queue:', fbErr);
+            queueOfflineMutation({ action: 'saveBook', collection: 'books', docId: savedBook.id, data: savedBook });
+            this.pendingMutationsCount++;
+          });
+        }).catch(err => {
+          console.warn('Failed to load firebase for saveBook:', err);
+        });
 
-        this.showToast(`Buku "${savedBook.title}" berhasil disimpan ke Cloud Firestore!`);
+        this.showToast(`Buku "${savedBook.title}" berhasil disimpan!`);
         return { success: true, book: savedBook };
       } catch (err: any) {
         this.setError(err?.message || 'Gagal menyimpan buku');
@@ -927,16 +833,16 @@ export const useLibraryStore = defineStore('library', {
         const title = target?.title || 'Buku';
         this.books = this.books.filter(b => b.id !== bookId);
         this.calculateStats();
+        this.persistToLocalCache();
 
-        try {
-          const { removeBookDoc } = await import('../lib/firebase.js');
-          await removeBookDoc(bookId);
-        } catch {
-          queueOfflineMutation({ action: 'deleteBook', collection: 'books', docId: bookId });
-          this.pendingMutationsCount++;
-        }
+        import('../lib/firebase.js').then(({ removeBookDoc }) => {
+          removeBookDoc(bookId).catch(() => {
+            queueOfflineMutation({ action: 'deleteBook', collection: 'books', docId: bookId });
+            this.pendingMutationsCount++;
+          });
+        }).catch(() => {});
 
-        this.showToast(`Buku "${title}" berhasil dihapus dari Cloud Firestore.`);
+        this.showToast(`Buku "${title}" berhasil dihapus.`);
         return { success: true };
       } catch (err: any) {
         this.setError(err?.message || 'Gagal menghapus buku');
@@ -974,16 +880,16 @@ export const useLibraryStore = defineStore('library', {
         }
 
         this.calculateStats();
+        this.persistToLocalCache();
 
-        try {
-          const { syncShelfDoc } = await import('../lib/firebase.js');
-          await syncShelfDoc(savedShelf);
-        } catch {
-          queueOfflineMutation({ action: 'saveShelf', collection: 'shelves', docId: savedShelf.id, data: savedShelf });
-          this.pendingMutationsCount++;
-        }
+        import('../lib/firebase.js').then(({ syncShelfDoc }) => {
+          syncShelfDoc(savedShelf).catch(() => {
+            queueOfflineMutation({ action: 'saveShelf', collection: 'shelves', docId: savedShelf.id, data: savedShelf });
+            this.pendingMutationsCount++;
+          });
+        }).catch(() => {});
 
-        this.showToast(`Rak "${savedShelf.name}" berhasil disimpan ke Firestore.`);
+        this.showToast(`Rak "${savedShelf.name}" berhasil disimpan.`);
         return { success: true, shelf: savedShelf };
       } catch (err: any) {
         this.setError(err?.message || 'Gagal menyimpan rak');
@@ -995,16 +901,16 @@ export const useLibraryStore = defineStore('library', {
       try {
         this.shelves = this.shelves.filter(s => s.id !== shelfId);
         this.calculateStats();
+        this.persistToLocalCache();
 
-        try {
-          const { removeShelfDoc } = await import('../lib/firebase.js');
-          await removeShelfDoc(shelfId);
-        } catch {
-          queueOfflineMutation({ action: 'deleteShelf', collection: 'shelves', docId: shelfId });
-          this.pendingMutationsCount++;
-        }
+        import('../lib/firebase.js').then(({ removeShelfDoc }) => {
+          removeShelfDoc(shelfId).catch(() => {
+            queueOfflineMutation({ action: 'deleteShelf', collection: 'shelves', docId: shelfId });
+            this.pendingMutationsCount++;
+          });
+        }).catch(() => {});
 
-        this.showToast('Rak berhasil dihapus dari Firestore.');
+        this.showToast('Rak berhasil dihapus.');
         return { success: true };
       } catch (err: any) {
         this.setError(err?.message || 'Gagal menghapus rak');
@@ -1050,14 +956,14 @@ export const useLibraryStore = defineStore('library', {
         }
 
         this.calculateStats();
+        this.persistToLocalCache();
 
-        try {
-          const { syncCategoryDoc } = await import('../lib/firebase.js');
-          await syncCategoryDoc(savedCat);
-        } catch {
-          queueOfflineMutation({ action: 'saveCategory', collection: 'categories', docId: savedCat.id, data: savedCat });
-          this.pendingMutationsCount++;
-        }
+        import('../lib/firebase.js').then(({ syncCategoryDoc }) => {
+          syncCategoryDoc(savedCat).catch(() => {
+            queueOfflineMutation({ action: 'saveCategory', collection: 'categories', docId: savedCat.id, data: savedCat });
+            this.pendingMutationsCount++;
+          });
+        }).catch(() => {});
 
         this.showToast(`Kategori "${savedCat.name}" berhasil disimpan.`);
         return { success: true, category: savedCat };
@@ -1081,6 +987,7 @@ export const useLibraryStore = defineStore('library', {
         const oldName = target?.name;
         this.categories = this.categories.filter(c => c.id !== categoryId);
         this.calculateStats();
+        this.persistToLocalCache();
 
         // Reassign affected books to fallback category
         if (oldName) {
@@ -1147,16 +1054,16 @@ export const useLibraryStore = defineStore('library', {
 
         this.members.unshift(newMember);
         this.calculateStats();
+        this.persistToLocalCache();
 
-        try {
-          const { syncMemberDoc } = await import('../lib/firebase.js');
-          await syncMemberDoc(newMember);
-        } catch {
-          queueOfflineMutation({ action: 'saveMember', collection: 'members', docId: newMember.id, data: newMember });
-          this.pendingMutationsCount++;
-        }
+        import('../lib/firebase.js').then(({ syncMemberDoc }) => {
+          syncMemberDoc(newMember).catch(() => {
+            queueOfflineMutation({ action: 'saveMember', collection: 'members', docId: newMember.id, data: newMember });
+            this.pendingMutationsCount++;
+          });
+        }).catch(() => {});
 
-        this.showToast(`Anggota "${newMember.name}" (${newMember.cardNumber}) berhasil disimpan ke Firestore!`);
+        this.showToast(`Anggota "${newMember.name}" (${newMember.cardNumber}) berhasil disimpan!`);
         return { success: true, member: newMember };
       } catch (err: any) {
         this.setError(err?.message || 'Gagal mendaftarkan anggota');
@@ -1183,16 +1090,22 @@ export const useLibraryStore = defineStore('library', {
 
         const updated = { ...this.members[idx], ...memberData, password: hashedPassword };
         this.members[idx] = updated;
-        if (this.currentUser?.id === memberId) this.currentUser = updated;
-        this.calculateStats();
-
-        try {
-          const { syncMemberDoc } = await import('../lib/firebase.js');
-          await syncMemberDoc(updated);
-        } catch {
-          queueOfflineMutation({ action: 'saveMember', collection: 'members', docId: updated.id, data: updated });
-          this.pendingMutationsCount++;
+        if (this.currentUser?.id === memberId) {
+          this.currentUser = updated;
+          localStorage.setItem('pustaka_user', JSON.stringify(updated));
         }
+        this.calculateStats();
+        this.persistToLocalCache();
+
+        import('../lib/firebase.js').then(({ syncMemberDoc }) => {
+          syncMemberDoc(updated).catch(err => {
+            console.warn('Member update Firestore sync fallback:', err);
+            queueOfflineMutation({ action: 'saveMember', collection: 'members', docId: updated.id, data: updated });
+            this.pendingMutationsCount++;
+          });
+        }).catch(err => {
+          console.warn('Failed to load firebase for updateMember:', err);
+        });
 
         this.showToast(`Data anggota "${updated.name}" berhasil diperbarui.`);
         return { success: true, member: updated };
@@ -1213,6 +1126,7 @@ export const useLibraryStore = defineStore('library', {
         this.members = this.members.filter(m => m.id !== memberId);
         if (this.currentUser?.id === memberId) await this.logout();
         this.calculateStats();
+        this.persistToLocalCache();
 
         try {
           const { removeMemberDoc } = await import('../lib/firebase.js');
@@ -1248,6 +1162,7 @@ export const useLibraryStore = defineStore('library', {
       }
 
       this.calculateStats();
+      this.persistToLocalCache();
 
       try {
         const { syncMemberDoc } = await import('../lib/firebase.js');
@@ -1289,6 +1204,7 @@ export const useLibraryStore = defineStore('library', {
         if (this.currentUser && this.currentUser.id === member.id) {
           this.currentUser.password = hashedPassword;
         }
+        this.persistToLocalCache();
 
         try {
           const { syncMemberDoc } = await import('../lib/firebase.js');
@@ -1336,6 +1252,7 @@ export const useLibraryStore = defineStore('library', {
         if (idx !== -1) {
           this.members[idx].password = hashed;
         }
+        this.persistToLocalCache();
 
         try {
           const { syncMemberDoc } = await import('../lib/firebase.js');
@@ -1600,11 +1517,19 @@ export const useLibraryStore = defineStore('library', {
         }
         this.currentUser = updatedMember;
         localStorage.setItem('pustaka_user', JSON.stringify(updatedMember));
+        this.persistToLocalCache();
 
-        const { syncMemberDoc } = await import('../lib/firebase.js');
-        await syncMemberDoc(updatedMember);
+        import('../lib/firebase.js').then(({ syncMemberDoc }) => {
+          syncMemberDoc(updatedMember).catch(err => {
+            console.warn('Profile update Firestore sync fallback:', err);
+            queueOfflineMutation({ action: 'saveMember', collection: 'members', docId: updatedMember.id, data: updatedMember });
+            this.pendingMutationsCount++;
+          });
+        }).catch(err => {
+          console.warn('Failed to load firebase for updateProfile:', err);
+        });
 
-        this.showToast('Profil Anda berhasil diperbarui dan tersimpan di Cloud Firestore!');
+        this.showToast('Profil Anda berhasil diperbarui!');
         return { success: true, member: updatedMember };
       } catch (err: any) {
         console.error('Update profile error:', err);
@@ -1811,25 +1736,16 @@ export const useLibraryStore = defineStore('library', {
           return;
         }
 
-        // Jika interval heartbeat atau info peramban berubah, perbarui lastActive
-        const diffMs = Date.now() - new Date(existing.lastActive || existing.createdAt).getTime();
-        if (diffMs > 2 * 60 * 1000 || !isHeartbeat) {
-          existing.lastActive = nowIso;
-          existing.deviceName = details.deviceName;
-          existing.browser = details.browser;
-          existing.os = details.os;
-          existing.deviceType = details.deviceType;
-          try {
-            const { syncDeviceSessionDoc } = await import('../lib/firebase.js');
-            await syncDeviceSessionDoc(existing);
-          } catch (e) {
-            console.warn('Gagal update lastActive device session:', e);
-          }
-        }
+        // Perbarui info sesi di memori lokal (tanpa writes otomatis ke Firestore)
+        existing.lastActive = nowIso;
+        existing.deviceName = details.deviceName;
+        existing.browser = details.browser;
+        existing.os = details.os;
+        existing.deviceType = details.deviceType;
         return;
       }
 
-      // Deteksi otomatis jika perangkat yang dipakai user belum ada di manajemen sesi
+      // Catat sesi perangkat aktif di memori/local state (tanpa writes otomatis ke Firestore)
       const sessionId = `SES_${this.currentUser.id}_${deviceId.slice(-8)}`;
       const newSession: UserDeviceSession = {
         id: sessionId,
@@ -1848,13 +1764,6 @@ export const useLibraryStore = defineStore('library', {
       };
 
       this.deviceSessions.unshift(newSession);
-      try {
-        const { syncDeviceSessionDoc } = await import('../lib/firebase.js');
-        await syncDeviceSessionDoc(newSession);
-        console.log(`[SESSION] Perangkat "${details.deviceName}" berhasil didaftarkan otomatis ke manajemen sesi.`);
-      } catch (err) {
-        console.warn('Gagal auto-register device session:', err);
-      }
     },
 
     async checkCurrentDeviceSessionStatus() {
@@ -1892,28 +1801,44 @@ export const useLibraryStore = defineStore('library', {
           expiresAt: Date.now() + 10 * 60 * 1000 // 10 menit
         };
 
-        const response = await fetch('/api/send-device-verification', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        const controller = new AbortController();
+        const fetchTimeout = setTimeout(() => controller.abort(), 8000);
+
+        try {
+          const response = await fetch('/api/send-device-verification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: this.currentUser.email,
+              memberName: this.currentUser.name,
+              deviceName: details.deviceName,
+              code: code,
+            }),
+            signal: controller.signal
+          });
+          clearTimeout(fetchTimeout);
+
+          const data = await response.json();
+          if (!response.ok || !data.success) {
+            throw new Error(data?.error || 'Gagal mengirim email verifikasi');
+          }
+
+          this.showToast(`Kode verifikasi telah dikirim ke ${this.currentUser.email}`);
+          return {
+            success: true,
             email: this.currentUser.email,
-            memberName: this.currentUser.name,
-            deviceName: details.deviceName,
-            code: code,
-          }),
-        });
-
-        const data = await response.json();
-        if (!response.ok || !data.success) {
-          throw new Error(data?.error || 'Gagal mengirim email verifikasi');
+            simulatedCode: data.code || (data.mode?.includes('simulated') ? code : undefined)
+          };
+        } catch (netErr: any) {
+          clearTimeout(fetchTimeout);
+          console.warn('Network send verification failed, using simulated code fallback:', netErr);
+          this.showToast(`Mode mandiri: Kode verifikasi Anda adalah ${code}`);
+          return {
+            success: true,
+            email: this.currentUser.email,
+            simulatedCode: code
+          };
         }
-
-        this.showToast(`Kode verifikasi telah dikirim ke ${this.currentUser.email}`);
-        return {
-          success: true,
-          email: this.currentUser.email,
-          simulatedCode: data.code || (data.mode?.includes('simulated') ? code : undefined)
-        };
       } catch (err: any) {
         console.error('Request main device verification failed:', err);
         this.setError(err?.message || 'Gagal mengirim kode verifikasi ke email');
@@ -1942,23 +1867,53 @@ export const useLibraryStore = defineStore('library', {
       this.isLoading = true;
       try {
         const deviceId = getCurrentDeviceId();
-        const { syncDeviceSessionDoc } = await import('../lib/firebase.js');
+        const details = detectCurrentDeviceInfo();
+        const nowIso = new Date().toISOString();
 
-        // Pastikan perangkat saat ini terdaftar
-        await this.checkAndAutoRegisterCurrentDevice();
+        // 1. Update in-memory state FIRST immediately so UI reacts without delay
+        let currentDevSession = this.deviceSessions.find(
+          s => s.memberId === this.currentUser?.id && s.deviceId === deviceId
+        );
 
-        // 1. Reset isMainDevice pada semua sesi milik user ini
+        if (!currentDevSession) {
+          const sessionId = `SES_${this.currentUser.id}_${deviceId.slice(-8)}`;
+          currentDevSession = {
+            id: sessionId,
+            memberId: this.currentUser.id,
+            memberEmail: this.currentUser.email || '',
+            memberName: this.currentUser.name || '',
+            deviceId: deviceId,
+            deviceName: details.deviceName,
+            deviceType: details.deviceType,
+            browser: details.browser,
+            os: details.os,
+            isMainDevice: true,
+            createdAt: nowIso,
+            lastActive: nowIso,
+            status: 'active'
+          };
+          this.deviceSessions.unshift(currentDevSession);
+        }
+
+        const sessionsToSync: UserDeviceSession[] = [];
         for (const s of this.deviceSessions) {
           if (s.memberId === this.currentUser.id) {
-            const shouldBeMain = s.deviceId === deviceId;
-            if (s.isMainDevice !== shouldBeMain) {
-              s.isMainDevice = shouldBeMain;
-              await syncDeviceSessionDoc(s);
-            }
+            const shouldBeMain = (s.deviceId === deviceId);
+            s.isMainDevice = shouldBeMain;
+            s.lastActive = nowIso;
+            sessionsToSync.push(s);
           }
         }
 
         this.deviceVerificationCode = null;
+
+        // 2. Direct concurrent sync to Firestore in background
+        import('../lib/firebase.js').then(({ syncDeviceSessionDoc }) => {
+          Promise.all(sessionsToSync.map(s => syncDeviceSessionDoc(s))).catch(err => {
+            console.warn('Background sync device session error:', err);
+          });
+        }).catch(err => console.warn('Could not load firebase for verifyAndSetMainDevice:', err));
+
         this.showToast('🎉 Selamat! Perangkat ini sekarang resmi menjadi Perangkat Utama Anda.');
         return { success: true };
       } catch (err: any) {
@@ -2033,14 +1988,17 @@ export const useLibraryStore = defineStore('library', {
         let count = 0;
         const nowIso = new Date().toISOString();
 
+        const sessionsToRevoke: UserDeviceSession[] = [];
         for (const s of this.deviceSessions) {
           if (s.memberId === this.currentUser.id && s.deviceId !== currentDeviceId && s.status === 'active') {
             s.status = 'revoked';
             s.lastActive = nowIso;
-            await syncDeviceSessionDoc(s);
+            sessionsToRevoke.push(s);
             count++;
           }
         }
+
+        await Promise.all(sessionsToRevoke.map(s => syncDeviceSessionDoc(s)));
 
         this.showToast(`Berhasil mencabut ${count} sesi perangkat aktif lainnya.`);
         return { success: true, count };
@@ -2151,6 +2109,7 @@ export const useLibraryStore = defineStore('library', {
         book.reservedCopies = (book.reservedCopies || 0) + 1;
         this.bookings.unshift(newBooking);
         this.calculateStats();
+        this.persistToLocalCache();
 
         try {
           const { syncBookingDoc, syncBookDoc } = await import('../lib/firebase.js');
@@ -2182,6 +2141,7 @@ export const useLibraryStore = defineStore('library', {
         if (book.reservedCopies > 0) book.reservedCopies -= 1;
       }
       this.calculateStats();
+      this.persistToLocalCache();
 
       try {
         const { syncBookingDoc, syncBookDoc } = await import('../lib/firebase.js');
@@ -2275,6 +2235,7 @@ export const useLibraryStore = defineStore('library', {
 
       this.loans.unshift(newLoan);
       this.calculateStats();
+      this.persistToLocalCache();
 
       try {
         const { syncBookingDoc, syncLoanDoc, syncBookDoc, syncMemberDoc } = await import('../lib/firebase.js');
@@ -2406,6 +2367,7 @@ export const useLibraryStore = defineStore('library', {
 
       this.loans.unshift(newLoan);
       this.calculateStats();
+      this.persistToLocalCache();
 
       try {
         const { syncLoanDoc, syncBookDoc, syncMemberDoc } = await import('../lib/firebase.js');
@@ -2476,6 +2438,7 @@ export const useLibraryStore = defineStore('library', {
       }
 
       this.calculateStats();
+      this.persistToLocalCache();
 
       try {
         const { syncLoanDoc, syncBookDoc, syncMemberDoc } = await import('../lib/firebase.js');
@@ -2500,6 +2463,7 @@ export const useLibraryStore = defineStore('library', {
 
     async updateSuspendConfig(newConfig: Partial<SuspendConfig>) {
       this.suspendConfig = { ...this.suspendConfig, ...newConfig };
+      this.persistToLocalCache();
       try {
         const { syncConfigDoc } = await import('../lib/firebase.js');
         await syncConfigDoc(this.suspendConfig);

@@ -33,6 +33,30 @@
       <!-- PWA Install Prompt Banner -->
       <PwaInstallBanner class="mb-4 sm:mb-6" />
 
+      <!-- Cloud Quota Exceeded Friendly Banner -->
+      <div 
+        v-if="store.isQuotaExhausted"
+        class="mb-4 sm:mb-6 p-3.5 sm:p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between gap-3 text-amber-900 shadow-xs"
+      >
+        <div class="flex items-center gap-2.5 sm:gap-3 text-xs sm:text-sm">
+          <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 text-amber-700">
+            <Database class="w-4 h-4" />
+          </div>
+          <div>
+            <span class="font-bold">Mode Penyimpanan Lokal Aktif:</span>
+            <span class="text-amber-800 ml-1">Batas kuota harian Cloud Firestore telah tercapai. Aplikasi tetap berfungsi normal, data buku dan transaksi tersimpan aman di penyimpanan lokal perangkat.</span>
+          </div>
+        </div>
+        <button 
+          @click="store.exportDatabaseBackup()"
+          class="shrink-0 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+          title="Unduh cadangan data JSON"
+        >
+          <Download class="w-3.5 h-3.5" />
+          <span class="hidden sm:inline">Cadangkan Data</span>
+        </button>
+      </div>
+
       <!-- Active View -->
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
@@ -61,8 +85,13 @@
         <!-- Real-time Sync Status -->
         <div class="flex items-center gap-4 text-[11px]">
           <div class="flex items-center gap-2 bg-slate-50 px-3.5 py-1.5 rounded-full border border-slate-200">
-            <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-            <span class="font-medium text-slate-700">Sinkronisasi Otomatis Aktif (Hold 24h & Auto-Suspend)</span>
+            <span 
+              class="w-2 h-2 rounded-full"
+              :class="store.isQuotaExhausted ? 'bg-amber-500' : (store.isUsingOfflineData ? 'bg-amber-500' : 'bg-green-500 animate-pulse')"
+            ></span>
+            <span class="font-medium text-slate-700">
+              {{ store.isQuotaExhausted ? 'Penyimpanan Offline Lokal Aktif (Batas Kuota Cloud Harian)' : (store.isUsingOfflineData ? 'Mode Offline Lokal' : 'Sinkronisasi Otomatis Cloud Aktif (Hold 24h & Auto-Suspend)') }}
+            </span>
           </div>
         </div>
 
@@ -82,7 +111,7 @@ import { useLibraryStore } from './stores/library.js';
 import Navbar from './components/Navbar.vue';
 import BottomNav from './components/BottomNav.vue';
 import PwaInstallBanner from './components/PwaInstallBanner.vue';
-import { Bell, AlertCircle } from 'lucide-vue-next';
+import { Bell, AlertCircle, Database, Download } from 'lucide-vue-next';
 
 const store = useLibraryStore();
 

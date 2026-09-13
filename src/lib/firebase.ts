@@ -49,9 +49,81 @@ export async function logoutUser() {
   }
 }
 
+let quotaExhausted = false;
+const quotaCallbacks = new Set<(status: boolean) => void>();
+const activeListeners = new Set<() => void>();
+
+export function isFirestoreQuotaExhausted(): boolean {
+  return quotaExhausted;
+}
+
+export function resetFirestoreQuotaStatus() {
+  quotaExhausted = false;
+  quotaCallbacks.forEach(cb => {
+    try { cb(false); } catch {}
+  });
+}
+
+export function setFirestoreQuotaExhausted(status: boolean) {
+  if (quotaExhausted === status) return;
+  quotaExhausted = status;
+  if (status) {
+    console.warn('[Firestore] Kuota Firestore tercapai. Mengaktifkan mode offline lokal & menghentikan listener real-time untuk mencegah beban berlebih.');
+    unsubscribeAllFirestoreListeners();
+  }
+  quotaCallbacks.forEach(cb => {
+    try { cb(status); } catch {}
+  });
+}
+
+export function onFirestoreQuotaChange(cb: (status: boolean) => void): () => void {
+  quotaCallbacks.add(cb);
+  return () => quotaCallbacks.delete(cb);
+}
+
+export function unsubscribeAllFirestoreListeners() {
+  activeListeners.forEach(unsub => {
+    try { unsub(); } catch {}
+  });
+  activeListeners.clear();
+}
+
+export function isQuotaError(err: any): boolean {
+  if (!err) return false;
+  const code = err?.code || '';
+  const msg = err?.message || String(err);
+  return (
+    code === 'resource-exhausted' ||
+    msg.includes('resource-exhausted') ||
+    msg.includes('Quota exceeded') ||
+    msg.includes('QUOTA_EXCEEDED')
+  );
+}
+
+export function handlePossibleQuotaError(err: any) {
+  if (isQuotaError(err)) {
+    setFirestoreQuotaExhausted(true);
+  }
+}
+
+export function withTimeout<T>(promise: Promise<T>, timeoutMs = 7000): Promise<T> {
+  if (quotaExhausted) {
+    return Promise.reject(new Error('Firestore quota exceeded (offline mode active)'));
+  }
+  return Promise.race([
+    promise.catch(err => {
+      handlePossibleQuotaError(err);
+      throw err;
+    }),
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Firestore request timed out after ${timeoutMs}ms`)), timeoutMs)
+    )
+  ]);
+}
+
 export async function checkAndSeedFirestore() {
   try {
-    const booksSnap = await getDocs(collection(db, 'books'));
+    const booksSnap = await withTimeout(getDocs(collection(db, 'books')), 8000);
     if (!booksSnap.empty) {
       return false;
     }
@@ -78,7 +150,7 @@ export async function checkAndSeedFirestore() {
 
     batch.set(doc(db, 'config', 'suspend_config'), defaultSuspendConfig);
 
-    await batch.commit();
+    await withTimeout(batch.commit(), 10000);
     console.log('Firestore bootstrap seed completed successfully!');
     return true;
   } catch (error) {
@@ -116,23 +188,23 @@ export function sanitizeForFirestore<T = any>(data: T): T {
 export async function syncBookDoc(book: any) {
   if (!book?.id) return;
   const clean = sanitizeForFirestore(book);
-  await setDoc(doc(db, 'books', book.id), clean, { merge: true });
+  await withTimeout(setDoc(doc(db, 'books', book.id), clean, { merge: true }), 7000);
 }
 
 export async function removeBookDoc(bookId: string) {
   if (!bookId) return;
-  await deleteDoc(doc(db, 'books', bookId));
+  await withTimeout(deleteDoc(doc(db, 'books', bookId)), 7000);
 }
 
 export async function syncShelfDoc(shelf: any) {
   if (!shelf?.id) return;
   const clean = sanitizeForFirestore(shelf);
-  await setDoc(doc(db, 'shelves', shelf.id), clean, { merge: true });
+  await withTimeout(setDoc(doc(db, 'shelves', shelf.id), clean, { merge: true }), 7000);
 }
 
 export async function removeShelfDoc(shelfId: string) {
   if (!shelfId) return;
-  await deleteDoc(doc(db, 'shelves', shelfId));
+  await withTimeout(deleteDoc(doc(db, 'shelves', shelfId)), 7000);
 }
 
 export async function syncMemberDoc(member: any) {
@@ -147,97 +219,125 @@ export async function syncMemberDoc(member: any) {
     sanitized.suspendReason = '';
     sanitized.suspendedUntil = null;
   }
-  await setDoc(doc(db, 'members', member.id), sanitized, { merge: true });
+  await withTimeout(setDoc(doc(db, 'members', member.id), sanitized, { merge: true }), 7000);
 }
 
 export async function removeMemberDoc(memberId: string) {
   if (!memberId) return;
-  await deleteDoc(doc(db, 'members', memberId));
+  await withTimeout(deleteDoc(doc(db, 'members', memberId)), 7000);
 }
 
 export async function syncCategoryDoc(category: any) {
   if (!category?.id) return;
   const clean = sanitizeForFirestore(category);
-  await setDoc(doc(db, 'categories', category.id), clean, { merge: true });
+  await withTimeout(setDoc(doc(db, 'categories', category.id), clean, { merge: true }), 7000);
 }
 
 export async function removeCategoryDoc(categoryId: string) {
   if (!categoryId) return;
-  await deleteDoc(doc(db, 'categories', categoryId));
+  await withTimeout(deleteDoc(doc(db, 'categories', categoryId)), 7000);
 }
 
 export async function syncLoanDoc(loan: any) {
   if (!loan?.id) return;
   const clean = sanitizeForFirestore(loan);
-  await setDoc(doc(db, 'loans', loan.id), clean, { merge: true });
+  await withTimeout(setDoc(doc(db, 'loans', loan.id), clean, { merge: true }), 7000);
 }
 
 export async function syncBookingDoc(booking: any) {
   if (!booking?.id) return;
   const clean = sanitizeForFirestore(booking);
-  await setDoc(doc(db, 'bookings', booking.id), clean, { merge: true });
+  await withTimeout(setDoc(doc(db, 'bookings', booking.id), clean, { merge: true }), 7000);
 }
 
 export async function syncConfigDoc(config: any) {
   const clean = sanitizeForFirestore(config);
-  await setDoc(doc(db, 'config', 'suspend_config'), clean, { merge: true });
+  await withTimeout(setDoc(doc(db, 'config', 'suspend_config'), clean, { merge: true }), 7000);
 }
 
 export async function syncNotificationDoc(notif: any) {
   if (!notif?.id) return;
   const clean = sanitizeForFirestore(notif);
-  await setDoc(doc(db, 'notifications', notif.id), clean, { merge: true });
+  await withTimeout(setDoc(doc(db, 'notifications', notif.id), clean, { merge: true }), 7000);
 }
 
 export async function removeNotificationDoc(id: string) {
-  await deleteDoc(doc(db, 'notifications', id));
+  if (!id) return;
+  await withTimeout(deleteDoc(doc(db, 'notifications', id)), 7000);
 }
 
 export async function syncTeacherRequestDoc(req: any) {
   if (!req?.id) return;
   const clean = sanitizeForFirestore(req);
-  await setDoc(doc(db, 'teacher_requests', req.id), clean);
+  await withTimeout(setDoc(doc(db, 'teacher_requests', req.id), clean), 7000);
 }
 
 export async function removeTeacherRequestDoc(id: string) {
   if (!id) return;
-  await deleteDoc(doc(db, 'teacher_requests', id));
+  await withTimeout(deleteDoc(doc(db, 'teacher_requests', id)), 7000);
 }
 
 export async function syncDeviceSessionDoc(session: any) {
   if (!session?.id) return;
   const clean = sanitizeForFirestore(session);
-  await setDoc(doc(db, 'device_sessions', session.id), clean, { merge: true });
+  await withTimeout(setDoc(doc(db, 'device_sessions', session.id), clean, { merge: true }), 7000);
 }
 
 export async function removeDeviceSessionDoc(sessionId: string) {
   if (!sessionId) return;
-  await deleteDoc(doc(db, 'device_sessions', sessionId));
+  await withTimeout(deleteDoc(doc(db, 'device_sessions', sessionId)), 7000);
 }
 
 /**
  * Direct Firestore Fetch Collection Helper
  */
 export async function getFirestoreCollection<T = any>(collectionName: string): Promise<T[]> {
-  const snap = await getDocs(collection(db, collectionName));
-  const items: T[] = [];
-  snap.forEach((d) => {
-    items.push(d.data() as T);
-  });
-  return items;
+  if (quotaExhausted) return [];
+  try {
+    const snap = await withTimeout(getDocs(collection(db, collectionName)), 9000);
+    const items: T[] = [];
+    snap.forEach((d) => {
+      items.push(d.data() as T);
+    });
+    return items;
+  } catch (err: any) {
+    handlePossibleQuotaError(err);
+    if (!isQuotaError(err)) {
+      console.warn(`getFirestoreCollection error for ${collectionName}:`, err?.message || err);
+    }
+    return [];
+  }
 }
 
 /**
- * Real-time Firestore Collection Listener
+ * Real-time Firestore Collection Listener with quota protection
  */
 export function subscribeToFirestoreCollection<T = any>(
   collectionName: string,
-  onUpdate: (items: T[]) => void
+  onUpdate: (items: T[]) => void,
+  onError?: (err: any) => void
 ): () => void {
+  if (quotaExhausted) {
+    return () => {};
+  }
   try {
-    const unsubscribe = onSnapshot(
+    let hasUnsubscribed = false;
+    let unsubSnapshot: (() => void) | null = null;
+
+    const cleanup = () => {
+      if (hasUnsubscribed) return;
+      hasUnsubscribed = true;
+      if (unsubSnapshot) {
+        try { unsubSnapshot(); } catch {}
+        unsubSnapshot = null;
+      }
+      activeListeners.delete(cleanup);
+    };
+
+    unsubSnapshot = onSnapshot(
       collection(db, collectionName),
       (snap) => {
+        if (hasUnsubscribed) return;
         const items: T[] = [];
         snap.forEach((d) => {
           items.push(d.data() as T);
@@ -245,11 +345,21 @@ export function subscribeToFirestoreCollection<T = any>(
         onUpdate(items);
       },
       (error) => {
-        console.warn(`Firestore listener warning for ${collectionName}:`, error);
+        if (hasUnsubscribed) return;
+        if (isQuotaError(error)) {
+          cleanup();
+          handlePossibleQuotaError(error);
+        } else {
+          console.warn(`Firestore listener warning for ${collectionName}:`, error);
+        }
+        if (onError) onError(error);
       }
     );
-    return unsubscribe;
+
+    activeListeners.add(cleanup);
+    return cleanup;
   } catch (err) {
+    handlePossibleQuotaError(err);
     console.warn(`Error setting up Firestore listener for ${collectionName}:`, err);
     return () => {};
   }
