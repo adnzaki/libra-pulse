@@ -2,20 +2,20 @@
   <teleport to="body">
     <div 
       v-if="isOpen" 
-      class="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200 overflow-x-hidden"
+      class="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200"
       @click.self="handleClose"
     >
       <div 
-        class="bg-white text-slate-900 w-full max-w-full sm:max-w-2xl h-[100dvh] sm:h-auto sm:max-h-[90vh] sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden border-0 sm:border border-slate-200/80 animate-in zoom-in-95 duration-200"
+        class="bg-white text-slate-900 w-full max-w-full sm:max-w-2xl max-h-[calc(100dvh-1.25rem)] sm:max-h-[90vh] rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200/80 animate-in zoom-in-95 duration-200 my-auto"
       >
         <!-- Modal Header -->
-        <div class="px-4 py-3.5 sm:px-6 sm:py-4 border-b border-slate-100 flex items-center justify-between gap-2.5 bg-slate-50/90 shrink-0 w-full">
+        <div class="px-3.5 py-3 sm:px-6 sm:py-4 border-b border-slate-100 flex items-center justify-between gap-2.5 bg-slate-50/90 shrink-0 w-full">
           <div class="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shrink-0">
+            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shrink-0">
               <Laptop class="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div class="min-w-0 flex-1">
-              <h2 class="font-extrabold text-sm sm:text-base text-slate-900 tracking-tight truncate sm:whitespace-normal">
+              <h2 class="font-extrabold text-xs sm:text-base text-slate-900 tracking-tight truncate sm:whitespace-normal">
                 Manajemen Sesi & Perangkat
               </h2>
               <p class="text-[10px] sm:text-xs text-slate-500 line-clamp-1 sm:line-clamp-none">
@@ -33,7 +33,7 @@
         </div>
 
         <!-- Modal Body Content -->
-        <div class="p-3.5 sm:p-6 overflow-y-auto flex-1 space-y-4 sm:space-y-5 overscroll-contain">
+        <div class="p-3.5 sm:p-6 overflow-y-auto flex-1 min-h-0 space-y-4 sm:space-y-5 overscroll-contain">
           
           <!-- Banner Status Perangkat Saat Ini -->
           <div 
@@ -258,10 +258,10 @@
         </div>
 
         <!-- Modal Footer -->
-        <div class="px-4 py-3 sm:px-6 sm:py-3.5 border-t border-slate-100 bg-slate-50/90 flex items-center justify-end gap-2 shrink-0 pb-[max(0.875rem,env(safe-area-inset-bottom))]">
+        <div class="px-4 py-3 sm:px-6 sm:py-3.5 border-t border-slate-100 bg-slate-50/90 flex items-center justify-end gap-2 shrink-0">
           <button 
             @click="handleClose"
-            class="w-full sm:w-auto px-6 py-2.5 bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-800 font-bold rounded-full text-xs transition cursor-pointer text-center"
+            class="w-full sm:w-auto px-6 py-2.5 bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-800 font-bold rounded-full text-xs transition cursor-pointer text-center active:scale-95"
           >
             Tutup
           </button>
