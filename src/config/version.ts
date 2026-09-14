@@ -17,7 +17,7 @@ export const CHANGELOG_LIST: ChangelogItem[] = [
   {
     id: 'teacher-status-request',
     title: 'Pengajuan Perubahan Status Akun Siswa ke Guru',
-    description: 'Siswa atau staf sekolah kini dapat mengajukan permohonan verifikasi untuk meningkatkan jenis akun menjadi Guru secara mandiri dengan melampirkan NIP/Identitas resmi dan berkas pendukung. Admin dapat meninjau, menyetujui, atau menolak permohonan dengan catatan transparan. Setelah disetujui, batas peminjaman bertambah hingga 10 buku secara otomatis.',
+    description: 'Tenaga Pendidik / Kependidikan kini dapat mengajukan perubahan status akun dari Siswa menjadi Guru melalui proses verifikasi foto selfie di menu Portal.',
     targetAudience: 'member',
     targetAudienceLabel: 'Khusus Siswa & Guru',
     category: 'feature',
@@ -37,7 +37,7 @@ export const CHANGELOG_LIST: ChangelogItem[] = [
   {
     id: 'multi-device-management',
     title: 'Manajemen Sesi Login Multi-Perangkat Real-time',
-    description: 'Pantau secara transparan seluruh perangkat yang sedang aktif mengakses akun Anda (Ponsel Android/iOS, Tablet, Desktop/Laptop) dengan detail peramban, sistem operasi, dan waktu aktivitas terakhir melalui Cloud Firestore.',
+    description: 'Pantau secara transparan seluruh perangkat yang sedang aktif mengakses akun Anda (Ponsel Android/iOS, Tablet, Desktop/Laptop) dengan detail peramban, sistem operasi, dan waktu aktivitas terakhir melalui Manajemen Sesi dan Perangkat.',
     targetAudience: 'all',
     targetAudienceLabel: 'Semua Pengguna (Siswa, Guru, Admin)',
     category: 'security',
@@ -57,7 +57,7 @@ export const CHANGELOG_LIST: ChangelogItem[] = [
   {
     id: 'mobile-device-modal-fix',
     title: 'Penyempurnaan Tampilan Mobile Manajemen Sesi & Tombol Tutup',
-    description: 'Menyempurnakan tata letak modal Manajemen Sesi dan sub-modal verifikasi di layar ponsel sehingga tombol Tutup dan tombol silang (X) tampil proporsional tanpa terpotong atau mengharuskan pengguna zoom out.',
+    description: 'Menyempurnakan tata letak modal Manajemen Sesi di layar ponsel sehingga tombol Tutup dan tombol silang (X) tampil proporsional tanpa terpotong atau mengharuskan pengguna melakukan zoom out.',
     targetAudience: 'all',
     targetAudienceLabel: 'Semua Pengguna',
     category: 'improvement',
@@ -66,8 +66,8 @@ export const CHANGELOG_LIST: ChangelogItem[] = [
   },
   {
     id: 'firestore-zero-write-optimization',
-    title: 'Optimasi Kuota Cloud Firestore (Zero Background Auto-Write)',
-    description: 'Mengeliminasi interval background write yang berpotensi memicu lonjakan kuota 20.000 writes pada Firestore. Pengecekan denda dan status penangguhan (suspend) diubah menjadi in-memory calculation cerdas tanpa membebani kuota, dilengkapi circuit breaker pemulihan otomatis.',
+    title: 'Optimasi Penyimpanan Data ke Database',
+    description: 'Mengoptimalkan proses penyimpanan data ke database dengan mengurangi proses penulisan data yang tidak perlu untuk meningkatkan performa aplikasi.',
     targetAudience: 'all',
     targetAudienceLabel: 'Semua Pengguna',
     category: 'fix',
@@ -77,7 +77,7 @@ export const CHANGELOG_LIST: ChangelogItem[] = [
   {
     id: 'realtime-version-detection',
     title: 'Sistem Deteksi Pembaruan Versi Real-time & Panduan Cache',
-    description: 'Aplikasi memantau versi rilis terbaru secara real-time via Firestore. Saat pembaruan terdeteksi, banner interaktif langsung muncul lengkap dengan tombol muat ulang cepat dan panduan langkah pembersihan cache browser.',
+    description: 'Pemantauan versi rilis terbaru secara real-time untuk mempermudah pengguna ketika terdapat versi terbaru dari aplikasi.',
     targetAudience: 'all',
     targetAudienceLabel: 'Semua Pengguna',
     category: 'feature',
@@ -86,24 +86,15 @@ export const CHANGELOG_LIST: ChangelogItem[] = [
   },
   {
     id: 'smart-qr-card-hold-24h',
-    title: 'Pembaruan Kartu Anggota Digital QR & Sistem Booking 24 Jam',
-    description: 'Peningkatan kecepatan render kartu barcode QR anggota resolusi tinggi untuk scanner meja sirkulasi serta pengamanan hold booking 24 jam dengan penghitungan mundur otomatis.',
+    title: 'Pembaruan Kartu Anggota Digital QR',
+    description: 'Memperbaiki ukuran kartu digital yang tidak sesuai antara tampilan di layar dengan output cetak PDF / gambar (PNG).',
     targetAudience: 'member',
     targetAudienceLabel: 'Khusus Siswa & Guru',
     category: 'improvement',
     badge: 'Member Portal',
     iconName: 'QrCode'
   },
-  {
-    id: 'superadmin-permission-isolation',
-    title: 'Pemisahan Otoritas Super Admin & Pengaturan Kritis',
-    description: 'Konfigurasi batas suspend, kuota denda, dan pencadangan database kini diisolasi secara ketat untuk Super Admin, menjaga keamanan integritas sistem perpustakaan sekolah.',
-    targetAudience: 'admin',
-    targetAudienceLabel: 'Khusus Admin & Pengelola',
-    category: 'security',
-    badge: 'Hak Akses Sistem',
-    iconName: 'Lock'
-  }
+
 ];
 
 /**

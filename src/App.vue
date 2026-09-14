@@ -104,7 +104,7 @@
             title="Buka Catatan Rilis & Riwayat Pembaruan"
           >
             <Sparkles class="w-3.5 h-3.5 text-blue-600" />
-            <span>v{{ store.currentAppVersion }} • Catatan Rilis</span>
+            <span>v{{ store.currentAppVersion }}</span>
           </button>
         </div>
 

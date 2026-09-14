@@ -20,16 +20,7 @@
           </router-link>
 
           <!-- Clickable Version Badge to Open Changelog -->
-          <button 
-            @click="store.openChangelog()"
-            type="button"
-            class="px-2 py-0.5 rounded-full bg-blue-500/20 hover:bg-blue-500/35 text-blue-300 hover:text-white border border-blue-400/30 text-[10px] font-mono font-bold transition flex items-center gap-1 cursor-pointer"
-            title="Buka Catatan Rilis & Riwayat Pembaruan (Changelog)"
-          >
-            <Sparkles class="w-2.5 h-2.5 text-amber-300" />
-            <span>v{{ store.currentAppVersion }}</span>
-            <span v-if="store.hasNewVersionAvailable" class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
-          </button>
+          
         </div>
 
         <!-- Desktop Navigation -->
@@ -214,7 +205,7 @@
                   >
                     <div class="flex items-center gap-2.5">
                       <Sparkles class="w-4 h-4 text-amber-400" />
-                      <span>Catatan Rilis (Changelog)</span>
+                      <span>Catatan Rilis</span>
                     </div>
                     <span class="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-mono font-bold">
                       v{{ store.currentAppVersion }}
@@ -347,7 +338,7 @@
       >
         <span class="flex items-center gap-2">
           <Sparkles class="w-4 h-4 text-amber-400" />
-          <span>Catatan Rilis (Changelog)</span>
+          <span>Catatan Rilis</span>
         </span>
         <span class="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-mono font-bold">
           v{{ store.currentAppVersion }}

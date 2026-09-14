@@ -122,9 +122,6 @@
           </p>
           <ul class="list-disc pl-10 space-y-1 text-xs text-amber-900/90">
             <li>
-              <strong>Klik Label Versi (v{{ CURRENT_APP_VERSION }})</strong> yang ada pada bilah navigasi atas (Navbar) tepat di sebelah logo Libra.
-            </li>
-            <li>
               <strong>Menu Akun / Profil Saya</strong> &gt; pilih menu <strong>Catatan Rilis (v{{ CURRENT_APP_VERSION }})</strong>.
             </li>
             <li>
