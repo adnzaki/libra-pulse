@@ -120,6 +120,7 @@ export const useLibraryStore = defineStore('library', {
       const currentDevId = getCurrentDeviceId();
       const currentUserId = state.currentUser?.id;
       const currentUserEmail = (state.currentUser?.email || '').toLowerCase().trim();
+      const userMainDeviceId = state.currentUser?.mainDeviceId;
 
       const filtered = state.deviceSessions.filter(s => {
         if (s.status !== 'active') return false;
@@ -129,17 +130,18 @@ export const useLibraryStore = defineStore('library', {
       });
 
       // Deduplikasi cerdas berdasarkan deviceId:
-      // Selalu pertahankan isMainDevice: true jika salah satu dokumen menandainya,
-      // dan selalu ambil timestamp lastActive terbaru.
+      // Selalu pertahankan isMainDevice: true jika cocok dengan currentUser.mainDeviceId
+      // atau salah satu dokumen menandainya, dan selalu ambil timestamp lastActive terbaru.
       const uniqueByDevice = new Map<string, UserDeviceSession>();
       for (const s of filtered) {
+        const isThisMain = Boolean(s.isMainDevice || (userMainDeviceId && s.deviceId === userMainDeviceId));
         const existing = uniqueByDevice.get(s.deviceId);
         if (!existing) {
-          uniqueByDevice.set(s.deviceId, { ...s });
+          uniqueByDevice.set(s.deviceId, { ...s, isMainDevice: isThisMain });
         } else {
           const existingTime = new Date(existing.lastActive || existing.createdAt || 0).getTime();
           const sTime = new Date(s.lastActive || s.createdAt || 0).getTime();
-          const isMain = Boolean(existing.isMainDevice || s.isMainDevice);
+          const isMain = Boolean(existing.isMainDevice || isThisMain);
           const newestLastActive = sTime >= existingTime ? (s.lastActive || s.createdAt) : (existing.lastActive || existing.createdAt);
           const preferred = sTime >= existingTime ? { ...s } : { ...existing };
           preferred.isMainDevice = isMain;
@@ -151,6 +153,7 @@ export const useLibraryStore = defineStore('library', {
       return Array.from(uniqueByDevice.values())
         .map(s => ({
           ...s,
+          isMainDevice: Boolean(s.isMainDevice || (userMainDeviceId && s.deviceId === userMainDeviceId)),
           isCurrentDevice: s.deviceId === currentDevId
         }))
         .sort((a, b) => {
@@ -166,9 +169,16 @@ export const useLibraryStore = defineStore('library', {
       return sessions.find(s => s.isCurrentDevice) || null;
     },
     isCurrentDeviceMain(): boolean {
+      if (!this.currentUser) return false;
+      const currentDevId = getCurrentDeviceId();
+      if (this.currentUser.mainDeviceId) {
+        return this.currentUser.mainDeviceId === currentDevId;
+      }
       return Boolean(this.currentDeviceSession?.isMainDevice);
     },
     userHasMainDevice(): boolean {
+      if (!this.currentUser) return false;
+      if (this.currentUser.mainDeviceId) return true;
       const sessions = (this.myDeviceSessions as (UserDeviceSession & { isCurrentDevice: boolean })[]) || [];
       return sessions.some(s => s.isMainDevice);
     }
@@ -509,7 +519,7 @@ export const useLibraryStore = defineStore('library', {
       if (found) {
         this.currentUser = found;
         localStorage.setItem('pustaka_user', JSON.stringify(found));
-        this.checkAndAutoRegisterCurrentDevice(false);
+        this.checkAndAutoRegisterCurrentDevice(true);
       } else if (this.members.length > 0) {
         // Kredensial tidak valid di database: hapus residu sesi
         this.currentUser = null;
@@ -1505,7 +1515,7 @@ export const useLibraryStore = defineStore('library', {
             syncMemberDoc(matchedMember).catch(() => {});
           }
 
-          await this.checkAndAutoRegisterCurrentDevice();
+          await this.checkAndAutoRegisterCurrentDevice(true);
 
           return { success: true, user: matchedMember };
         }
@@ -1551,7 +1561,7 @@ export const useLibraryStore = defineStore('library', {
       localStorage.setItem('pustaka_token', this.authToken);
       localStorage.setItem('pustaka_user_id', matched.id);
       localStorage.setItem('pustaka_user', JSON.stringify(matched));
-      await this.checkAndAutoRegisterCurrentDevice();
+      await this.checkAndAutoRegisterCurrentDevice(true);
       this.showToast(`Selamat datang, ${matched.name}!`);
       return { success: true, user: matched };
     },
@@ -1833,14 +1843,17 @@ export const useLibraryStore = defineStore('library', {
       const canonicalSessionId = `SES_${currentUserId}_${sanitizedDevId}`;
 
       // Periksa apakah perangkat ini sudah pernah ditandai sebagai Perangkat Utama
-      const isAnyRecordMain = this.deviceSessions.some(
-        s => s.deviceId === deviceId && s.isMainDevice && (
-          (currentUserId && s.memberId === currentUserId) ||
-          (currentUserEmail && s.memberEmail && s.memberEmail.toLowerCase().trim() === currentUserEmail)
+      const isThisDeviceMain = Boolean(
+        (this.currentUser.mainDeviceId && this.currentUser.mainDeviceId === deviceId) ||
+        this.deviceSessions.some(
+          s => s.deviceId === deviceId && s.isMainDevice && (
+            (currentUserId && s.memberId === currentUserId) ||
+            (currentUserEmail && s.memberEmail && s.memberEmail.toLowerCase().trim() === currentUserEmail)
+          )
         )
       );
 
-      // Cari sesi aktif saat ini untuk user ini dan deviceId ini
+      // Cari sesi saat ini untuk user ini dan deviceId ini
       let existing = this.deviceSessions.find(
         s => s.deviceId === deviceId && (
           (currentUserId && s.memberId === currentUserId) ||
@@ -1851,15 +1864,11 @@ export const useLibraryStore = defineStore('library', {
       const nowIso = new Date().toISOString();
 
       if (existing) {
-        // Jika status sesi sudah dicabut oleh Perangkat Utama, jangan re-aktivasi
-        if (existing.status === 'revoked') {
-          return;
-        }
+        // Ketika pengguna aktif/login, sesi HARUS berstatus 'active'
+        existing.status = 'active';
 
-        // Pertahankan status Perangkat Utama jika sudah pernah diverifikasi
-        if (isAnyRecordMain) {
-          existing.isMainDevice = true;
-        }
+        // Pertahankan status Perangkat Utama jika sudah pernah diverifikasi atau tersimpan di member
+        existing.isMainDevice = Boolean(isThisDeviceMain || existing.isMainDevice);
 
         // Perbarui info sesi di memori lokal
         const oldId = existing.id;
@@ -1905,7 +1914,7 @@ export const useLibraryStore = defineStore('library', {
         deviceType: details.deviceType,
         browser: details.browser,
         os: details.os,
-        isMainDevice: isAnyRecordMain,
+        isMainDevice: isThisDeviceMain,
         createdAt: nowIso,
         lastActive: nowIso,
         status: 'active'
@@ -2053,7 +2062,18 @@ export const useLibraryStore = defineStore('library', {
         const currentUserId = this.currentUser.id;
         const currentUserEmail = (this.currentUser.email || '').toLowerCase().trim();
 
-        // 1. Update in-memory state FIRST immediately so UI reacts without delay
+        // 1. Simpan mainDeviceId pada currentUser & akun member di Firestore
+        this.currentUser.mainDeviceId = deviceId;
+        localStorage.setItem('pustaka_user', JSON.stringify(this.currentUser));
+
+        const { syncMemberDoc, syncDeviceSessionDoc } = await import('../lib/firebase.js');
+        const memberDoc = this.members.find(m => m.id === currentUserId || (m.email && m.email.toLowerCase() === currentUserEmail));
+        if (memberDoc) {
+          memberDoc.mainDeviceId = deviceId;
+          await syncMemberDoc(memberDoc).catch(e => console.warn('Failed to sync member mainDeviceId:', e));
+        }
+
+        // 2. Update in-memory state FIRST immediately so UI reacts without delay
         let currentDevSession = this.deviceSessions.find(
           s => s.deviceId === deviceId && (
             (currentUserId && s.memberId === currentUserId) ||
@@ -2089,6 +2109,9 @@ export const useLibraryStore = defineStore('library', {
           if (isThisUser) {
             const shouldBeMain = (s.deviceId === deviceId);
             s.isMainDevice = shouldBeMain;
+            if (shouldBeMain) {
+              s.status = 'active';
+            }
             s.lastActive = nowIso;
             sessionsToSync.push(s);
           }
@@ -2096,8 +2119,7 @@ export const useLibraryStore = defineStore('library', {
 
         this.deviceVerificationCode = null;
 
-        // 2. Direct concurrent sync to Firestore in background
-        const { syncDeviceSessionDoc } = await import('../lib/firebase.js');
+        // 3. Direct concurrent sync to Firestore in background
         await Promise.all(sessionsToSync.map(s => syncDeviceSessionDoc(s)));
         await this.refreshDeviceSessions();
 

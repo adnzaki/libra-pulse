@@ -60,6 +60,7 @@ export interface Member {
   activeLoansCount: number;
   address?: string;
   password?: string;
+  mainDeviceId?: string;
 }
 
 export interface Booking {
