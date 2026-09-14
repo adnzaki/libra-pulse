@@ -133,6 +133,14 @@ const store = useLibraryStore();
 
 onMounted(async () => {
   await store.initAll();
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('focus', () => {
+      if (store.currentUser) {
+        store.checkAndAutoRegisterCurrentDevice(false);
+      }
+    });
+  }
 });
 </script>
 

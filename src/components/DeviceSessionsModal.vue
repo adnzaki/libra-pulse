@@ -131,10 +131,11 @@
               </div>
               <button 
                 @click="refreshSessions"
-                class="text-[11px] text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 cursor-pointer shrink-0"
-                :class="{ 'animate-spin': isRefreshing }"
+                type="button"
+                :disabled="isRefreshing"
+                class="text-[11px] text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 disabled:opacity-50 transition active:scale-95"
               >
-                <RefreshCw class="w-3.5 h-3.5" />
+                <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': isRefreshing }" />
                 <span class="text-[11px]">Perbarui</span>
               </button>
             </div>
@@ -184,7 +185,11 @@
                     <div class="text-[10px] sm:text-[11px] text-slate-500 flex flex-wrap items-center gap-y-1 gap-x-2.5">
                       <span>Peramban: <strong class="text-slate-700">{{ session.browser || 'Web' }}</strong></span>
                       <span>OS: <strong class="text-slate-700">{{ session.os || 'Lainnya' }}</strong></span>
-                      <span>Terakhir Aktif: <strong class="text-slate-700">{{ formatRelativeTime(session.lastActive) }}</strong></span>
+                      <span class="flex items-center gap-1">
+                        Terakhir Aktif:
+                        <span v-if="isOnlineNow(session)" class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+                        <strong :class="isOnlineNow(session) ? 'text-emerald-700 font-semibold' : 'text-slate-700'">{{ formatRelativeTime(session.lastActive, session.isCurrentDevice) }}</strong>
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -528,8 +533,9 @@ function handleClose() {
 }
 
 async function refreshSessions() {
+  if (isRefreshing.value) return;
   isRefreshing.value = true;
-  await store.checkAndAutoRegisterCurrentDevice(false);
+  await store.refreshDeviceSessions();
   setTimeout(() => {
     isRefreshing.value = false;
   }, 400);
@@ -616,11 +622,19 @@ async function executeRevokeAll() {
   isRevokeAllConfirmOpen.value = false;
 }
 
-function formatRelativeTime(dateStr?: string) {
+function isOnlineNow(session: UserDeviceSession) {
+  if (session.isCurrentDevice) return true;
+  if (!session.lastActive) return false;
+  const diffSec = Math.floor((Date.now() - new Date(session.lastActive).getTime()) / 1000);
+  return diffSec < 180; // Aktif dalam 3 menit terakhir
+}
+
+function formatRelativeTime(dateStr?: string, isCurrent = false) {
+  if (isCurrent) return 'Baru saja (Sedang aktif)';
   if (!dateStr) return 'Baru saja';
   const diffSec = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
-  if (diffSec < 60) return 'Baru saja';
-  if (diffSec < 3600) return `${Math.floor(diffSec / 60)} menit lalu`;
+  if (diffSec < 120) return 'Baru saja (Sedang aktif)';
+  if (diffSec < 3600) return `${Math.max(1, Math.floor(diffSec / 60))} menit lalu`;
   if (diffSec < 86400) return `${Math.floor(diffSec / 3600)} jam lalu`;
   return new Date(dateStr).toLocaleDateString('id-ID', {
     day: 'numeric',
@@ -632,15 +646,15 @@ function formatRelativeTime(dateStr?: string) {
 
 onMounted(() => {
   if (props.isOpen && store.currentUser) {
-    store.checkAndAutoRegisterCurrentDevice();
+    refreshSessions();
   }
 });
 
 watch(() => props.isOpen, (newVal) => {
   if (newVal && store.currentUser) {
-    store.checkAndAutoRegisterCurrentDevice();
+    refreshSessions();
   }
-});
+}, { immediate: true });
 
 onBeforeUnmount(() => {
   if (countdownTimer) clearInterval(countdownTimer);

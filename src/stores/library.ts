@@ -118,8 +118,32 @@ export const useLibraryStore = defineStore('library', {
     myDeviceSessions: (state) => {
       if (!state.currentUser) return [];
       const currentDevId = getCurrentDeviceId();
-      return state.deviceSessions
-        .filter(s => s.memberId === state.currentUser?.id && s.status === 'active')
+      const currentUserId = state.currentUser?.id;
+      const currentUserEmail = (state.currentUser?.email || '').toLowerCase().trim();
+
+      const filtered = state.deviceSessions.filter(s => {
+        if (s.status !== 'active') return false;
+        const matchId = currentUserId && s.memberId === currentUserId;
+        const matchEmail = currentUserEmail && s.memberEmail && s.memberEmail.toLowerCase().trim() === currentUserEmail;
+        return matchId || matchEmail;
+      });
+
+      // Deduplikasi berdasarkan deviceId (pilih yang berstatus Perangkat Utama atau dengan lastActive terbaru)
+      const uniqueByDevice = new Map<string, UserDeviceSession>();
+      for (const s of filtered) {
+        const existing = uniqueByDevice.get(s.deviceId);
+        if (!existing) {
+          uniqueByDevice.set(s.deviceId, s);
+        } else {
+          const existingTime = new Date(existing.lastActive || existing.createdAt).getTime();
+          const sTime = new Date(s.lastActive || s.createdAt).getTime();
+          if (s.isMainDevice || (!existing.isMainDevice && sTime > existingTime)) {
+            uniqueByDevice.set(s.deviceId, s);
+          }
+        }
+      }
+
+      return Array.from(uniqueByDevice.values())
         .map(s => ({
           ...s,
           isCurrentDevice: s.deviceId === currentDevId
@@ -135,22 +159,37 @@ export const useLibraryStore = defineStore('library', {
     currentDeviceSession: (state) => {
       if (!state.currentUser) return null;
       const currentDevId = getCurrentDeviceId();
+      const currentUserId = state.currentUser?.id;
+      const currentUserEmail = (state.currentUser?.email || '').toLowerCase().trim();
       return state.deviceSessions.find(
-        s => s.memberId === state.currentUser?.id && s.deviceId === currentDevId && s.status === 'active'
+        s => s.deviceId === currentDevId && s.status === 'active' && (
+          (currentUserId && s.memberId === currentUserId) ||
+          (currentUserEmail && s.memberEmail && s.memberEmail.toLowerCase().trim() === currentUserEmail)
+        )
       ) || null;
     },
     isCurrentDeviceMain: (state) => {
       if (!state.currentUser) return false;
       const currentDevId = getCurrentDeviceId();
+      const currentUserId = state.currentUser?.id;
+      const currentUserEmail = (state.currentUser?.email || '').toLowerCase().trim();
       const current = state.deviceSessions.find(
-        s => s.memberId === state.currentUser?.id && s.deviceId === currentDevId && s.status === 'active'
+        s => s.deviceId === currentDevId && s.status === 'active' && (
+          (currentUserId && s.memberId === currentUserId) ||
+          (currentUserEmail && s.memberEmail && s.memberEmail.toLowerCase().trim() === currentUserEmail)
+        )
       );
       return Boolean(current?.isMainDevice);
     },
     userHasMainDevice: (state) => {
       if (!state.currentUser) return false;
+      const currentUserId = state.currentUser?.id;
+      const currentUserEmail = (state.currentUser?.email || '').toLowerCase().trim();
       return state.deviceSessions.some(
-        s => s.memberId === state.currentUser?.id && s.status === 'active' && s.isMainDevice
+        s => s.status === 'active' && s.isMainDevice && (
+          (currentUserId && s.memberId === currentUserId) ||
+          (currentUserEmail && s.memberEmail && s.memberEmail.toLowerCase().trim() === currentUserEmail)
+        )
       );
     }
   },
@@ -287,15 +326,28 @@ export const useLibraryStore = defineStore('library', {
           }
         });
 
-        // Pastikan tidak ada interval latar belakang yang memicu pemanggilan Firestore berkala
+        // Heartbeat berkala saat tab aktif di layar (misal PC & HP aktif bersamaan)
         if (typeof window !== 'undefined') {
           if ((window as any).__overdue_checker_interval) {
             clearInterval((window as any).__overdue_checker_interval);
             delete (window as any).__overdue_checker_interval;
           }
-          if ((window as any).__session_heartbeat_interval) {
-            clearInterval((window as any).__session_heartbeat_interval);
-            delete (window as any).__session_heartbeat_interval;
+
+          if (!(window as any).__session_heartbeat_interval) {
+            (window as any).__session_heartbeat_interval = setInterval(() => {
+              if (typeof document !== 'undefined' && document.visibilityState === 'visible' && this.currentUser) {
+                this.checkAndAutoRegisterCurrentDevice(false);
+              }
+            }, 120000); // Setiap 2 menit saat aplikasi sedang dibuka/aktif
+          }
+
+          if (!(window as any).__session_visibility_listener) {
+            (window as any).__session_visibility_listener = true;
+            document.addEventListener('visibilitychange', () => {
+              if (document.visibilityState === 'visible' && this.currentUser) {
+                this.checkAndAutoRegisterCurrentDevice(false);
+              }
+            });
           }
         }
       }).catch(err => {
@@ -461,20 +513,30 @@ export const useLibraryStore = defineStore('library', {
         return;
       }
 
-      if (savedUserId && this.members.length > 0) {
-        const found = this.members.find(m => m.id === savedUserId);
-        if (found) {
-          this.currentUser = found;
-          localStorage.setItem('pustaka_user', JSON.stringify(found));
-          this.checkAndAutoRegisterCurrentDevice();
-        } else {
-          // Kredensial tidak valid di database: hapus residu sesi
-          this.currentUser = null;
-          this.authToken = '';
-          localStorage.removeItem('pustaka_token');
-          localStorage.removeItem('pustaka_user_id');
-          localStorage.removeItem('pustaka_user');
+      let found = this.members.find(m => m.id === savedUserId);
+      if (!found) {
+        const cached = localStorage.getItem('pustaka_user');
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached);
+            if (parsed && (parsed.id === savedUserId || parsed.email)) {
+              found = parsed;
+            }
+          } catch (e) {}
         }
+      }
+
+      if (found) {
+        this.currentUser = found;
+        localStorage.setItem('pustaka_user', JSON.stringify(found));
+        this.checkAndAutoRegisterCurrentDevice(false);
+      } else if (this.members.length > 0) {
+        // Kredensial tidak valid di database: hapus residu sesi
+        this.currentUser = null;
+        this.authToken = '';
+        localStorage.removeItem('pustaka_token');
+        localStorage.removeItem('pustaka_user_id');
+        localStorage.removeItem('pustaka_user');
       }
     },
 
@@ -1726,6 +1788,29 @@ export const useLibraryStore = defineStore('library', {
     },
 
     async logout() {
+      // Tandai sesi login perangkat saat ini sebagai 'logged_out' di Firestore sebelum logout
+      if (this.currentUser) {
+        try {
+          const deviceId = getCurrentDeviceId();
+          const currentUserId = this.currentUser.id;
+          const currentUserEmail = (this.currentUser.email || '').toLowerCase().trim();
+          const currentSession = this.deviceSessions.find(
+            s => s.deviceId === deviceId && (
+              (currentUserId && s.memberId === currentUserId) ||
+              (currentUserEmail && s.memberEmail && s.memberEmail.toLowerCase().trim() === currentUserEmail)
+            )
+          );
+          if (currentSession) {
+            currentSession.status = 'logged_out';
+            currentSession.lastActive = new Date().toISOString();
+            const { syncDeviceSessionDoc } = await import('../lib/firebase.js');
+            await syncDeviceSessionDoc(currentSession);
+          }
+        } catch (e) {
+          console.warn('Gagal memperbarui status sesi saat logout:', e);
+        }
+      }
+
       this.currentUser = null;
       this.authToken = '';
 
@@ -1758,14 +1843,19 @@ export const useLibraryStore = defineStore('library', {
     // ------------------------------------------------------------------------
     // Manajemen Sesi & Perangkat (Device Sessions & Main Device)
     // ------------------------------------------------------------------------
-    async checkAndAutoRegisterCurrentDevice(isHeartbeat = false) {
+    async checkAndAutoRegisterCurrentDevice(forceSync = false) {
       if (!this.currentUser) return;
       const deviceId = getCurrentDeviceId();
       const details = detectCurrentDeviceInfo();
+      const currentUserId = this.currentUser.id;
+      const currentUserEmail = (this.currentUser.email || '').toLowerCase().trim();
 
       // Cari sesi aktif saat ini untuk user ini dan deviceId ini
-      const existing = this.deviceSessions.find(
-        s => s.memberId === this.currentUser?.id && s.deviceId === deviceId
+      let existing = this.deviceSessions.find(
+        s => s.deviceId === deviceId && (
+          (currentUserId && s.memberId === currentUserId) ||
+          (currentUserEmail && s.memberEmail && s.memberEmail.toLowerCase().trim() === currentUserEmail)
+        )
       );
 
       const nowIso = new Date().toISOString();
@@ -1776,20 +1866,39 @@ export const useLibraryStore = defineStore('library', {
           return;
         }
 
-        // Perbarui info sesi di memori lokal (tanpa writes otomatis ke Firestore)
+        // Perbarui info sesi di memori lokal
         existing.lastActive = nowIso;
         existing.deviceName = details.deviceName;
         existing.browser = details.browser;
         existing.os = details.os;
         existing.deviceType = details.deviceType;
+        if (currentUserId && !existing.memberId) existing.memberId = currentUserId;
+        if (currentUserEmail && !existing.memberEmail) existing.memberEmail = currentUserEmail;
+
+        // Kontrol penulisan ke Firestore agar hemat kuota namun selalu akurat
+        // Sinkronisasi dilakukan jika dipaksa (forceSync) atau sudah lebih dari 2 menit sejak sinkronisasi terakhir
+        const lastSyncTime = (window as any).__last_device_session_sync || 0;
+        const shouldSyncToFirestore = forceSync || (Date.now() - lastSyncTime > 2 * 60 * 1000);
+
+        if (shouldSyncToFirestore) {
+          (window as any).__last_device_session_sync = Date.now();
+          try {
+            const { syncDeviceSessionDoc } = await import('../lib/firebase.js');
+            await syncDeviceSessionDoc(existing);
+          } catch (err) {
+            console.warn('Sync existing device session error:', err);
+          }
+        }
         return;
       }
 
-      // Catat sesi perangkat aktif di memori/local state (tanpa writes otomatis ke Firestore)
-      const sessionId = `SES_${this.currentUser.id}_${deviceId.slice(-8)}`;
+      // Catat sesi perangkat aktif baru dan WAJIB simpan ke Firestore
+      // agar langsung terbaca oleh perangkat lain milik pengguna (misal PC & HP)
+      const sanitizedDevId = deviceId.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const sessionId = `SES_${currentUserId}_${sanitizedDevId}`;
       const newSession: UserDeviceSession = {
         id: sessionId,
-        memberId: this.currentUser.id,
+        memberId: currentUserId,
         memberEmail: this.currentUser.email || '',
         memberName: this.currentUser.name || '',
         deviceId: deviceId,
@@ -1804,13 +1913,46 @@ export const useLibraryStore = defineStore('library', {
       };
 
       this.deviceSessions.unshift(newSession);
+      (window as any).__last_device_session_sync = Date.now();
+
+      try {
+        const { syncDeviceSessionDoc } = await import('../lib/firebase.js');
+        await syncDeviceSessionDoc(newSession);
+      } catch (err) {
+        console.warn('Gagal menyimpan sesi baru ke Firestore:', err);
+      }
+    },
+
+    async refreshDeviceSessions() {
+      if (!this.currentUser) return;
+      try {
+        // 1. Update status aktif dan lastActive perangkat ini ke Firestore
+        await this.checkAndAutoRegisterCurrentDevice(true);
+
+        // 2. Ambil snapshot data sesi terbaru langsung dari Firestore
+        const { getFirestoreCollection } = await import('../lib/firebase.js');
+        const freshSessions = await getFirestoreCollection<UserDeviceSession>('device_sessions');
+        if (freshSessions && Array.isArray(freshSessions)) {
+          this.deviceSessions = freshSessions;
+        }
+
+        // 3. Periksa apakah sesi perangkat saat ini dicabut
+        await this.checkCurrentDeviceSessionStatus();
+      } catch (err) {
+        console.warn('Gagal memuat ulang sesi perangkat:', err);
+      }
     },
 
     async checkCurrentDeviceSessionStatus() {
       if (!this.currentUser) return;
       const deviceId = getCurrentDeviceId();
+      const currentUserId = this.currentUser.id;
+      const currentUserEmail = (this.currentUser.email || '').toLowerCase().trim();
       const thisSession = this.deviceSessions.find(
-        s => s.memberId === this.currentUser?.id && s.deviceId === deviceId
+        s => s.deviceId === deviceId && (
+          (currentUserId && s.memberId === currentUserId) ||
+          (currentUserEmail && s.memberEmail && s.memberEmail.toLowerCase().trim() === currentUserEmail)
+        )
       );
 
       // Jika sesi perangkat ini ditandai 'revoked' oleh Perangkat Utama:
@@ -1909,17 +2051,23 @@ export const useLibraryStore = defineStore('library', {
         const deviceId = getCurrentDeviceId();
         const details = detectCurrentDeviceInfo();
         const nowIso = new Date().toISOString();
+        const currentUserId = this.currentUser.id;
+        const currentUserEmail = (this.currentUser.email || '').toLowerCase().trim();
 
         // 1. Update in-memory state FIRST immediately so UI reacts without delay
         let currentDevSession = this.deviceSessions.find(
-          s => s.memberId === this.currentUser?.id && s.deviceId === deviceId
+          s => s.deviceId === deviceId && (
+            (currentUserId && s.memberId === currentUserId) ||
+            (currentUserEmail && s.memberEmail && s.memberEmail.toLowerCase().trim() === currentUserEmail)
+          )
         );
 
         if (!currentDevSession) {
-          const sessionId = `SES_${this.currentUser.id}_${deviceId.slice(-8)}`;
+          const sanitizedDevId = deviceId.replace(/[^a-zA-Z0-9_-]/g, '_');
+          const sessionId = `SES_${currentUserId}_${sanitizedDevId}`;
           currentDevSession = {
             id: sessionId,
-            memberId: this.currentUser.id,
+            memberId: currentUserId,
             memberEmail: this.currentUser.email || '',
             memberName: this.currentUser.name || '',
             deviceId: deviceId,
@@ -1937,7 +2085,9 @@ export const useLibraryStore = defineStore('library', {
 
         const sessionsToSync: UserDeviceSession[] = [];
         for (const s of this.deviceSessions) {
-          if (s.memberId === this.currentUser.id) {
+          const isThisUser = (currentUserId && s.memberId === currentUserId) ||
+                             (currentUserEmail && s.memberEmail && s.memberEmail.toLowerCase().trim() === currentUserEmail);
+          if (isThisUser) {
             const shouldBeMain = (s.deviceId === deviceId);
             s.isMainDevice = shouldBeMain;
             s.lastActive = nowIso;
@@ -1948,11 +2098,9 @@ export const useLibraryStore = defineStore('library', {
         this.deviceVerificationCode = null;
 
         // 2. Direct concurrent sync to Firestore in background
-        import('../lib/firebase.js').then(({ syncDeviceSessionDoc }) => {
-          Promise.all(sessionsToSync.map(s => syncDeviceSessionDoc(s))).catch(err => {
-            console.warn('Background sync device session error:', err);
-          });
-        }).catch(err => console.warn('Could not load firebase for verifyAndSetMainDevice:', err));
+        const { syncDeviceSessionDoc } = await import('../lib/firebase.js');
+        await Promise.all(sessionsToSync.map(s => syncDeviceSessionDoc(s)));
+        await this.refreshDeviceSessions();
 
         this.showToast('🎉 Selamat! Perangkat ini sekarang resmi menjadi Perangkat Utama Anda.');
         return { success: true };
@@ -1969,8 +2117,14 @@ export const useLibraryStore = defineStore('library', {
       if (!this.currentUser) return { success: false, error: 'User belum login' };
 
       const currentDeviceId = getCurrentDeviceId();
+      const currentUserId = this.currentUser.id;
+      const currentUserEmail = (this.currentUser.email || '').toLowerCase().trim();
+
       const currentSession = this.deviceSessions.find(
-        s => s.memberId === this.currentUser?.id && s.deviceId === currentDeviceId && s.status === 'active'
+        s => s.deviceId === currentDeviceId && s.status === 'active' && (
+          (currentUserId && s.memberId === currentUserId) ||
+          (currentUserEmail && s.memberEmail && s.memberEmail.toLowerCase().trim() === currentUserEmail)
+        )
       );
 
       // Validasi: Hanya Perangkat Utama yang boleh mencabut sesi login aktif perangkat lain!
@@ -1997,6 +2151,8 @@ export const useLibraryStore = defineStore('library', {
         const { syncDeviceSessionDoc } = await import('../lib/firebase.js');
         await syncDeviceSessionDoc(targetSession);
 
+        await this.refreshDeviceSessions();
+
         this.showToast(`Sesi login pada "${targetSession.deviceName}" berhasil dicabut.`);
         return { success: true };
       } catch (err: any) {
@@ -2012,8 +2168,14 @@ export const useLibraryStore = defineStore('library', {
       if (!this.currentUser) return { success: false, error: 'User belum login' };
 
       const currentDeviceId = getCurrentDeviceId();
+      const currentUserId = this.currentUser.id;
+      const currentUserEmail = (this.currentUser.email || '').toLowerCase().trim();
+
       const currentSession = this.deviceSessions.find(
-        s => s.memberId === this.currentUser?.id && s.deviceId === currentDeviceId && s.status === 'active'
+        s => s.deviceId === currentDeviceId && s.status === 'active' && (
+          (currentUserId && s.memberId === currentUserId) ||
+          (currentUserEmail && s.memberEmail && s.memberEmail.toLowerCase().trim() === currentUserEmail)
+        )
       );
 
       if (!currentSession?.isMainDevice) {
@@ -2030,7 +2192,9 @@ export const useLibraryStore = defineStore('library', {
 
         const sessionsToRevoke: UserDeviceSession[] = [];
         for (const s of this.deviceSessions) {
-          if (s.memberId === this.currentUser.id && s.deviceId !== currentDeviceId && s.status === 'active') {
+          const isThisUser = (currentUserId && s.memberId === currentUserId) ||
+                             (currentUserEmail && s.memberEmail && s.memberEmail.toLowerCase().trim() === currentUserEmail);
+          if (isThisUser && s.deviceId !== currentDeviceId && s.status === 'active') {
             s.status = 'revoked';
             s.lastActive = nowIso;
             sessionsToRevoke.push(s);
@@ -2038,7 +2202,13 @@ export const useLibraryStore = defineStore('library', {
           }
         }
 
+        if (sessionsToRevoke.length === 0) {
+          this.showToast('Tidak ada sesi perangkat lain yang aktif.');
+          return { success: true, count: 0 };
+        }
+
         await Promise.all(sessionsToRevoke.map(s => syncDeviceSessionDoc(s)));
+        await this.refreshDeviceSessions();
 
         this.showToast(`Berhasil mencabut ${count} sesi perangkat aktif lainnya.`);
         return { success: true, count };
