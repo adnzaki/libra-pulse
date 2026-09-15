@@ -210,7 +210,7 @@
               v-model="form.shelfId" 
               class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
             >
-              <option v-for="s in store.shelves" :key="s.id" :value="s.id">
+              <option v-for="s in sortedShelves" :key="s.id" :value="s.id">
                 [{{ s.code }}] {{ s.name }} (Lantai {{ s.floor }})
               </option>
             </select>
@@ -289,7 +289,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, toRef } from 'vue';
+import { ref, watch, toRef, computed } from 'vue';
 import axios from 'axios';
 import { useLibraryStore } from '../stores/library.js';
 import type { Book } from '../types.js';
@@ -320,6 +320,7 @@ const handleClose = () => {
 useModalBack(toRef(props, 'isOpen'), handleClose, 'book_form_modal');
 
 const store = useLibraryStore();
+const sortedShelves = computed(() => store.sortedShelves || store.shelves);
 const isSubmitting = ref(false);
 const isUploading = ref(false);
 const isDragging = ref(false);
@@ -347,7 +348,7 @@ const getBlankForm = (): Partial<Book> => ({
   year: new Date().getFullYear(),
   isbn: '',
   category: store.categories[0]?.name || 'Teknologi & Komputer',
-  shelfId: store.shelves[0]?.id || 'RAK-A1',
+  shelfId: sortedShelves.value[0]?.id || store.shelves[0]?.id || 'RAK-A1',
   totalCopies: 1,
   pages: undefined,
   language: 'Bahasa Indonesia',
@@ -454,7 +455,7 @@ const handleSaveBook = async () => {
   }
 
   // Update shelf info
-  const selectedShelf = store.shelves.find(s => s.id === form.value.shelfId);
+  const selectedShelf = sortedShelves.value.find(s => s.id === form.value.shelfId) || store.shelves.find(s => s.id === form.value.shelfId);
   if (selectedShelf) {
     form.value.shelfCode = selectedShelf.code;
     form.value.shelfName = selectedShelf.name;

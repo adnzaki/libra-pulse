@@ -41,6 +41,7 @@ export interface Shelf {
   color: string;
   description: string;
   shelfRow?: string;
+  createdAt?: string;
 }
 
 export interface Member {

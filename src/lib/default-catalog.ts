@@ -22,7 +22,8 @@ export const initialShelves: Shelf[] = [
     category: 'Teknologi & Komputer',
     color: '#3b82f6',
     description: 'Buku teks pemrograman, kecerdasan buatan, arsitektur cloud, dan sistem basis data.',
-    shelfRow: 'Baris A, Kolom 1'
+    shelfRow: 'Baris A, Kolom 1',
+    createdAt: '2026-01-01T08:00:01.000Z'
   },
   {
     id: 'RAK-A2',
@@ -35,7 +36,8 @@ export const initialShelves: Shelf[] = [
     category: 'Sains & Matematika',
     color: '#10b981',
     description: 'Koleksi buku sains modern, fisika kuantum, kalkulus, dan astronomi.',
-    shelfRow: 'Baris A, Kolom 2'
+    shelfRow: 'Baris A, Kolom 2',
+    createdAt: '2026-01-01T08:00:02.000Z'
   },
   {
     id: 'RAK-B1',
@@ -48,7 +50,8 @@ export const initialShelves: Shelf[] = [
     category: 'Sastra & Fiksi',
     color: '#f59e0b',
     description: 'Koleksi karya sastra Indonesia klasik, novel pemenang penghargaan, dan antologi puisi.',
-    shelfRow: 'Baris B, Kolom 1'
+    shelfRow: 'Baris B, Kolom 1',
+    createdAt: '2026-01-01T08:00:03.000Z'
   },
   {
     id: 'RAK-B2',
@@ -61,7 +64,8 @@ export const initialShelves: Shelf[] = [
     category: 'Pengembangan Diri',
     color: '#ec4899',
     description: 'Buku pengembangan karakter, manajemen emosi, pembentukan kebiasaan, dan mindfulness.',
-    shelfRow: 'Baris B, Kolom 2'
+    shelfRow: 'Baris B, Kolom 2',
+    createdAt: '2026-01-01T08:00:04.000Z'
   },
   {
     id: 'RAK-C1',
@@ -74,7 +78,8 @@ export const initialShelves: Shelf[] = [
     category: 'Sejarah & Filsafat',
     color: '#8b5cf6',
     description: 'Buku kronologi sejarah dunia, antropologi nusantara, dan pemikiran filsafat barat/timur.',
-    shelfRow: 'Baris C, Kolom 1'
+    shelfRow: 'Baris C, Kolom 1',
+    createdAt: '2026-01-01T08:00:05.000Z'
   }
 ];
 

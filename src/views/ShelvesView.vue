@@ -235,8 +235,9 @@ const isShelfModalOpen = ref(false);
 const selectedShelfForEdit = ref<Shelf | null>(null);
 
 const displayedShelves = computed(() => {
-  if (selectedFloor.value === 0) return store.shelves;
-  return store.shelves.filter(s => s.floor === selectedFloor.value);
+  const list = store.sortedShelves || store.shelves;
+  if (selectedFloor.value === 0) return list;
+  return list.filter(s => s.floor === selectedFloor.value);
 });
 
 const getShortShelfCode = (code?: string) => {

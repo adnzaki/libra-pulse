@@ -90,7 +90,7 @@
             class="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-full text-slate-700 text-xs focus:outline-none focus:border-blue-500 font-medium"
           >
             <option value="all">Semua Lokasi Rak</option>
-            <option v-for="s in store.shelves" :key="s.id" :value="s.id">
+            <option v-for="s in store.sortedShelves" :key="s.id" :value="s.id">
               {{ s.code }} - Lantai {{ s.floor }} ({{ s.zone }})
             </option>
           </select>

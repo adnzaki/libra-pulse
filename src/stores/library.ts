@@ -18,6 +18,43 @@ export const isSuperAdminMember = (m: any): boolean => {
   return email === 'azzackey@gmail.com' || m.isSuperAdmin === true || m.role === 'superadmin';
 };
 
+/**
+ * Mengurutkan daftar rak perpustakaan:
+ * 1. Berdasarkan waktu ditambahkan (paling awal ditambahkan / lama terlebih dahulu).
+ * 2. Jika waktu sama atau belum ada timestamp, urutkan secara natural berdasarkan kode rak (misal: RAK-A1 sebelum RAK-A2).
+ * 3. Fallback nama rak secara natural.
+ */
+export const sortShelves = (shelvesList: Shelf[]): Shelf[] => {
+  if (!Array.isArray(shelvesList)) return [];
+  return [...shelvesList].sort((a, b) => {
+    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+
+    // Jika keduanya memiliki timestamp createdAt yang valid dan berbeda
+    if (timeA > 0 && timeB > 0 && timeA !== timeB) {
+      return timeA - timeB;
+    }
+
+    // Jika salah satu memiliki createdAt dan satunya tidak, rak tanpa createdAt dianggap data lama (dibuat lebih awal)
+    if (timeA === 0 && timeB > 0) return -1;
+    if (timeA > 0 && timeB === 0) return 1;
+
+    // Urutan natural kode rak (RAK-A1 sebelum RAK-A2, RAK-01 sebelum RAK-02, dsb)
+    const codeA = (a.code || a.id || '').trim();
+    const codeB = (b.code || b.id || '').trim();
+    const codeComp = codeA.localeCompare(codeB, 'id-ID', { numeric: true, sensitivity: 'base' });
+    if (codeComp !== 0) return codeComp;
+
+    // Urutan natural nama rak (Rak A-01 sebelum Rak A-02, dsb)
+    const nameA = (a.name || '').trim();
+    const nameB = (b.name || '').trim();
+    const nameComp = nameA.localeCompare(nameB, 'id-ID', { numeric: true, sensitivity: 'base' });
+    if (nameComp !== 0) return nameComp;
+
+    return (a.id || '').localeCompare(b.id || '', 'id-ID', { numeric: true, sensitivity: 'base' });
+  });
+};
+
 export const useLibraryStore = defineStore('library', {
   state: () => ({
     categories: [] as BookCategory[],
@@ -71,6 +108,7 @@ export const useLibraryStore = defineStore('library', {
   }),
 
   getters: {
+    sortedShelves: (state) => sortShelves(state.shelves),
     isAdmin: (state) => state.currentUser?.role === 'admin',
     isSuperAdmin: (state) => isSuperAdminMember(state.currentUser),
     isMember: (state) => state.currentUser?.role === 'member',
@@ -238,7 +276,7 @@ export const useLibraryStore = defineStore('library', {
         });
         subscribeToFirestoreCollection<Shelf>('shelves', (items) => {
           if (items && items.length > 0) {
-            this.shelves = items;
+            this.shelves = sortShelves(items);
             this.calculateStats();
             this.persistToLocalCache();
           }
@@ -575,7 +613,7 @@ export const useLibraryStore = defineStore('library', {
       if (offline.books.length > 0 || offline.members.length > 0) {
         this.books = offline.books;
         this.categories = (offline.categories && offline.categories.length > 0) ? offline.categories : [...initialCategories];
-        this.shelves = (offline.shelves && offline.shelves.length > 0) ? offline.shelves : [...initialShelves];
+        this.shelves = (offline.shelves && offline.shelves.length > 0) ? sortShelves(offline.shelves) : sortShelves([...initialShelves]);
         this.members = (offline.members && offline.members.length > 0) ? offline.members : [...initialMembers];
         this.loans = offline.loans || [];
         this.bookings = offline.bookings || [];
@@ -584,7 +622,7 @@ export const useLibraryStore = defineStore('library', {
       } else {
         this.books = [...initialBooks];
         this.categories = [...initialCategories];
-        this.shelves = [...initialShelves];
+        this.shelves = sortShelves([...initialShelves]);
         this.members = [...initialMembers];
         this.suspendConfig = { ...defaultSuspendConfig };
         this.persistToLocalCache();
@@ -711,7 +749,7 @@ export const useLibraryStore = defineStore('library', {
           ]);
 
           this.books = fBooks;
-          if (fShelves && fShelves.length > 0) this.shelves = fShelves;
+          if (fShelves && fShelves.length > 0) this.shelves = sortShelves(fShelves);
           if (fCats && fCats.length > 0) this.categories = fCats;
           if (fMembers && fMembers.length > 0) this.members = fMembers;
           this.loans = fLoans || [];
@@ -975,7 +1013,11 @@ export const useLibraryStore = defineStore('library', {
 
         if (isEditing) {
           const idx = this.shelves.findIndex(s => s.id === shelfData.id);
-          savedShelf = { ...this.shelves[idx], ...shelfData };
+          savedShelf = { 
+            ...this.shelves[idx], 
+            ...shelfData,
+            createdAt: this.shelves[idx]?.createdAt || shelfData.createdAt || new Date().toISOString()
+          };
           this.shelves[idx] = savedShelf;
         } else {
           savedShelf = {
@@ -989,10 +1031,13 @@ export const useLibraryStore = defineStore('library', {
             category: shelfData.category || 'Umum',
             color: shelfData.color || '#3b82f6',
             description: shelfData.description || '',
+            createdAt: shelfData.createdAt || new Date().toISOString(),
             ...shelfData
           };
           this.shelves.push(savedShelf);
         }
+
+        this.shelves = sortShelves(this.shelves);
 
         this.calculateStats();
         this.persistToLocalCache();
