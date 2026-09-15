@@ -219,6 +219,8 @@ export async function syncMemberDoc(member: any) {
     sanitized.isSuspended = false;
     sanitized.suspendReason = '';
     sanitized.suspendedUntil = null;
+    sanitized.suspendedBy = null;
+    sanitized.isManualSuspend = false;
   }
   await withTimeout(setDoc(doc(db, 'members', member.id), sanitized, { merge: true }), 7000);
 }

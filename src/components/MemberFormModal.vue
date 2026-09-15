@@ -379,20 +379,20 @@ const form = ref({
   confirmPassword: ''
 });
 
-watch(() => props.member, (newVal) => {
+const resetForm = () => {
   passwordError.value = '';
   showPassword.value = false;
   showConfirmPassword.value = false;
 
-  if (newVal) {
+  if (props.member) {
     form.value = {
-      name: newVal.name,
-      email: newVal.email,
-      phone: newVal.phone,
-      role: newVal.role,
-      memberType: newVal.memberType || 'siswa',
-      avatar: newVal.avatar || '',
-      address: newVal.address || '',
+      name: props.member.name,
+      email: props.member.email,
+      phone: props.member.phone,
+      role: props.member.role,
+      memberType: props.member.memberType || 'siswa',
+      avatar: props.member.avatar || '',
+      address: props.member.address || '',
       password: '',
       confirmPassword: ''
     };
@@ -408,6 +408,12 @@ watch(() => props.member, (newVal) => {
       password: '',
       confirmPassword: ''
     };
+  }
+};
+
+watch([() => props.isOpen, () => props.member], ([isOpen]) => {
+  if (isOpen) {
+    resetForm();
   }
 }, { immediate: true });
 
@@ -497,6 +503,7 @@ const handleSubmit = async () => {
     } else {
       await store.createMemberByAdmin(payload);
     }
+    resetForm();
     emit('close');
   } finally {
     isSubmitting.value = false;

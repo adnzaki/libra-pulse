@@ -297,19 +297,21 @@ const regForm = ref({
 const isTargetMemberBlocked = computed(() => {
   if (store.currentUser) {
     if (store.currentUser.isSuspended) return true;
+    const isGuru = store.currentUser.memberType === 'guru';
     const ov = store.loans.filter(l => 
       (l.memberId === store.currentUser?.id || l.memberCardNumber === store.currentUser?.cardNumber) && 
       l.status === 'overdue'
     );
-    if (ov.length > 0) return true;
+    if (ov.length > 0 && !isGuru) return true;
   }
   if (authMode.value === 'card' && verifiedMember.value) {
     if (verifiedMember.value.isSuspended) return true;
+    const isGuru = verifiedMember.value.memberType === 'guru';
     const ov = store.loans.filter(l => 
       (l.memberId === verifiedMember.value?.id || l.memberCardNumber === verifiedMember.value?.cardNumber) && 
       l.status === 'overdue'
     );
-    if (ov.length > 0) return true;
+    if (ov.length > 0 && !isGuru) return true;
   }
   return false;
 });

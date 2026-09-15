@@ -399,47 +399,70 @@ export const useLibraryStore = defineStore('library', {
                            (member.email && overdueMemberKeys.has(member.email.toLowerCase().trim()));
         const isGuru = member.memberType === 'guru';
 
-        // Akun guru berhak atas benefit bebas auto-suspend jika terlambat
-        if (hasOverdue && autoSuspendEnabled && !isGuru) {
-          member.isSuspended = true;
-          if (!member.suspendReason) {
-            const worstLoan = this.loans.find(l => l.status === 'overdue' && (l.memberId === member.id || l.memberCardNumber === member.cardNumber));
-            member.suspendReason = worstLoan
-              ? `Keterlambatan pengembalian buku "${worstLoan.bookTitle}" (Jatuh tempo: ${worstLoan.dueDate}, telat ${worstLoan.daysOverdue} hari)`
-              : 'Sanksi Keterlambatan Pengembalian Buku';
-          }
-        } else if (isGuru && member.isSuspended) {
-          // Bebaskan guru dari suspend keterlambatan
-          const reason = (member.suspendReason || '').toLowerCase();
-          const isOverdueSuspension = !reason ||
-            reason.includes('keterlambatan') ||
-            reason.includes('sanksi') ||
-            reason.includes('jatuh tempo') ||
-            reason.includes('telat') ||
-            reason.includes('buku');
+        // Deteksi apakah sanksi suspend berasal dari tindakan manual Admin
+        const isSuspendedByAdmin = member.suspendedBy === 'admin' || 
+                                   member.isManualSuspend === true || 
+                                   (member.suspendedUntil && new Date(member.suspendedUntil).getTime() >= Date.now() && !member.suspendReason?.toLowerCase().includes('otomatis'));
 
-          if (isOverdueSuspension) {
+        // Cek apakah masa berlaku suspend (suspendedUntil) sudah lewat
+        const isSuspendExpired = member.suspendedUntil ? new Date(member.suspendedUntil).getTime() < Date.now() : false;
+
+        if (member.isSuspended) {
+          if (isSuspendedByAdmin) {
+            // Sanksi manual dari Admin berlaku mutlak (baik untuk Siswa maupun Guru).
+            // Hanya dipulihkan jika masa sanksi tanggalnya sudah habis (expired), atau dicabut manual oleh Admin.
+            if (isSuspendExpired) {
+              member.isSuspended = false;
+              member.suspendReason = '';
+              member.suspendedUntil = null;
+              member.suspendedBy = undefined;
+              member.isManualSuspend = false;
+              if (this.currentUser && (this.currentUser.id === member.id || this.currentUser.cardNumber === member.cardNumber)) {
+                this.currentUser = { ...member };
+              }
+            }
+            // Tetap berstatus suspend, jangan disentuh oleh auto-unsuspend sistem!
+            continue;
+          }
+
+          // Jika ini auto-suspend keterlambatan sistem:
+          // Status Guru hanya memproteksi dari auto-suspend keterlambatan buku
+          if (isGuru) {
             member.isSuspended = false;
             member.suspendReason = '';
             member.suspendedUntil = null;
+            member.suspendedBy = undefined;
+            member.isManualSuspend = false;
+            if (this.currentUser && (this.currentUser.id === member.id || this.currentUser.cardNumber === member.cardNumber)) {
+              this.currentUser = { ...member };
+            }
+            continue;
+          }
+
+          // Untuk Siswa: jika pinjaman buku yang telat sudah beres atau suspend expired
+          if (!hasOverdue || isSuspendExpired) {
+            member.isSuspended = false;
+            member.suspendReason = '';
+            member.suspendedUntil = null;
+            member.suspendedBy = undefined;
+            member.isManualSuspend = false;
             if (this.currentUser && (this.currentUser.id === member.id || this.currentUser.cardNumber === member.cardNumber)) {
               this.currentUser = { ...member };
             }
           }
-        } else if (!hasOverdue && member.isSuspended) {
-          // If suspension was triggered by overdue loans, auto-restore
-          const reason = (member.suspendReason || '').toLowerCase();
-          const isOverdueSuspension = !reason ||
-            reason.includes('keterlambatan') ||
-            reason.includes('sanksi') ||
-            reason.includes('jatuh tempo') ||
-            reason.includes('telat') ||
-            reason.includes('buku');
-
-          if (isOverdueSuspension) {
-            member.isSuspended = false;
-            member.suspendReason = '';
-            member.suspendedUntil = null;
+        } else {
+          // Member sedang aktif:
+          // Auto-suspend hanya dikenakan kepada Siswa yang terlambat (Guru dikecualikan dari auto-suspend)
+          if (hasOverdue && autoSuspendEnabled && !isGuru) {
+            member.isSuspended = true;
+            member.suspendedBy = 'auto';
+            member.isManualSuspend = false;
+            const worstLoan = this.loans.find(l => l.status === 'overdue' && (l.memberId === member.id || l.memberCardNumber === member.cardNumber));
+            member.suspendReason = worstLoan
+              ? `Keterlambatan pengembalian buku "${worstLoan.bookTitle}" (Jatuh tempo: ${worstLoan.dueDate}, telat ${worstLoan.daysOverdue} hari)`
+              : 'Sanksi Keterlambatan Pengembalian Buku';
+            const defaultDays = this.suspendConfig?.defaultSuspendDays || 7;
+            member.suspendedUntil = new Date(Date.now() + defaultDays * 86400000).toISOString().slice(0, 10);
             if (this.currentUser && (this.currentUser.id === member.id || this.currentUser.cardNumber === member.cardNumber)) {
               this.currentUser = { ...member };
             }
@@ -1236,18 +1259,63 @@ export const useLibraryStore = defineStore('library', {
       }
     },
 
-    async toggleMemberSuspend(memberId: string, suspend: boolean, days?: number, reason?: string) {
+    async toggleMemberSuspend(
+      memberId: string, 
+      suspend: boolean, 
+      daysOrReason?: number | string, 
+      reasonOrDays?: string | number
+    ) {
       const target = this.members.find(m => m.id === memberId);
-      if (!target) return { success: false };
+      if (!target) return { success: false, error: 'Anggota tidak ditemukan' };
 
       if (isSuperAdminMember(target)) {
         this.setError('Akun Super Admin tidak dapat disuspend.');
         return { success: false, error: 'Akses ditolak' };
       }
 
+      // Normalisasi parameter agar fleksibel jika argumen tertukar (days vs reason)
+      let days = 7;
+      let reason = 'Sanksi Keterlambatan Pengembalian Buku / Pelanggaran Tata Tertib';
+
+      if (typeof daysOrReason === 'number') {
+        days = daysOrReason > 0 ? daysOrReason : 7;
+        if (typeof reasonOrDays === 'string' && reasonOrDays.trim()) {
+          reason = reasonOrDays.trim();
+        }
+      } else if (typeof daysOrReason === 'string') {
+        if (daysOrReason.trim()) {
+          // Cek apakah string ini sebenarnya representasi angka hari
+          if (!isNaN(Number(daysOrReason)) && Number(daysOrReason) > 0) {
+            days = Number(daysOrReason);
+            if (typeof reasonOrDays === 'string' && reasonOrDays.trim()) {
+              reason = reasonOrDays.trim();
+            }
+          } else {
+            reason = daysOrReason.trim();
+            if (typeof reasonOrDays === 'number' && reasonOrDays > 0) {
+              days = reasonOrDays;
+            } else if (typeof reasonOrDays === 'string' && !isNaN(Number(reasonOrDays)) && Number(reasonOrDays) > 0) {
+              days = Number(reasonOrDays);
+            }
+          }
+        }
+      } else if (typeof reasonOrDays === 'number') {
+        days = reasonOrDays > 0 ? reasonOrDays : 7;
+      }
+
       target.isSuspended = suspend;
-      target.suspendedUntil = suspend && days ? new Date(Date.now() + days * 86400000).toISOString().slice(0, 10) : null;
-      target.suspendReason = suspend ? (reason || 'Sanksi Keterlambatan Pengembalian Buku') : '';
+      if (suspend) {
+        const suspendUntilDate = new Date(Date.now() + days * 86400000);
+        target.suspendedUntil = suspendUntilDate.toISOString().slice(0, 10);
+        target.suspendReason = reason;
+        target.suspendedBy = 'admin';
+        target.isManualSuspend = true;
+      } else {
+        target.suspendedUntil = null;
+        target.suspendReason = '';
+        target.suspendedBy = undefined;
+        target.isManualSuspend = false;
+      }
 
       if (this.currentUser && (this.currentUser.id === target.id || this.currentUser.cardNumber === target.cardNumber)) {
         this.currentUser = { ...target };
@@ -2662,10 +2730,13 @@ export const useLibraryStore = defineStore('library', {
                l.status === 'overdue' &&
                (l.memberId === member.id || l.memberCardNumber === member.cardNumber || (l.memberEmail && member.email && l.memberEmail.toLowerCase() === member.email.toLowerCase()))
         );
-        if (remainingOverdue.length === 0 && member.isSuspended) {
+        const isManualSuspend = member.suspendedBy === 'admin' || member.isManualSuspend === true;
+        if (remainingOverdue.length === 0 && member.isSuspended && !isManualSuspend) {
           member.isSuspended = false;
           member.suspendReason = '';
           member.suspendedUntil = null;
+          member.suspendedBy = undefined;
+          member.isManualSuspend = false;
           if (this.currentUser?.id === member.id || this.currentUser?.cardNumber === member.cardNumber) {
             this.currentUser = { ...member };
           }

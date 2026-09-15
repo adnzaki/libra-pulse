@@ -14,7 +14,7 @@
           </div>
         </div>
         <button 
-          @click="$emit('close')" 
+          @click="handleClose" 
           type="button"
           aria-label="Tutup modal form buku"
           class="p-2 sm:p-2.5 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-200/70 active:scale-95 transition cursor-pointer flex items-center justify-center shrink-0"
@@ -267,7 +267,7 @@
       <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 backdrop-blur-md border-t border-slate-100 flex items-center justify-end gap-3 shrink-0 sticky bottom-0 z-20">
         <button 
           type="button" 
-          @click="$emit('close')"
+          @click="handleClose"
           class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 hover:bg-slate-200/60 transition cursor-pointer"
         >
           Batal
@@ -312,7 +312,12 @@ const props = defineProps<{
 
 const emit = defineEmits(['close', 'saved']);
 
-useModalBack(toRef(props, 'isOpen'), () => emit('close'), 'book_form_modal');
+const handleClose = () => {
+  resetForm();
+  emit('close');
+};
+
+useModalBack(toRef(props, 'isOpen'), handleClose, 'book_form_modal');
 
 const store = useLibraryStore();
 const isSubmitting = ref(false);
@@ -335,47 +340,49 @@ const generateRandomCover = () => {
   form.value.cover = randomCovers[idx];
 };
 
-const form = ref<Partial<Book>>({
+const getBlankForm = (): Partial<Book> => ({
   title: '',
   author: '',
-  publisher: 'Pustaka Utama',
+  publisher: '',
   year: new Date().getFullYear(),
   isbn: '',
-  category: 'Teknologi & Komputer',
-  shelfId: 'RAK-A1',
-  totalCopies: 5,
-  pages: 320,
+  category: store.categories[0]?.name || 'Teknologi & Komputer',
+  shelfId: store.shelves[0]?.id || 'RAK-A1',
+  totalCopies: 1,
+  pages: undefined,
   language: 'Bahasa Indonesia',
   cover: '',
   synopsis: ''
 });
 
-watch(() => props.book, (val) => {
-  if (val) {
-    form.value = { ...val };
-    if (val.cover && !val.cover.startsWith('/covers/')) {
+const form = ref<Partial<Book>>(getBlankForm());
+
+const resetForm = () => {
+  if (props.book) {
+    form.value = { ...props.book };
+    if (props.book.cover && !props.book.cover.startsWith('/covers/')) {
       coverSourceMode.value = 'url';
     } else {
       coverSourceMode.value = 'upload';
     }
   } else {
-    form.value = {
-      title: '',
-      author: '',
-      publisher: 'Gramedia Pustaka',
-      year: new Date().getFullYear(),
-      isbn: `978-602-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(10 + Math.random() * 90)}-0`,
-      category: 'Teknologi & Komputer',
-      shelfId: store.shelves[0]?.id || 'RAK-A1',
-      totalCopies: 5,
-      pages: 320,
-      language: 'Bahasa Indonesia',
-      cover: '',
-      synopsis: ''
-    };
+    form.value = getBlankForm();
     coverSourceMode.value = 'upload';
   }
-}, { immediate: true });
+  if (fileInputRef.value) {
+    fileInputRef.value.value = '';
+  }
+};
+
+watch(
+  [() => props.isOpen, () => props.book],
+  ([isOpen]) => {
+    if (isOpen) {
+      resetForm();
+    }
+  },
+  { immediate: true }
+);
 
 const triggerFileInput = () => {
   if (fileInputRef.value) {
@@ -462,6 +469,7 @@ const handleSaveBook = async () => {
   try {
     const res = await store.saveBook(payload);
     if (res.success) {
+      resetForm();
       emit('saved');
       emit('close');
     }

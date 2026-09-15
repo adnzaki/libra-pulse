@@ -56,6 +56,8 @@ export interface Member {
   isSuspended: boolean;
   suspendReason?: string;
   suspendedUntil?: string | null;
+  suspendedBy?: 'admin' | 'auto';
+  isManualSuspend?: boolean;
   totalBorrowed: number;
   activeLoansCount: number;
   address?: string;

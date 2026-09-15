@@ -1707,7 +1707,11 @@
     </div>
 
     <!-- Modal Penangguhan Sanksi Anggota (Suspend) -->
-    <div v-if="isSuspendMemberModalOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200">
+    <div 
+      v-if="isSuspendMemberModalOpen" 
+      @click.self="closeSuspendMemberModal"
+      class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200"
+    >
       <div class="bg-white w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-md sm:rounded-3xl rounded-none border-0 sm:border sm:border-slate-200 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         <div class="px-4 sm:px-6 py-4 bg-rose-600 text-white flex items-center justify-between shrink-0 sticky top-0 z-20">
           <div class="flex items-center gap-2.5">
@@ -2007,15 +2011,20 @@ const confirmSuspendMember = async () => {
   if (!selectedMemberForSuspend.value) return;
   const member = selectedMemberForSuspend.value;
   const reason = suspendReasonInput.value.trim() || 'Pelanggaran aturan tata tertib / telat peminjaman';
-  const days = suspendDaysInput.value > 0 ? suspendDaysInput.value : 7;
+  const days = Number(suspendDaysInput.value) > 0 ? Number(suspendDaysInput.value) : 7;
   
   isProcessingSuspend.value = true;
   try {
-    await store.toggleMemberSuspend(member.id, true, reason, days);
-    store.showToast(`Anggota ${member.name} berhasil ditangguhkan selama ${days} hari.`);
-    closeSuspendMemberModal();
-  } catch (err) {
+    const res = await store.toggleMemberSuspend(member.id, true, days, reason);
+    if (res && res.success === false) {
+      store.setError(res.error || 'Gagal menangguhkan anggota.');
+    } else {
+      store.showToast(`Anggota ${member.name} berhasil ditangguhkan selama ${days} hari.`);
+      closeSuspendMemberModal();
+    }
+  } catch (err: any) {
     console.error('Failed to suspend member:', err);
+    store.setError(err?.message || 'Terjadi kesalahan saat memproses suspend');
   } finally {
     isProcessingSuspend.value = false;
   }

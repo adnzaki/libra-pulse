@@ -150,15 +150,21 @@ const form = ref<Partial<BookCategory>>({
   color: '#3b82f6'
 });
 
-watch(() => props.category, (val) => {
-  if (val) {
-    form.value = { ...val };
+const resetForm = () => {
+  if (props.category) {
+    form.value = { ...props.category };
   } else {
     form.value = {
       name: '',
       description: '',
       color: colorPalette[Math.floor(Math.random() * colorPalette.length)]
     };
+  }
+};
+
+watch([() => props.isOpen, () => props.category], ([isOpen]) => {
+  if (isOpen) {
+    resetForm();
   }
 }, { immediate: true });
 
@@ -178,6 +184,7 @@ const handleSave = async () => {
     }
 
     if (res?.success) {
+      resetForm();
       emit('saved');
       emit('close');
     }
