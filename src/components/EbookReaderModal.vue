@@ -502,6 +502,7 @@ const cleanup = () => {
   errorMessage.value = '';
   zoomMultiplier.value = 1.0;
   viewerMode.value = 'canvas';
+  activeWorkingUrl.value = ''; // <--- Tambahkan baris ini
 };
 
 const loadDocument = async () => {
@@ -734,20 +735,27 @@ const handleWindowResize = () => {
   }, 150);
 };
 
+// Watcher gabungan untuk menangani pemuatan ulang dokumen
 watch(
-  () => props.isOpen,
-  (open) => {
-    if (open) {
+  [() => props.isOpen, () => props.loan],
+  ([newOpen, newLoan], [oldOpen, oldLoan]) => {
+    if (newOpen) {
+      // Jika loan berubah atau modal baru dibuka, reset state URL aktif
+      if (newLoan !== oldLoan) {
+        activeWorkingUrl.value = '';
+      }
       zoomMultiplier.value = 1.0;
       loadDocument();
       window.addEventListener('keydown', handleKeyDown);
       window.addEventListener('resize', handleWindowResize);
     } else {
       cleanup();
+      activeWorkingUrl.value = ''; // Pastikan dibersihkan saat modal tutup
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('resize', handleWindowResize);
     }
-  }
+  },
+  { deep: true }
 );
 
 watch(
