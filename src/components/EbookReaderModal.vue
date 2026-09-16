@@ -1,19 +1,21 @@
 <template>
   <div 
     v-if="isOpen" 
+    ref="readerModalRef"
     class="fixed inset-0 z-50 flex flex-col bg-slate-950/95 backdrop-blur-md overflow-hidden select-none animate-in fade-in duration-200"
+    :class="{ 'is-fullscreen': isFullscreen }"
     @contextmenu.prevent
   >
     <!-- Top Navigation / Reader Toolbar -->
-    <header class="h-14 sm:h-16 bg-slate-900/95 border-b border-slate-800 text-white px-3 sm:px-6 flex items-center justify-between shrink-0 z-20 shadow-md">
+    <header class="h-12 sm:h-14 bg-slate-900/95 border-b border-slate-800 text-white px-3 sm:px-6 flex items-center justify-between shrink-0 z-20 shadow-md transition-all">
       <!-- Left: Book & Status Details -->
-      <div class="flex items-center gap-2.5 sm:gap-3 min-w-0 mr-2">
+      <div class="flex items-center gap-2 sm:gap-3 min-w-0 mr-2">
         <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-indigo-600/30 text-indigo-400 border border-indigo-500/30 flex items-center justify-center shrink-0">
           <BookOpen class="w-4 h-4 sm:w-5 sm:h-5" />
         </div>
         <div class="min-w-0">
           <div class="flex items-center gap-2">
-            <h2 class="font-extrabold text-xs sm:text-sm text-slate-100 truncate max-w-[150px] xs:max-w-[220px] sm:max-w-md" :title="loan?.bookTitle">
+            <h2 class="font-extrabold text-xs sm:text-sm text-slate-100 truncate max-w-[140px] xs:max-w-[200px] sm:max-w-md" :title="loan?.bookTitle">
               {{ loan?.bookTitle || 'Baca Dokumen e-Book' }}
             </h2>
             <span class="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-bold border border-indigo-500/30 shrink-0 hidden sm:inline-block">
@@ -35,7 +37,23 @@
       </div>
 
       <!-- Right Toolbar Controls -->
-      <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+      <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <!-- Fullscreen Toggle Button -->
+        <button
+          @click="toggleFullscreen"
+          class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-xs font-semibold transition cursor-pointer active:scale-95 shadow-xs"
+          :class="isFullscreen 
+            ? 'bg-amber-500/20 border-amber-500/40 text-amber-300 hover:bg-amber-500/30' 
+            : 'bg-slate-800 hover:bg-slate-700 border-slate-700/70 text-slate-300 hover:text-white'"
+          :title="isFullscreen ? 'Keluar Layar Penuh (Esc / F)' : 'Layar Penuh / Fullscreen (F)'"
+        >
+          <Minimize v-if="isFullscreen" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+          <Maximize v-else class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-400" />
+          <span class="text-[11px] hidden sm:inline">
+            {{ isFullscreen ? 'Normal' : 'Layar Penuh' }}
+          </span>
+        </button>
+
         <!-- Watermark Intensity Control -->
         <button
           v-if="!isExpired && (pdfDoc || isEpubMode)"
@@ -165,7 +183,8 @@
         <!-- EPUB Container (Clean, Reflowable / Paginated Reader) -->
         <div 
           v-if="isEpubMode"
-          class="relative w-full max-w-3xl h-[78vh] sm:h-[82vh] bg-white rounded-2xl shadow-2xl border border-slate-700/50 overflow-hidden flex flex-col shrink-0"
+          class="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-slate-700/50 overflow-hidden flex flex-col shrink-0 transition-all duration-200"
+          :class="isFullscreen ? 'h-[90vh] sm:h-[92vh]' : 'h-[78vh] sm:h-[84vh]'"
         >
           <!-- Stage for ePub rendition -->
           <div 
@@ -250,83 +269,162 @@
         </div>
 
         <!-- Floating Reading Controller Bar (Thumb-Friendly for Mobile & Desktop) -->
-        <div class="fixed bottom-4 sm:bottom-6 z-30 flex items-center gap-1.5 sm:gap-2.5 bg-slate-900/95 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-slate-700/80 text-white text-xs shadow-2xl">
-          <!-- Prev Button -->
-          <button 
-            @click="prevPage" 
-            :disabled="currentPage <= 1 || isLoadingPage"
-            class="p-1.5 sm:p-2 hover:text-indigo-400 disabled:opacity-30 transition cursor-pointer rounded-full hover:bg-slate-800"
-            title="Halaman Sebelumnya"
+        <div 
+          class="fixed bottom-2 sm:bottom-5 z-30 flex items-center transition-all duration-200"
+          :class="{ 'opacity-95 hover:opacity-100': isFullscreen }"
+        >
+          <!-- MINIMIZED DOCK: Ultra compact for landscape / immersive reading -->
+          <div 
+            v-if="isDockMinimized" 
+            class="flex items-center gap-2 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-700/80 text-white text-xs shadow-2xl animate-in zoom-in-95 duration-150"
           >
-            <ChevronLeft class="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
+            <button 
+              @click="prevPage" 
+              :disabled="currentPage <= 1 || isLoadingPage"
+              class="p-1 hover:text-indigo-400 disabled:opacity-30 cursor-pointer rounded-full"
+              title="Halaman Sebelumnya"
+            >
+              <ChevronLeft class="w-4 h-4" />
+            </button>
 
-          <!-- Page Jumper -->
-          <div class="flex items-center gap-1 font-mono text-[11px] sm:text-xs text-slate-300">
-            <input 
-              v-model.lazy="pageInput" 
-              type="number" 
-              min="1" 
-              :max="totalPages || 9999"
-              @change="handlePageInputChange"
-              class="w-9 sm:w-11 bg-slate-800 border border-slate-700 rounded-md text-center py-0.5 text-white font-bold text-xs focus:outline-none focus:border-indigo-500"
-            />
-            <span class="text-slate-400">/ {{ totalPages || (isEpubMode ? '?' : 1) }}</span>
+            <span class="font-mono text-[11px] text-slate-300 font-semibold px-1">
+              {{ currentPage }} / {{ totalPages || '?' }}
+            </span>
+
+            <button 
+              @click="nextPage" 
+              :disabled="(totalPages > 0 && currentPage >= totalPages) || isLoadingPage"
+              class="p-1 hover:text-indigo-400 disabled:opacity-30 cursor-pointer rounded-full"
+              title="Halaman Berikutnya"
+            >
+              <ChevronRight class="w-4 h-4" />
+            </button>
+
+            <div class="h-3 w-px bg-slate-700 mx-0.5"></div>
+
+            <button
+              @click="toggleFullscreen"
+              class="p-1 transition cursor-pointer rounded-full hover:bg-slate-800"
+              :class="isFullscreen ? 'text-amber-400' : 'text-slate-300 hover:text-indigo-400'"
+              :title="isFullscreen ? 'Keluar Layar Penuh (Esc)' : 'Layar Penuh (Fullscreen)'"
+            >
+              <Minimize v-if="isFullscreen" class="w-3.5 h-3.5" />
+              <Maximize v-else class="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              @click="isDockMinimized = false"
+              class="p-1 text-slate-400 hover:text-white transition cursor-pointer rounded-full hover:bg-slate-800"
+              title="Tampilkan Panel Menu Lengkap"
+            >
+              <ChevronUp class="w-3.5 h-3.5" />
+            </button>
           </div>
 
-          <!-- Next Button -->
-          <button 
-            @click="nextPage" 
-            :disabled="(totalPages > 0 && currentPage >= totalPages) || isLoadingPage"
-            class="p-1.5 sm:p-2 hover:text-indigo-400 disabled:opacity-30 transition cursor-pointer rounded-full hover:bg-slate-800"
-            title="Halaman Berikutnya"
+          <!-- EXPANDED DOCK: Full tools with Fullscreen & Minimizer -->
+          <div 
+            v-else 
+            class="flex items-center gap-1 sm:gap-2 bg-slate-900/95 backdrop-blur-md px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full border border-slate-700/80 text-white text-xs shadow-2xl animate-in zoom-in-95 duration-150"
           >
-            <ChevronRight class="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
+            <!-- Prev Button -->
+            <button 
+              @click="prevPage" 
+              :disabled="currentPage <= 1 || isLoadingPage"
+              class="p-1.5 sm:p-2 hover:text-indigo-400 disabled:opacity-30 transition cursor-pointer rounded-full hover:bg-slate-800"
+              title="Halaman Sebelumnya"
+            >
+              <ChevronLeft class="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
 
-          <div class="h-4 w-px bg-slate-700 mx-0.5"></div>
+            <!-- Page Jumper -->
+            <div class="flex items-center gap-1 font-mono text-[11px] sm:text-xs text-slate-300">
+              <input 
+                v-model.lazy="pageInput" 
+                type="number" 
+                min="1" 
+                :max="totalPages || 9999"
+                @change="handlePageInputChange"
+                class="w-9 sm:w-11 bg-slate-800 border border-slate-700 rounded-md text-center py-0.5 text-white font-bold text-xs focus:outline-none focus:border-indigo-500"
+              />
+              <span class="text-slate-400">/ {{ totalPages || (isEpubMode ? '?' : 1) }}</span>
+            </div>
 
-          <!-- Zoom Out / Font Smaller -->
-          <button 
-            @click="zoomOut" 
-            :disabled="zoomMultiplier <= 0.6"
-            class="p-1.5 hover:text-indigo-400 disabled:opacity-30 transition cursor-pointer rounded-full hover:bg-slate-800"
-            :title="isEpubMode ? 'Perkecil Ukuran Huruf' : 'Perkecil'"
-          >
-            <ZoomOut class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          </button>
+            <!-- Next Button -->
+            <button 
+              @click="nextPage" 
+              :disabled="(totalPages > 0 && currentPage >= totalPages) || isLoadingPage"
+              class="p-1.5 sm:p-2 hover:text-indigo-400 disabled:opacity-30 transition cursor-pointer rounded-full hover:bg-slate-800"
+              title="Halaman Berikutnya"
+            >
+              <ChevronRight class="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
 
-          <!-- Fit / Zoom Percent Indicator -->
-          <button 
-            @click="resetZoom" 
-            class="px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold hover:bg-slate-800 text-indigo-300 transition cursor-pointer"
-            :title="isEpubMode ? 'Reset Ukuran Huruf (100%)' : 'Pas Lebar Layar (100%)'"
-          >
-            {{ Math.round(zoomMultiplier * 100) }}%
-          </button>
+            <div class="h-4 w-px bg-slate-700 mx-0.5"></div>
 
-          <!-- Zoom In / Font Larger -->
-          <button 
-            @click="zoomIn" 
-            :disabled="zoomMultiplier >= 2.5"
-            class="p-1.5 hover:text-indigo-400 disabled:opacity-30 transition cursor-pointer rounded-full hover:bg-slate-800"
-            :title="isEpubMode ? 'Perbesar Ukuran Huruf' : 'Perbesar'"
-          >
-            <ZoomIn class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          </button>
+            <!-- Zoom Out / Font Smaller -->
+            <button 
+              @click="zoomOut" 
+              :disabled="zoomMultiplier <= 0.6"
+              class="p-1.5 hover:text-indigo-400 disabled:opacity-30 transition cursor-pointer rounded-full hover:bg-slate-800"
+              :title="isEpubMode ? 'Perkecil Ukuran Huruf' : 'Perkecil'"
+            >
+              <ZoomOut class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </button>
 
-          <div class="h-4 w-px bg-slate-700 mx-0.5"></div>
+            <!-- Fit / Zoom Percent Indicator -->
+            <button 
+              @click="resetZoom" 
+              class="px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold hover:bg-slate-800 text-indigo-300 transition cursor-pointer"
+              :title="isEpubMode ? 'Reset Ukuran Huruf (100%)' : 'Pas Lebar Layar (100%)'"
+            >
+              {{ Math.round(zoomMultiplier * 100) }}%
+            </button>
 
-          <!-- Quick Watermark Toggle -->
-          <button
-            @click="cycleWatermarkMode"
-            class="p-1.5 hover:text-indigo-400 transition cursor-pointer rounded-full hover:bg-slate-800"
-            :title="watermarkTooltip"
-          >
-            <EyeOff v-if="watermarkMode === 'off'" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-400" />
-            <Eye v-else-if="watermarkMode === 'subtle'" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
-            <Shield v-else class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-400" />
-          </button>
+            <!-- Zoom In / Font Larger -->
+            <button 
+              @click="zoomIn" 
+              :disabled="zoomMultiplier >= 2.5"
+              class="p-1.5 hover:text-indigo-400 disabled:opacity-30 transition cursor-pointer rounded-full hover:bg-slate-800"
+              :title="isEpubMode ? 'Perbesar Ukuran Huruf' : 'Perbesar'"
+            >
+              <ZoomIn class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </button>
+
+            <div class="h-4 w-px bg-slate-700 mx-0.5"></div>
+
+            <!-- Quick Watermark Toggle -->
+            <button
+              @click="cycleWatermarkMode"
+              class="p-1.5 hover:text-indigo-400 transition cursor-pointer rounded-full hover:bg-slate-800"
+              :title="watermarkTooltip"
+            >
+              <EyeOff v-if="watermarkMode === 'off'" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-400" />
+              <Eye v-else-if="watermarkMode === 'subtle'" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
+              <Shield v-else class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-400" />
+            </button>
+
+            <div class="h-4 w-px bg-slate-700 mx-0.5"></div>
+
+            <!-- Fullscreen Toggle in Dock -->
+            <button
+              @click="toggleFullscreen"
+              class="p-1.5 transition cursor-pointer rounded-full hover:bg-slate-800"
+              :class="isFullscreen ? 'text-amber-400 bg-amber-500/10' : 'text-slate-300 hover:text-indigo-400'"
+              :title="isFullscreen ? 'Keluar Layar Penuh (Esc / F)' : 'Mode Layar Penuh / Fullscreen (F)'"
+            >
+              <Minimize v-if="isFullscreen" class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <Maximize v-else class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </button>
+
+            <!-- Minimize Dock Button -->
+            <button
+              @click="isDockMinimized = true"
+              class="p-1 sm:p-1.5 text-slate-400 hover:text-white transition cursor-pointer rounded-full hover:bg-slate-800"
+              title="Sembunyikan Panel Kontrol (Mode Baca Fokus)"
+            >
+              <ChevronDown class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -344,8 +442,11 @@
 
     </main>
 
-    <!-- Bottom Advisory Banner (Desktop Only) -->
-    <footer class="bg-slate-950 px-4 py-2 border-t border-slate-850 text-center text-[10px] sm:text-[11px] text-slate-400 shrink-0 hidden sm:flex items-center justify-center gap-2">
+    <!-- Bottom Advisory Banner (Desktop Only - Hidden in Mobile Landscape & Fullscreen) -->
+    <footer 
+      v-if="!isFullscreen" 
+      class="bg-slate-950 px-4 py-2 border-t border-slate-850 text-center text-[10px] sm:text-[11px] text-slate-400 shrink-0 hidden lg:flex items-center justify-center gap-2"
+    >
       <ShieldCheck class="w-3.5 h-3.5 text-emerald-400 shrink-0" />
       <span>Perpustakaan Digital Resmi SDN Pengasinan VII • Dokumen hanya dapat dibaca in-app tanpa opsi unduh bebas demi kepatuhan lisensi.</span>
     </footer>
@@ -362,7 +463,8 @@ import type { Loan } from '../types.js';
 import { useLibraryStore } from '../stores/library.js';
 import { 
   BookOpen, Lock, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, 
-  X, Loader2, AlertTriangle, ShieldCheck, Sparkles, Eye, EyeOff, Shield 
+  X, Loader2, AlertTriangle, ShieldCheck, Sparkles, Eye, EyeOff, Shield,
+  Maximize, Minimize, ChevronDown, ChevronUp
 } from 'lucide-vue-next';
 
 // Configure pdfjs worker
@@ -378,6 +480,7 @@ const emit = defineEmits(['close']);
 const router = useRouter();
 const store = useLibraryStore();
 
+const readerModalRef = ref<HTMLElement | null>(null);
 const readerWorkspaceRef = ref<HTMLElement | null>(null);
 const pdfCanvasRef = ref<HTMLCanvasElement | null>(null);
 const epubContainerRef = ref<HTMLElement | null>(null);
@@ -390,6 +493,61 @@ const totalPages = ref(0);
 const pageInput = ref(1);
 const viewerMode = ref<'canvas' | 'embed'>('canvas');
 const activeWorkingUrl = ref('');
+
+// Fullscreen and immersive reader state
+const isFullscreen = ref(false);
+const isDockMinimized = ref(false);
+
+const getFullscreenElement = () => {
+  return (
+    document.fullscreenElement ||
+    (document as any).webkitFullscreenElement ||
+    (document as any).mozFullScreenElement ||
+    (document as any).msFullscreenElement ||
+    null
+  );
+};
+
+const toggleFullscreen = async () => {
+  try {
+    const isCurrentlyFs = !!getFullscreenElement();
+    if (!isCurrentlyFs) {
+      // Prioritaskan reader modal element, fallback ke documentElement
+      const elem = readerModalRef.value || document.documentElement;
+      if (elem.requestFullscreen) {
+        await elem.requestFullscreen();
+      } else if ((elem as any).webkitRequestFullscreen) {
+        await (elem as any).webkitRequestFullscreen();
+      } else if ((elem as any).mozRequestFullScreen) {
+        await (elem as any).mozRequestFullScreen();
+      } else if ((elem as any).msRequestFullscreen) {
+        await (elem as any).msRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        await document.exitFullscreen();
+      } else if ((document as any).webkitExitFullscreen) {
+        await (document as any).webkitExitFullscreen();
+      } else if ((document as any).mozCancelFullScreen) {
+        await (document as any).mozCancelFullScreen();
+      } else if ((document as any).msExitFullscreen) {
+        await (document as any).msExitFullscreen();
+      }
+    }
+  } catch (err: any) {
+    console.warn('[EbookReader] Fullscreen toggle error:', err?.message || err);
+  }
+};
+
+const handleFullscreenChange = () => {
+  isFullscreen.value = !!getFullscreenElement();
+  setTimeout(() => {
+    handleWindowResize();
+  }, 100);
+  setTimeout(() => {
+    handleWindowResize();
+  }, 350);
+};
 
 // Accurate responsive dimensions (Zero distortion)
 const canvasDisplayWidth = ref(0);
@@ -514,6 +672,15 @@ const cycleWatermarkMode = () => {
 };
 
 const handleClose = () => {
+  if (getFullscreenElement()) {
+    try {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if ((document as any).webkitExitFullscreen) {
+        (document as any).webkitExitFullscreen();
+      }
+    } catch {}
+  }
   cleanup();
   emit('close');
 };
@@ -791,17 +958,18 @@ const renderCurrentPage = async () => {
     // 2. Calculate available width in the reader workspace
     const container = readerWorkspaceRef.value;
     const containerWidth = container ? container.clientWidth : window.innerWidth;
-    const isMobile = window.innerWidth < 640;
+    const isLandscapeMobile = window.innerHeight < 550;
+    const isCompact = window.innerWidth < 640 || isLandscapeMobile || isFullscreen.value;
     
-    // Exact padding: 16px on mobile (8px left & right), 48px on desktop
-    const horizontalPadding = isMobile ? 16 : 48;
+    // Exact padding: 12px when compact/mobile/landscape/fullscreen, 40px on large desktop
+    const horizontalPadding = isCompact ? 12 : 40;
     const availableWidth = Math.max(260, containerWidth - horizontalPadding);
 
     // 3. Compute scale to fit width seamlessly without distortion
     let targetScale = (availableWidth / unscaledViewport.width) * zoomMultiplier.value;
     
     // On large screens, avoid an overly huge page if zoomMultiplier is 1.0
-    if (!isMobile && zoomMultiplier.value === 1.0 && unscaledViewport.width * targetScale > 850) {
+    if (!isCompact && zoomMultiplier.value === 1.0 && unscaledViewport.width * targetScale > 850) {
       targetScale = 850 / unscaledViewport.width;
     }
 
@@ -922,7 +1090,19 @@ const handleKeyDown = (e: KeyboardEvent) => {
   if (!props.isOpen || isExpired.value) return;
   if (e.key === 'ArrowLeft') prevPage();
   if (e.key === 'ArrowRight') nextPage();
-  if (e.key === 'Escape') handleClose();
+  if (e.key === 'f' || e.key === 'F') {
+    if ((e.target as HTMLElement)?.tagName !== 'INPUT') {
+      e.preventDefault();
+      toggleFullscreen();
+    }
+  }
+  if (e.key === 'Escape') {
+    if (isFullscreen.value) {
+      // Browser secara native menangani Esc untuk keluar dari fullscreen
+      return;
+    }
+    handleClose();
+  }
 };
 
 const handleWindowResize = () => {
@@ -936,6 +1116,13 @@ const handleWindowResize = () => {
     }
   }, 150);
 };
+
+onMounted(() => {
+  document.addEventListener('fullscreenchange', handleFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+  document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+  document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+});
 
 // Watcher gabungan untuk menangani pemuatan ulang dokumen
 watch(
@@ -953,6 +1140,12 @@ watch(
     } else {
       cleanup();
       activeWorkingUrl.value = ''; // Pastikan dibersihkan saat modal tutup
+      if (getFullscreenElement()) {
+        try {
+          if (document.exitFullscreen) document.exitFullscreen();
+          else if ((document as any).webkitExitFullscreen) (document as any).webkitExitFullscreen();
+        } catch {}
+      }
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('resize', handleWindowResize);
     }
@@ -969,12 +1162,29 @@ watch(
 
 onUnmounted(() => {
   cleanup();
+  if (getFullscreenElement()) {
+    try {
+      if (document.exitFullscreen) document.exitFullscreen();
+      else if ((document as any).webkitExitFullscreen) (document as any).webkitExitFullscreen();
+    } catch {}
+  }
+  document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+  document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+  document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
   window.removeEventListener('keydown', handleKeyDown);
   window.removeEventListener('resize', handleWindowResize);
 });
 </script>
 
 <style scoped>
+:fullscreen,
+:-webkit-full-screen {
+  background-color: rgb(2, 6, 23);
+  width: 100vw;
+  height: 100vh;
+}
+
 .custom-reader-scroll::-webkit-scrollbar {
   width: 6px;
   height: 6px;
