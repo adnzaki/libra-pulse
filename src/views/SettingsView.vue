@@ -367,7 +367,7 @@
             <input 
               v-model="newVersionInput" 
               type="text" 
-              placeholder="Misal: 1.0.0-beta.2"
+              placeholder="Misal: 1.0.0-beta.3"
               class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 font-mono focus:outline-hidden focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -396,7 +396,7 @@
             @click="resetToCurrentVersion"
             :disabled="isBroadcastingVersion"
             class="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs rounded-xl transition cursor-pointer"
-            title="Kembalikan versi cloud ke versi aplikasi ini (1.0.0-beta.1)"
+            :title="`Kembalikan versi cloud ke versi aplikasi ini (${store.currentAppVersion})`"
           >
             Reset Cloud ke v{{ store.currentAppVersion }}
           </button>
@@ -726,7 +726,7 @@ watch(() => store.isSuperAdmin, (isSuper) => {
 });
 
 // Version Management & OTA Broadcast
-const newVersionInput = ref('1.0.0-beta.2');
+const newVersionInput = ref('1.0.0-beta.3');
 const newVersionMessage = ref('Pembaruan sistem Libra telah tersedia. Silakan muat ulang halaman.');
 const isBroadcastingVersion = ref(false);
 
@@ -744,7 +744,7 @@ const resetToCurrentVersion = async () => {
   isBroadcastingVersion.value = true;
   try {
     await store.broadcastNewAppVersion(store.currentAppVersion, `Aplikasi berjalan pada versi resmi v${store.currentAppVersion}.`);
-    newVersionInput.value = '1.0.0-beta.2';
+    newVersionInput.value = '1.0.0-beta.3';
   } finally {
     isBroadcastingVersion.value = false;
   }
