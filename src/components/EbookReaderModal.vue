@@ -122,16 +122,39 @@
       </div>
 
       <!-- STATE 3: ERROR LOADING PDF -->
-      <div v-else-if="errorMessage" class="my-auto max-w-sm p-6 rounded-3xl bg-slate-900 border border-rose-800/50 text-center space-y-3">
-        <AlertTriangle class="w-8 h-8 text-rose-500 mx-auto" />
-        <div class="font-bold text-sm text-white">Gagal Membuka File e-Book</div>
-        <p class="text-xs text-slate-400 leading-relaxed">{{ errorMessage }}</p>
-        <button 
-          @click="loadDocument" 
-          class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-full transition cursor-pointer"
-        >
-          Coba Muat Ulang
-        </button>
+      <div v-else-if="errorMessage" class="my-auto max-w-md p-6 sm:p-8 rounded-3xl bg-slate-900 border border-rose-800/50 text-center space-y-4 shadow-2xl">
+        <div class="w-12 h-12 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center mx-auto">
+          <AlertTriangle class="w-7 h-7" />
+        </div>
+        <div class="space-y-1">
+          <div class="font-bold text-base text-white">Gagal Membuka File e-Book</div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Dokumen e-Book tidak dapat ditemukan di server penyimpanan.
+          </p>
+        </div>
+        <div class="p-3.5 bg-slate-950/80 rounded-2xl border border-slate-800 text-[11px] text-slate-400 text-left space-y-1.5">
+          <div class="flex items-center gap-1.5 font-semibold text-slate-300">
+            <Sparkles class="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span>Panduan untuk Pengelola / Admin:</span>
+          </div>
+          <p class="leading-relaxed">
+            Jika server baru saja di-deploy atau di-push, pastikan file PDF telah diunggah melalui menu <b>Katalog Buku &gt; Edit Buku</b> di server ini agar file tersimpan di direktori server produksi.
+          </p>
+        </div>
+        <div class="flex items-center justify-center gap-3 pt-2">
+          <button 
+            @click="handleClose" 
+            class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-full transition cursor-pointer"
+          >
+            Tutup
+          </button>
+          <button 
+            @click="loadDocument" 
+            class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-full transition cursor-pointer shadow-lg shadow-indigo-600/30 active:scale-95"
+          >
+            Coba Muat Ulang
+          </button>
+        </div>
       </div>
 
       <!-- STATE 4: ACTIVE VIEWER (CANVAS MODE) -->
@@ -327,6 +350,7 @@ const currentPage = ref(1);
 const totalPages = ref(0);
 const pageInput = ref(1);
 const viewerMode = ref<'canvas' | 'embed'>('canvas');
+const activeWorkingUrl = ref('');
 
 // Accurate responsive dimensions (Zero distortion)
 const canvasDisplayWidth = ref(0);
@@ -373,6 +397,8 @@ const watermarkMemberInfo = computed(() => {
 
 const streamUrl = computed(() => {
   if (!props.loan) return '';
+  if (activeWorkingUrl.value) return activeWorkingUrl.value;
+
   let ebookUrl = props.loan.ebookUrl || '';
   
   // 1. Fallback jika loan belum memiliki ebookUrl, cari dari buku terkait di store
@@ -386,10 +412,12 @@ const streamUrl = computed(() => {
     }
   }
 
+  const titleParam = encodeURIComponent(props.loan?.bookTitle || '');
+
   // 2. Jika ebookUrl mengarah ke /uploads/ebooks/
   if (ebookUrl && ebookUrl.startsWith('/uploads/ebooks/')) {
     const filename = ebookUrl.replace('/uploads/ebooks/', '');
-    return `/api/ebook-stream/${encodeURIComponent(filename)}`;
+    return `/api/ebook-stream/${encodeURIComponent(filename)}?title=${titleParam}`;
   }
 
   // 3. Jika ada ebookUrl yang valid
@@ -399,7 +427,7 @@ const streamUrl = computed(() => {
 
   // 4. Fallback jika masih kosong, streaming langsung berdasarkan judul buku
   if (props.loan?.bookTitle) {
-    return `/api/ebook-stream-by-title?title=${encodeURIComponent(props.loan.bookTitle)}`;
+    return `/api/ebook-stream-by-title?title=${titleParam}`;
   }
 
   return '';
@@ -473,14 +501,67 @@ const cleanup = () => {
   totalPages.value = 0;
   errorMessage.value = '';
   zoomMultiplier.value = 1.0;
+  viewerMode.value = 'canvas';
 };
 
 const loadDocument = async () => {
   if (!props.isOpen || !props.loan || isExpired.value) return;
 
-  const url = streamUrl.value;
-  if (!url) {
-    errorMessage.value = 'Tautan dokumen e-Book tidak valid atau belum diunggah.';
+  let ebookUrl = props.loan.ebookUrl || '';
+  if (!ebookUrl) {
+    const book = store.books.find(b => 
+      (props.loan?.bookId && b.id === props.loan.bookId) ||
+      (props.loan?.bookTitle && b.title.trim().toLowerCase() === props.loan.bookTitle.trim().toLowerCase())
+    );
+    if (book) {
+      ebookUrl = book.ebookUrl || (book as any).ebookFile || '';
+    }
+  }
+
+  const bookTitle = props.loan.bookTitle || '';
+  const titleParam = encodeURIComponent(bookTitle);
+  const rawFilename = ebookUrl && ebookUrl.startsWith('/uploads/ebooks/') 
+    ? ebookUrl.replace('/uploads/ebooks/', '') 
+    : '';
+
+  // Bangun daftar kandidat URL fallback (prioritaskan cache-buster agar tidak tertahan oleh cache 404 Cloudflare/Proxy)
+  const timestamp = Date.now();
+  const rawCandidates: string[] = [];
+
+  // Jika sebelumnya sudah ada activeWorkingUrl, prioritaskan
+  if (activeWorkingUrl.value) {
+    rawCandidates.push(activeWorkingUrl.value);
+  }
+
+  // 1. Streaming by filename dengan query judul (agar backend bisa fuzzy match jika nama file berbeda)
+  if (rawFilename) {
+    rawCandidates.push(`/api/ebook-stream/${encodeURIComponent(rawFilename)}?title=${titleParam}&_cb=${timestamp}`);
+    rawCandidates.push(`/api/ebook-stream/${encodeURIComponent(rawFilename)}`);
+  }
+
+  // 2. Streaming cerdas berdasarkan judul buku (sangat ampuh jika nama file di disk berbeda)
+  if (bookTitle) {
+    rawCandidates.push(`/api/ebook-stream-by-title?title=${titleParam}&_cb=${timestamp}`);
+    rawCandidates.push(`/api/ebook-stream-by-title?title=${titleParam}`);
+  }
+
+  // 3. Jika ebookUrl eksternal atau path langsung
+  if (ebookUrl) {
+    if (rawFilename) {
+      rawCandidates.push(`/uploads/ebooks/${encodeURIComponent(rawFilename)}?_cb=${timestamp}`);
+      rawCandidates.push(`/uploads/ebooks/${encodeURIComponent(rawFilename)}`);
+    } else {
+      const sep = ebookUrl.includes('?') ? '&' : '?';
+      rawCandidates.push(`${ebookUrl}${sep}_cb=${timestamp}`);
+      rawCandidates.push(ebookUrl);
+    }
+  }
+
+  // Hilangkan duplikat
+  const candidateUrls = Array.from(new Set(rawCandidates.filter(Boolean)));
+
+  if (candidateUrls.length === 0) {
+    errorMessage.value = 'Tautan dokumen e-Book belum tersedia untuk buku ini.';
     return;
   }
 
@@ -488,30 +569,36 @@ const loadDocument = async () => {
   isLoadingDoc.value = true;
   errorMessage.value = '';
 
-  try {
-    const loadingTask = pdfjsLib.getDocument({
-      url
-    });
+  let loaded = false;
+  let lastError: any = null;
 
-    pdfDoc = await loadingTask.promise;
-    totalPages.value = pdfDoc.numPages;
-    currentPage.value = 1;
-    pageInput.value = 1;
-    isLoadingDoc.value = false;
+  for (const candidate of candidateUrls) {
+    try {
+      console.log(`[EbookReader] Mencoba memuat e-Book dari: ${candidate}`);
+      const loadingTask = pdfjsLib.getDocument({
+        url: candidate,
+      });
 
-    await nextTick();
-    await renderCurrentPage();
-  } catch (err: any) {
-    console.error('Error loading PDF in canvas mode:', err);
-    // Fallback to embed iframe mode if pdfjs has worker or rendering issue
-    if (viewerMode.value === 'canvas') {
-      viewerMode.value = 'embed';
+      pdfDoc = await loadingTask.promise;
+      totalPages.value = pdfDoc.numPages;
+      currentPage.value = 1;
+      pageInput.value = 1;
       isLoadingDoc.value = false;
-      errorMessage.value = '';
-    } else {
-      errorMessage.value = err?.message || 'Gagal memuat dokumen e-Book dari server.';
-      isLoadingDoc.value = false;
+      activeWorkingUrl.value = candidate;
+      loaded = true;
+
+      await nextTick();
+      await renderCurrentPage();
+      break;
+    } catch (err: any) {
+      console.warn(`[EbookReader] Gagal memuat dari ${candidate}:`, err?.message || err);
+      lastError = err;
     }
+  }
+
+  if (!loaded) {
+    isLoadingDoc.value = false;
+    errorMessage.value = lastError?.message || 'File dokumen e-Book tidak ditemukan di server produksi.';
   }
 };
 
@@ -660,6 +747,13 @@ watch(
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('resize', handleWindowResize);
     }
+  }
+);
+
+watch(
+  () => props.loan?.id,
+  () => {
+    activeWorkingUrl.value = '';
   }
 );
 

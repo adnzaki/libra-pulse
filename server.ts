@@ -96,7 +96,7 @@ const ebookStorage = multer.diskStorage({
     cb(null, ebooksDir)
   },
   filename: (req, file, cb) => {
-    const rawName = req.body.filename || file.originalname.replace(/\.[^/.]+$/, '')
+    const rawName = (req.body.filename || file.originalname.replace(/\.[^/.]+$/, '')).replace(/^ebook_+/, '')
     const cleanName = rawName.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40)
     cb(
       null,
@@ -619,30 +619,95 @@ app.post('/api/delete-ebook', (req, res) => {
   }
 })
 
+// Helper pencarian cerdas file PDF e-Book berdasarkan nama file atau kata kunci judul
+function extractEbookTokens(str: string): string[] {
+  return str
+    .toLowerCase()
+    .replace(/^ebook_+/, '')
+    .replace(/\.pdf$/i, '')
+    .replace(/_\d+_[a-z0-9]+$/i, '') // Hapus timestamp dan random suffix
+    .replace(/[^a-z0-9]/g, ' ')
+    .split(/\s+/)
+    .filter(t => t.length >= 2)
+}
+
+function findBestEbookFile(searchFilename: string, searchTitle?: string): string | null {
+  if (!fs.existsSync(ebooksDir)) return null
+  const files = fs.readdirSync(ebooksDir).filter(f => f.toLowerCase().endsWith('.pdf'))
+  if (files.length === 0) return null
+
+  const safeFilename = path.basename(decodeURIComponent(searchFilename || '')).trim()
+
+  // 1. Kecocokan nama file secara persis (exact match)
+  if (safeFilename && files.includes(safeFilename)) {
+    return safeFilename
+  }
+
+  // 2. Kecocokan case-insensitive
+  const ciMatch = files.find(f => f.toLowerCase() === safeFilename.toLowerCase())
+  if (ciMatch) return ciMatch
+
+  // 3. Ekstraksi token dari nama file dan judul buku
+  const filenameTokens = safeFilename ? extractEbookTokens(safeFilename) : []
+  const titleTokens = searchTitle ? extractEbookTokens(searchTitle) : []
+  const allTokens = Array.from(new Set([...filenameTokens, ...titleTokens]))
+
+  if (allTokens.length > 0) {
+    let bestMatch: string | null = null
+    let maxScore = 0
+
+    for (const f of files) {
+      const lower = f.toLowerCase()
+      let score = 0
+      for (const token of allTokens) {
+        if (lower.includes(token)) {
+          // Bobot token lebih panjang lebih tinggi
+          score += token.length
+        }
+      }
+      if (score > maxScore) {
+        maxScore = score
+        bestMatch = f
+      }
+    }
+
+    if (bestMatch && maxScore >= 3) {
+      return bestMatch
+    }
+  }
+
+  // 4. Substring fallback match
+  if (safeFilename) {
+    const cleanBase = safeFilename.replace(/^ebook_+/, '').replace(/\.pdf$/i, '').toLowerCase()
+    const subMatch = files.find(f => {
+      const lower = f.toLowerCase()
+      return lower.includes(cleanBase) || cleanBase.includes(lower.replace(/\.pdf$/i, ''))
+    })
+    if (subMatch) return subMatch
+  }
+
+  // 5. Jika hanya ada 1 file ebook selain sample, gunakan file tersebut
+  const customPdfs = files.filter(f => !f.startsWith('sample_'))
+  if (customPdfs.length === 1) {
+    return customPdfs[0]
+  }
+
+  return null
+}
+
 // Endpoint Streaming e-Book (Inline stream with no-download / protected headers & Range support)
 app.get('/api/ebook-stream/:filename', (req, res) => {
   try {
     const safeFilename = path.basename(decodeURIComponent(req.params.filename || ''))
-    let filePath = path.join(ebooksDir, safeFilename)
+    const titleQuery = (req.query.title as string) || ''
+    
+    let targetFile = findBestEbookFile(safeFilename, titleQuery)
+    let filePath = targetFile ? path.join(ebooksDir, targetFile) : null
 
-    if (!fs.existsSync(filePath)) {
-      // Robust fallback search: cari file dalam folder ebooks yang namanya cocok
-      if (fs.existsSync(ebooksDir)) {
-        const files = fs.readdirSync(ebooksDir)
-        const baseSearch = safeFilename.replace(/\.pdf$/i, '').toLowerCase()
-        const matched = files.find(f => {
-          const lower = f.toLowerCase()
-          return lower === safeFilename.toLowerCase() ||
-                 lower.includes(baseSearch) ||
-                 baseSearch.includes(lower.replace(/\.pdf$/i, ''))
-        })
-        if (matched) {
-          filePath = path.join(ebooksDir, matched)
-        }
-      }
-    }
-
-    if (!fs.existsSync(filePath)) {
+    if (!filePath || !fs.existsSync(filePath)) {
+      // Pastikan Cloudflare / proxy tidak melakukan cache terhadap respon 404
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+      res.setHeader('Pragma', 'no-cache')
       return res.status(404).json({ success: false, error: 'File e-Book tidak ditemukan di server.' })
     }
 
@@ -655,6 +720,7 @@ app.get('/api/ebook-stream/:filename', (req, res) => {
     return res.sendFile(filePath)
   } catch (err: any) {
     console.error('>>> Gagal streaming file e-book:', err)
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
     return res.status(500).json({ success: false, error: 'Gagal memuat e-Book.' })
   }
 })
@@ -662,47 +728,20 @@ app.get('/api/ebook-stream/:filename', (req, res) => {
 // Endpoint Streaming e-Book Berdasarkan Judul Buku (Fallback pintar jika link belum tercatat)
 app.get('/api/ebook-stream-by-title', (req, res) => {
   try {
-    const title = (req.query.title as string || '').toLowerCase().trim()
+    const title = (req.query.title as string || '').trim()
     if (!title) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
       return res.status(400).json({ success: false, error: 'Parameter judul buku wajib disertakan.' })
     }
 
-    if (!fs.existsSync(ebooksDir)) {
-      return res.status(404).json({ success: false, error: 'Direktori e-Book tidak ditemukan.' })
-    }
-
-    const files = fs.readdirSync(ebooksDir)
-    const tokens = title.replace(/[^a-z0-9]/g, ' ').split(/\s+/).filter(t => t.length > 2)
-
-    let bestMatch: string | null = null
-    let maxMatches = 0
-
-    for (const f of files) {
-      if (!f.endsWith('.pdf')) continue
-      const lower = f.toLowerCase()
-      let matchCount = 0
-      for (const token of tokens) {
-        if (lower.includes(token)) matchCount++
-      }
-      if (matchCount > maxMatches) {
-        maxMatches = matchCount
-        bestMatch = f
-      }
-    }
-
-    // Jika tidak ada kecocokan token khusus, ambil file PDF yang paling baru diupload
-    if (!bestMatch || maxMatches === 0) {
-      const pdfs = files.filter(f => f.endsWith('.pdf') && !f.startsWith('sample_'))
-      if (pdfs.length > 0) {
-        bestMatch = pdfs[0]
-      }
-    }
-
-    if (!bestMatch) {
+    const targetFile = findBestEbookFile('', title)
+    if (!targetFile) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+      res.setHeader('Pragma', 'no-cache')
       return res.status(404).json({ success: false, error: 'File e-Book tidak ditemukan untuk judul buku ini.' })
     }
 
-    const filePath = path.join(ebooksDir, bestMatch)
+    const filePath = path.join(ebooksDir, targetFile)
     res.setHeader('Content-Disposition', 'inline; filename="document.pdf"')
     res.setHeader('X-Content-Type-Options', 'nosniff')
     res.setHeader('Access-Control-Allow-Origin', '*')
@@ -712,6 +751,7 @@ app.get('/api/ebook-stream-by-title', (req, res) => {
     return res.sendFile(filePath)
   } catch (err: any) {
     console.error('>>> Gagal streaming file e-book by title:', err)
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
     return res.status(500).json({ success: false, error: 'Gagal memuat e-Book.' })
   }
 })
