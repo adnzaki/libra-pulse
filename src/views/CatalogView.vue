@@ -213,62 +213,59 @@
                 :alt="book.title"
                 class="w-full h-full object-cover group-hover:scale-105 transition duration-500" 
               />
-              <div class="absolute inset-0 bg-gradient-to-t from-slate-900/75 via-transparent to-black/30 pointer-events-none"></div>
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-black/25 pointer-events-none"></div>
               
-              <!-- Badges Container: Unified single header row (never overlaps on mobile) -->
+              <!-- Badges Container: Top Row with Format (Left) and Availability (Right) - Never overlaps on mobile -->
               <div class="absolute top-2 inset-x-2 sm:top-2.5 sm:inset-x-2.5 flex items-center justify-between gap-1.5 z-10 pointer-events-none">
-                <!-- Kategori Buku (Truncate rapi, tidak saling bertumpuk dengan badge kanan) -->
-                <span 
-                  class="pointer-events-auto px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full bg-white/95 backdrop-blur-md text-[8px] sm:text-[9px] uppercase font-bold tracking-wider text-slate-700 shadow-xs border border-slate-200/60 truncate min-w-0 max-w-[60%]"
-                  :title="book.category"
-                >
-                  {{ book.category }}
-                </span>
-
-                <!-- Format Buku Digital atau Lokasi Rak Fisik (Satu badge informatif di kanan atas) -->
-                <div class="shrink-0 pointer-events-auto flex items-center">
-                  <!-- e-Book Badge: Tampilkan satu pill rapi (ePub / e-Book), tidak dobel dengan Digital -->
+                <!-- Format Buku Digital atau Lokasi Rak Fisik (Kiri Atas) -->
+                <div class="pointer-events-auto shrink-0">
                   <span 
                     v-if="book.isEbook"
-                    class="px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full bg-indigo-600 text-white text-[8.5px] sm:text-[9.5px] font-extrabold uppercase tracking-wider shadow-xs flex items-center gap-1 shrink-0"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full bg-indigo-600/95 backdrop-blur-md text-white text-[8px] sm:text-[9px] font-extrabold uppercase tracking-wider shadow-sm"
                     :title="`Buku Digital (${(book.ebookFormat || 'e-Book').toUpperCase()})`"
                   >
                     <Smartphone class="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
                     <span>{{ book.ebookFormat?.toLowerCase() === 'epub' ? 'ePub' : 'e-Book' }}</span>
                   </span>
 
-                  <!-- Lokasi Rak Fisik -->
                   <router-link 
                     v-else
                     to="/shelves"
-                    class="px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full bg-slate-900/85 backdrop-blur-md text-[8.5px] sm:text-[9.5px] font-mono font-bold text-white flex items-center gap-1 hover:bg-slate-900 shadow-xs shrink-0 transition"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full bg-slate-900/90 backdrop-blur-md text-white text-[8px] sm:text-[9px] font-mono font-bold hover:bg-slate-900 shadow-sm transition shrink-0"
                     title="Lokasi Rak Fisik"
                   >
                     <MapPin class="w-2.5 h-2.5 sm:w-3 sm:h-3 text-amber-400 shrink-0" />
                     <span>{{ book.shelfCode }}</span>
                   </router-link>
                 </div>
-              </div>
 
-              <!-- Availability Status Badge on Cover Bottom -->
-              <div class="absolute bottom-2 left-2 right-2 sm:bottom-3 sm:left-3 sm:right-3 flex items-center justify-between text-[9px] sm:text-[10px] bg-white/95 backdrop-blur-md px-2 py-1 sm:px-3 sm:py-1.5 rounded-full shadow-sm">
-                <div class="flex items-center gap-1 min-w-0">
+                <!-- Status Ketersediaan (Kanan Atas) -->
+                <div class="pointer-events-auto shrink-0">
                   <span 
-                    class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full shrink-0" 
-                    :class="book.availableCopies > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'"
-                  ></span>
-                  <span class="font-bold truncate" :class="book.availableCopies > 0 ? 'text-slate-900' : 'text-rose-600'">
-                    {{ book.isEbook ? (book.availableCopies > 0 ? 'Akses Siap' : 'Penuh') : (book.availableCopies > 0 ? `${book.availableCopies} Ada` : 'Habis') }}
+                    class="inline-flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full backdrop-blur-md text-[8px] sm:text-[9px] font-bold shadow-sm"
+                    :class="book.availableCopies > 0 
+                      ? 'bg-emerald-600/95 text-white' 
+                      : 'bg-rose-600/95 text-white'"
+                  >
+                    <span class="w-1.5 h-1.5 rounded-full bg-white shrink-0" :class="{ 'animate-pulse': book.availableCopies > 0 }"></span>
+                    <span>{{ book.isEbook ? (book.availableCopies > 0 ? 'Tersedia' : 'Penuh') : (book.availableCopies > 0 ? `${book.availableCopies} Ada` : 'Habis') }}</span>
                   </span>
                 </div>
-                <span v-if="book.reservedCopies > 0" class="text-amber-600 font-bold shrink-0 text-[8.5px] sm:text-[9.5px]">
-                  {{ book.reservedCopies }} hold
-                </span>
               </div>
             </div>
 
             <!-- Card Info -->
             <div class="p-2.5 sm:p-4 space-y-1">
+              <!-- Category & Hold Info Row -->
+              <div class="flex items-center justify-between gap-1.5 text-[9px] sm:text-[10px]">
+                <span class="font-bold text-blue-600 uppercase tracking-wider truncate" :title="book.category">
+                  {{ book.category }}
+                </span>
+                <span v-if="book.reservedCopies > 0" class="text-amber-700 font-bold shrink-0 bg-amber-50 border border-amber-200/60 px-1.5 py-0.2 rounded-md text-[8px] sm:text-[9px]">
+                  {{ book.reservedCopies }} hold
+                </span>
+              </div>
+
               <h3 
                 @click="openDetail(book)"
                 class="font-bold text-xs sm:text-sm text-slate-900 hover:text-blue-600 transition cursor-pointer line-clamp-2 leading-snug"

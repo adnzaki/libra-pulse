@@ -38,18 +38,49 @@
 
       <!-- Right Toolbar Controls -->
       <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <!-- View Mode Switcher: Mode Baca (Teks Reflow) vs Halaman Asli (Canvas) -->
+        <div 
+          v-if="!isExpired && pdfDoc && !isEpubMode" 
+          class="flex items-center bg-slate-800 p-0.5 rounded-full border border-slate-700/80 shadow-xs mr-0.5 sm:mr-1"
+        >
+          <button
+            @click="setReadingView('reflow')"
+            class="flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full text-xs font-semibold transition cursor-pointer"
+            :class="readingView === 'reflow' 
+              ? 'bg-indigo-600 text-white shadow-xs' 
+              : 'text-slate-400 hover:text-slate-200'"
+            title="Mode Baca Teks: Otomatis menyesuaikan ukuran layar HP tanpa perlu zoom"
+          >
+            <AlignLeft class="w-3.5 h-3.5" />
+            <span class="text-[11px] font-medium hidden xs:inline">Mode Baca</span>
+            <span class="text-[11px] font-medium xs:hidden">Baca</span>
+          </button>
+          <button
+            @click="setReadingView('canvas')"
+            class="flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full text-xs font-semibold transition cursor-pointer"
+            :class="readingView === 'canvas' 
+              ? 'bg-indigo-600 text-white shadow-xs' 
+              : 'text-slate-400 hover:text-slate-200'"
+            title="Tampilan Halaman Asli Dokumen"
+          >
+            <FileText class="w-3.5 h-3.5" />
+            <span class="text-[11px] font-medium hidden xs:inline">Halaman Asli</span>
+            <span class="text-[11px] font-medium xs:hidden">Asli</span>
+          </button>
+        </div>
+
         <!-- Fullscreen Toggle Button -->
         <button
           @click="toggleFullscreen"
-          class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-xs font-semibold transition cursor-pointer active:scale-95 shadow-xs"
+          class="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-full border text-xs font-semibold transition cursor-pointer active:scale-95 shadow-xs"
           :class="isFullscreen 
             ? 'bg-amber-500/20 border-amber-500/40 text-amber-300 hover:bg-amber-500/30' 
             : 'bg-slate-800 hover:bg-slate-700 border-slate-700/70 text-slate-300 hover:text-white'"
           :title="isFullscreen ? 'Keluar Layar Penuh (Esc / F)' : 'Layar Penuh / Fullscreen (F)'"
         >
-          <Minimize v-if="isFullscreen" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
-          <Maximize v-else class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-400" />
-          <span class="text-[11px] hidden sm:inline">
+          <Minimize v-if="isFullscreen" class="w-3.5 h-3.5 text-amber-400" />
+          <Maximize v-else class="w-3.5 h-3.5 text-indigo-400" />
+          <span class="text-[11px] hidden md:inline">
             {{ isFullscreen ? 'Normal' : 'Layar Penuh' }}
           </span>
         </button>
@@ -58,26 +89,15 @@
         <button
           v-if="!isExpired && (pdfDoc || isEpubMode)"
           @click="cycleWatermarkMode"
-          class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700/70 text-slate-300 text-xs transition cursor-pointer"
+          class="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700/70 text-slate-300 text-xs transition cursor-pointer"
           :title="watermarkTooltip"
         >
           <EyeOff v-if="watermarkMode === 'off'" class="w-3.5 h-3.5 text-rose-400" />
           <Eye v-else-if="watermarkMode === 'subtle'" class="w-3.5 h-3.5 text-emerald-400" />
           <Shield v-else class="w-3.5 h-3.5 text-indigo-400" />
-          <span class="text-[11px] font-medium hidden xs:inline">
+          <span class="text-[11px] font-medium hidden md:inline">
             {{ watermarkLabel }}
           </span>
-        </button>
-
-        <!-- Mode Canvas / Embed Toggle (Desktop for PDF) -->
-        <button 
-          v-if="!isExpired && pdfDoc && !isEpubMode"
-          @click="toggleViewerMode" 
-          class="p-2 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 transition text-xs font-semibold cursor-pointer hidden md:flex items-center gap-1.5"
-          :title="viewerMode === 'canvas' ? 'Gunakan mode Dokumen Standar' : 'Gunakan mode Canvas Pembaca'"
-        >
-          <Sparkles class="w-3.5 h-3.5 text-indigo-400" />
-          <span class="text-[11px]">{{ viewerMode === 'canvas' ? 'Mode Canvas' : 'Mode Dokumen' }}</span>
         </button>
 
         <!-- Close Button -->
@@ -216,9 +236,202 @@
           </div>
         </div>
 
-        <!-- Canvas Container with Watermark Security Overlay (FOR PDF) -->
+        <!-- MODE BACA TEKS (FOR PDF - Responsive Reflow Mode, Fits 100% Screen Width) -->
         <div 
-          v-else-if="pdfDoc"
+          v-else-if="pdfDoc && readingView === 'reflow'"
+          class="w-full max-w-2xl sm:max-w-3xl flex flex-col items-center my-auto transition-all duration-200 shrink-0 relative px-1 sm:px-0"
+        >
+          <!-- Quick Styling Toolbar (Theme & Typography) -->
+          <div class="w-full mb-3 flex flex-wrap items-center justify-between gap-2 px-1 text-xs">
+            <!-- Theme Presets: Sepia, Light, Dark -->
+            <div class="flex items-center gap-1 bg-slate-800/95 backdrop-blur-md p-1 rounded-full border border-slate-700/80 shadow-md">
+              <button 
+                @click="setReaderTheme('sepia')"
+                class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition cursor-pointer"
+                :class="readerTheme === 'sepia' 
+                  ? 'bg-[#FAF4E8] text-[#3D2B1F] shadow-xs' 
+                  : 'text-slate-400 hover:text-white'"
+                title="Tema Kertas Sepia (Hangat & Nyaman di Mata)"
+              >
+                <span class="w-2.5 h-2.5 rounded-full bg-[#FAF4E8] border border-amber-300/40 shrink-0"></span>
+                <span>Sepia</span>
+              </button>
+              <button 
+                @click="setReaderTheme('light')"
+                class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition cursor-pointer"
+                :class="readerTheme === 'light' 
+                  ? 'bg-white text-slate-900 shadow-xs' 
+                  : 'text-slate-400 hover:text-white'"
+                title="Tema Terang (Putih Bersih)"
+              >
+                <span class="w-2.5 h-2.5 rounded-full bg-white border border-slate-300 shrink-0"></span>
+                <span>Terang</span>
+              </button>
+              <button 
+                @click="setReaderTheme('dark')"
+                class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition cursor-pointer"
+                :class="readerTheme === 'dark' 
+                  ? 'bg-slate-900 text-slate-100 border border-slate-700 shadow-xs' 
+                  : 'text-slate-400 hover:text-white'"
+                title="Tema Gelap (Mode Malam)"
+              >
+                <span class="w-2.5 h-2.5 rounded-full bg-slate-950 border border-slate-600 shrink-0"></span>
+                <span>Gelap</span>
+              </button>
+            </div>
+
+            <!-- Typography Adjusters (Serif/Sans, Font Size) -->
+            <div class="flex items-center gap-1 bg-slate-800/95 backdrop-blur-md p-1 rounded-full border border-slate-700/80 shadow-md">
+              <button
+                @click="toggleFontFamily"
+                class="px-2.5 py-1 rounded-full text-[11px] font-semibold text-slate-300 hover:text-white transition cursor-pointer hover:bg-slate-700"
+                :title="readerFontFamily === 'serif' ? 'Beralih ke font Modern (Sans)' : 'Beralih ke font Buku Klasik (Serif)'"
+              >
+                {{ readerFontFamily === 'serif' ? 'Buku (Serif)' : 'Modern (Sans)' }}
+              </button>
+              <div class="h-3 w-px bg-slate-700"></div>
+              <button 
+                @click="decreaseFontSize" 
+                :disabled="readerFontSize <= 13"
+                class="px-2 py-0.5 text-xs text-slate-300 hover:text-indigo-400 disabled:opacity-30 cursor-pointer font-bold"
+                title="Perkecil Ukuran Huruf (A-)"
+              >
+                A-
+              </button>
+              <span class="text-[11px] font-mono text-indigo-300 font-bold px-1">{{ readerFontSize }}px</span>
+              <button 
+                @click="increaseFontSize" 
+                :disabled="readerFontSize >= 26"
+                class="px-2 py-0.5 text-xs text-slate-300 hover:text-indigo-400 disabled:opacity-30 cursor-pointer font-bold"
+                title="Perbesar Ukuran Huruf (A+)"
+              >
+                A+
+              </button>
+            </div>
+          </div>
+
+          <!-- Reflowable Reading Card -->
+          <div 
+            class="relative w-full rounded-2xl sm:rounded-3xl border shadow-2xl p-5 sm:p-10 transition-colors duration-200 overflow-hidden"
+            :class="themeCardClasses"
+            :style="{
+              fontFamily: readerFontFamily === 'serif' ? 'Georgia, Cambria, &quot;Times New Roman&quot;, serif' : 'system-ui, -apple-system, sans-serif'
+            }"
+          >
+            <!-- Watermark Security Overlay -->
+            <div 
+              v-if="watermarkMode !== 'off'"
+              class="absolute inset-0 pointer-events-none flex flex-col justify-around p-4 sm:p-10 overflow-hidden select-none"
+              :class="{
+                'opacity-[0.04]': watermarkMode === 'subtle',
+                'opacity-[0.08]': watermarkMode === 'normal'
+              }"
+            >
+              <div 
+                v-for="i in 3" 
+                :key="i" 
+                class="transform -rotate-25 font-sans text-[11px] font-medium tracking-widest uppercase text-center"
+              >
+                SDN PENGASINAN VII • {{ watermarkMemberInfo }}
+              </div>
+            </div>
+
+            <!-- State A: Loading Text -->
+            <div v-if="isLoadingText" class="py-16 text-center space-y-3">
+              <Loader2 class="w-7 h-7 animate-spin text-indigo-500 mx-auto" />
+              <p class="text-xs font-semibold opacity-70">Menyesuaikan tata letak teks ke ukuran layar...</p>
+            </div>
+
+            <!-- State B: Scanned / Cover Fallback -->
+            <div 
+              v-else-if="currentExtractedText.isScanOnly" 
+              class="py-12 px-4 text-center space-y-4 max-w-md mx-auto"
+            >
+              <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/30 flex items-center justify-center mx-auto">
+                <FileText class="w-6 h-6" />
+              </div>
+              <div class="space-y-1.5">
+                <h4 class="font-bold text-sm sm:text-base">Halaman Gambar / Dokumen Pindaian</h4>
+                <p class="text-xs opacity-75 leading-relaxed">
+                  Halaman {{ currentPage }} tidak memiliki lapisan teks digital (berupa sampul buku, diagram, atau hasil scan).
+                </p>
+              </div>
+              <button 
+                @click="setReadingView('canvas')"
+                class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs transition cursor-pointer shadow-md inline-flex items-center gap-1.5"
+              >
+                <FileText class="w-4 h-4" />
+                <span>Buka Tampilan Halaman Asli</span>
+              </button>
+            </div>
+
+            <!-- State C: Formatted Reflowable Content -->
+            <div v-else class="space-y-4 select-text relative z-10" :style="{ fontSize: `${readerFontSize}px` }">
+              <!-- Top Page Info -->
+              <div class="flex items-center justify-between pb-3 mb-2 border-b text-[11px] opacity-60 font-mono" :class="readerTheme === 'dark' ? 'border-slate-800' : 'border-slate-300/60'">
+                <span class="truncate max-w-[200px]">{{ loan?.bookTitle }}</span>
+                <span class="shrink-0">Hal {{ currentPage }} / {{ totalPages }}</span>
+              </div>
+
+              <!-- Paragraphs -->
+              <template v-for="(paragraph, pIdx) in currentExtractedText.paragraphs" :key="pIdx">
+                <!-- Chapter / Title Heading -->
+                <h3 
+                  v-if="isHeadingParagraph(paragraph)"
+                  class="font-extrabold text-center tracking-wider uppercase my-4 leading-snug"
+                  :class="readerTheme === 'dark' ? 'text-indigo-300' : (readerTheme === 'sepia' ? 'text-[#302013]' : 'text-slate-900')"
+                  :style="{ fontSize: `${readerFontSize * 1.25}px` }"
+                >
+                  {{ paragraph }}
+                </h3>
+
+                <!-- Subtitle / Summary block -->
+                <div 
+                  v-else-if="isSubtitleParagraph(paragraph)"
+                  class="font-semibold text-center tracking-wide uppercase opacity-85 my-3 px-2 sm:px-6 leading-relaxed"
+                  :style="{ fontSize: `${readerFontSize * 0.88}px` }"
+                >
+                  {{ paragraph }}
+                </div>
+
+                <!-- Body Paragraph: perfectly fits mobile screen, wraps text automatically -->
+                <p 
+                  v-else 
+                  class="leading-[1.8] text-justify sm:text-left indent-5 sm:indent-8 my-3.5 break-words"
+                >
+                  {{ paragraph }}
+                </p>
+              </template>
+
+              <!-- Bottom Page Navigation inside Card -->
+              <div class="pt-6 mt-6 border-t flex items-center justify-between gap-2 text-xs" :class="readerTheme === 'dark' ? 'border-slate-800 text-slate-400' : 'border-slate-300/60 text-slate-600'">
+                <button 
+                  @click="prevPage" 
+                  :disabled="currentPage <= 1 || isLoadingPage || isLoadingText"
+                  class="px-3 py-1.5 rounded-lg border font-semibold hover:opacity-80 disabled:opacity-30 transition cursor-pointer flex items-center gap-1"
+                >
+                  <ChevronLeft class="w-3.5 h-3.5" />
+                  <span>Sebelumnya</span>
+                </button>
+
+                <span class="font-mono text-[11px]">Halaman {{ currentPage }} dari {{ totalPages }}</span>
+
+                <button 
+                  @click="nextPage" 
+                  :disabled="currentPage >= totalPages || isLoadingPage || isLoadingText"
+                  class="px-3 py-1.5 rounded-lg border font-semibold hover:opacity-80 disabled:opacity-30 transition cursor-pointer flex items-center gap-1"
+                >
+                  <span>Berikutnya</span>
+                  <ChevronRight class="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Canvas Container with Watermark Security Overlay (FOR PDF ORIGINAL CANVAS) -->
+        <div 
+          v-else-if="pdfDoc && readingView === 'canvas'"
           class="relative rounded-lg shadow-2xl overflow-hidden bg-white border border-slate-700/50 transition-[width,height] duration-150 shrink-0"
           :style="{
             width: canvasDisplayWidth ? `${canvasDisplayWidth}px` : 'auto',
@@ -280,7 +493,7 @@
           >
             <button 
               @click="prevPage" 
-              :disabled="currentPage <= 1 || isLoadingPage"
+              :disabled="currentPage <= 1 || isLoadingPage || isLoadingText"
               class="p-1 hover:text-indigo-400 disabled:opacity-30 cursor-pointer rounded-full"
               title="Halaman Sebelumnya"
             >
@@ -293,7 +506,7 @@
 
             <button 
               @click="nextPage" 
-              :disabled="(totalPages > 0 && currentPage >= totalPages) || isLoadingPage"
+              :disabled="(totalPages > 0 && currentPage >= totalPages) || isLoadingPage || isLoadingText"
               class="p-1 hover:text-indigo-400 disabled:opacity-30 cursor-pointer rounded-full"
               title="Halaman Berikutnya"
             >
@@ -301,16 +514,6 @@
             </button>
 
             <div class="h-3 w-px bg-slate-700 mx-0.5"></div>
-
-            <button
-              @click="toggleFullscreen"
-              class="p-1 transition cursor-pointer rounded-full hover:bg-slate-800"
-              :class="isFullscreen ? 'text-amber-400' : 'text-slate-300 hover:text-indigo-400'"
-              :title="isFullscreen ? 'Keluar Layar Penuh (Esc)' : 'Layar Penuh (Fullscreen)'"
-            >
-              <Minimize v-if="isFullscreen" class="w-3.5 h-3.5" />
-              <Maximize v-else class="w-3.5 h-3.5" />
-            </button>
 
             <button
               @click="isDockMinimized = false"
@@ -321,7 +524,7 @@
             </button>
           </div>
 
-          <!-- EXPANDED DOCK: Full tools with Fullscreen & Minimizer -->
+          <!-- EXPANDED DOCK: Clean tools without redundant top icons -->
           <div 
             v-else 
             class="flex items-center gap-1 sm:gap-2 bg-slate-900/95 backdrop-blur-md px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full border border-slate-700/80 text-white text-xs shadow-2xl animate-in zoom-in-95 duration-150"
@@ -329,7 +532,7 @@
             <!-- Prev Button -->
             <button 
               @click="prevPage" 
-              :disabled="currentPage <= 1 || isLoadingPage"
+              :disabled="currentPage <= 1 || isLoadingPage || isLoadingText"
               class="p-1.5 sm:p-2 hover:text-indigo-400 disabled:opacity-30 transition cursor-pointer rounded-full hover:bg-slate-800"
               title="Halaman Sebelumnya"
             >
@@ -352,7 +555,7 @@
             <!-- Next Button -->
             <button 
               @click="nextPage" 
-              :disabled="(totalPages > 0 && currentPage >= totalPages) || isLoadingPage"
+              :disabled="(totalPages > 0 && currentPage >= totalPages) || isLoadingPage || isLoadingText"
               class="p-1.5 sm:p-2 hover:text-indigo-400 disabled:opacity-30 transition cursor-pointer rounded-full hover:bg-slate-800"
               title="Halaman Berikutnya"
             >
@@ -361,60 +564,36 @@
 
             <div class="h-4 w-px bg-slate-700 mx-0.5"></div>
 
-            <!-- Zoom Out / Font Smaller -->
+            <!-- Size / Zoom Decrement -->
             <button 
-              @click="zoomOut" 
-              :disabled="zoomMultiplier <= 0.6"
+              @click="decreaseSize" 
+              :disabled="canDecreaseSize"
               class="p-1.5 hover:text-indigo-400 disabled:opacity-30 transition cursor-pointer rounded-full hover:bg-slate-800"
-              :title="isEpubMode ? 'Perkecil Ukuran Huruf' : 'Perkecil'"
+              :title="readingView === 'reflow' ? 'Perkecil Ukuran Teks' : 'Perkecil Tampilan'"
             >
               <ZoomOut class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
 
-            <!-- Fit / Zoom Percent Indicator -->
+            <!-- Size / Zoom Reset Indicator -->
             <button 
-              @click="resetZoom" 
+              @click="resetSize" 
               class="px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold hover:bg-slate-800 text-indigo-300 transition cursor-pointer"
-              :title="isEpubMode ? 'Reset Ukuran Huruf (100%)' : 'Pas Lebar Layar (100%)'"
+              :title="readingView === 'reflow' ? 'Reset Ukuran Teks (17px)' : 'Reset Ukuran (100%)'"
             >
-              {{ Math.round(zoomMultiplier * 100) }}%
+              {{ sizeLabel }}
             </button>
 
-            <!-- Zoom In / Font Larger -->
+            <!-- Size / Zoom Increment -->
             <button 
-              @click="zoomIn" 
-              :disabled="zoomMultiplier >= 2.5"
+              @click="increaseSize" 
+              :disabled="canIncreaseSize"
               class="p-1.5 hover:text-indigo-400 disabled:opacity-30 transition cursor-pointer rounded-full hover:bg-slate-800"
-              :title="isEpubMode ? 'Perbesar Ukuran Huruf' : 'Perbesar'"
+              :title="readingView === 'reflow' ? 'Perbesar Ukuran Teks' : 'Perbesar Tampilan'"
             >
               <ZoomIn class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
 
             <div class="h-4 w-px bg-slate-700 mx-0.5"></div>
-
-            <!-- Quick Watermark Toggle -->
-            <button
-              @click="cycleWatermarkMode"
-              class="p-1.5 hover:text-indigo-400 transition cursor-pointer rounded-full hover:bg-slate-800"
-              :title="watermarkTooltip"
-            >
-              <EyeOff v-if="watermarkMode === 'off'" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-400" />
-              <Eye v-else-if="watermarkMode === 'subtle'" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
-              <Shield v-else class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-400" />
-            </button>
-
-            <div class="h-4 w-px bg-slate-700 mx-0.5"></div>
-
-            <!-- Fullscreen Toggle in Dock -->
-            <button
-              @click="toggleFullscreen"
-              class="p-1.5 transition cursor-pointer rounded-full hover:bg-slate-800"
-              :class="isFullscreen ? 'text-amber-400 bg-amber-500/10' : 'text-slate-300 hover:text-indigo-400'"
-              :title="isFullscreen ? 'Keluar Layar Penuh (Esc / F)' : 'Mode Layar Penuh / Fullscreen (F)'"
-            >
-              <Minimize v-if="isFullscreen" class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <Maximize v-else class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </button>
 
             <!-- Minimize Dock Button -->
             <button
@@ -464,7 +643,7 @@ import { useLibraryStore } from '../stores/library.js';
 import { 
   BookOpen, Lock, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, 
   X, Loader2, AlertTriangle, ShieldCheck, Sparkles, Eye, EyeOff, Shield,
-  Maximize, Minimize, ChevronDown, ChevronUp
+  Maximize, Minimize, ChevronDown, ChevronUp, AlignLeft, FileText, Type
 } from 'lucide-vue-next';
 
 // Configure pdfjs worker
@@ -493,6 +672,37 @@ const totalPages = ref(0);
 const pageInput = ref(1);
 const viewerMode = ref<'canvas' | 'embed'>('canvas');
 const activeWorkingUrl = ref('');
+
+// Reading Mode: 'reflow' (Auto-fit responsive text, like browser reader mode) vs 'canvas' (Original PDF page)
+const readingView = ref<'reflow' | 'canvas'>(
+  (localStorage.getItem('libra_reader_view') as any) === 'canvas' ? 'canvas' : 'reflow'
+);
+const readerTheme = ref<'sepia' | 'light' | 'dark'>(
+  (localStorage.getItem('libra_reader_theme') as any) || 'sepia'
+);
+const readerFontSize = ref<number>(
+  Number(localStorage.getItem('libra_reader_font_size')) || 17
+);
+const readerFontFamily = ref<'serif' | 'sans'>(
+  (localStorage.getItem('libra_reader_font_family') as any) || 'serif'
+);
+const isLoadingText = ref(false);
+const currentExtractedText = ref<{ paragraphs: string[]; rawText: string; isScanOnly: boolean }>({
+  paragraphs: [],
+  rawText: '',
+  isScanOnly: false
+});
+const extractedTextCache = new Map<number, { paragraphs: string[]; rawText: string; isScanOnly: boolean }>();
+
+const themeCardClasses = computed(() => {
+  if (readerTheme.value === 'sepia') {
+    return 'bg-[#FAF4E8] text-[#2C1E14] border-[#EADCC8] shadow-amber-950/20';
+  }
+  if (readerTheme.value === 'light') {
+    return 'bg-white text-slate-900 border-slate-200 shadow-slate-950/20';
+  }
+  return 'bg-[#0B0F19] text-slate-200 border-slate-800 shadow-black/50';
+});
 
 // Fullscreen and immersive reader state
 const isFullscreen = ref(false);
@@ -690,10 +900,284 @@ const goToCatalog = () => {
   router.push('/');
 };
 
-const toggleViewerMode = () => {
-  viewerMode.value = viewerMode.value === 'canvas' ? 'embed' : 'canvas';
-  if (viewerMode.value === 'canvas') {
-    nextTick(() => renderCurrentPage());
+const setReadingView = async (mode: 'reflow' | 'canvas') => {
+  readingView.value = mode;
+  try {
+    localStorage.setItem('libra_reader_view', mode);
+  } catch {}
+  if (mode === 'reflow') {
+    await loadTextForCurrentPage();
+  } else {
+    await nextTick();
+    renderCurrentPage();
+  }
+};
+
+const setReaderTheme = (theme: 'sepia' | 'light' | 'dark') => {
+  readerTheme.value = theme;
+  try {
+    localStorage.setItem('libra_reader_theme', theme);
+  } catch {}
+};
+
+const toggleFontFamily = () => {
+  readerFontFamily.value = readerFontFamily.value === 'serif' ? 'sans' : 'serif';
+  try {
+    localStorage.setItem('libra_reader_font_family', readerFontFamily.value);
+  } catch {}
+};
+
+const decreaseFontSize = () => {
+  if (readerFontSize.value > 13) {
+    readerFontSize.value--;
+    try {
+      localStorage.setItem('libra_reader_font_size', String(readerFontSize.value));
+    } catch {}
+  }
+};
+
+const increaseFontSize = () => {
+  if (readerFontSize.value < 26) {
+    readerFontSize.value++;
+    try {
+      localStorage.setItem('libra_reader_font_size', String(readerFontSize.value));
+    } catch {}
+  }
+};
+
+const decreaseSize = () => {
+  if (readingView.value === 'reflow') {
+    decreaseFontSize();
+  } else {
+    zoomOut();
+  }
+};
+
+const increaseSize = () => {
+  if (readingView.value === 'reflow') {
+    increaseFontSize();
+  } else {
+    zoomIn();
+  }
+};
+
+const resetSize = () => {
+  if (readingView.value === 'reflow') {
+    readerFontSize.value = 17;
+    try {
+      localStorage.setItem('libra_reader_font_size', '17');
+    } catch {}
+  } else {
+    resetZoom();
+  }
+};
+
+const sizeLabel = computed(() => {
+  if (readingView.value === 'reflow') {
+    return `${readerFontSize.value}px`;
+  }
+  return `${Math.round(zoomMultiplier.value * 100)}%`;
+});
+
+const canDecreaseSize = computed(() => {
+  if (readingView.value === 'reflow') {
+    return readerFontSize.value <= 13;
+  }
+  return zoomMultiplier.value <= 0.6;
+});
+
+const canIncreaseSize = computed(() => {
+  if (readingView.value === 'reflow') {
+    return readerFontSize.value >= 26;
+  }
+  return zoomMultiplier.value >= 2.5;
+});
+
+const cleanTextLine = (text: string): string => {
+  return text
+    .replace(/[\u0000-\u0008\u000B-\u001F\u007F-\u009F]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+const isHeadingParagraph = (text: string): boolean => {
+  const trimmed = text.trim();
+  if (!trimmed) return false;
+  if (/^(BOOK|BAB|CHAPTER|BAGIAN|BAG\.|ACT|SCENE)\b/i.test(trimmed)) return true;
+  if (trimmed.length <= 45 && trimmed === trimmed.toUpperCase() && /^[A-Z0-9\s\.\-\—\:\,\'\"]+$/.test(trimmed)) {
+    return true;
+  }
+  return false;
+};
+
+const isSubtitleParagraph = (text: string): boolean => {
+  const trimmed = text.trim();
+  if (!trimmed) return false;
+  if (trimmed.length > 45 && trimmed.length <= 260 && trimmed === trimmed.toUpperCase()) {
+    return true;
+  }
+  return false;
+};
+
+const extractPdfPageText = (textContent: any) => {
+  if (!textContent || !textContent.items || textContent.items.length === 0) {
+    return { paragraphs: [], rawText: '', isScanOnly: true };
+  }
+
+  const items = textContent.items
+    .filter((item: any) => item && typeof item.str === 'string' && item.str.trim().length > 0)
+    .map((item: any) => {
+      const transform = item.transform || [1, 0, 0, 1, 0, 0];
+      const x = transform[4] || 0;
+      const y = transform[5] || 0;
+      const height = item.height || Math.abs(transform[3]) || 12;
+      return {
+        str: item.str,
+        x,
+        y,
+        height,
+        hasEOL: !!item.hasEOL
+      };
+    });
+
+  if (items.length === 0) {
+    return { paragraphs: [], rawText: '', isScanOnly: true };
+  }
+
+  // Sort reading order: Top-to-bottom (PDF y is inverted, higher y is higher on the page), then left-to-right (x)
+  items.sort((a, b) => {
+    const yDiff = b.y - a.y;
+    if (Math.abs(yDiff) > 4) {
+      return yDiff;
+    }
+    return a.x - b.x;
+  });
+
+  // Group text chunks on the same horizontal line
+  const lines: { text: string; y: number; height: number }[] = [];
+  let currentLineItems: typeof items = [];
+  let currentLineY = items[0].y;
+
+  for (const item of items) {
+    if (currentLineItems.length === 0) {
+      currentLineItems.push(item);
+      currentLineY = item.y;
+    } else if (Math.abs(item.y - currentLineY) <= 4.5) {
+      currentLineItems.push(item);
+    } else {
+      currentLineItems.sort((a, b) => a.x - b.x);
+      const lineStr = cleanTextLine(currentLineItems.map(i => i.str).join(' '));
+      if (lineStr) {
+        lines.push({
+          text: lineStr,
+          y: currentLineY,
+          height: currentLineItems[0]?.height || 12
+        });
+      }
+      currentLineItems = [item];
+      currentLineY = item.y;
+    }
+  }
+
+  if (currentLineItems.length > 0) {
+    currentLineItems.sort((a, b) => a.x - b.x);
+    const lineStr = cleanTextLine(currentLineItems.map(i => i.str).join(' '));
+    if (lineStr) {
+      lines.push({
+        text: lineStr,
+        y: currentLineY,
+        height: currentLineItems[0]?.height || 12
+      });
+    }
+  }
+
+  if (lines.length === 0) {
+    return { paragraphs: [], rawText: '', isScanOnly: true };
+  }
+
+  // Group lines into semantic paragraphs
+  const paragraphs: string[] = [];
+  let currentParagraph = '';
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const prevLine = i > 0 ? lines[i - 1] : null;
+
+    const isHeading = isHeadingParagraph(line.text) || isSubtitleParagraph(line.text);
+    const isPrevHeading = prevLine ? (isHeadingParagraph(prevLine.text) || isSubtitleParagraph(prevLine.text)) : false;
+    const verticalGap = prevLine ? Math.abs(prevLine.y - line.y) : 0;
+    const avgHeight = prevLine ? (prevLine.height + line.height) / 2 : line.height;
+    const hasBigGap = verticalGap > avgHeight * 1.65;
+
+    const startsNewParagraph = (
+      !currentParagraph ||
+      isHeading ||
+      isPrevHeading ||
+      hasBigGap ||
+      (prevLine && /[.!?]["']?$/.test(prevLine.text) && prevLine.text.length < 60)
+    );
+
+    if (startsNewParagraph) {
+      if (currentParagraph) {
+        paragraphs.push(currentParagraph.trim());
+      }
+      currentParagraph = line.text;
+    } else {
+      if (currentParagraph.endsWith('-')) {
+        currentParagraph = currentParagraph.slice(0, -1) + line.text;
+      } else {
+        currentParagraph += ' ' + line.text;
+      }
+    }
+  }
+
+  if (currentParagraph) {
+    paragraphs.push(currentParagraph.trim());
+  }
+
+  const rawText = paragraphs.join('\n\n');
+  const totalLetters = rawText.replace(/[^a-zA-Z0-9]/g, '').length;
+
+  return {
+    paragraphs,
+    rawText,
+    isScanOnly: totalLetters < 20
+  };
+};
+
+const loadTextForCurrentPage = async () => {
+  if (!pdfDoc || isExpired.value) return;
+
+  const pageNum = currentPage.value;
+  if (extractedTextCache.has(pageNum)) {
+    currentExtractedText.value = extractedTextCache.get(pageNum)!;
+    return;
+  }
+
+  isLoadingText.value = true;
+  try {
+    const page = await pdfDoc.getPage(pageNum);
+    const textContent = await page.getTextContent();
+    const result = extractPdfPageText(textContent);
+    extractedTextCache.set(pageNum, result);
+    currentExtractedText.value = result;
+
+    // Prefetch adjacent next page in background for instant reading
+    if (pageNum + 1 <= totalPages.value && !extractedTextCache.has(pageNum + 1)) {
+      pdfDoc.getPage(pageNum + 1).then(async (p: any) => {
+        const tc = await p.getTextContent();
+        extractedTextCache.set(pageNum + 1, extractPdfPageText(tc));
+      }).catch(() => {});
+    }
+  } catch (err) {
+    console.warn('[EbookReader] Failed extracting page text:', err);
+    currentExtractedText.value = {
+      paragraphs: [],
+      rawText: '',
+      isScanOnly: true
+    };
+  } finally {
+    isLoadingText.value = false;
   }
 };
 
@@ -813,7 +1297,10 @@ const cleanup = () => {
   errorMessage.value = '';
   zoomMultiplier.value = 1.0;
   viewerMode.value = 'canvas';
-  activeWorkingUrl.value = ''; // <--- Tambahkan baris ini
+  activeWorkingUrl.value = '';
+  extractedTextCache.clear();
+  currentExtractedText.value = { paragraphs: [], rawText: '', isScanOnly: false };
+  isLoadingText.value = false;
 };
 
 const loadDocument = async () => {
@@ -919,7 +1406,11 @@ const loadDocument = async () => {
         loaded = true;
 
         await nextTick();
-        await renderCurrentPage();
+        if (readingView.value === 'reflow') {
+          await loadTextForCurrentPage();
+        } else {
+          await renderCurrentPage();
+        }
         break;
       }
     } catch (err: any) {
@@ -1009,29 +1500,45 @@ const renderCurrentPage = async () => {
   }
 };
 
-const prevPage = () => {
+const prevPage = async () => {
   if (isEpubMode.value && epubRendition) {
     epubRendition.prev();
     return;
   }
   if (currentPage.value > 1) {
     currentPage.value--;
-    renderCurrentPage();
+    pageInput.value = currentPage.value;
+    if (readingView.value === 'reflow') {
+      await loadTextForCurrentPage();
+      if (readerWorkspaceRef.value) {
+        readerWorkspaceRef.value.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    } else {
+      renderCurrentPage();
+    }
   }
 };
 
-const nextPage = () => {
+const nextPage = async () => {
   if (isEpubMode.value && epubRendition) {
     epubRendition.next();
     return;
   }
   if (currentPage.value < totalPages.value) {
     currentPage.value++;
-    renderCurrentPage();
+    pageInput.value = currentPage.value;
+    if (readingView.value === 'reflow') {
+      await loadTextForCurrentPage();
+      if (readerWorkspaceRef.value) {
+        readerWorkspaceRef.value.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    } else {
+      renderCurrentPage();
+    }
   }
 };
 
-const handlePageInputChange = () => {
+const handlePageInputChange = async () => {
   const target = Number(pageInput.value);
   if (isEpubMode.value && epubBook && epubBook.locations && epubRendition) {
     if (target >= 1 && (!totalPages.value || target <= totalPages.value)) {
@@ -1049,7 +1556,14 @@ const handlePageInputChange = () => {
 
   if (target >= 1 && target <= totalPages.value) {
     currentPage.value = target;
-    renderCurrentPage();
+    if (readingView.value === 'reflow') {
+      await loadTextForCurrentPage();
+      if (readerWorkspaceRef.value) {
+        readerWorkspaceRef.value.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    } else {
+      renderCurrentPage();
+    }
   } else {
     pageInput.value = currentPage.value;
   }
