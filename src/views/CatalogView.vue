@@ -213,57 +213,55 @@
                 :alt="book.title"
                 class="w-full h-full object-cover group-hover:scale-105 transition duration-500" 
               />
-              <div class="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-transparent to-transparent"></div>
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-900/75 via-transparent to-black/30 pointer-events-none"></div>
               
-              <!-- Badges Container (Category + e-Book Badge) -->
-              <div class="absolute top-2 left-2 sm:top-3 sm:left-3 max-w-[75%] flex flex-col gap-1 z-10">
-                <!-- Label Khusus e-Book -->
+              <!-- Badges Container: Unified single header row (never overlaps on mobile) -->
+              <div class="absolute top-2 inset-x-2 sm:top-2.5 sm:inset-x-2.5 flex items-center justify-between gap-1.5 z-10 pointer-events-none">
+                <!-- Kategori Buku (Truncate rapi, tidak saling bertumpuk dengan badge kanan) -->
                 <span 
-                  v-if="book.isEbook" 
-                  class="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-indigo-600 text-white text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider shadow-md flex items-center gap-1 shrink-0"
+                  class="pointer-events-auto px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full bg-white/95 backdrop-blur-md text-[8px] sm:text-[9px] uppercase font-bold tracking-wider text-slate-700 shadow-xs border border-slate-200/60 truncate min-w-0 max-w-[60%]"
+                  :title="book.category"
                 >
-                  <Smartphone class="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                  e-Book
-                </span>
-                
-                <span class="px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full bg-white/95 backdrop-blur-md text-[8px] sm:text-[9px] uppercase font-bold tracking-wider text-slate-800 shadow-sm border border-slate-100 truncate block">
                   {{ book.category }}
                 </span>
-              </div>
 
-              <!-- Shelf Location or Format Badge -->
-              <div class="absolute top-2 right-2 sm:top-3 sm:right-3">
-                <span 
-                  v-if="book.isEbook"
-                  class="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-indigo-950/85 backdrop-blur-md text-[9px] sm:text-[10px] font-mono font-bold text-indigo-200 flex items-center gap-1 shadow-sm border border-indigo-500/30"
-                  title="Format Digital"
-                >
-                  <Smartphone class="w-2.5 h-2.5 sm:w-3 sm:h-3 text-indigo-400" />
-                  Digital
-                </span>
-                <router-link 
-                  v-else
-                  to="/shelves"
-                  class="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-slate-900/85 backdrop-blur-md text-[9px] sm:text-[10px] font-mono font-bold text-white flex items-center gap-1 hover:bg-slate-900 shadow-sm"
-                  title="Lokasi Rak Fisik"
-                >
-                  <MapPin class="w-2.5 h-2.5 sm:w-3 sm:h-3 text-amber-400" />
-                  {{ book.shelfCode }}
-                </router-link>
+                <!-- Format Buku Digital atau Lokasi Rak Fisik (Satu badge informatif di kanan atas) -->
+                <div class="shrink-0 pointer-events-auto flex items-center">
+                  <!-- e-Book Badge: Tampilkan satu pill rapi (ePub / e-Book), tidak dobel dengan Digital -->
+                  <span 
+                    v-if="book.isEbook"
+                    class="px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full bg-indigo-600 text-white text-[8.5px] sm:text-[9.5px] font-extrabold uppercase tracking-wider shadow-xs flex items-center gap-1 shrink-0"
+                    :title="`Buku Digital (${(book.ebookFormat || 'e-Book').toUpperCase()})`"
+                  >
+                    <Smartphone class="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
+                    <span>{{ book.ebookFormat?.toLowerCase() === 'epub' ? 'ePub' : 'e-Book' }}</span>
+                  </span>
+
+                  <!-- Lokasi Rak Fisik -->
+                  <router-link 
+                    v-else
+                    to="/shelves"
+                    class="px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full bg-slate-900/85 backdrop-blur-md text-[8.5px] sm:text-[9.5px] font-mono font-bold text-white flex items-center gap-1 hover:bg-slate-900 shadow-xs shrink-0 transition"
+                    title="Lokasi Rak Fisik"
+                  >
+                    <MapPin class="w-2.5 h-2.5 sm:w-3 sm:h-3 text-amber-400 shrink-0" />
+                    <span>{{ book.shelfCode }}</span>
+                  </router-link>
+                </div>
               </div>
 
               <!-- Availability Status Badge on Cover Bottom -->
               <div class="absolute bottom-2 left-2 right-2 sm:bottom-3 sm:left-3 sm:right-3 flex items-center justify-between text-[9px] sm:text-[10px] bg-white/95 backdrop-blur-md px-2 py-1 sm:px-3 sm:py-1.5 rounded-full shadow-sm">
-                <div class="flex items-center gap-1">
+                <div class="flex items-center gap-1 min-w-0">
                   <span 
-                    class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full" 
+                    class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full shrink-0" 
                     :class="book.availableCopies > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'"
                   ></span>
                   <span class="font-bold truncate" :class="book.availableCopies > 0 ? 'text-slate-900' : 'text-rose-600'">
                     {{ book.isEbook ? (book.availableCopies > 0 ? 'Akses Siap' : 'Penuh') : (book.availableCopies > 0 ? `${book.availableCopies} Ada` : 'Habis') }}
                   </span>
                 </div>
-                <span v-if="book.reservedCopies > 0" class="text-amber-600 font-bold shrink-0">
+                <span v-if="book.reservedCopies > 0" class="text-amber-600 font-bold shrink-0 text-[8.5px] sm:text-[9.5px]">
                   {{ book.reservedCopies }} hold
                 </span>
               </div>
@@ -300,8 +298,8 @@
                   ? (book.isEbook ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200') 
                   : 'bg-slate-100 text-slate-400 cursor-not-allowed'"
               >
-                <Bookmark class="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                <span class="truncate">{{ book.availableCopies > 0 ? (book.isEbook ? 'Booking' : 'Hold 24h') : 'Habis' }}</span>
+                <Bookmark class="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+                <span class="truncate">{{ book.availableCopies > 0 ? (book.isEbook ? 'Booking' : 'Hold') : 'Habis' }}</span>
               </button>
             </div>
           </div>
