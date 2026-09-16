@@ -23,6 +23,7 @@
     "dotenv": "^17.2.3",
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
+    "epubjs": "^0.3.93",
     "express": "^4.21.2",
     "firebase": "^12.17.1",
     "firebase-admin": "^14.3.0",

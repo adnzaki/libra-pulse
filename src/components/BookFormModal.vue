@@ -152,7 +152,7 @@
                 </span>
               </div>
               <p class="text-[11px] text-slate-500">
-                Aktifkan jika buku ini berupa dokumen PDF yang dapat dibaca secara digital oleh anggota setelah booking disetujui.
+                Aktifkan jika buku ini berupa dokumen digital (PDF atau ePub) yang dapat dibaca oleh anggota setelah booking disetujui.
               </p>
             </div>
 
@@ -174,23 +174,23 @@
           <div v-if="isEbookPermanent" class="mt-3 p-2.5 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-2 text-[11px] text-amber-800">
             <AlertCircle class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             <p>
-              <strong>Format e-Book Permanen:</strong> Buku ini sudah tersimpan sebagai e-Book dan tidak dapat diubah menjadi buku cetak fisik. Jika ingin mengganti format, silakan hapus buku ini dan buat kembali (file PDF juga akan terhapus otomatis dari server).
+              <strong>Format e-Book Permanen:</strong> Buku ini sudah tersimpan sebagai e-Book dan tidak dapat diubah menjadi buku cetak fisik. Jika ingin mengganti format, silakan hapus buku ini dan buat kembali (file e-Book juga akan terhapus otomatis dari server).
             </p>
           </div>
 
-          <!-- Area Upload Dokumen PDF e-Book jika Toggle ON -->
+          <!-- Area Upload Dokumen PDF / ePub e-Book jika Toggle ON -->
           <div v-if="form.isEbook" class="mt-3 pt-3 border-t border-indigo-100 space-y-3">
             <div class="flex items-center justify-between">
               <label class="block font-bold text-slate-800 text-xs">
-                Dokumen File PDF e-Book *
+                Dokumen File e-Book (PDF / ePub) *
               </label>
               <span v-if="form.ebookUrl" class="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-bold">
                 <CheckCircle2 class="w-3.5 h-3.5" />
-                PDF Terunggah
+                {{ (form.ebookFormat || (form.ebookFileName?.toLowerCase().endsWith('.epub') ? 'ePub' : 'PDF')).toUpperCase() }} Terunggah
               </span>
             </div>
 
-            <!-- Box Upload PDF -->
+            <!-- Box Upload File e-Book -->
             <div 
               @dragover.prevent="isPdfDragging = true"
               @dragleave.prevent="isPdfDragging = false"
@@ -205,45 +205,45 @@
               <input 
                 ref="pdfFileInputRef" 
                 type="file" 
-                accept="application/pdf,.pdf" 
+                accept="application/pdf,.pdf,application/epub+zip,.epub" 
                 class="hidden" 
                 @change="handlePdfFileChange"
               />
 
               <div v-if="isUploadingPdf" class="flex items-center gap-2 text-indigo-600 py-2">
                 <Loader2 class="w-5 h-5 animate-spin" />
-                <span class="text-xs font-semibold">Mengunggah file PDF e-Book...</span>
+                <span class="text-xs font-semibold">Mengunggah file dokumen e-Book...</span>
               </div>
 
-              <!-- State: Sudah ada file PDF -->
+              <!-- State: Sudah ada file e-Book -->
               <template v-else-if="form.ebookUrl">
                 <div class="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shadow-xs">
                   <FileText class="w-5 h-5" />
                 </div>
                 <div>
-                  <p class="text-xs font-bold text-slate-800">{{ form.ebookFileName || 'dokumen_ebook.pdf' }}</p>
+                  <p class="text-xs font-bold text-slate-800">{{ form.ebookFileName || 'dokumen_ebook' }}</p>
                   <p class="text-[11px] text-slate-500">
-                    {{ formatFileSize(form.ebookFileSize) }} • Klik untuk ganti file PDF
+                    {{ formatFileSize(form.ebookFileSize) }} • Klik untuk ganti file
                   </p>
                 </div>
                 <div class="flex items-center gap-2 pt-1">
                   <span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px]">
-                    Siap Dibaca In-App
+                    Format {{ (form.ebookFormat || (form.ebookFileName?.toLowerCase().endsWith('.epub') ? 'ePub' : 'PDF')).toUpperCase() }} • Siap Dibaca In-App
                   </span>
                 </div>
               </template>
 
-              <!-- State: Belum ada file PDF -->
+              <!-- State: Belum ada file e-Book -->
               <template v-else>
                 <div class="w-10 h-10 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center shadow-xs">
                   <UploadCloud class="w-5 h-5" />
                 </div>
                 <div>
                   <p class="text-xs font-bold text-slate-800">
-                    Pilih atau Tarik File PDF e-Book ke Sini
+                    Pilih atau Tarik File PDF / ePub e-Book ke Sini
                   </p>
                   <p class="text-[11px] text-slate-500">
-                    Hanya format .PDF resmi (hingga 100MB)
+                    Mendukung format .PDF dan .ePub (hingga 100MB)
                   </p>
                 </div>
               </template>
@@ -316,8 +316,25 @@
             </select>
           </div>
           <div>
-            <label class="block font-bold text-slate-700 mb-1">Penempatan Rak Perpustakaan *</label>
+            <label class="block font-bold text-slate-700 mb-1">
+              {{ form.isEbook ? 'Format Lokasi' : 'Penempatan Rak Perpustakaan *' }}
+            </label>
+            <!-- Untuk buku digital (e-Book), tidak perlu isian rak fisik, langsung label Digital -->
+            <div 
+              v-if="form.isEbook" 
+              class="w-full px-4 py-2.5 bg-indigo-50 border border-indigo-200 rounded-2xl flex items-center justify-between"
+            >
+              <div class="flex items-center gap-2 text-indigo-900 font-bold text-xs sm:text-sm">
+                <span class="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-pulse"></span>
+                <span>Digital</span>
+              </div>
+              <span class="text-[11px] font-semibold text-indigo-700 bg-indigo-100 px-2.5 py-0.5 rounded-full">
+                Koleksi e-Book Online
+              </span>
+            </div>
+            <!-- Untuk buku cetak fisik, pilih rak perpustakaan -->
             <select 
+              v-else
               v-model="form.shelfId" 
               class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
             >
@@ -449,7 +466,7 @@ const pdfFileInputRef = ref<HTMLInputElement | null>(null);
 const isEbookPermanent = computed(() => Boolean(props.book?.isEbook));
 
 const formatFileSize = (bytes?: number) => {
-  if (!bytes) return 'PDF Document';
+  if (!bytes) return 'Dokumen e-Book';
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 };
@@ -482,6 +499,7 @@ const getBlankForm = (): Partial<Book> => ({
   cover: '',
   synopsis: '',
   isEbook: false,
+  ebookFormat: 'pdf',
   ebookUrl: '',
   ebookFileName: '',
   ebookFileSize: 0
@@ -494,6 +512,7 @@ const resetForm = () => {
     form.value = { 
       ...props.book,
       isEbook: Boolean(props.book.isEbook),
+      ebookFormat: props.book.ebookFormat || (props.book.ebookFileName?.toLowerCase().endsWith('.epub') ? 'epub' : 'pdf'),
       ebookUrl: props.book.ebookUrl || '',
       ebookFileName: props.book.ebookFileName || '',
       ebookFileSize: props.book.ebookFileSize || 0
@@ -670,13 +689,14 @@ const handlePdfDrop = async (event: DragEvent) => {
 
 const uploadEbookPdf = async (file: File) => {
   const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-  if (!isPdf) {
-    store.setError('Hanya dokumen format PDF yang didukung untuk e-Book.');
+  const isEpub = file.type === 'application/epub+zip' || file.name.toLowerCase().endsWith('.epub');
+  if (!isPdf && !isEpub) {
+    store.setError('Hanya dokumen format PDF (.pdf) dan ePub (.epub) yang didukung untuk e-Book.');
     return;
   }
 
   if (file.size > 100 * 1024 * 1024) {
-    store.setError('Ukuran file PDF melebihi batas maksimal 100MB.');
+    store.setError('Ukuran file e-Book melebihi batas maksimal 100MB.');
     return;
   }
 
@@ -695,16 +715,17 @@ const uploadEbookPdf = async (file: File) => {
 
     const data = await res.json();
     if (!res.ok || !data.success) {
-      throw new Error(data.error || 'Gagal mengunggah file PDF e-Book');
+      throw new Error(data.error || 'Gagal mengunggah file dokumen e-Book');
     }
 
     form.value.ebookUrl = data.url;
     form.value.ebookFileName = data.filename;
     form.value.ebookFileSize = data.size;
-    store.showToast(`✅ File e-Book "${file.name}" berhasil diunggah!`);
+    form.value.ebookFormat = isEpub ? 'epub' : 'pdf';
+    store.showToast(`✅ File e-Book (${isEpub ? 'ePub' : 'PDF'}) "${file.name}" berhasil diunggah!`);
   } catch (err: any) {
     console.error('Upload e-book error:', err);
-    store.setError(err.message || 'Gagal mengunggah file PDF e-Book');
+    store.setError(err.message || 'Gagal mengunggah file dokumen e-Book');
   } finally {
     isUploadingPdf.value = false;
   }
@@ -713,9 +734,9 @@ const uploadEbookPdf = async (file: File) => {
 const handleSaveBook = async () => {
   if (!form.value.title || !form.value.author) return;
 
-  // Validasi jika e-book dipilih, wajib ada file PDF
+  // Validasi jika e-book dipilih, wajib ada file e-Book (PDF/ePub)
   if (form.value.isEbook && !form.value.ebookUrl) {
-    store.setError('File PDF e-Book wajib diunggah sebelum menyimpan buku digital.');
+    store.setError('File e-Book (PDF atau ePub) wajib diunggah sebelum menyimpan buku digital.');
     return;
   }
 
@@ -724,10 +745,16 @@ const handleSaveBook = async () => {
   }
 
   // Update shelf info
-  const selectedShelf = sortedShelves.value.find(s => s.id === form.value.shelfId) || store.shelves.find(s => s.id === form.value.shelfId);
-  if (selectedShelf) {
-    form.value.shelfCode = selectedShelf.code;
-    form.value.shelfName = selectedShelf.name;
+  if (form.value.isEbook) {
+    form.value.shelfCode = 'DIGITAL';
+    form.value.shelfName = 'Digital';
+    form.value.shelfId = 'digital';
+  } else {
+    const selectedShelf = sortedShelves.value.find(s => s.id === form.value.shelfId) || store.shelves.find(s => s.id === form.value.shelfId);
+    if (selectedShelf) {
+      form.value.shelfCode = selectedShelf.code;
+      form.value.shelfName = selectedShelf.name;
+    }
   }
 
   const payload = { ...form.value };

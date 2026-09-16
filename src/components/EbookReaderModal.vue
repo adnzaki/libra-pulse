@@ -38,7 +38,7 @@
       <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
         <!-- Watermark Intensity Control -->
         <button
-          v-if="!isExpired && pdfDoc"
+          v-if="!isExpired && (pdfDoc || isEpubMode)"
           @click="cycleWatermarkMode"
           class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700/70 text-slate-300 text-xs transition cursor-pointer"
           :title="watermarkTooltip"
@@ -51,9 +51,9 @@
           </span>
         </button>
 
-        <!-- Mode Canvas / Embed Toggle (Desktop) -->
+        <!-- Mode Canvas / Embed Toggle (Desktop for PDF) -->
         <button 
-          v-if="!isExpired && pdfDoc"
+          v-if="!isExpired && pdfDoc && !isEpubMode"
           @click="toggleViewerMode" 
           class="p-2 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 transition text-xs font-semibold cursor-pointer hidden md:flex items-center gap-1.5"
           :title="viewerMode === 'canvas' ? 'Gunakan mode Dokumen Standar' : 'Gunakan mode Canvas Pembaca'"
@@ -157,13 +157,49 @@
         </div>
       </div>
 
-      <!-- STATE 4: ACTIVE VIEWER (CANVAS MODE) -->
+      <!-- STATE 4: ACTIVE VIEWER (CANVAS FOR PDF OR DEDICATED STAGE FOR EPUB) -->
       <div 
-        v-else-if="viewerMode === 'canvas'"
-        class="relative flex flex-col items-center transition-all duration-150 my-auto pb-16 sm:pb-20"
+        v-else-if="viewerMode === 'canvas' && (pdfDoc || isEpubMode)"
+        class="relative flex flex-col items-center transition-all duration-150 my-auto pb-16 sm:pb-20 w-full"
       >
-        <!-- Canvas Container with Watermark Security Overlay -->
+        <!-- EPUB Container (Clean, Reflowable / Paginated Reader) -->
         <div 
+          v-if="isEpubMode"
+          class="relative w-full max-w-3xl h-[78vh] sm:h-[82vh] bg-white rounded-2xl shadow-2xl border border-slate-700/50 overflow-hidden flex flex-col shrink-0"
+        >
+          <!-- Stage for ePub rendition -->
+          <div 
+            ref="epubContainerRef" 
+            class="w-full h-full flex-1 overflow-hidden"
+          ></div>
+
+          <!-- Dynamic Security Watermark (Ultra-soft, unobtrusive to reading) -->
+          <div 
+            v-if="watermarkMode !== 'off'"
+            class="absolute inset-0 pointer-events-none flex flex-col justify-around p-6 sm:p-14 overflow-hidden select-none transition-opacity duration-200"
+            :class="{
+              'opacity-[0.045]': watermarkMode === 'subtle',
+              'opacity-[0.10]': watermarkMode === 'normal'
+            }"
+          >
+            <div 
+              v-for="i in (watermarkMode === 'subtle' ? 2 : 3)" 
+              :key="i" 
+              class="transform -rotate-25 text-slate-800 font-sans text-[11px] sm:text-xs font-medium tracking-widest uppercase select-none text-center"
+            >
+              SDN PENGASINAN VII • {{ watermarkMemberInfo }}
+            </div>
+
+            <!-- Fine footer edge tag -->
+            <div class="absolute bottom-2 right-3 text-[9px] font-mono text-slate-500 select-none opacity-40">
+              Perpustakaan Digital • Akses Resmi ePub
+            </div>
+          </div>
+        </div>
+
+        <!-- Canvas Container with Watermark Security Overlay (FOR PDF) -->
+        <div 
+          v-else-if="pdfDoc"
           class="relative rounded-lg shadow-2xl overflow-hidden bg-white border border-slate-700/50 transition-[width,height] duration-150 shrink-0"
           :style="{
             width: canvasDisplayWidth ? `${canvasDisplayWidth}px` : 'auto',
@@ -231,17 +267,17 @@
               v-model.lazy="pageInput" 
               type="number" 
               min="1" 
-              :max="totalPages"
+              :max="totalPages || 9999"
               @change="handlePageInputChange"
               class="w-9 sm:w-11 bg-slate-800 border border-slate-700 rounded-md text-center py-0.5 text-white font-bold text-xs focus:outline-none focus:border-indigo-500"
             />
-            <span class="text-slate-400">/ {{ totalPages }}</span>
+            <span class="text-slate-400">/ {{ totalPages || (isEpubMode ? '?' : 1) }}</span>
           </div>
 
           <!-- Next Button -->
           <button 
             @click="nextPage" 
-            :disabled="currentPage >= totalPages || isLoadingPage"
+            :disabled="(totalPages > 0 && currentPage >= totalPages) || isLoadingPage"
             class="p-1.5 sm:p-2 hover:text-indigo-400 disabled:opacity-30 transition cursor-pointer rounded-full hover:bg-slate-800"
             title="Halaman Berikutnya"
           >
@@ -250,12 +286,12 @@
 
           <div class="h-4 w-px bg-slate-700 mx-0.5"></div>
 
-          <!-- Zoom Out -->
+          <!-- Zoom Out / Font Smaller -->
           <button 
             @click="zoomOut" 
             :disabled="zoomMultiplier <= 0.6"
             class="p-1.5 hover:text-indigo-400 disabled:opacity-30 transition cursor-pointer rounded-full hover:bg-slate-800"
-            title="Perkecil"
+            :title="isEpubMode ? 'Perkecil Ukuran Huruf' : 'Perkecil'"
           >
             <ZoomOut class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
@@ -264,17 +300,17 @@
           <button 
             @click="resetZoom" 
             class="px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold hover:bg-slate-800 text-indigo-300 transition cursor-pointer"
-            title="Pas Lebar Layar (100%)"
+            :title="isEpubMode ? 'Reset Ukuran Huruf (100%)' : 'Pas Lebar Layar (100%)'"
           >
             {{ Math.round(zoomMultiplier * 100) }}%
           </button>
 
-          <!-- Zoom In -->
+          <!-- Zoom In / Font Larger -->
           <button 
             @click="zoomIn" 
             :disabled="zoomMultiplier >= 2.5"
             class="p-1.5 hover:text-indigo-400 disabled:opacity-30 transition cursor-pointer rounded-full hover:bg-slate-800"
-            title="Perbesar"
+            :title="isEpubMode ? 'Perbesar Ukuran Huruf' : 'Perbesar'"
           >
             <ZoomIn class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
@@ -321,6 +357,7 @@ import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import ePub from 'epubjs';
 import type { Loan } from '../types.js';
 import { useLibraryStore } from '../stores/library.js';
 import { 
@@ -343,6 +380,8 @@ const store = useLibraryStore();
 
 const readerWorkspaceRef = ref<HTMLElement | null>(null);
 const pdfCanvasRef = ref<HTMLCanvasElement | null>(null);
+const epubContainerRef = ref<HTMLElement | null>(null);
+const isEpubMode = ref(false);
 const isLoadingDoc = ref(false);
 const isLoadingPage = ref(false);
 const errorMessage = ref('');
@@ -363,6 +402,8 @@ const watermarkMode = ref<'subtle' | 'off' | 'normal'>('subtle');
 let pdfDoc: any = null;
 let renderTask: any = null;
 let resizeTimeout: any = null;
+let epubBook: any = null;
+let epubRendition: any = null;
 
 const watermarkLabel = computed(() => {
   if (watermarkMode.value === 'subtle') return 'Watermark: Halus';
@@ -489,6 +530,96 @@ const toggleViewerMode = () => {
   }
 };
 
+const isPdfBuffer = (buffer: ArrayBuffer): boolean => {
+  if (buffer.byteLength < 4) return false;
+  const bytes = new Uint8Array(buffer.slice(0, 4));
+  return bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46; // %PDF
+};
+
+const isEpubBuffer = (buffer: ArrayBuffer): boolean => {
+  if (buffer.byteLength < 4) return false;
+  const bytes = new Uint8Array(buffer.slice(0, 4));
+  return bytes[0] === 0x50 && bytes[1] === 0x4B; // PK Zip header
+};
+
+const applyEpubTheme = () => {
+  if (!epubRendition) return;
+  const pct = Math.round(zoomMultiplier.value * 100);
+  epubRendition.themes.fontSize(`${pct}%`);
+  epubRendition.themes.default({
+    body: {
+      'font-family': 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important',
+      'line-height': '1.7 !important',
+      'padding': '16px 20px !important',
+      'color': '#0f172a !important',
+      'background-color': '#ffffff !important'
+    },
+    'p, div, span, li': {
+      'line-height': '1.7 !important'
+    }
+  });
+};
+
+const loadEpubFromBuffer = async (buffer: ArrayBuffer) => {
+  if (epubRendition) {
+    try { epubRendition.destroy(); } catch {}
+    epubRendition = null;
+  }
+  if (epubBook) {
+    try { epubBook.destroy(); } catch {}
+    epubBook = null;
+  }
+
+  isEpubMode.value = true;
+  epubBook = (ePub as any)(buffer);
+  await epubBook.ready;
+
+  await nextTick();
+
+  if (epubContainerRef.value) {
+    epubContainerRef.value.innerHTML = '';
+
+    epubRendition = epubBook.renderTo(epubContainerRef.value, {
+      width: '100%',
+      height: '100%',
+      flow: 'paginated',
+      spread: 'none'
+    });
+
+    applyEpubTheme();
+
+    await epubRendition.display();
+
+    epubRendition.on('relocated', (location: any) => {
+      if (location && location.start) {
+        if (epubBook.locations && epubBook.locations.total > 0) {
+          const currentLoc = epubBook.locations.locationFromCfi(location.start.cfi);
+          currentPage.value = currentLoc || 1;
+          totalPages.value = epubBook.locations.total || 1;
+          pageInput.value = currentPage.value;
+        }
+      }
+    });
+
+    epubRendition.on('keyup', (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') prevPage();
+      if (e.key === 'ArrowRight') nextPage();
+    });
+
+    // Generate locations for page numbers
+    epubBook.locations.generate(1200).then(() => {
+      if (epubRendition && epubRendition.location && epubRendition.location.start) {
+        const currentLoc = epubBook.locations.locationFromCfi(epubRendition.location.start.cfi);
+        currentPage.value = currentLoc || 1;
+        totalPages.value = epubBook.locations.total || 1;
+        pageInput.value = currentPage.value;
+      }
+    }).catch((err: any) => {
+      console.warn('ePub locations generation:', err);
+    });
+  }
+};
+
 const cleanup = () => {
   if (renderTask) {
     try {
@@ -496,6 +627,19 @@ const cleanup = () => {
     } catch {}
     renderTask = null;
   }
+  if (epubRendition) {
+    try {
+      epubRendition.destroy();
+    } catch {}
+    epubRendition = null;
+  }
+  if (epubBook) {
+    try {
+      epubBook.destroy();
+    } catch {}
+    epubBook = null;
+  }
+  isEpubMode.value = false;
   pdfDoc = null;
   currentPage.value = 1;
   totalPages.value = 0;
@@ -576,21 +720,41 @@ const loadDocument = async () => {
   for (const candidate of candidateUrls) {
     try {
       console.log(`[EbookReader] Mencoba memuat e-Book dari: ${candidate}`);
-      const loadingTask = pdfjsLib.getDocument({
-        url: candidate,
-      });
+      
+      const response = await fetch(candidate);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: Gagal mengunduh file e-Book`);
+      }
 
-      pdfDoc = await loadingTask.promise;
-      totalPages.value = pdfDoc.numPages;
-      currentPage.value = 1;
-      pageInput.value = 1;
-      isLoadingDoc.value = false;
-      activeWorkingUrl.value = candidate;
-      loaded = true;
+      const buffer = await response.arrayBuffer();
 
-      await nextTick();
-      await renderCurrentPage();
-      break;
+      const isPdf = isPdfBuffer(buffer);
+      const isEpub = isEpubBuffer(buffer) || candidate.toLowerCase().includes('.epub') || props.loan?.ebookFormat === 'epub';
+
+      if (isEpub && !isPdf) {
+        await loadEpubFromBuffer(buffer);
+        activeWorkingUrl.value = candidate;
+        isLoadingDoc.value = false;
+        loaded = true;
+        break;
+      } else {
+        isEpubMode.value = false;
+        const loadingTask = pdfjsLib.getDocument({
+          data: buffer
+        });
+
+        pdfDoc = await loadingTask.promise;
+        totalPages.value = pdfDoc.numPages;
+        currentPage.value = 1;
+        pageInput.value = 1;
+        isLoadingDoc.value = false;
+        activeWorkingUrl.value = candidate;
+        loaded = true;
+
+        await nextTick();
+        await renderCurrentPage();
+        break;
+      }
     } catch (err: any) {
       console.warn(`[EbookReader] Gagal memuat dari ${candidate}:`, err?.message || err);
       lastError = err;
@@ -678,6 +842,10 @@ const renderCurrentPage = async () => {
 };
 
 const prevPage = () => {
+  if (isEpubMode.value && epubRendition) {
+    epubRendition.prev();
+    return;
+  }
   if (currentPage.value > 1) {
     currentPage.value--;
     renderCurrentPage();
@@ -685,6 +853,10 @@ const prevPage = () => {
 };
 
 const nextPage = () => {
+  if (isEpubMode.value && epubRendition) {
+    epubRendition.next();
+    return;
+  }
   if (currentPage.value < totalPages.value) {
     currentPage.value++;
     renderCurrentPage();
@@ -693,6 +865,20 @@ const nextPage = () => {
 
 const handlePageInputChange = () => {
   const target = Number(pageInput.value);
+  if (isEpubMode.value && epubBook && epubBook.locations && epubRendition) {
+    if (target >= 1 && (!totalPages.value || target <= totalPages.value)) {
+      const cfi = epubBook.locations.cfiFromLocation(target);
+      if (cfi) {
+        epubRendition.display(cfi);
+      }
+      currentPage.value = target;
+      pageInput.value = target;
+    } else {
+      pageInput.value = currentPage.value;
+    }
+    return;
+  }
+
   if (target >= 1 && target <= totalPages.value) {
     currentPage.value = target;
     renderCurrentPage();
@@ -703,21 +889,33 @@ const handlePageInputChange = () => {
 
 const zoomIn = () => {
   if (zoomMultiplier.value < 2.5) {
-    zoomMultiplier.value = Number((zoomMultiplier.value + 0.2).toFixed(2));
-    renderCurrentPage();
+    zoomMultiplier.value = Number((zoomMultiplier.value + 0.15).toFixed(2));
+    if (isEpubMode.value) {
+      applyEpubTheme();
+    } else {
+      renderCurrentPage();
+    }
   }
 };
 
 const zoomOut = () => {
   if (zoomMultiplier.value > 0.6) {
-    zoomMultiplier.value = Number((zoomMultiplier.value - 0.2).toFixed(2));
-    renderCurrentPage();
+    zoomMultiplier.value = Number((zoomMultiplier.value - 0.15).toFixed(2));
+    if (isEpubMode.value) {
+      applyEpubTheme();
+    } else {
+      renderCurrentPage();
+    }
   }
 };
 
 const resetZoom = () => {
   zoomMultiplier.value = 1.0;
-  renderCurrentPage();
+  if (isEpubMode.value) {
+    applyEpubTheme();
+  } else {
+    renderCurrentPage();
+  }
 };
 
 const handleKeyDown = (e: KeyboardEvent) => {
@@ -728,10 +926,14 @@ const handleKeyDown = (e: KeyboardEvent) => {
 };
 
 const handleWindowResize = () => {
-  if (!props.isOpen || !pdfDoc) return;
+  if (!props.isOpen) return;
   clearTimeout(resizeTimeout);
   resizeTimeout = setTimeout(() => {
-    renderCurrentPage();
+    if (isEpubMode.value && epubRendition) {
+      epubRendition.resize();
+    } else if (pdfDoc) {
+      renderCurrentPage();
+    }
   }, 150);
 };
 

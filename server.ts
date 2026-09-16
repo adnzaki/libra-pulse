@@ -98,9 +98,10 @@ const ebookStorage = multer.diskStorage({
   filename: (req, file, cb) => {
     const rawName = (req.body.filename || file.originalname.replace(/\.[^/.]+$/, '')).replace(/^ebook_+/, '')
     const cleanName = rawName.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40)
+    const ext = path.extname(file.originalname).toLowerCase() || '.pdf'
     cb(
       null,
-      `ebook_${cleanName}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.pdf`,
+      `ebook_${cleanName}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}${ext}`,
     )
   },
 })
@@ -109,10 +110,12 @@ const ebookUpload = multer({
   storage: ebookStorage,
   limits: { fileSize: 100 * 1024 * 1024 }, // 100MB max
   fileFilter: (_req, file, cb) => {
-    if (file.mimetype === 'application/pdf' || file.originalname.toLowerCase().endsWith('.pdf')) {
+    const isPdf = file.mimetype === 'application/pdf' || file.originalname.toLowerCase().endsWith('.pdf')
+    const isEpub = file.mimetype === 'application/epub+zip' || file.originalname.toLowerCase().endsWith('.epub')
+    if (isPdf || isEpub) {
       cb(null, true)
     } else {
-      cb(new Error('Hanya file dokumen PDF yang diperbolehkan untuk e-Book.'))
+      cb(new Error('Hanya file dokumen PDF atau ePub (.epub) yang diperbolehkan untuk e-Book.'))
     }
   },
 })
@@ -619,12 +622,12 @@ app.post('/api/delete-ebook', (req, res) => {
   }
 })
 
-// Helper pencarian cerdas file PDF e-Book berdasarkan nama file atau kata kunci judul
+// Helper pencarian cerdas file e-Book (PDF & ePub) berdasarkan nama file atau kata kunci judul
 function extractEbookTokens(str: string): string[] {
   return str
     .toLowerCase()
     .replace(/^ebook_+/, '')
-    .replace(/\.pdf$/i, '')
+    .replace(/\.(pdf|epub)$/i, '')
     .replace(/_\d+_[a-z0-9]+$/i, '') // Hapus timestamp dan random suffix
     .replace(/[^a-z0-9]/g, ' ')
     .split(/\s+/)
@@ -633,7 +636,10 @@ function extractEbookTokens(str: string): string[] {
 
 function findBestEbookFile(searchFilename: string, searchTitle?: string): string | null {
   if (!fs.existsSync(ebooksDir)) return null
-  const files = fs.readdirSync(ebooksDir).filter(f => f.toLowerCase().endsWith('.pdf'))
+  const files = fs.readdirSync(ebooksDir).filter(f => {
+    const lower = f.toLowerCase()
+    return lower.endsWith('.pdf') || lower.endsWith('.epub')
+  })
   if (files.length === 0) return null
 
   const safeFilename = path.basename(decodeURIComponent(searchFilename || '')).trim()
@@ -678,18 +684,18 @@ function findBestEbookFile(searchFilename: string, searchTitle?: string): string
 
   // 4. Substring fallback match
   if (safeFilename) {
-    const cleanBase = safeFilename.replace(/^ebook_+/, '').replace(/\.pdf$/i, '').toLowerCase()
+    const cleanBase = safeFilename.replace(/^ebook_+/, '').replace(/\.(pdf|epub)$/i, '').toLowerCase()
     const subMatch = files.find(f => {
       const lower = f.toLowerCase()
-      return lower.includes(cleanBase) || cleanBase.includes(lower.replace(/\.pdf$/i, ''))
+      return lower.includes(cleanBase) || cleanBase.includes(lower.replace(/\.(pdf|epub)$/i, ''))
     })
     if (subMatch) return subMatch
   }
 
   // 5. Jika hanya ada 1 file ebook selain sample, gunakan file tersebut
-  const customPdfs = files.filter(f => !f.startsWith('sample_'))
-  if (customPdfs.length === 1) {
-    return customPdfs[0]
+  const customFiles = files.filter(f => !f.startsWith('sample_'))
+  if (customFiles.length === 1) {
+    return customFiles[0]
   }
 
   return null
@@ -711,7 +717,9 @@ app.get('/api/ebook-stream/:filename', (req, res) => {
       return res.status(404).json({ success: false, error: 'File e-Book tidak ditemukan di server.' })
     }
 
-    res.setHeader('Content-Disposition', 'inline; filename="document.pdf"')
+    const isEpub = targetFile!.toLowerCase().endsWith('.epub')
+    res.setHeader('Content-Type', isEpub ? 'application/epub+zip' : 'application/pdf')
+    res.setHeader('Content-Disposition', `inline; filename="document.${isEpub ? 'epub' : 'pdf'}"`)
     res.setHeader('X-Content-Type-Options', 'nosniff')
     res.setHeader('Access-Control-Allow-Origin', '*')
     res.setHeader('Access-Control-Expose-Headers', 'Content-Range, Accept-Ranges, Content-Length')
@@ -742,7 +750,9 @@ app.get('/api/ebook-stream-by-title', (req, res) => {
     }
 
     const filePath = path.join(ebooksDir, targetFile)
-    res.setHeader('Content-Disposition', 'inline; filename="document.pdf"')
+    const isEpub = targetFile.toLowerCase().endsWith('.epub')
+    res.setHeader('Content-Type', isEpub ? 'application/epub+zip' : 'application/pdf')
+    res.setHeader('Content-Disposition', `inline; filename="document.${isEpub ? 'epub' : 'pdf'}"`)
     res.setHeader('X-Content-Type-Options', 'nosniff')
     res.setHeader('Access-Control-Allow-Origin', '*')
     res.setHeader('Access-Control-Expose-Headers', 'Content-Range, Accept-Ranges, Content-Length')

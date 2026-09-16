@@ -292,14 +292,23 @@
           </button>
         </div>
 
-        <!-- Real-time Search Input -->
-        <div class="relative w-full xl:w-72 shrink-0">
+        <!-- Real-time Search Input with Tab-Specific Models -->
+        <div v-if="hasSearchForActiveTab" class="relative w-full xl:w-80 shrink-0">
           <input 
-            v-model="loanSearch"
+            v-model="currentSearchInput"
             type="text" 
-            placeholder="Cari transaksi / nama..."
-            class="w-full pl-4 pr-3 py-2 bg-white border border-slate-200 rounded-full text-xs text-slate-900 focus:outline-none focus:border-blue-500 shadow-sm"
+            :placeholder="searchPlaceholder"
+            class="w-full pl-9 pr-8 py-2 bg-white border border-slate-200 rounded-full text-xs text-slate-900 focus:outline-none focus:border-blue-500 shadow-sm font-medium placeholder:text-slate-400"
           />
+          <Search class="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
+          <button 
+            v-if="currentSearchInput"
+            @click="currentSearchInput = ''"
+            class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-700 p-0.5 rounded-full cursor-pointer transition"
+            title="Hapus kata kunci pencarian"
+          >
+            <X class="w-3.5 h-3.5" />
+          </button>
         </div>
 
       </div>
@@ -452,13 +461,19 @@
               </div>
             </div>
             <span class="text-xs text-amber-800 font-bold font-mono px-3 py-1 bg-amber-200/60 rounded-full">
-              {{ store.activeHoldBookings.length }} Booking Aktif
+              {{ filteredBookings.length }} Booking Aktif
             </span>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div v-if="filteredBookings.length === 0" class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs">
+            <Clock class="w-8 h-8 text-slate-300 mx-auto mb-2" />
+            <p class="font-bold text-slate-700">Tidak Ada Data Booking</p>
+            <p class="text-[11px]" v-if="bookingSearch">Tidak ada booking yang cocok dengan kata kunci "{{ bookingSearch }}".</p>
+          </div>
+
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div 
-              v-for="b in store.activeHoldBookings"
+              v-for="b in filteredBookings"
               :key="b.id"
               class="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-4"
             >
@@ -1167,131 +1182,225 @@
 
         <!-- Tab 5: Master Data Buku -->
         <div v-if="activeTab === 'books'" class="space-y-4">
-          <div class="flex items-center justify-between">
-            <h3 class="text-xs sm:text-sm font-bold text-slate-900">Katalog Master Buku & Penempatan Rak</h3>
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200/80">
+            <div>
+              <h3 class="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
+                <span>Katalog Master Buku & Penempatan Rak</span>
+                <span class="text-[11px] font-bold text-blue-700 bg-blue-100/70 px-2.5 py-0.5 rounded-full">
+                  {{ filteredBooks.length }} Judul Buku
+                </span>
+              </h3>
+              <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5">Kelola judul buku, stok eksemplar, penempatan rak fisik, dan unggah e-Book digital.</p>
+            </div>
             <button 
               @click="openAddBookModal"
-              class="px-3.5 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full text-xs shadow-sm transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+              class="px-3.5 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full text-xs shadow-sm transition flex items-center gap-1.5 cursor-pointer active:scale-95 shrink-0 self-start sm:self-auto"
             >
               <Plus class="w-4 h-4" />
-              <span class="truncate">Tambah Buku</span>
+              <span class="truncate">Tambah Buku Baru</span>
             </button>
           </div>
 
-          <!-- Mobile Cards for Master Books -->
-          <div class="grid grid-cols-1 gap-3 md:hidden">
-            <div 
-              v-for="b in store.books" 
-              :key="b.id"
-              class="p-4 rounded-2xl bg-slate-50/60 border border-slate-200 space-y-3"
+          <!-- Empty State -->
+          <div v-if="filteredBooks.length === 0" class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs space-y-2">
+            <BookOpen class="w-8 h-8 text-slate-300 mx-auto" />
+            <p class="font-bold text-slate-700 text-sm">Tidak Ada Buku Ditemukan</p>
+            <p class="text-[11px]" v-if="bookSearch">Tidak ada buku yang cocok dengan kata kunci pencarian "{{ bookSearch }}".</p>
+            <button 
+              v-if="bookSearch"
+              @click="bookSearch = ''"
+              class="mt-2 px-3.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-full text-xs transition cursor-pointer"
             >
-              <div class="flex gap-3">
-                <img :src="b.cover" class="w-14 h-20 object-cover rounded-xl shadow-sm shrink-0" alt="Cover" />
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center justify-between gap-1">
-                    <span 
-                      class="px-2 py-0.5 rounded-full text-[10px] font-bold truncate max-w-[120px]"
-                      :style="{ backgroundColor: `${getCategoryColor(b.category)}18`, color: getCategoryColor(b.category) }"
-                    >
-                      {{ b.category }}
-                    </span>
-                    <span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-mono text-[10px] font-bold shrink-0">
-                      {{ b.shelfCode }}
-                    </span>
-                  </div>
-                  <h4 class="font-bold text-slate-900 text-sm mt-1 truncate">{{ b.title }}</h4>
-                  <div class="text-[11px] text-slate-500 truncate">{{ b.author }} ({{ b.year }})</div>
-                  <div class="text-xs font-semibold text-slate-700 mt-1">
-                    Stok: <span class="text-emerald-600 font-bold">{{ b.availableCopies }}</span> / {{ b.totalCopies }} Buku
-                  </div>
-                </div>
-              </div>
-
-              <div class="pt-2 border-t border-slate-200 flex items-center justify-between">
-                <span class="font-mono text-[10px] text-slate-400"></span>
-                <div class="flex items-center gap-1.5">
-                  <button 
-                    @click="openEditBookModal(b)"
-                    class="px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-700 text-xs font-semibold transition active:scale-95"
-                  >
-                    Edit
-                  </button>
-                  <button 
-                    @click="handleDeleteBook(b.id)"
-                    class="px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold transition active:scale-95"
-                  >
-                    Hapus
-                  </button>
-                </div>
-              </div>
-            </div>
+              Reset Pencarian
+            </button>
           </div>
 
-          <!-- Desktop Table for Master Books -->
-          <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100">
-            <table class="w-full text-left text-xs text-slate-600">
-              <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] tracking-wider border-b border-slate-100 font-bold">
-                <tr>
-                  <th class="py-3.5 px-4">Cover & Judul</th>
-                  <th class="py-3.5 px-4">Kategori</th>
-                  <th class="py-3.5 px-4">Lokasi Rak</th>
-                  <th class="py-3.5 px-4">Stok (Tersedia / Total)</th>
-                  <th class="py-3.5 px-4 text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-100">
-                <tr v-for="b in store.books" :key="b.id" class="hover:bg-slate-50/80">
-                  <td class="py-3 px-4 flex items-center gap-3">
-                    <img :src="b.cover" class="w-10 h-14 object-cover rounded-lg shadow-sm" alt="Cover" />
-                    <div>
-                      <div class="font-bold text-slate-900">{{ b.title }}</div>
-                      <div class="text-[10px] text-slate-400">{{ b.author }} • {{ b.publisher }} ({{ b.year }})</div>
+          <template v-else>
+            <!-- Mobile Cards for Master Books -->
+            <div class="grid grid-cols-1 gap-3 md:hidden">
+              <div 
+                v-for="b in paginatedBooks" 
+                :key="b.id"
+                class="p-4 rounded-2xl bg-slate-50/60 border border-slate-200 space-y-3"
+              >
+                <div class="flex gap-3">
+                  <img :src="b.cover" class="w-14 h-20 object-cover rounded-xl shadow-sm shrink-0" alt="Cover" />
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-1">
+                      <span 
+                        class="px-2 py-0.5 rounded-full text-[10px] font-bold truncate max-w-[120px]"
+                        :style="{ backgroundColor: `${getCategoryColor(b.category)}18`, color: getCategoryColor(b.category) }"
+                      >
+                        {{ b.category }}
+                      </span>
+                      <span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-mono text-[10px] font-bold shrink-0">
+                        {{ b.shelfCode }}
+                      </span>
                     </div>
-                  </td>
-                  <td class="py-3 px-4">
-                    <span 
-                      class="px-2.5 py-0.5 rounded-full text-[11px] font-bold"
-                      :style="{ 
-                        backgroundColor: `${getCategoryColor(b.category)}18`, 
-                        color: getCategoryColor(b.category) 
-                      }"
-                    >
-                      {{ b.category }}
-                    </span>
-                  </td>
-                  <td class="py-3 px-4">
-                    <span class="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-mono text-[11px] font-bold">
-                      {{ b.shelfCode }}
-                    </span>
-                  </td>
-                  <td class="py-3 px-4 font-semibold text-slate-700">
-                    <span class="text-emerald-600 font-bold">{{ b.availableCopies }}</span> / {{ b.totalCopies }} Buku
-                  </td>
-                  <td class="py-3 px-4 text-right space-x-1">
+                    <h4 class="font-bold text-slate-900 text-sm mt-1 truncate">{{ b.title }}</h4>
+                    <div class="text-[11px] text-slate-500 truncate">{{ b.author }} ({{ b.year }})</div>
+                    <div class="text-xs font-semibold text-slate-700 mt-1">
+                      Stok: <span class="text-emerald-600 font-bold">{{ b.availableCopies }}</span> / {{ b.totalCopies }} Buku
+                    </div>
+                  </div>
+                </div>
+
+                <div class="pt-2 border-t border-slate-200 flex items-center justify-between">
+                  <span class="font-mono text-[10px] text-slate-400"></span>
+                  <div class="flex items-center gap-1.5">
                     <button 
                       @click="openEditBookModal(b)"
-                      class="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs transition cursor-pointer"
+                      class="px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-700 text-xs font-semibold transition active:scale-95 cursor-pointer"
                     >
-                      <Pencil class="w-3.5 h-3.5" />
+                      Edit
                     </button>
                     <button 
                       @click="handleDeleteBook(b.id)"
-                      class="p-2 rounded-full bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 text-xs transition cursor-pointer"
+                      class="px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold transition active:scale-95 cursor-pointer"
                     >
-                      <Trash2 class="w-3.5 h-3.5" />
+                      Hapus
                     </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Desktop Table for Master Books -->
+            <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100">
+              <table class="w-full text-left text-xs text-slate-600">
+                <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] tracking-wider border-b border-slate-100 font-bold">
+                  <tr>
+                    <th class="py-3.5 px-4">Cover & Judul</th>
+                    <th class="py-3.5 px-4">Kategori</th>
+                    <th class="py-3.5 px-4">Lokasi Rak</th>
+                    <th class="py-3.5 px-4">Stok (Tersedia / Total)</th>
+                    <th class="py-3.5 px-4 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  <tr v-for="b in paginatedBooks" :key="b.id" class="hover:bg-slate-50/80">
+                    <td class="py-3 px-4 flex items-center gap-3">
+                      <img :src="b.cover" class="w-10 h-14 object-cover rounded-lg shadow-sm" alt="Cover" />
+                      <div>
+                        <div class="font-bold text-slate-900">{{ b.title }}</div>
+                        <div class="text-[10px] text-slate-400">{{ b.author }} • {{ b.publisher }} ({{ b.year }})</div>
+                      </div>
+                    </td>
+                    <td class="py-3 px-4">
+                      <span 
+                        class="px-2.5 py-0.5 rounded-full text-[11px] font-bold"
+                        :style="{ 
+                          backgroundColor: `${getCategoryColor(b.category)}18`, 
+                          color: getCategoryColor(b.category) 
+                        }"
+                      >
+                        {{ b.category }}
+                      </span>
+                    </td>
+                    <td class="py-3 px-4">
+                      <span class="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-mono text-[11px] font-bold">
+                        {{ b.shelfCode }}
+                      </span>
+                    </td>
+                    <td class="py-3 px-4 font-semibold text-slate-700">
+                      <span class="text-emerald-600 font-bold">{{ b.availableCopies }}</span> / {{ b.totalCopies }} Buku
+                    </td>
+                    <td class="py-3 px-4 text-right space-x-1">
+                      <button 
+                        @click="openEditBookModal(b)"
+                        class="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs transition cursor-pointer"
+                        title="Edit Buku"
+                      >
+                        <Pencil class="w-3.5 h-3.5" />
+                      </button>
+                      <button 
+                        @click="handleDeleteBook(b.id)"
+                        class="p-2 rounded-full bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 text-xs transition cursor-pointer"
+                        title="Hapus Buku"
+                      >
+                        <Trash2 class="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination Controls for Master Data Buku -->
+            <div class="p-3 sm:p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+              <div class="flex items-center gap-3 text-slate-500 text-[11px] sm:text-xs">
+                <span>
+                  Menampilkan <strong class="text-slate-800">{{ ((bookCurrentPage - 1) * bookItemsPerPage) + 1 }}</strong> - 
+                  <strong class="text-slate-800">{{ Math.min(bookCurrentPage * bookItemsPerPage, filteredBooks.length) }}</strong> 
+                  dari <strong class="text-slate-800">{{ filteredBooks.length }}</strong> buku
+                </span>
+                <div class="flex items-center gap-1 pl-2 border-l border-slate-200">
+                  <span class="text-slate-400">Baris:</span>
+                  <select 
+                    v-model="bookItemsPerPage"
+                    class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-700 font-medium focus:outline-none focus:border-blue-500"
+                  >
+                    <option :value="10">10</option>
+                    <option :value="25">25</option>
+                    <option :value="50">50</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Buttons -->
+              <div class="flex items-center gap-1">
+                <button 
+                  @click="bookCurrentPage = 1"
+                  :disabled="bookCurrentPage === 1"
+                  class="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                  title="Halaman Pertama"
+                >
+                  <ChevronsLeft class="w-4 h-4" />
+                </button>
+                <button 
+                  @click="bookCurrentPage--"
+                  :disabled="bookCurrentPage === 1"
+                  class="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                  title="Halaman Sebelumnya"
+                >
+                  <ChevronLeft class="w-4 h-4" />
+                </button>
+
+                <span class="px-2.5 py-1 font-bold text-slate-700 text-xs">
+                  Hal {{ bookCurrentPage }} / {{ bookTotalPages }}
+                </span>
+
+                <button 
+                  @click="bookCurrentPage++"
+                  :disabled="bookCurrentPage >= bookTotalPages"
+                  class="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                  title="Halaman Selanjutnya"
+                >
+                  <ChevronRight class="w-4 h-4" />
+                </button>
+                <button 
+                  @click="bookCurrentPage = bookTotalPages"
+                  :disabled="bookCurrentPage >= bookTotalPages"
+                  class="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                  title="Halaman Terakhir"
+                >
+                  <ChevronsRight class="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </template>
         </div>
 
         <!-- Tab 6: Pengelolaan Kategori Buku -->
         <div v-if="activeTab === 'categories'" class="space-y-6">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200/80">
             <div>
-              <h3 class="text-sm font-bold text-slate-900">Pengelolaan Taksonomi & Kategori Buku</h3>
+              <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <span>Pengelolaan Taksonomi & Kategori Buku</span>
+                <span class="text-[11px] font-bold text-indigo-700 bg-indigo-100/70 px-2.5 py-0.5 rounded-full">
+                  {{ filteredCategories.length }} Kategori
+                </span>
+              </h3>
               <p class="text-xs text-slate-500 mt-0.5">Tambah, ubah nama, deskripsi, serta palet warna kategori untuk pengelompokan buku.</p>
             </div>
             <button 
@@ -1303,10 +1412,17 @@
             </button>
           </div>
 
+          <!-- Empty State -->
+          <div v-if="filteredCategories.length === 0" class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs">
+            <Tag class="w-8 h-8 text-slate-300 mx-auto mb-2" />
+            <p class="font-bold text-slate-700">Tidak Ada Kategori Ditemukan</p>
+            <p class="text-[11px]" v-if="categorySearch">Tidak ada kategori yang cocok dengan kata kunci "{{ categorySearch }}".</p>
+          </div>
+
           <!-- Categories Bento Grid -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div 
-              v-for="cat in store.categories" 
+              v-for="cat in filteredCategories" 
               :key="cat.id"
               class="bg-white p-5 rounded-2xl border border-slate-100 hover:border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
             >
@@ -1853,7 +1969,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import type { Loan, Book, BookCategory, Member, Booking } from '../types.js';
 import DirectLoanModal from '../components/DirectLoanModal.vue';
@@ -1870,13 +1986,131 @@ import {
   ShieldCheck, BookPlus, CheckCircle2, BookOpen, CheckCircle, 
   BookMarked, Clock, AlertTriangle, UserX, Sliders, Send, 
   Plus, Pencil, Trash2, Tag, Users, UserPlus, LogIn, KeyRound, X, Eye, EyeOff, Check, RefreshCw, Database,
-  GraduationCap, Laptop
+  GraduationCap, Laptop, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight
 } from 'lucide-vue-next';
 
 const store = useLibraryStore();
 const isDeviceSessionsOpen = ref(false);
 const activeTab = ref('loans');
-const loanSearch = ref('');
+
+// Model textbox pencarian independen per tab (mencegah search term bocor antar-tab)
+const circulationSearch = ref('');
+const bookingSearch = ref('');
+const memberSearch = ref('');
+const teacherRequestSearch = ref('');
+const bookSearch = ref('');
+const categorySearch = ref('');
+
+// Backward-compat alias untuk sirkulasi
+const loanSearch = circulationSearch;
+
+const hasSearchForActiveTab = computed(() => {
+  return ['loans', 'bookings', 'members', 'teacher_requests', 'books', 'categories'].includes(activeTab.value);
+});
+
+const searchPlaceholder = computed(() => {
+  switch (activeTab.value) {
+    case 'loans': return 'Cari transaksi sirkulasi / peminjam / judul...';
+    case 'bookings': return 'Cari booking aktif / nama / judul...';
+    case 'members': return 'Cari anggota / no kartu / email / no HP...';
+    case 'teacher_requests': return 'Cari verifikasi guru / NIP / nama...';
+    case 'books': return 'Cari judul buku / pengarang / rak / ISBN...';
+    case 'categories': return 'Cari nama kategori buku...';
+    default: return 'Cari data...';
+  }
+});
+
+const currentSearchInput = computed({
+  get() {
+    switch (activeTab.value) {
+      case 'loans': return circulationSearch.value;
+      case 'bookings': return bookingSearch.value;
+      case 'members': return memberSearch.value;
+      case 'teacher_requests': return teacherRequestSearch.value;
+      case 'books': return bookSearch.value;
+      case 'categories': return categorySearch.value;
+      default: return '';
+    }
+  },
+  set(val: string) {
+    switch (activeTab.value) {
+      case 'loans': circulationSearch.value = val; break;
+      case 'bookings': bookingSearch.value = val; break;
+      case 'members': memberSearch.value = val; break;
+      case 'teacher_requests': teacherRequestSearch.value = val; break;
+      case 'books': bookSearch.value = val; break;
+      case 'categories': categorySearch.value = val; break;
+    }
+  }
+});
+
+// Master Data Buku: Search & Pagination
+const filteredBooks = computed(() => {
+  let list = store.books;
+  if (bookSearch.value.trim()) {
+    const q = bookSearch.value.toLowerCase().trim();
+    list = list.filter(b => 
+      b.title.toLowerCase().includes(q) ||
+      b.author.toLowerCase().includes(q) ||
+      (b.publisher && b.publisher.toLowerCase().includes(q)) ||
+      (b.category && b.category.toLowerCase().includes(q)) ||
+      (b.shelfCode && b.shelfCode.toLowerCase().includes(q)) ||
+      (b.shelfName && b.shelfName.toLowerCase().includes(q)) ||
+      (b.isbn && b.isbn.toLowerCase().includes(q)) ||
+      (b.barcode && b.barcode.toLowerCase().includes(q)) ||
+      (b.year && b.year.toString().includes(q))
+    );
+  }
+  return list;
+});
+
+const bookCurrentPage = ref(1);
+const bookItemsPerPage = ref(10);
+
+const bookTotalPages = computed(() => {
+  return Math.max(1, Math.ceil(filteredBooks.value.length / bookItemsPerPage.value));
+});
+
+const paginatedBooks = computed(() => {
+  const start = (bookCurrentPage.value - 1) * bookItemsPerPage.value;
+  return filteredBooks.value.slice(start, start + bookItemsPerPage.value);
+});
+
+watch([bookSearch, bookItemsPerPage], () => {
+  bookCurrentPage.value = 1;
+});
+
+// Booking: Search
+const filteredBookings = computed(() => {
+  let list = store.activeHoldBookings;
+  if (bookingSearch.value.trim()) {
+    const q = bookingSearch.value.toLowerCase().trim();
+    list = list.filter(b => 
+      b.id.toLowerCase().includes(q) ||
+      b.bookTitle.toLowerCase().includes(q) ||
+      b.memberName.toLowerCase().includes(q) ||
+      b.memberCardNumber.toLowerCase().includes(q) ||
+      (b.memberEmail && b.memberEmail.toLowerCase().includes(q)) ||
+      (b.memberPhone && b.memberPhone.includes(q)) ||
+      (b.shelfCode && b.shelfCode.toLowerCase().includes(q))
+    );
+  }
+  return list;
+});
+
+// Kategori: Search
+const filteredCategories = computed(() => {
+  let list = store.categories;
+  if (categorySearch.value.trim()) {
+    const q = categorySearch.value.toLowerCase().trim();
+    list = list.filter(c => 
+      c.name.toLowerCase().includes(q) ||
+      (c.description && c.description.toLowerCase().includes(q))
+    );
+  }
+  return list;
+});
+
 const memberFilter = ref('all');
 const now = ref(Date.now());
 let timerInterval: any = null;
@@ -2136,13 +2370,14 @@ const filteredMembers = computed(() => {
     list = list.filter(m => m.memberType === 'siswa' || !m.memberType);
   }
 
-  if (loanSearch.value.trim() && activeTab.value === 'members') {
-    const q = loanSearch.value.toLowerCase().trim();
+  if (memberSearch.value.trim()) {
+    const q = memberSearch.value.toLowerCase().trim();
     list = list.filter(m => 
       m.name.toLowerCase().includes(q) ||
       m.email.toLowerCase().includes(q) ||
       m.cardNumber.toLowerCase().includes(q) ||
-      m.phone.includes(q)
+      m.phone.includes(q) ||
+      (m.teacherNip && m.teacherNip.toLowerCase().includes(q))
     );
   }
   return list;
@@ -2182,13 +2417,14 @@ const handleDeleteMember = (memberId: string, memberName: string) => {
 
 const filteredLoans = computed(() => {
   let list = store.loans.filter(l => l.status === 'active' || l.status === 'overdue');
-  if (loanSearch.value.trim() && activeTab.value === 'loans') {
-    const q = loanSearch.value.toLowerCase().trim();
+  if (circulationSearch.value.trim()) {
+    const q = circulationSearch.value.toLowerCase().trim();
     list = list.filter(l => 
       l.id.toLowerCase().includes(q) ||
       l.bookTitle.toLowerCase().includes(q) ||
       l.memberName.toLowerCase().includes(q) ||
-      l.memberCardNumber.toLowerCase().includes(q)
+      l.memberCardNumber.toLowerCase().includes(q) ||
+      (l.shelfCode && l.shelfCode.toLowerCase().includes(q))
     );
   }
   return list;
@@ -2344,6 +2580,16 @@ const filteredTeacherRequests = computed(() => {
   let list = store.teacherRequests;
   if (teacherRequestFilter.value !== 'all') {
     list = list.filter(r => r.status === teacherRequestFilter.value);
+  }
+  if (teacherRequestSearch.value.trim()) {
+    const q = teacherRequestSearch.value.toLowerCase().trim();
+    list = list.filter(r => 
+      r.memberName.toLowerCase().includes(q) ||
+      r.memberCardNumber.toLowerCase().includes(q) ||
+      (r.memberEmail && r.memberEmail.toLowerCase().includes(q)) ||
+      (r.memberPhone && r.memberPhone.includes(q)) ||
+      (r.teacherNip && r.teacherNip.toLowerCase().includes(q))
+    );
   }
   return list;
 });

@@ -28,6 +28,7 @@ export interface Book {
   pages: number;
   language: string;
   isEbook?: boolean;
+  ebookFormat?: 'pdf' | 'epub';
   ebookUrl?: string;
   ebookFileName?: string;
   ebookFileSize?: number;
@@ -86,6 +87,7 @@ export interface Booking {
   status: 'active_hold' | 'collected' | 'cancelled_timeout' | 'cancelled_user';
   notes?: string;
   isEbook?: boolean;
+  ebookFormat?: 'pdf' | 'epub';
 }
 
 export interface Loan {
@@ -106,6 +108,7 @@ export interface Loan {
   daysOverdue: number;
   handledBy: string;
   isEbook?: boolean;
+  ebookFormat?: 'pdf' | 'epub';
   ebookUrl?: string;
 }
 

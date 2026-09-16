@@ -74,8 +74,29 @@
               <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5">Penerbit: {{ book.publisher }} (Tahun {{ book.year }}) • {{ book.pages }} Halaman • {{ book.language }}</p>
             </div>
 
-            <!-- Shelf Location Locator Box -->
-            <div class="p-3.5 sm:p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
+            <!-- Shelf Location Locator Box (or Digital e-Book Badge) -->
+            <div v-if="book.isEbook" class="p-3.5 sm:p-4 rounded-2xl bg-indigo-50 border border-indigo-100 space-y-2">
+              <div class="flex items-center gap-2 text-xs font-bold text-indigo-900">
+                <Smartphone class="w-4 h-4 text-indigo-600 shrink-0" />
+                <span>Format Buku Digital (e-Book):</span>
+              </div>
+              <div class="p-3 rounded-xl bg-white border border-indigo-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-xs">
+                <div>
+                  <div class="font-bold text-sm text-indigo-700 font-mono flex items-center gap-2">
+                    <span class="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 text-xs font-extrabold uppercase">
+                      {{ (book.ebookFormat || (book.ebookFileName?.toLowerCase().endsWith('.epub') ? 'epub' : 'pdf')).toUpperCase() }}
+                    </span>
+                    <span>Buku Digital In-App</span>
+                  </div>
+                  <div class="text-xs text-slate-500 mt-0.5">Dapat dibaca langsung di browser / smartphone setelah peminjaman disetujui.</div>
+                </div>
+                <span class="text-xs px-3 py-1.5 rounded-full bg-indigo-100 text-indigo-700 font-bold text-center shrink-0">
+                  Label: Digital
+                </span>
+              </div>
+            </div>
+
+            <div v-else class="p-3.5 sm:p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
               <div class="flex items-center gap-2 text-xs font-bold text-slate-800">
                 <MapPin class="w-4 h-4 text-blue-600 shrink-0" />
                 <span>Lokasi Rak Fisik Perpustakaan:</span>
@@ -134,7 +155,7 @@
 <script setup lang="ts">
 import { toRef } from 'vue';
 import type { Book } from '../types.js';
-import { X, MapPin, Bookmark } from 'lucide-vue-next';
+import { X, MapPin, Bookmark, Smartphone } from 'lucide-vue-next';
 import { useModalBack } from '../composables/useModalBack.js';
 
 const props = defineProps<{

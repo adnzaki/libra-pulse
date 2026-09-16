@@ -9,51 +9,61 @@ export const DEFAULT_APP_VERSION_CONFIG: AppVersionConfig = {
   releaseDate: APP_RELEASE_DATE,
   forceReload: false,
   minSupportedVersion: '1.0.0-beta.2',
-  updateMessage: 'Pembaruan sistem Libra versi 1.0.0-beta.2 telah dirilis dengan penambahan fitur manajemen sesi multi-perangkat terpusat dan dukungan buku digital (e-Book) interaktif.',
-  changelogSummary: 'Menambahkan fitur manajemen sesi multi-perangkat real-time dengan verifikasi OTP, serta dukungan penuh untuk peminjaman dan in-app reader buku digital (e-Book) dengan proteksi lisensi dan kenyamanan tampilan mobile.'
+  updateMessage: 'Pembaruan sistem Libra versi 1.0.0-beta.2 telah dirilis dengan penambahan fitur manajemen sesi multi-perangkat terpusat dan dukungan buku digital (e-Book) interaktif PDF & ePub.',
+  changelogSummary: 'Menambahkan fitur manajemen sesi multi-perangkat real-time, serta dukungan penuh untuk buku digital (e-Book) dalam format PDF & ePub dengan in-app reader tanpa distorsi mobile, watermark halus ergonomis, pagination data buku, dan pencarian independen per-tab.'
 };
 
 export const CHANGELOG_LIST: ChangelogItem[] = [
   {
+    id: 'session-management',
+    title: 'Manajemen Sesi Multi-Perangkat Terpusat',
+    description: 'Menambahkan fitur manajemen sesi terpusat dengan deteksi perangkat aktif, riwayat login, dan kemampuan mengakhiri sesi lain secara jarak jauh (remote logout) secara instan.',
+    targetAudience: 'all',
+    targetAudienceLabel: 'Semua Pengguna',
+    category: 'feature',
+    badge: 'Fitur Unggulan',
+    iconName: 'ShieldCheck'
+  },
+  {
     id: 'ebook-integration',
-    title: 'Dukungan Koleksi Buku Digital (e-Book)',
-    description: 'Menambahkan dukungan penuh untuk koleksi buku digital (e-Book) di katalog perpustakaan. Siswa dan Guru kini dapat meminjam dan mengakses bahan bacaan digital secara langsung dengan kuota peminjaman berjangka dan batas waktu jatuh tempo otomatis.',
+    title: 'Dukungan Koleksi Buku Digital (e-Book) PDF & ePub',
+    description: 'Menambahkan dukungan penuh untuk koleksi buku digital (e-Book) baik dalam format PDF maupun ePub. Pengguna dapat membaca langsung di peramban dengan penyesuaian font reflowable, rasio aspek presisi bebas distorsi di layar ponsel, serta pilihan intensitas watermark.',
     targetAudience: 'member',
     targetAudienceLabel: 'Khusus Siswa & Guru',
     category: 'feature',
-    badge: 'Fitur Unggulan',
+    badge: 'Koleksi Digital',
     iconName: 'BookOpen'
   },
   {
-    id: 'ebook-inapp-reader',
-    title: 'In-App PDF Reader & Proteksi Dokumen Berlisensi',
-    description: 'Membaca buku digital kini dapat dilakukan langsung di dalam aplikasi (in-app reader) dengan perenderan beresolusi tinggi, navigasi ramah jempol (lompat halaman dan zoom), proteksi hak cipta watermark halus, serta teknologi streaming byte-range aman yang mencegah unduhan bebas dokumen.',
-    targetAudience: 'all',
-    targetAudienceLabel: 'Semua Pengguna',
-    category: 'feature',
-    badge: 'E-Book Reader',
+    id: 'search-pagination-improvements',
+    title: 'Pencarian Independen Per-Tab & Pagination Data',
+    description: 'Memperbaiki kotak pencarian di Master Data Buku admin agar berfungsi maksimal dan memisahkan model pencarian antar-tab (Sirkulasi, Booking, Kelola Anggota, Verifikasi Guru, Master Buku, dan Kategori). Menambahkan sistem pagination untuk katalog buku dan master data buku admin.',
+    targetAudience: 'admin',
+    targetAudienceLabel: 'Khusus Admin',
+    category: 'improvement',
+    badge: 'Produktivitas',
     iconName: 'Sparkles'
   },
   {
-    id: 'mobile-device-modal-fix',
-    title: 'Penyempurnaan Tampilan Mobile Modal Sesi & Navigasi',
-    description: 'Menyempurnakan tata letak modal Manajemen Sesi di layar ponsel sehingga tombol Tutup dan tombol silang (X) tampil proporsional tanpa terpotong atau mengharuskan pengguna melakukan zoom out.',
+    id: 'digital-label-form',
+    title: 'Label Otomatis Digital & Penyempurnaan Form Buku',
+    description: 'Pada form tambah/edit buku digital, isian lokasi rak digantikan secara otomatis dengan label Digital, menyederhanakan proses katalogisasi buku elektronik tanpa memerlukan alokasi rak fisik perpustakaan.',
+    targetAudience: 'admin',
+    targetAudienceLabel: 'Khusus Admin',
+    category: 'improvement',
+    badge: 'Manajemen Data',
+    iconName: 'Bookmark'
+  },
+  {
+    id: 'mobile-reader-comfort',
+    title: 'Kenyamanan Membaca Layar Ponsel & Watermark Halus',
+    description: 'Menghilangkan distorsi regangan teks pada tampilan e-Book di layar ponsel dengan rasio aspek matematis yang presisi, serta menurunkan intensitas watermark menjadi sangat halus agar nyaman dibaca dan tidak menghalangi teks buku.',
     targetAudience: 'all',
     targetAudienceLabel: 'Semua Pengguna',
     category: 'improvement',
-    badge: 'UI/UX Responsif',
+    badge: 'Kenyamanan Baca',
     iconName: 'Smartphone'
-  },
-  {
-    id: 'realtime-version-detection',
-    title: 'Sistem Deteksi Pembaruan Versi Real-time & Panduan Cache',
-    description: 'Pemantauan versi rilis terbaru secara real-time untuk mempermudah pengguna ketika terdapat versi terbaru dari aplikasi.',
-    targetAudience: 'all',
-    targetAudienceLabel: 'Semua Pengguna',
-    category: 'feature',
-    badge: 'Sistem Otomasi',
-    iconName: 'RefreshCw'
-  },
+  }
 ];
 
 /**

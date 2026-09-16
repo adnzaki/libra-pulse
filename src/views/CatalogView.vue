@@ -100,7 +100,7 @@
           </div>
           <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-slate-700 font-medium">
             <Layers class="w-3.5 h-3.5 text-blue-600" />
-            <span>{{ store.shelves.length }} Rak</span>
+            <span>{{ store.shelves.length }} Rak Fisik</span>
           </div>
         </div>
       </div>
@@ -184,7 +184,7 @@
         </div>
 
         <div class="flex items-center justify-between sm:justify-end gap-3 text-[11px] sm:text-xs text-slate-400">
-          <span>Menampilkan <strong class="text-slate-800">{{ filteredBooks.length }}</strong> buku</span>
+          <span>Menampilkan <strong class="text-slate-800">{{ filteredBooks.length }}</strong> buku (Hal {{ currentPage }}/{{ totalPages }})</span>
           <button 
             v-if="selectedCategory !== 'all' || selectedShelfId !== 'all' || availabilityFilter !== 'all' || bookTypeFilter !== 'all' || searchQuery"
             @click="resetFilters" 
@@ -197,13 +197,14 @@
     </section>
 
     <!-- Books Grid (Optimized 2-columns on mobile, 4-columns on desktop) -->
-    <section>
-      <div v-if="filteredBooks.length > 0" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
-        <div 
-          v-for="book in filteredBooks" 
-          :key="book.id"
-          class="group bg-white border border-slate-100 hover:border-slate-200 rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between"
-        >
+    <section id="catalog-books-section">
+      <div v-if="filteredBooks.length > 0" class="space-y-4">
+        <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
+          <div 
+            v-for="book in paginatedBooks" 
+            :key="book.id"
+            class="group bg-white border border-slate-100 hover:border-slate-200 rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between"
+          >
           <!-- Top: Book Cover & Badges -->
           <div>
             <div class="relative aspect-[3/4] overflow-hidden bg-slate-100">
@@ -304,7 +305,82 @@
               </button>
             </div>
           </div>
+        </div>
+      </div>
 
+        <!-- Pagination Controls -->
+        <div class="p-4 sm:p-5 bg-white rounded-3xl border border-slate-100 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+          <div class="flex items-center gap-3 text-slate-500 text-[11px] sm:text-xs">
+            <span>
+              Menampilkan <strong class="text-slate-900 font-bold">{{ ((currentPage - 1) * itemsPerPage) + 1 }}</strong> - 
+              <strong class="text-slate-900 font-bold">{{ Math.min(currentPage * itemsPerPage, filteredBooks.length) }}</strong> 
+              dari <strong class="text-slate-900 font-bold">{{ filteredBooks.length }}</strong> buku
+            </span>
+            <div class="flex items-center gap-1.5 pl-3 border-l border-slate-200">
+              <span class="text-slate-400">Baris:</span>
+              <select 
+                v-model="itemsPerPage"
+                class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-700 font-bold focus:outline-none focus:border-blue-500 cursor-pointer"
+              >
+                <option :value="8">8</option>
+                <option :value="12">12</option>
+                <option :value="24">24</option>
+                <option :value="48">48</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Page Navigation Buttons -->
+          <div class="flex items-center gap-1">
+            <button 
+              @click="goToPage(1)"
+              :disabled="currentPage === 1"
+              class="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+              title="Halaman Pertama"
+            >
+              <ChevronsLeft class="w-4 h-4" />
+            </button>
+            <button 
+              @click="goToPage(currentPage - 1)"
+              :disabled="currentPage === 1"
+              class="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+              title="Halaman Sebelumnya"
+            >
+              <ChevronLeft class="w-4 h-4" />
+            </button>
+
+            <!-- Numbered page pills -->
+            <div class="flex items-center gap-1 px-1">
+              <button 
+                v-for="p in displayedPages"
+                :key="p"
+                @click="goToPage(p)"
+                class="min-w-[32px] h-8 px-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center"
+                :class="p === currentPage 
+                  ? 'bg-blue-600 text-white shadow-sm shadow-blue-200' 
+                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80'"
+              >
+                {{ p }}
+              </button>
+            </div>
+
+            <button 
+              @click="goToPage(currentPage + 1)"
+              :disabled="currentPage >= totalPages"
+              class="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+              title="Halaman Selanjutnya"
+            >
+              <ChevronRight class="w-4 h-4" />
+            </button>
+            <button 
+              @click="goToPage(totalPages)"
+              :disabled="currentPage >= totalPages"
+              class="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+              title="Halaman Terakhir"
+            >
+              <ChevronsRight class="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -341,7 +417,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useLibraryStore } from '../stores/library.js';
 import type { Book, Loan } from '../types.js';
@@ -349,7 +425,8 @@ import BookingModal from '../components/BookingModal.vue';
 import BookDetailModal from '../components/BookDetailModal.vue';
 import { 
   Search, QrCode, Sparkles, CheckCircle2, Clock, 
-  Layers, MapPin, Bookmark, BookX, Smartphone, BookOpen, X
+  Layers, MapPin, Bookmark, BookX, Smartphone, BookOpen, X,
+  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight
 } from 'lucide-vue-next';
 
 const router = useRouter();
@@ -442,12 +519,57 @@ const filteredBooks = computed(() => {
   return list;
 });
 
+// Pagination State & Logic
+const currentPage = ref(1);
+const itemsPerPage = ref(12);
+
+const totalPages = computed(() => {
+  return Math.max(1, Math.ceil(filteredBooks.value.length / itemsPerPage.value));
+});
+
+const paginatedBooks = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  return filteredBooks.value.slice(start, start + itemsPerPage.value);
+});
+
+watch([searchQuery, selectedCategory, selectedShelfId, availabilityFilter, bookTypeFilter, itemsPerPage], () => {
+  currentPage.value = 1;
+});
+
+const goToPage = (page: number) => {
+  if (page < 1 || page > totalPages.value) return;
+  currentPage.value = page;
+  const el = document.getElementById('catalog-books-section');
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+};
+
+const displayedPages = computed(() => {
+  const current = currentPage.value;
+  const total = totalPages.value;
+  if (total <= 5) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  let start = Math.max(1, current - 2);
+  let end = Math.min(total, start + 4);
+  if (end - start < 4) {
+    start = Math.max(1, end - 4);
+  }
+  const pages: number[] = [];
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+  return pages;
+});
+
 const resetFilters = () => {
   searchQuery.value = '';
   selectedCategory.value = 'all';
   selectedShelfId.value = 'all';
   availabilityFilter.value = 'all';
   bookTypeFilter.value = 'all';
+  currentPage.value = 1;
 };
 
 const openBooking = (book: Book) => {
