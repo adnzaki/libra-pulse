@@ -461,8 +461,13 @@ const openDetail = (book: Book) => {
 };
 
 const openBookingFromDetail = (book: Book) => {
+  // 1. Tutup detail modal dulu
   isDetailModalOpen.value = false;
-  openBooking(book);
+  
+  // 2. Beri jeda 150ms agar animasi penutupan modal detail selesai & backdrop tidak bentrok
+  setTimeout(() => {
+    openBooking(book);
+  }, 150);
 };
 
 const openDirectScan = () => {
