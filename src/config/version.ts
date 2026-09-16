@@ -35,36 +35,6 @@ export const CHANGELOG_LIST: ChangelogItem[] = [
     iconName: 'Sparkles'
   },
   {
-    id: 'ebook-mobile-aspect-ratio',
-    title: 'Optimalisasi Tampilan Layar Ponsel & Kontrol Watermark',
-    description: 'Penyempurnaan rasio tampilan e-Book pada perangkat ponsel agar teks tidak terdistorsi/teregang, dilengkapi tombol pengatur intensitas watermark (mode Halus 4.5%, Nonaktif, atau Standar) untuk kenyamanan membaca buku pelajaran secara maksimal.',
-    targetAudience: 'all',
-    targetAudienceLabel: 'Semua Pengguna',
-    category: 'improvement',
-    badge: 'UI/UX Responsif',
-    iconName: 'Smartphone'
-  },
-  {
-    id: 'multi-device-management',
-    title: 'Fitur Manajemen Sesi & Multi-Perangkat Real-time',
-    description: 'Menambahkan fitur manajemen sesi komprehensif untuk memantau seluruh perangkat aktif (Ponsel Android/iOS, Tablet, Desktop) yang terhubung ke akun Anda, lengkap dengan rincian sistem operasi, peramban, lokasi perangkat, dan waktu aktivitas terakhir.',
-    targetAudience: 'all',
-    targetAudienceLabel: 'Semua Pengguna (Siswa, Guru, Admin)',
-    category: 'security',
-    badge: 'Keamanan Akun',
-    iconName: 'Laptop'
-  },
-  {
-    id: 'main-device-otp-verification',
-    title: 'Perangkat Utama (Main Device) & Verifikasi OTP Email',
-    description: 'Tetapkan satu perangkat terpercaya sebagai "Perangkat Utama" melalui kode OTP email 6-digit. Memberikan perlindungan ekstra dengan hak istimewa untuk mencabut sesi login atau me-logout paksa perangkat lain dari jarak jauh (remote logout).',
-    targetAudience: 'all',
-    targetAudienceLabel: 'Semua Pengguna',
-    category: 'security',
-    badge: 'Otorisasi Keamanan',
-    iconName: 'Crown'
-  },
-  {
     id: 'mobile-device-modal-fix',
     title: 'Penyempurnaan Tampilan Mobile Modal Sesi & Navigasi',
     description: 'Menyempurnakan tata letak modal Manajemen Sesi di layar ponsel sehingga tombol Tutup dan tombol silang (X) tampil proporsional tanpa terpotong atau mengharuskan pengguna melakukan zoom out.',
@@ -73,26 +43,6 @@ export const CHANGELOG_LIST: ChangelogItem[] = [
     category: 'improvement',
     badge: 'UI/UX Responsif',
     iconName: 'Smartphone'
-  },
-  {
-    id: 'teacher-status-request',
-    title: 'Pengajuan Perubahan Status Akun Siswa ke Guru',
-    description: 'Tenaga Pendidik / Kependidikan kini dapat mengajukan perubahan status akun dari Siswa menjadi Guru melalui proses verifikasi foto selfie di menu Portal.',
-    targetAudience: 'member',
-    targetAudienceLabel: 'Khusus Siswa & Guru',
-    category: 'feature',
-    badge: 'Fitur Unggulan',
-    iconName: 'GraduationCap'
-  },
-  {
-    id: 'admin-teacher-approval',
-    title: 'Panel Verifikasi Permohonan Guru untuk Admin',
-    description: 'Panel khusus bagi Administrator untuk mengelola permohonan kenaikan status guru yang masuk secara real-time, lengkap dengan badge indikator jumlah permohonan pending di navigasi bar dan riwayat peninjauan.',
-    targetAudience: 'admin',
-    targetAudienceLabel: 'Khusus Admin & Pengelola',
-    category: 'feature',
-    badge: 'Admin Console',
-    iconName: 'ShieldCheck'
   },
   {
     id: 'realtime-version-detection',
@@ -104,16 +54,6 @@ export const CHANGELOG_LIST: ChangelogItem[] = [
     badge: 'Sistem Otomasi',
     iconName: 'RefreshCw'
   },
-  {
-    id: 'firestore-zero-write-optimization',
-    title: 'Optimasi Penyimpanan Data ke Database',
-    description: 'Mengoptimalkan proses penyimpanan data ke database dengan mengurangi proses penulisan data yang tidak perlu untuk meningkatkan performa aplikasi.',
-    targetAudience: 'all',
-    targetAudienceLabel: 'Semua Pengguna',
-    category: 'fix',
-    badge: 'Stabilitas & Cloud',
-    iconName: 'Database'
-  }
 ];
 
 /**
