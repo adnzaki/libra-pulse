@@ -183,6 +183,47 @@
         </div>
       </div>
 
+      <!-- Banner Notifikasi: e-Book Kedaluwarsa Telah Dikembalikan Otomatis (Bebas Sanksi Suspend) -->
+      <div 
+        v-if="expiredEbookInfo" 
+        class="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 text-white shadow-lg flex flex-col sm:flex-row items-start justify-between gap-4 border border-amber-400/30 animate-in fade-in duration-300"
+      >
+        <div class="flex items-start gap-3.5 min-w-0 flex-1">
+          <div class="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 border border-white/30 text-xl shadow-xs">
+            📱
+          </div>
+          <div class="space-y-1.5 min-w-0 flex-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="font-extrabold text-[11px] tracking-wide uppercase px-2.5 py-0.5 rounded-full bg-white/25 text-white">
+                Masa Akses e-Book Berakhir
+              </span>
+              <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-black/25 text-amber-200 border border-amber-300/30">
+                ✅ Dikembalikan Otomatis • Bebas Suspend
+              </span>
+            </div>
+            
+            <h4 class="font-bold text-sm text-white">{{ expiredEbookInfo.subject }}</h4>
+            <p class="text-xs text-white/95 leading-relaxed whitespace-pre-line font-medium">{{ expiredEbookInfo.message }}</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+          <router-link 
+            to="/"
+            class="px-4 py-2 rounded-full bg-white text-amber-950 hover:bg-amber-50 font-bold text-xs shadow-sm transition flex items-center gap-1.5 cursor-pointer"
+          >
+            <span>Pinjam di Katalog →</span>
+          </router-link>
+          <button 
+            @click="dismissExpiredEbookInfo(expiredEbookInfo.id)"
+            class="p-2 rounded-full hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer"
+            title="Tutup pemberitahuan"
+          >
+            <X class="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
       <!-- Quick Banner: Pending Teacher Request (Jika sedang proses verifikasi selfie) -->
       <div 
         v-if="store.myPendingTeacherRequest" 
@@ -673,10 +714,87 @@ const formatDateTime = (ts?: number | string) => {
   });
 };
 
+// Banner Notifikasi e-Book Kedaluwarsa yang Dikembalikan Otomatis
+const dismissedExpiredEbookNotifs = ref<string[]>([]);
+try {
+  dismissedExpiredEbookNotifs.value = JSON.parse(localStorage.getItem('dismissed_expired_ebook_notifs') || '[]');
+} catch {}
+
+const expiredEbookInfo = computed(() => {
+  if (!store.currentUser) return null;
+  const memId = store.currentUser.id;
+  const cardNum = store.currentUser.cardNumber;
+  const email = store.currentUser.email?.toLowerCase().trim();
+
+  // 1. Prioritaskan dari log notifikasi resmi perpustakaan yang belum di-dismiss
+  const notif = store.notifications.find(n => 
+    n.triggerReason === 'ebook_expired' &&
+    !dismissedExpiredEbookNotifs.value.includes(n.id) &&
+    (n.memberId === memId || (email && n.recipient && n.recipient.toLowerCase().trim() === email))
+  );
+
+  if (notif) {
+    return {
+      id: notif.id,
+      subject: notif.subject,
+      message: notif.message,
+      sentAt: notif.sentAt
+    };
+  }
+
+  // 2. Fallback realtime dari pinjaman e-book yang sudah berstatus returned karena lewat tempo (dalam 7 hari terakhir)
+  const todayMidnight = new Date().setHours(0, 0, 0, 0);
+  const returnedExpiredLoans = store.loans.filter(l => {
+    if (l.memberId !== memId && l.memberCardNumber !== cardNum) return false;
+    const isEbook = l.isEbook === true || store.books.find(b => b.id === l.bookId)?.isEbook === true;
+    if (!isEbook || l.status !== 'returned' || !l.dueDate) return false;
+    const dueTime = new Date(l.dueDate).getTime();
+    if (todayMidnight <= dueTime) return false;
+    return !dismissedExpiredEbookNotifs.value.includes(`loan_${l.id}`);
+  });
+
+  if (returnedExpiredLoans.length === 0) return null;
+
+  const notifKey = `auto_returned_loans_${returnedExpiredLoans.map(l => l.id).join('_')}`;
+  if (dismissedExpiredEbookNotifs.value.includes(notifKey)) return null;
+
+  if (returnedExpiredLoans.length === 1) {
+    const l = returnedExpiredLoans[0];
+    return {
+      id: notifKey,
+      subject: `Masa Akses e-Book Berakhir: ${l.bookTitle}`,
+      message: `Masa akses peminjaman untuk e-Book "${l.bookTitle}" telah berakhir per ${new Date(l.dueDate).toLocaleDateString('id-ID')} dan telah dikembalikan secara otomatis oleh sistem perpustakaan.\n\nAkun Anda tetap aktif tanpa sanksi denda atau suspend. Anda dapat meminjam kembali melalui katalog jika ingin membaca ulang.`,
+      sentAt: new Date().toISOString()
+    };
+  }
+
+  const listText = returnedExpiredLoans.map((l, idx) => `  ${idx + 1}. "${l.bookTitle}" (Jatuh tempo: ${new Date(l.dueDate).toLocaleDateString('id-ID')})`).join('\n');
+  return {
+    id: notifKey,
+    subject: `Masa Akses ${returnedExpiredLoans.length} e-Book Berakhir (Pengembalian Otomatis)`,
+    message: `Masa akses peminjaman untuk ${returnedExpiredLoans.length} e-Book Anda telah berakhir dan telah dikembalikan secara otomatis oleh sistem:\n\n${listText}\n\nSemua e-Book di atas telah dikembalikan ke sistem tanpa dikenakan sanksi denda atau suspend. Anda dapat melakukan booking kembali melalui katalog buku kapan saja jika ingin membaca ulang.`,
+    sentAt: new Date().toISOString()
+  };
+});
+
+const dismissExpiredEbookInfo = (id: string) => {
+  if (!dismissedExpiredEbookNotifs.value.includes(id)) {
+    dismissedExpiredEbookNotifs.value.push(id);
+    try {
+      localStorage.setItem('dismissed_expired_ebook_notifs', JSON.stringify(dismissedExpiredEbookNotifs.value));
+    } catch {}
+  }
+};
+
 onMounted(() => {
   timerInterval = setInterval(() => {
     now.value = Date.now();
   }, 1000);
+
+  // Pengecekan background e-book hemat kuota (hanya akun pengguna aktif, cooldown 10 menit)
+  if (store.currentUser?.id) {
+    store.triggerBackgroundEbookCheck(store.currentUser.id);
+  }
 });
 
 onBeforeUnmount(() => {

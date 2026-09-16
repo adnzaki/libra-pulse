@@ -69,6 +69,17 @@ export const useLibraryStore = defineStore('library', {
     stats: null as LibraryStats | null,
     suspendConfig: defaultSuspendConfig,
     
+    // E-Book Auto-Return & Rate Limiting state
+    processedEbookReturnIds: (() => {
+      try {
+        const raw = localStorage.getItem('pustaka_processed_ebook_returns');
+        return new Set<string>(raw ? JSON.parse(raw) : []);
+      } catch {
+        return new Set<string>();
+      }
+    })(),
+    isProcessingEbookAutoReturn: false,
+    
     // Auth & Role
     _isCheckingOverdue: false,
     currentUser: null as Member | null,
@@ -432,6 +443,7 @@ export const useLibraryStore = defineStore('library', {
 
       for (const loan of this.loans) {
         if (loan.status === 'returned' || !loan.dueDate) continue;
+        const isEbook = loan.isEbook === true || this.books.find(b => b.id === loan.bookId)?.isEbook === true;
         const parts = loan.dueDate.split('-');
         let dueMidnight = 0;
         if (parts.length === 3) {
@@ -441,11 +453,21 @@ export const useLibraryStore = defineStore('library', {
         }
 
         if (todayMidnight > dueMidnight) {
-          loan.status = 'overdue';
-          loan.daysOverdue = Math.max(1, Math.round((todayMidnight - dueMidnight) / (24 * 3600 * 1000)));
-          if (loan.memberId) overdueMemberKeys.add(loan.memberId);
-          if (loan.memberCardNumber) overdueMemberKeys.add(loan.memberCardNumber);
-          if (loan.memberEmail) overdueMemberKeys.add(loan.memberEmail.toLowerCase().trim());
+          if (isEbook) {
+            // E-BOOK: Dikembalikan secara otomatis ketika sudah lewat jatuh tempo
+            loan.status = 'returned';
+            loan.returnDate = loan.returnDate || new Date().toISOString().slice(0, 10);
+            loan.daysOverdue = 0;
+            // Peminjam e-Book DITOLERANSI PENUH & TIDAK dimasukkan ke overdueMemberKeys
+            // Menjamin peminjam e-Book TIDAK PERNAH terkena auto-suspend!
+          } else {
+            // BUKU FISIK: Dikenakan status overdue dan penelusuran sanksi
+            loan.status = 'overdue';
+            loan.daysOverdue = Math.max(1, Math.round((todayMidnight - dueMidnight) / (24 * 3600 * 1000)));
+            if (loan.memberId) overdueMemberKeys.add(loan.memberId);
+            if (loan.memberCardNumber) overdueMemberKeys.add(loan.memberCardNumber);
+            if (loan.memberEmail) overdueMemberKeys.add(loan.memberEmail.toLowerCase().trim());
+          }
         }
       }
 
@@ -514,7 +536,7 @@ export const useLibraryStore = defineStore('library', {
             member.isSuspended = true;
             member.suspendedBy = 'auto';
             member.isManualSuspend = false;
-            const worstLoan = this.loans.find(l => l.status === 'overdue' && (l.memberId === member.id || l.memberCardNumber === member.cardNumber));
+            const worstLoan = this.loans.find(l => !l.isEbook && l.status === 'overdue' && (l.memberId === member.id || l.memberCardNumber === member.cardNumber));
             member.suspendReason = worstLoan
               ? `Keterlambatan pengembalian buku "${worstLoan.bookTitle}" (Jatuh tempo: ${worstLoan.dueDate}, telat ${worstLoan.daysOverdue} hari)`
               : 'Sanksi Keterlambatan Pengembalian Buku';
@@ -567,6 +589,206 @@ export const useLibraryStore = defineStore('library', {
      */
     async checkOverdueAndAutoSuspend() {
       this.calculateStats();
+    },
+
+    /**
+     * Memproses pengembalian otomatis e-Book kedaluwarsa secara hemat kuota (Zero Firestore Surge).
+     * - Hanya menulis dokumen yang benar-benar kedaluwarsa dan belum diproses sebelumnya.
+     * - Tidak melakukan query/read baru (memanfaatkan memori state realtime yang sudah ada).
+     * - Menghasilkan 1 notifikasi rangkuman per anggota (dengan list e-book jika > 1).
+     * - Idempotent melalui deduplication key di localStorage.
+     */
+    async autoReturnExpiredEbooks(options?: { memberId?: string; isManualTrigger?: boolean; silent?: boolean }) {
+      if (this.isProcessingEbookAutoReturn) {
+        return { returnedCount: 0, affectedMembers: 0 };
+      }
+
+      this.isProcessingEbookAutoReturn = true;
+
+      try {
+        const now = new Date();
+        const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+        // Cari pinjaman e-Book yang sudah lewat tempo dan belum ditandai processed di database
+        const expiredLoansToProcess = this.loans.filter(loan => {
+          if (options?.memberId && loan.memberId !== options.memberId && loan.memberCardNumber !== options.memberId) {
+            return false;
+          }
+          const isEbook = loan.isEbook === true || this.books.find(b => b.id === loan.bookId)?.isEbook === true;
+          if (!isEbook || !loan.dueDate) return false;
+
+          const parts = loan.dueDate.split('-');
+          let dueMidnight = 0;
+          if (parts.length === 3) {
+            dueMidnight = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])).getTime();
+          } else {
+            dueMidnight = new Date(loan.dueDate).getTime();
+          }
+
+          const isExpired = todayMidnight > dueMidnight;
+          if (!isExpired) return false;
+
+          // Lewati jika sudah pernah disinkronkan ke database
+          if (this.processedEbookReturnIds.has(loan.id) && loan.status === 'returned') {
+            return false;
+          }
+
+          return true;
+        });
+
+        if (expiredLoansToProcess.length === 0) {
+          if (options?.isManualTrigger) {
+            this.showToast('ℹ️ Semua e-Book aktif. Tidak ada e-Book kedaluwarsa yang perlu dikembalikan.');
+          }
+          return { returnedCount: 0, affectedMembers: 0 };
+        }
+
+        // Kelompokkan per anggota peminjam
+        const memberLoansMap = new Map<string, Loan[]>();
+        for (const loan of expiredLoansToProcess) {
+          const key = loan.memberId || loan.memberCardNumber || loan.memberEmail || 'unknown';
+          const list = memberLoansMap.get(key) || [];
+          list.push(loan);
+          memberLoansMap.set(key, list);
+        }
+
+        const { syncLoanDoc, syncBookDoc, syncMemberDoc, syncNotificationDoc } = await import('../lib/firebase.js');
+        const syncPromises: Promise<any>[] = [];
+        const affectedBookIds = new Set<string>();
+
+        for (const [, memberLoans] of memberLoansMap.entries()) {
+          const firstLoan = memberLoans[0];
+          const memberName = firstLoan.memberName || 'Anggota';
+          const recipient = firstLoan.memberEmail || firstLoan.memberPhone || 'Anggota Perpustakaan';
+          const memberId = firstLoan.memberId;
+
+          // Update status tiap loan e-book
+          for (const loan of memberLoans) {
+            loan.status = 'returned';
+            loan.returnDate = loan.returnDate || new Date().toISOString().slice(0, 10);
+            loan.daysOverdue = 0;
+            this.processedEbookReturnIds.add(loan.id);
+            affectedBookIds.add(loan.bookId);
+            syncPromises.push(syncLoanDoc(loan));
+          }
+
+          // Update jumlah kuota aktif member di memori & sync
+          const member = this.members.find(m => 
+            m.id === memberId || 
+            m.cardNumber === firstLoan.memberCardNumber || 
+            (m.email && firstLoan.memberEmail && m.email.toLowerCase() === firstLoan.memberEmail.toLowerCase())
+          );
+          if (member) {
+            if (member.activeLoansCount && member.activeLoansCount > 0) {
+              member.activeLoansCount = Math.max(0, member.activeLoansCount - memberLoans.length);
+            }
+            // Pastikan jika ada histori suspend otomatis akibat e-book, langsung dicabut
+            if (member.isSuspended && member.suspendedBy !== 'admin' && !member.isManualSuspend) {
+              member.isSuspended = false;
+              member.suspendReason = '';
+              member.suspendedUntil = null;
+              member.suspendedBy = undefined;
+            }
+            syncPromises.push(syncMemberDoc(member));
+          }
+
+          // Buat notifikasi pengembalian otomatis
+          let subject = '';
+          let message = '';
+          if (memberLoans.length === 1) {
+            const single = memberLoans[0];
+            const dueStr = new Date(single.dueDate).toLocaleDateString('id-ID');
+            subject = `Masa Akses e-Book Berakhir: ${single.bookTitle}`;
+            message = `Halo ${memberName}, masa akses peminjaman untuk e-Book "${single.bookTitle}" telah berakhir per tanggal ${dueStr}.\n\ne-Book tersebut telah dikembalikan secara otomatis ke perpustakaan oleh sistem. Akun keanggotaan Anda tetap aktif tanpa sanksi denda ataupun suspend. Jika masih membutuhkan, Anda dapat melakukan booking kembali melalui katalog buku.`;
+          } else {
+            subject = `Masa Akses ${memberLoans.length} e-Book Berakhir (Pengembalian Otomatis)`;
+            const listText = memberLoans.map((l, idx) => {
+              const dueStr = new Date(l.dueDate).toLocaleDateString('id-ID');
+              return `  ${idx + 1}. "${l.bookTitle}" (Jatuh tempo: ${dueStr})`;
+            }).join('\n');
+            message = `Halo ${memberName}, masa akses peminjaman untuk ${memberLoans.length} e-Book berikut telah berakhir dan telah dikembalikan secara otomatis oleh sistem:\n\n${listText}\n\nSemua e-Book di atas telah dikembalikan ke sistem tanpa dikenakan sanksi denda atau suspend. Anda dapat melakukan booking kembali melalui katalog buku kapan saja jika ingin membaca ulang.`;
+          }
+
+          const notifId = `NOTIF-EBK-${Date.now().toString().slice(-6)}-${Math.random().toString(36).slice(2, 5)}`;
+          const notif: NotificationLog = {
+            id: notifId,
+            memberId: memberId || 'GUEST',
+            memberName,
+            recipient,
+            type: 'email',
+            subject,
+            message,
+            sentAt: new Date().toISOString(),
+            status: 'sent',
+            triggerReason: 'ebook_expired'
+          };
+
+          this.notifications.unshift(notif);
+          syncPromises.push(syncNotificationDoc(notif));
+
+          // Kirim email lewat API backend (jika tersedia / silent)
+          fetch('/api/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              recipient,
+              subject,
+              message
+            })
+          }).catch(() => {});
+        }
+
+        // Update kuota buku yang terpengaruh
+        for (const bookId of affectedBookIds) {
+          const book = this.books.find(b => b.id === bookId);
+          if (book) {
+            syncPromises.push(syncBookDoc(book));
+          }
+        }
+
+        // Simpan cache ID yang telah diproses ke localStorage
+        try {
+          localStorage.setItem('pustaka_processed_ebook_returns', JSON.stringify([...this.processedEbookReturnIds]));
+        } catch (e) {}
+
+        // Jalankan sinkronisasi secara paralel
+        await Promise.allSettled(syncPromises);
+
+        this.calculateStats();
+        this.persistToLocalCache();
+
+        if (options?.isManualTrigger || (!options?.silent && expiredLoansToProcess.length > 0)) {
+          this.showToast(`✅ Berhasil: ${expiredLoansToProcess.length} e-Book telah dikembalikan secara otomatis untuk ${memberLoansMap.size} anggota.`);
+        }
+
+        return {
+          returnedCount: expiredLoansToProcess.length,
+          affectedMembers: memberLoansMap.size
+        };
+      } catch (err: any) {
+        console.warn('Error during auto-return expired ebooks:', err);
+        return { returnedCount: 0, affectedMembers: 0 };
+      } finally {
+        this.isProcessingEbookAutoReturn = false;
+      }
+    },
+
+    /**
+     * Trigger background yang sangat hemat kuota dengan session cooldown (10 menit).
+     * Mencegah pemanggilan berulang kali yang membebani Firestore.
+     */
+    triggerBackgroundEbookCheck(memberId?: string) {
+      if (typeof window === 'undefined') return;
+      const now = Date.now();
+      const lastCheckKey = memberId ? `pustaka_last_ebook_check_${memberId}` : 'pustaka_last_ebook_check_global';
+      const lastCheck = Number(sessionStorage.getItem(lastCheckKey) || 0);
+
+      // Cooldown 10 menit (600.000 ms) agar TIDAK membebani Firestore
+      if (now - lastCheck < 600000) {
+        return;
+      }
+      sessionStorage.setItem(lastCheckKey, String(now));
+      this.autoReturnExpiredEbooks({ memberId, silent: true });
     },
 
     restoreUserSession() {

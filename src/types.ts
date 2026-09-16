@@ -129,7 +129,7 @@ export interface NotificationLog {
   message: string;
   sentAt: string;
   status: 'sent' | 'delivered' | 'read';
-  triggerReason: 'overdue_reminder' | 'due_today' | 'booking_expiry_warning' | 'suspend_notice' | 'booking_success';
+  triggerReason: 'overdue_reminder' | 'due_today' | 'booking_expiry_warning' | 'suspend_notice' | 'booking_success' | 'ebook_expired';
 }
 
 export interface LibraryStats {

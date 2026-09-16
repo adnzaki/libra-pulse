@@ -318,9 +318,23 @@
         
         <!-- Tab 1: Peminjaman & Sirkulasi Aktif -->
         <div v-if="activeTab === 'loans'" class="space-y-4">
-          <div class="flex items-center justify-between">
-            <h3 class="text-xs sm:text-sm font-bold text-slate-900">Daftar Peminjaman Aktif & Overdue</h3>
-            <span class="text-[11px] sm:text-xs text-slate-400 font-mono">{{ filteredLoans.length }} Transaksi</span>
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+            <div>
+              <h3 class="text-xs sm:text-sm font-bold text-slate-900">Daftar Peminjaman Aktif & Overdue</h3>
+              <p class="text-[11px] text-slate-500">Buku fisik yang telat dikenakan sanksi; e-Book yang lewat tempo otomatis dikembalikan sistem (bebas sanksi suspend).</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button 
+                @click="triggerAutoReturnEbooks"
+                :disabled="isProcessingEbookAutoReturn"
+                class="px-3.5 py-2 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                title="Pindai dan proses pengembalian otomatis e-Book kedaluwarsa secara hemat kuota database"
+              >
+                <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': isProcessingEbookAutoReturn }" />
+                <span>{{ isProcessingEbookAutoReturn ? 'Memproses...' : 'Sinkron e-Book Kedaluwarsa' }}</span>
+              </button>
+              <span class="text-[11px] sm:text-xs text-slate-600 font-mono bg-white px-3 py-1.5 rounded-full border border-slate-200">{{ filteredLoans.length }} Transaksi</span>
+            </div>
           </div>
 
           <!-- Mobile Card View (Zero horizontal scroll on phones) -->
@@ -1001,7 +1015,7 @@
               <div class="space-y-2 bg-white p-4 rounded-2xl border border-slate-200 flex flex-col justify-between">
                 <div>
                   <label class="block font-semibold text-slate-700 text-xs">Terapkan Auto-Suspend</label>
-                  <p class="text-[11px] text-slate-500 mt-1">Otomatis suspend akun member saat terlambat mengembalikan buku.</p>
+                  <p class="text-[11px] text-slate-500 mt-1">Otomatis suspend akun saat terlambat mengembalikan buku fisik (Peminjam e-Book otomatis dikecualikan & e-Book dikembalikan sistem).</p>
                 </div>
                 <label class="inline-flex items-center gap-2 cursor-pointer pt-2">
                   <input 
@@ -1124,11 +1138,19 @@
             >
               <div class="flex items-center justify-between">
                 <span class="font-bold text-slate-900">{{ n.memberName }}</span>
-                <span 
-                  class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-700" 
-                >
-                  {{ n.type }}
-                </span>
+                <div class="flex items-center gap-1.5">
+                  <span 
+                    v-if="n.triggerReason === 'ebook_expired'"
+                    class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-200"
+                  >
+                    📱 e-Book Kedaluwarsa
+                  </span>
+                  <span 
+                    class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-700" 
+                  >
+                    {{ n.type }}
+                  </span>
+                </div>
               </div>
               <p class="text-slate-600 leading-relaxed">{{ n.message }}</p>
               <div class="flex items-center justify-between text-[10px] text-slate-400 font-mono pt-1 border-t border-slate-200/60">
@@ -1159,11 +1181,19 @@
                     <div class="text-[10px] text-slate-500 font-mono">{{ n.recipient }}</div>
                   </td>
                   <td class="py-3 px-4">
-                    <span 
-                      class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-700" 
-                    >
-                      {{ n.type }}
-                    </span>
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <span 
+                        class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-700" 
+                      >
+                        {{ n.type }}
+                      </span>
+                      <span 
+                        v-if="n.triggerReason === 'ebook_expired'" 
+                        class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-200 whitespace-nowrap"
+                      >
+                        📱 e-Book Kedaluwarsa
+                      </span>
+                    </div>
                   </td>
                   <td class="py-3 px-4 max-w-sm truncate text-slate-700" :title="n.message">
                     {{ n.message }}
@@ -1992,6 +2022,13 @@ import {
 const store = useLibraryStore();
 const isDeviceSessionsOpen = ref(false);
 const activeTab = ref('loans');
+
+// E-Book Auto-Return Trigger
+const isProcessingEbookAutoReturn = computed(() => store.isProcessingEbookAutoReturn);
+
+const triggerAutoReturnEbooks = async () => {
+  await store.autoReturnExpiredEbooks({ isManualTrigger: true });
+};
 
 // Model textbox pencarian independen per tab (mencegah search term bocor antar-tab)
 const circulationSearch = ref('');
