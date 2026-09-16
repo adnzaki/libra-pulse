@@ -34,7 +34,11 @@
         "year": { "type": "number" },
         "pages": { "type": "number" },
         "language": { "type": "string", "maxLength": 50 },
-        "addedAt": { "type": "string", "maxLength": 50 }
+        "addedAt": { "type": "string", "maxLength": 50 },
+        "isEbook": { "type": "boolean" },
+        "ebookUrl": { "type": "string", "maxLength": 1000 },
+        "ebookFileName": { "type": "string", "maxLength": 200 },
+        "ebookFileSize": { "type": "number" }
       },
       "required": ["id", "title", "author", "isbn", "category", "shelfId", "shelfCode", "totalCopies", "availableCopies", "reservedCopies"]
     },
@@ -95,7 +99,8 @@
         "bookingDate": { "type": "string", "maxLength": 50 },
         "expiresAt": { "type": "string", "maxLength": 50 },
         "status": { "type": "string", "enum": ["active_hold", "fulfilled", "cancelled", "expired"] },
-        "pickupCode": { "type": "string", "maxLength": 50 }
+        "pickupCode": { "type": "string", "maxLength": 50 },
+        "isEbook": { "type": "boolean" }
       },
       "required": ["id", "bookId", "bookTitle", "memberId", "memberName", "memberCardNumber", "bookingDate", "expiresAt", "status", "pickupCode"]
     },
@@ -117,7 +122,9 @@
         "returnDate": { "type": "string", "maxLength": 50 },
         "status": { "type": "string", "enum": ["active", "returned", "overdue"] },
         "daysOverdue": { "type": "number" },
-        "notes": { "type": "string", "maxLength": 500 }
+        "notes": { "type": "string", "maxLength": 500 },
+        "isEbook": { "type": "boolean" },
+        "ebookUrl": { "type": "string", "maxLength": 1000 }
       },
       "required": ["id", "bookId", "bookTitle", "memberId", "memberName", "memberCardNumber", "borrowDate", "dueDate", "status"]
     },

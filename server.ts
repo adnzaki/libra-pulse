@@ -11,8 +11,11 @@ const PORT = 3000
 // 1. Parsing Limit Standard & Headers
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204)
+  }
   next()
 })
 app.use(express.json({ limit: '50mb' }))
@@ -34,10 +37,16 @@ if (!fs.existsSync(selfiesDir)) {
   fs.mkdirSync(selfiesDir, { recursive: true })
 }
 
+const ebooksDir = path.join(process.cwd(), 'uploads', 'ebooks')
+if (!fs.existsSync(ebooksDir)) {
+  fs.mkdirSync(ebooksDir, { recursive: true })
+}
+
 app.use('/covers', express.static(coversDir))
 app.use('/uploads/covers', express.static(coversDir))
 app.use('/uploads/avatar', express.static(avatarsDir))
 app.use('/uploads/selfie', express.static(selfiesDir))
+app.use('/uploads/ebooks', express.static(ebooksDir))
 
 // 3. Konfigurasi Multer
 const storage = multer.diskStorage({
@@ -80,6 +89,32 @@ const avatarStorage = multer.diskStorage({
 const avatarUpload = multer({
   storage: avatarStorage,
   limits: { fileSize: 10 * 1024 * 1024 },
+})
+
+const ebookStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, ebooksDir)
+  },
+  filename: (req, file, cb) => {
+    const rawName = req.body.filename || file.originalname.replace(/\.[^/.]+$/, '')
+    const cleanName = rawName.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40)
+    cb(
+      null,
+      `ebook_${cleanName}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.pdf`,
+    )
+  },
+})
+
+const ebookUpload = multer({
+  storage: ebookStorage,
+  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB max
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype === 'application/pdf' || file.originalname.toLowerCase().endsWith('.pdf')) {
+      cb(null, true)
+    } else {
+      cb(new Error('Hanya file dokumen PDF yang diperbolehkan untuk e-Book.'))
+    }
+  },
 })
 
 // 4. API ROUTES (Harus didefinisikan sebelum startServer / vite.middlewares)
@@ -529,6 +564,155 @@ app.post('/api/upload-selfie', (req, res) => {
   } catch (err: any) {
     console.error('>>> Gagal menyimpan foto selfie:', err)
     return res.status(500).json({ success: false, error: err?.message || 'Gagal menyimpan foto selfie' })
+  }
+})
+
+// Upload Dokumen e-Book PDF (disimpan di uploads/ebooks)
+app.post('/api/upload-ebook', (req, res) => {
+  console.log('>>> API UPLOAD EBOOK DIPANGGIL <<<')
+  ebookUpload.single('ebook')(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      return res.status(400).json({ success: false, error: `Multer error: ${err.message}` })
+    } else if (err) {
+      return res.status(400).json({ success: false, error: err.message })
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'File dokumen PDF e-Book tidak ditemukan' })
+    }
+
+    const publicUrl = `/uploads/ebooks/${req.file.filename}`
+    console.log('>>> File e-Book berhasil diunggah:', publicUrl, `(${req.file.size} bytes)`)
+    return res.json({
+      success: true,
+      url: publicUrl,
+      filename: req.file.filename,
+      originalName: req.file.originalname,
+      size: req.file.size,
+    })
+  })
+})
+
+// Hapus Dokumen e-Book PDF saat buku dihapus dari katalog
+app.post('/api/delete-ebook', (req, res) => {
+  try {
+    const { filename } = req.body || {}
+    if (!filename) {
+      return res.status(400).json({ success: false, error: 'Nama file e-Book tidak disertakan.' })
+    }
+
+    // Sanitize filename to prevent directory traversal
+    const safeFilename = path.basename(filename)
+    const filePath = path.join(ebooksDir, safeFilename)
+
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath)
+      console.log(`>>> [EBOOK DELETED] Berhasil menghapus file PDF: ${safeFilename}`)
+    } else {
+      console.log(`>>> [EBOOK DELETE NOTICE] File PDF tidak ditemukan di disk: ${safeFilename}`)
+    }
+
+    return res.json({ success: true, message: 'File e-Book berhasil dihapus dari server.' })
+  } catch (err: any) {
+    console.error('>>> Gagal menghapus file e-book:', err)
+    return res.status(500).json({ success: false, error: err?.message || 'Gagal menghapus file PDF dari server' })
+  }
+})
+
+// Endpoint Streaming e-Book (Inline stream with no-download / protected headers & Range support)
+app.get('/api/ebook-stream/:filename', (req, res) => {
+  try {
+    const safeFilename = path.basename(decodeURIComponent(req.params.filename || ''))
+    let filePath = path.join(ebooksDir, safeFilename)
+
+    if (!fs.existsSync(filePath)) {
+      // Robust fallback search: cari file dalam folder ebooks yang namanya cocok
+      if (fs.existsSync(ebooksDir)) {
+        const files = fs.readdirSync(ebooksDir)
+        const baseSearch = safeFilename.replace(/\.pdf$/i, '').toLowerCase()
+        const matched = files.find(f => {
+          const lower = f.toLowerCase()
+          return lower === safeFilename.toLowerCase() ||
+                 lower.includes(baseSearch) ||
+                 baseSearch.includes(lower.replace(/\.pdf$/i, ''))
+        })
+        if (matched) {
+          filePath = path.join(ebooksDir, matched)
+        }
+      }
+    }
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ success: false, error: 'File e-Book tidak ditemukan di server.' })
+    }
+
+    res.setHeader('Content-Disposition', 'inline; filename="document.pdf"')
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Range, Accept-Ranges, Content-Length')
+    res.setHeader('Cache-Control', 'public, max-age=3600')
+
+    return res.sendFile(filePath)
+  } catch (err: any) {
+    console.error('>>> Gagal streaming file e-book:', err)
+    return res.status(500).json({ success: false, error: 'Gagal memuat e-Book.' })
+  }
+})
+
+// Endpoint Streaming e-Book Berdasarkan Judul Buku (Fallback pintar jika link belum tercatat)
+app.get('/api/ebook-stream-by-title', (req, res) => {
+  try {
+    const title = (req.query.title as string || '').toLowerCase().trim()
+    if (!title) {
+      return res.status(400).json({ success: false, error: 'Parameter judul buku wajib disertakan.' })
+    }
+
+    if (!fs.existsSync(ebooksDir)) {
+      return res.status(404).json({ success: false, error: 'Direktori e-Book tidak ditemukan.' })
+    }
+
+    const files = fs.readdirSync(ebooksDir)
+    const tokens = title.replace(/[^a-z0-9]/g, ' ').split(/\s+/).filter(t => t.length > 2)
+
+    let bestMatch: string | null = null
+    let maxMatches = 0
+
+    for (const f of files) {
+      if (!f.endsWith('.pdf')) continue
+      const lower = f.toLowerCase()
+      let matchCount = 0
+      for (const token of tokens) {
+        if (lower.includes(token)) matchCount++
+      }
+      if (matchCount > maxMatches) {
+        maxMatches = matchCount
+        bestMatch = f
+      }
+    }
+
+    // Jika tidak ada kecocokan token khusus, ambil file PDF yang paling baru diupload
+    if (!bestMatch || maxMatches === 0) {
+      const pdfs = files.filter(f => f.endsWith('.pdf') && !f.startsWith('sample_'))
+      if (pdfs.length > 0) {
+        bestMatch = pdfs[0]
+      }
+    }
+
+    if (!bestMatch) {
+      return res.status(404).json({ success: false, error: 'File e-Book tidak ditemukan untuk judul buku ini.' })
+    }
+
+    const filePath = path.join(ebooksDir, bestMatch)
+    res.setHeader('Content-Disposition', 'inline; filename="document.pdf"')
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Range, Accept-Ranges, Content-Length')
+    res.setHeader('Cache-Control', 'public, max-age=3600')
+
+    return res.sendFile(filePath)
+  } catch (err: any) {
+    console.error('>>> Gagal streaming file e-book by title:', err)
+    return res.status(500).json({ success: false, error: 'Gagal memuat e-Book.' })
   }
 })
 

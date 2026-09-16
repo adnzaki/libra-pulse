@@ -1,0 +1,688 @@
+<template>
+  <div 
+    v-if="isOpen" 
+    class="fixed inset-0 z-50 flex flex-col bg-slate-950/95 backdrop-blur-md overflow-hidden select-none animate-in fade-in duration-200"
+    @contextmenu.prevent
+  >
+    <!-- Top Navigation / Reader Toolbar -->
+    <header class="h-14 sm:h-16 bg-slate-900/95 border-b border-slate-800 text-white px-3 sm:px-6 flex items-center justify-between shrink-0 z-20 shadow-md">
+      <!-- Left: Book & Status Details -->
+      <div class="flex items-center gap-2.5 sm:gap-3 min-w-0 mr-2">
+        <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-indigo-600/30 text-indigo-400 border border-indigo-500/30 flex items-center justify-center shrink-0">
+          <BookOpen class="w-4 h-4 sm:w-5 sm:h-5" />
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <h2 class="font-extrabold text-xs sm:text-sm text-slate-100 truncate max-w-[150px] xs:max-w-[220px] sm:max-w-md" :title="loan?.bookTitle">
+              {{ loan?.bookTitle || 'Baca Dokumen e-Book' }}
+            </h2>
+            <span class="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-bold border border-indigo-500/30 shrink-0 hidden sm:inline-block">
+              In-App Reader
+            </span>
+          </div>
+          <div class="text-[10px] sm:text-[11px] text-slate-400 flex items-center gap-1.5 truncate">
+            <span v-if="!isExpired" class="text-emerald-400 flex items-center gap-1 font-semibold truncate">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+              <span class="hidden sm:inline">Akses Aktif • Jatuh Tempo: {{ formatDate(loan?.dueDate) }}</span>
+              <span class="sm:hidden">s/d {{ formatShortDate(loan?.dueDate) }}</span>
+            </span>
+            <span v-else class="text-rose-400 flex items-center gap-1 font-bold">
+              <Lock class="w-3 h-3 shrink-0" />
+              Masa Akses Berakhir
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Toolbar Controls -->
+      <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+        <!-- Watermark Intensity Control -->
+        <button
+          v-if="!isExpired && pdfDoc"
+          @click="cycleWatermarkMode"
+          class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700/70 text-slate-300 text-xs transition cursor-pointer"
+          :title="watermarkTooltip"
+        >
+          <EyeOff v-if="watermarkMode === 'off'" class="w-3.5 h-3.5 text-rose-400" />
+          <Eye v-else-if="watermarkMode === 'subtle'" class="w-3.5 h-3.5 text-emerald-400" />
+          <Shield v-else class="w-3.5 h-3.5 text-indigo-400" />
+          <span class="text-[11px] font-medium hidden xs:inline">
+            {{ watermarkLabel }}
+          </span>
+        </button>
+
+        <!-- Mode Canvas / Embed Toggle (Desktop) -->
+        <button 
+          v-if="!isExpired && pdfDoc"
+          @click="toggleViewerMode" 
+          class="p-2 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 transition text-xs font-semibold cursor-pointer hidden md:flex items-center gap-1.5"
+          :title="viewerMode === 'canvas' ? 'Gunakan mode Dokumen Standar' : 'Gunakan mode Canvas Pembaca'"
+        >
+          <Sparkles class="w-3.5 h-3.5 text-indigo-400" />
+          <span class="text-[11px]">{{ viewerMode === 'canvas' ? 'Mode Canvas' : 'Mode Dokumen' }}</span>
+        </button>
+
+        <!-- Close Button -->
+        <button 
+          @click="handleClose" 
+          class="p-2 sm:p-2.5 rounded-full bg-slate-800/90 hover:bg-rose-600 text-slate-300 hover:text-white transition cursor-pointer shadow-sm active:scale-95"
+          title="Tutup Pembaca e-Book"
+        >
+          <X class="w-4 h-4 sm:w-5 sm:h-5" />
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Reader Workspace -->
+    <main 
+      ref="readerWorkspaceRef"
+      class="flex-1 relative overflow-auto flex flex-col items-center justify-start p-2 sm:p-6 bg-slate-900/90 custom-reader-scroll"
+    >
+      
+      <!-- STATE 1: EXPIRED / OVERDUE LOCK SCREEN -->
+      <div 
+        v-if="isExpired" 
+        class="my-auto max-w-md w-full p-6 sm:p-8 rounded-3xl bg-slate-900 border border-slate-800 text-center space-y-4 shadow-2xl text-slate-200 animate-in zoom-in-95 duration-200"
+      >
+        <div class="w-16 h-16 rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center mx-auto shadow-inner">
+          <Lock class="w-8 h-8" />
+        </div>
+        <div>
+          <h3 class="font-extrabold text-lg sm:text-xl text-white">Masa Peminjaman e-Book Telah Berakhir</h3>
+          <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
+            Akses membaca dokumen digital ini telah dikunci otomatis karena melewati tenggat waktu jatuh tempo ({{ formatDate(loan?.dueDate) }}).
+          </p>
+        </div>
+        <div class="p-4 rounded-2xl bg-slate-800/60 border border-slate-700/50 text-left text-xs space-y-1.5 text-slate-300">
+          <div class="font-bold text-indigo-300">Ingin membaca kembali?</div>
+          <p class="text-[11px] text-slate-400 leading-relaxed">
+            Sesuai regulasi perpustakaan, Anda dapat mengajukan <strong>Booking Ulang</strong> di katalog buku untuk mendapatkan masa pinjam e-Book berikutnya.
+          </p>
+        </div>
+        <div class="pt-2 flex gap-2">
+          <button 
+            @click="handleClose" 
+            class="flex-1 py-2.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition cursor-pointer"
+          >
+            Tutup
+          </button>
+          <button 
+            @click="goToCatalog" 
+            class="flex-1 py-2.5 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md transition cursor-pointer active:scale-95"
+          >
+            Buka Katalog Buku →
+          </button>
+        </div>
+      </div>
+
+      <!-- STATE 2: LOADING PDF -->
+      <div v-else-if="isLoadingDoc" class="my-auto flex flex-col items-center justify-center gap-3 text-slate-400">
+        <Loader2 class="w-8 h-8 text-indigo-500 animate-spin" />
+        <span class="text-xs font-medium">Menyiapkan e-Book...</span>
+      </div>
+
+      <!-- STATE 3: ERROR LOADING PDF -->
+      <div v-else-if="errorMessage" class="my-auto max-w-sm p-6 rounded-3xl bg-slate-900 border border-rose-800/50 text-center space-y-3">
+        <AlertTriangle class="w-8 h-8 text-rose-500 mx-auto" />
+        <div class="font-bold text-sm text-white">Gagal Membuka File e-Book</div>
+        <p class="text-xs text-slate-400 leading-relaxed">{{ errorMessage }}</p>
+        <button 
+          @click="loadDocument" 
+          class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-full transition cursor-pointer"
+        >
+          Coba Muat Ulang
+        </button>
+      </div>
+
+      <!-- STATE 4: ACTIVE VIEWER (CANVAS MODE) -->
+      <div 
+        v-else-if="viewerMode === 'canvas'"
+        class="relative flex flex-col items-center transition-all duration-150 my-auto pb-16 sm:pb-20"
+      >
+        <!-- Canvas Container with Watermark Security Overlay -->
+        <div 
+          class="relative rounded-lg shadow-2xl overflow-hidden bg-white border border-slate-700/50 transition-[width,height] duration-150 shrink-0"
+          :style="{
+            width: canvasDisplayWidth ? `${canvasDisplayWidth}px` : 'auto',
+            height: canvasDisplayHeight ? `${canvasDisplayHeight}px` : 'auto'
+          }"
+        >
+          <!-- Canvas with mathematically locked aspect ratio -->
+          <canvas 
+            ref="pdfCanvasRef" 
+            class="block"
+            :style="{
+              width: canvasDisplayWidth ? `${canvasDisplayWidth}px` : 'auto',
+              height: canvasDisplayHeight ? `${canvasDisplayHeight}px` : 'auto'
+            }"
+          ></canvas>
+          
+          <!-- Dynamic Security Watermark (Ultra-soft, unobtrusive to reading) -->
+          <div 
+            v-if="watermarkMode !== 'off'"
+            class="absolute inset-0 pointer-events-none flex flex-col justify-around p-6 sm:p-14 overflow-hidden select-none transition-opacity duration-200"
+            :class="{
+              'opacity-[0.045]': watermarkMode === 'subtle',
+              'opacity-[0.10]': watermarkMode === 'normal'
+            }"
+          >
+            <div 
+              v-for="i in (watermarkMode === 'subtle' ? 2 : 3)" 
+              :key="i" 
+              class="transform -rotate-25 text-slate-800 font-sans text-[11px] sm:text-xs font-medium tracking-widest uppercase select-none text-center"
+            >
+              SDN PENGASINAN VII • {{ watermarkMemberInfo }}
+            </div>
+
+            <!-- Fine footer edge tag -->
+            <div class="absolute bottom-2 right-3 text-[9px] font-mono text-slate-500 select-none opacity-40">
+              Perpustakaan Digital • Akses Resmi
+            </div>
+          </div>
+
+          <!-- Loading Page Spinner Overlay -->
+          <div 
+            v-if="isLoadingPage" 
+            class="absolute inset-0 bg-slate-950/30 backdrop-blur-[1px] flex items-center justify-center text-white gap-2 text-xs font-semibold"
+          >
+            <Loader2 class="w-5 h-5 animate-spin text-indigo-400" />
+            <span>Memuat Halaman {{ currentPage }}...</span>
+          </div>
+        </div>
+
+        <!-- Floating Reading Controller Bar (Thumb-Friendly for Mobile & Desktop) -->
+        <div class="fixed bottom-4 sm:bottom-6 z-30 flex items-center gap-1.5 sm:gap-2.5 bg-slate-900/95 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-slate-700/80 text-white text-xs shadow-2xl">
+          <!-- Prev Button -->
+          <button 
+            @click="prevPage" 
+            :disabled="currentPage <= 1 || isLoadingPage"
+            class="p-1.5 sm:p-2 hover:text-indigo-400 disabled:opacity-30 transition cursor-pointer rounded-full hover:bg-slate-800"
+            title="Halaman Sebelumnya"
+          >
+            <ChevronLeft class="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+
+          <!-- Page Jumper -->
+          <div class="flex items-center gap-1 font-mono text-[11px] sm:text-xs text-slate-300">
+            <input 
+              v-model.lazy="pageInput" 
+              type="number" 
+              min="1" 
+              :max="totalPages"
+              @change="handlePageInputChange"
+              class="w-9 sm:w-11 bg-slate-800 border border-slate-700 rounded-md text-center py-0.5 text-white font-bold text-xs focus:outline-none focus:border-indigo-500"
+            />
+            <span class="text-slate-400">/ {{ totalPages }}</span>
+          </div>
+
+          <!-- Next Button -->
+          <button 
+            @click="nextPage" 
+            :disabled="currentPage >= totalPages || isLoadingPage"
+            class="p-1.5 sm:p-2 hover:text-indigo-400 disabled:opacity-30 transition cursor-pointer rounded-full hover:bg-slate-800"
+            title="Halaman Berikutnya"
+          >
+            <ChevronRight class="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+
+          <div class="h-4 w-px bg-slate-700 mx-0.5"></div>
+
+          <!-- Zoom Out -->
+          <button 
+            @click="zoomOut" 
+            :disabled="zoomMultiplier <= 0.6"
+            class="p-1.5 hover:text-indigo-400 disabled:opacity-30 transition cursor-pointer rounded-full hover:bg-slate-800"
+            title="Perkecil"
+          >
+            <ZoomOut class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          </button>
+
+          <!-- Fit / Zoom Percent Indicator -->
+          <button 
+            @click="resetZoom" 
+            class="px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold hover:bg-slate-800 text-indigo-300 transition cursor-pointer"
+            title="Pas Lebar Layar (100%)"
+          >
+            {{ Math.round(zoomMultiplier * 100) }}%
+          </button>
+
+          <!-- Zoom In -->
+          <button 
+            @click="zoomIn" 
+            :disabled="zoomMultiplier >= 2.5"
+            class="p-1.5 hover:text-indigo-400 disabled:opacity-30 transition cursor-pointer rounded-full hover:bg-slate-800"
+            title="Perbesar"
+          >
+            <ZoomIn class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          </button>
+
+          <div class="h-4 w-px bg-slate-700 mx-0.5"></div>
+
+          <!-- Quick Watermark Toggle -->
+          <button
+            @click="cycleWatermarkMode"
+            class="p-1.5 hover:text-indigo-400 transition cursor-pointer rounded-full hover:bg-slate-800"
+            :title="watermarkTooltip"
+          >
+            <EyeOff v-if="watermarkMode === 'off'" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-400" />
+            <Eye v-else-if="watermarkMode === 'subtle'" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
+            <Shield v-else class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-400" />
+          </button>
+        </div>
+      </div>
+
+      <!-- STATE 5: EMBEDDED IFRAME FALLBACK VIEWER (if canvas isn't preferred) -->
+      <div 
+        v-else-if="viewerMode === 'embed'"
+        class="w-full h-full max-w-5xl rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-2xl relative"
+      >
+        <iframe 
+          :src="`${streamUrl}#toolbar=0&navpanes=0&scrollbar=1`"
+          class="w-full h-full border-0 bg-slate-800"
+          title="e-Book Document Viewer"
+        ></iframe>
+      </div>
+
+    </main>
+
+    <!-- Bottom Advisory Banner (Desktop Only) -->
+    <footer class="bg-slate-950 px-4 py-2 border-t border-slate-850 text-center text-[10px] sm:text-[11px] text-slate-400 shrink-0 hidden sm:flex items-center justify-center gap-2">
+      <ShieldCheck class="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+      <span>Perpustakaan Digital Resmi SDN Pengasinan VII • Dokumen hanya dapat dibaca in-app tanpa opsi unduh bebas demi kepatuhan lisensi.</span>
+    </footer>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
+import { useRouter } from 'vue-router';
+import * as pdfjsLib from 'pdfjs-dist';
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import type { Loan } from '../types.js';
+import { useLibraryStore } from '../stores/library.js';
+import { 
+  BookOpen, Lock, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, 
+  X, Loader2, AlertTriangle, ShieldCheck, Sparkles, Eye, EyeOff, Shield 
+} from 'lucide-vue-next';
+
+// Configure pdfjs worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+
+const props = defineProps<{
+  isOpen: boolean;
+  loan: Loan | null;
+}>();
+
+const emit = defineEmits(['close']);
+
+const router = useRouter();
+const store = useLibraryStore();
+
+const readerWorkspaceRef = ref<HTMLElement | null>(null);
+const pdfCanvasRef = ref<HTMLCanvasElement | null>(null);
+const isLoadingDoc = ref(false);
+const isLoadingPage = ref(false);
+const errorMessage = ref('');
+const currentPage = ref(1);
+const totalPages = ref(0);
+const pageInput = ref(1);
+const viewerMode = ref<'canvas' | 'embed'>('canvas');
+
+// Accurate responsive dimensions (Zero distortion)
+const canvasDisplayWidth = ref(0);
+const canvasDisplayHeight = ref(0);
+const zoomMultiplier = ref(1.0);
+
+// Watermark mode: 'subtle' (Halus 4.5% - default), 'off' (Bersih / Nonaktif), 'normal' (Standar 10%)
+const watermarkMode = ref<'subtle' | 'off' | 'normal'>('subtle');
+
+let pdfDoc: any = null;
+let renderTask: any = null;
+let resizeTimeout: any = null;
+
+const watermarkLabel = computed(() => {
+  if (watermarkMode.value === 'subtle') return 'Watermark: Halus';
+  if (watermarkMode.value === 'off') return 'Watermark: Off';
+  return 'Watermark: Standar';
+});
+
+const watermarkTooltip = computed(() => {
+  if (watermarkMode.value === 'subtle') return 'Watermark Halus (4.5%). Klik untuk menonaktifkan agar lebih nyaman membaca.';
+  if (watermarkMode.value === 'off') return 'Watermark Nonaktif. Klik untuk mengaktifkan mode halus.';
+  return 'Watermark Standar (10%). Klik untuk beralih ke mode halus.';
+});
+
+const isExpired = computed(() => {
+  if (!props.loan) return false;
+  if (props.loan.status === 'overdue') return true;
+  if (!props.loan.dueDate) return false;
+  const due = new Date(props.loan.dueDate).getTime();
+  const now = new Date().setHours(0, 0, 0, 0);
+  return due < now;
+});
+
+const watermarkMemberInfo = computed(() => {
+  if (store.currentUser) {
+    return `${store.currentUser.name} (${store.currentUser.cardNumber})`;
+  }
+  if (props.loan) {
+    return `${props.loan.memberName} (${props.loan.memberCardNumber})`;
+  }
+  return 'ANGGOTA PERPUSTAKAAN';
+});
+
+const streamUrl = computed(() => {
+  if (!props.loan) return '';
+  let ebookUrl = props.loan.ebookUrl || '';
+  
+  // 1. Fallback jika loan belum memiliki ebookUrl, cari dari buku terkait di store
+  if (!ebookUrl) {
+    const book = store.books.find(b => 
+      (props.loan?.bookId && b.id === props.loan.bookId) ||
+      (props.loan?.bookTitle && b.title.trim().toLowerCase() === props.loan.bookTitle.trim().toLowerCase())
+    );
+    if (book) {
+      ebookUrl = book.ebookUrl || (book as any).ebookFile || '';
+    }
+  }
+
+  // 2. Jika ebookUrl mengarah ke /uploads/ebooks/
+  if (ebookUrl && ebookUrl.startsWith('/uploads/ebooks/')) {
+    const filename = ebookUrl.replace('/uploads/ebooks/', '');
+    return `/api/ebook-stream/${encodeURIComponent(filename)}`;
+  }
+
+  // 3. Jika ada ebookUrl yang valid
+  if (ebookUrl) {
+    return ebookUrl;
+  }
+
+  // 4. Fallback jika masih kosong, streaming langsung berdasarkan judul buku
+  if (props.loan?.bookTitle) {
+    return `/api/ebook-stream-by-title?title=${encodeURIComponent(props.loan.bookTitle)}`;
+  }
+
+  return '';
+});
+
+const formatDate = (dateStr?: string | null) => {
+  if (!dateStr) return '-';
+  try {
+    return new Date(dateStr).toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  } catch {
+    return dateStr;
+  }
+};
+
+const formatShortDate = (dateStr?: string | null) => {
+  if (!dateStr) return '-';
+  try {
+    return new Date(dateStr).toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  } catch {
+    return dateStr;
+  }
+};
+
+const cycleWatermarkMode = () => {
+  if (watermarkMode.value === 'subtle') {
+    watermarkMode.value = 'off';
+    store.showToast('Watermark dinonaktifkan (mode membaca bersih)');
+  } else if (watermarkMode.value === 'off') {
+    watermarkMode.value = 'normal';
+    store.showToast('Watermark mode standar diaktifkan');
+  } else {
+    watermarkMode.value = 'subtle';
+    store.showToast('Watermark mode halus diaktifkan (4.5%)');
+  }
+};
+
+const handleClose = () => {
+  cleanup();
+  emit('close');
+};
+
+const goToCatalog = () => {
+  handleClose();
+  router.push('/');
+};
+
+const toggleViewerMode = () => {
+  viewerMode.value = viewerMode.value === 'canvas' ? 'embed' : 'canvas';
+  if (viewerMode.value === 'canvas') {
+    nextTick(() => renderCurrentPage());
+  }
+};
+
+const cleanup = () => {
+  if (renderTask) {
+    try {
+      renderTask.cancel();
+    } catch {}
+    renderTask = null;
+  }
+  pdfDoc = null;
+  currentPage.value = 1;
+  totalPages.value = 0;
+  errorMessage.value = '';
+  zoomMultiplier.value = 1.0;
+};
+
+const loadDocument = async () => {
+  if (!props.isOpen || !props.loan || isExpired.value) return;
+
+  const url = streamUrl.value;
+  if (!url) {
+    errorMessage.value = 'Tautan dokumen e-Book tidak valid atau belum diunggah.';
+    return;
+  }
+
+  cleanup();
+  isLoadingDoc.value = true;
+  errorMessage.value = '';
+
+  try {
+    const loadingTask = pdfjsLib.getDocument({
+      url
+    });
+
+    pdfDoc = await loadingTask.promise;
+    totalPages.value = pdfDoc.numPages;
+    currentPage.value = 1;
+    pageInput.value = 1;
+    isLoadingDoc.value = false;
+
+    await nextTick();
+    await renderCurrentPage();
+  } catch (err: any) {
+    console.error('Error loading PDF in canvas mode:', err);
+    // Fallback to embed iframe mode if pdfjs has worker or rendering issue
+    if (viewerMode.value === 'canvas') {
+      viewerMode.value = 'embed';
+      isLoadingDoc.value = false;
+      errorMessage.value = '';
+    } else {
+      errorMessage.value = err?.message || 'Gagal memuat dokumen e-Book dari server.';
+      isLoadingDoc.value = false;
+    }
+  }
+};
+
+const renderCurrentPage = async () => {
+  if (!pdfDoc || !pdfCanvasRef.value || isExpired.value) return;
+
+  if (renderTask) {
+    try {
+      renderTask.cancel();
+    } catch {}
+    renderTask = null;
+  }
+
+  isLoadingPage.value = true;
+
+  try {
+    const page = await pdfDoc.getPage(currentPage.value);
+    const canvas = pdfCanvasRef.value;
+    const context = canvas.getContext('2d');
+    if (!context) return;
+
+    // 1. Get intrinsic unscaled dimensions at 1.0 scale
+    const unscaledViewport = page.getViewport({ scale: 1.0 });
+
+    // 2. Calculate available width in the reader workspace
+    const container = readerWorkspaceRef.value;
+    const containerWidth = container ? container.clientWidth : window.innerWidth;
+    const isMobile = window.innerWidth < 640;
+    
+    // Exact padding: 16px on mobile (8px left & right), 48px on desktop
+    const horizontalPadding = isMobile ? 16 : 48;
+    const availableWidth = Math.max(260, containerWidth - horizontalPadding);
+
+    // 3. Compute scale to fit width seamlessly without distortion
+    let targetScale = (availableWidth / unscaledViewport.width) * zoomMultiplier.value;
+    
+    // On large screens, avoid an overly huge page if zoomMultiplier is 1.0
+    if (!isMobile && zoomMultiplier.value === 1.0 && unscaledViewport.width * targetScale > 850) {
+      targetScale = 850 / unscaledViewport.width;
+    }
+
+    const viewport = page.getViewport({ scale: targetScale });
+    const outputScale = window.devicePixelRatio || 1;
+
+    // 4. Set canvas pixel resolution for retina rendering
+    canvas.width = Math.floor(viewport.width * outputScale);
+    canvas.height = Math.floor(viewport.height * outputScale);
+
+    // 5. Explicit CSS dimensions guarantee 100% accurate aspect ratio
+    canvasDisplayWidth.value = Math.floor(viewport.width);
+    canvasDisplayHeight.value = Math.floor(viewport.height);
+
+    canvas.style.width = `${canvasDisplayWidth.value}px`;
+    canvas.style.height = `${canvasDisplayHeight.value}px`;
+
+    const transform = outputScale !== 1 
+      ? [outputScale, 0, 0, outputScale, 0, 0] 
+      : undefined;
+
+    const renderContext = {
+      canvasContext: context,
+      transform,
+      viewport
+    };
+
+    renderTask = page.render(renderContext);
+    await renderTask.promise;
+    pageInput.value = currentPage.value;
+  } catch (err: any) {
+    if (err?.name !== 'RenderingCancelledException') {
+      console.error('Error rendering page:', err);
+    }
+  } finally {
+    isLoadingPage.value = false;
+  }
+};
+
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--;
+    renderCurrentPage();
+  }
+};
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++;
+    renderCurrentPage();
+  }
+};
+
+const handlePageInputChange = () => {
+  const target = Number(pageInput.value);
+  if (target >= 1 && target <= totalPages.value) {
+    currentPage.value = target;
+    renderCurrentPage();
+  } else {
+    pageInput.value = currentPage.value;
+  }
+};
+
+const zoomIn = () => {
+  if (zoomMultiplier.value < 2.5) {
+    zoomMultiplier.value = Number((zoomMultiplier.value + 0.2).toFixed(2));
+    renderCurrentPage();
+  }
+};
+
+const zoomOut = () => {
+  if (zoomMultiplier.value > 0.6) {
+    zoomMultiplier.value = Number((zoomMultiplier.value - 0.2).toFixed(2));
+    renderCurrentPage();
+  }
+};
+
+const resetZoom = () => {
+  zoomMultiplier.value = 1.0;
+  renderCurrentPage();
+};
+
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (!props.isOpen || isExpired.value) return;
+  if (e.key === 'ArrowLeft') prevPage();
+  if (e.key === 'ArrowRight') nextPage();
+  if (e.key === 'Escape') handleClose();
+};
+
+const handleWindowResize = () => {
+  if (!props.isOpen || !pdfDoc) return;
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(() => {
+    renderCurrentPage();
+  }, 150);
+};
+
+watch(
+  () => props.isOpen,
+  (open) => {
+    if (open) {
+      zoomMultiplier.value = 1.0;
+      loadDocument();
+      window.addEventListener('keydown', handleKeyDown);
+      window.addEventListener('resize', handleWindowResize);
+    } else {
+      cleanup();
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('resize', handleWindowResize);
+    }
+  }
+);
+
+onUnmounted(() => {
+  cleanup();
+  window.removeEventListener('keydown', handleKeyDown);
+  window.removeEventListener('resize', handleWindowResize);
+});
+</script>
+
+<style scoped>
+.custom-reader-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-reader-scroll::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+}
+.custom-reader-scroll::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.3);
+  border-radius: 9999px;
+}
+.custom-reader-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.6);
+}
+</style>

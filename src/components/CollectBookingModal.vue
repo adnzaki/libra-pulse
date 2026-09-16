@@ -9,12 +9,16 @@
       <!-- Sticky Header -->
       <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 backdrop-blur-md border-b border-slate-100 flex items-center justify-between shrink-0 sticky top-0 z-20">
         <div class="flex items-center gap-2.5">
-          <div class="w-9 h-9 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold shrink-0">
+          <div class="w-9 h-9 rounded-2xl flex items-center justify-center font-bold shrink-0" :class="booking?.isEbook ? 'bg-indigo-100 text-indigo-600' : 'bg-blue-100 text-blue-600'">
             <CheckCircle class="w-5 h-5" />
           </div>
           <div>
-            <h3 class="font-bold text-slate-900 text-sm sm:text-base">Penyerahan Buku Booking</h3>
-            <p class="text-[11px] sm:text-xs text-slate-500">Konfirmasi serah-terima buku & durasi pinjam</p>
+            <h3 class="font-bold text-slate-900 text-sm sm:text-base">
+              {{ booking?.isEbook ? 'Persetujuan Akses e-Book Online' : 'Penyerahan Buku Booking' }}
+            </h3>
+            <p class="text-[11px] sm:text-xs text-slate-500">
+              {{ booking?.isEbook ? 'Konfirmasi penyerahan akses online & durasi baca' : 'Konfirmasi serah-terima buku & durasi pinjam' }}
+            </p>
           </div>
         </div>
         <button 
@@ -46,7 +50,11 @@
           />
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2">
-              <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-blue-100 text-blue-700">
+              <span v-if="booking.isEbook" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 flex items-center gap-1">
+                <Smartphone class="w-2.5 h-2.5" />
+                Format: e-Book Digital
+              </span>
+              <span v-else class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-blue-100 text-blue-700">
                 Rak: {{ booking.shelfCode || 'A-01' }}
               </span>
               <span class="text-[10px] font-mono text-slate-400">ID: {{ booking.id }}</span>
@@ -181,10 +189,11 @@
           type="button" 
           @click="handleConfirmCollection"
           :disabled="isSubmitting || isMemberBlocked || loanDays < 1 || loanDays > maxLoanDays"
-          class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+          class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold text-white shadow-md transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+          :class="booking?.isEbook ? 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'"
         >
           <CheckCircle class="w-4 h-4" />
-          {{ isSubmitting ? 'Memproses...' : 'Konfirmasi & Serahkan Buku' }}
+          {{ isSubmitting ? 'Memproses...' : (booking?.isEbook ? 'Setujui & Buka Akses e-Book' : 'Konfirmasi & Serahkan Buku') }}
         </button>
       </div>
 
@@ -196,7 +205,7 @@
 import { ref, computed, watch, toRef } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import type { Booking, Member } from '../types.js';
-import { CheckCircle, X, AlertCircle, Clock, Calendar, ShieldAlert } from 'lucide-vue-next';
+import { CheckCircle, X, AlertCircle, Clock, Calendar, ShieldAlert, Smartphone } from 'lucide-vue-next';
 import confetti from 'canvas-confetti';
 import { useModalBack } from '../composables/useModalBack.js';
 

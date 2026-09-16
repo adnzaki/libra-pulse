@@ -1,6 +1,49 @@
 <template>
   <div class="space-y-4 sm:space-y-6">
     
+    <!-- Banner Notifikasi Peminjaman Disetujui Admin -->
+    <div 
+      v-if="approvedLoanBanner" 
+      class="bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 text-white rounded-3xl p-4 sm:p-6 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-emerald-400/30 animate-in fade-in slide-in-from-top-4 duration-300"
+    >
+      <div class="flex items-start gap-3.5">
+        <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 border border-white/30 text-2xl shadow-sm">
+          🎉
+        </div>
+        <div class="space-y-1">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="font-extrabold text-xs tracking-wide uppercase px-2.5 py-0.5 rounded-full bg-white/25 text-white">
+              Peminjaman Disetujui Admin
+            </span>
+            <span v-if="approvedLoanBanner.isEbook" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-900/60 text-emerald-200 border border-emerald-300/30">
+              📱 Akses e-Book Aktif
+            </span>
+          </div>
+          <p class="text-xs sm:text-sm text-white/95 font-medium leading-relaxed">
+            Peminjaman buku <strong class="text-white underline">{{ approvedLoanBanner.bookTitle }}</strong> Anda telah disetujui admin!
+            <span v-if="approvedLoanBanner.isEbook"> Dokumen e-Book digital Anda sudah dapat langsung dibaca in-app di Portal Saya.</span>
+            <span v-else> Silakan ambil fisik buku di loket perpustakaan.</span>
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 w-full sm:w-auto shrink-0">
+        <router-link 
+          to="/member-portal"
+          class="flex-1 sm:flex-none px-5 py-2.5 rounded-full bg-white text-emerald-900 hover:bg-emerald-50 font-bold text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+        >
+          <span>Buka Halaman Portal Saya →</span>
+        </router-link>
+        <button 
+          @click="dismissApprovedBanner(approvedLoanBanner.id)"
+          class="p-2 rounded-full hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer"
+          title="Tutup notifikasi"
+        >
+          <X class="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+
     <!-- Hero Bento Banner -->
     <section class="bg-white rounded-3xl p-4 sm:p-8 border border-slate-100 shadow-sm relative overflow-hidden">
       <div class="max-w-3xl space-y-3 sm:space-y-4">
@@ -66,8 +109,44 @@
     <!-- Filters & Search Toolbar (Bento Card) -->
     <section class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm space-y-3.5">
       
-      <!-- Category Filter Tabs (Flex-wrap with clean spacing, never clipped or truncated) -->
+      <!-- Filter Jenis Buku (Semua, Buku Cetak, e-Book) -->
       <div>
+        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Jenis Koleksi:</div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button 
+            type="button"
+            @click="bookTypeFilter = 'all'"
+            class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition cursor-pointer active:scale-95 flex items-center gap-1.5"
+            :class="bookTypeFilter === 'all' ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'"
+          >
+            <span>Semua</span>
+            <span class="text-[10px] opacity-80 font-mono font-bold">({{ store.books.length }})</span>
+          </button>
+          <button 
+            type="button"
+            @click="bookTypeFilter = 'physical'"
+            class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition cursor-pointer active:scale-95 flex items-center gap-1.5"
+            :class="bookTypeFilter === 'physical' ? 'bg-blue-600 text-white shadow-sm shadow-blue-200' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'"
+          >
+            <BookOpen class="w-3.5 h-3.5" />
+            <span>Buku Cetak</span>
+            <span class="text-[10px] opacity-80 font-mono font-bold">({{ physicalBooksCount }})</span>
+          </button>
+          <button 
+            type="button"
+            @click="bookTypeFilter = 'ebook'"
+            class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition cursor-pointer active:scale-95 flex items-center gap-1.5"
+            :class="bookTypeFilter === 'ebook' ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'"
+          >
+            <Smartphone class="w-3.5 h-3.5" />
+            <span>e-Book</span>
+            <span class="text-[10px] opacity-80 font-mono font-bold">({{ ebooksCount }})</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Category Filter Tabs (Flex-wrap with clean spacing, never clipped or truncated) -->
+      <div class="pt-2 border-t border-slate-100">
         <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Kategori Buku:</div>
         <div class="flex flex-wrap items-center gap-2">
           <button 
@@ -107,7 +186,7 @@
         <div class="flex items-center justify-between sm:justify-end gap-3 text-[11px] sm:text-xs text-slate-400">
           <span>Menampilkan <strong class="text-slate-800">{{ filteredBooks.length }}</strong> buku</span>
           <button 
-            v-if="selectedCategory !== 'all' || selectedShelfId !== 'all' || availabilityFilter !== 'all' || searchQuery"
+            v-if="selectedCategory !== 'all' || selectedShelfId !== 'all' || availabilityFilter !== 'all' || bookTypeFilter !== 'all' || searchQuery"
             @click="resetFilters" 
             class="text-blue-600 font-bold underline hover:text-blue-700 cursor-pointer"
           >
@@ -135,16 +214,34 @@
               />
               <div class="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-transparent to-transparent"></div>
               
-              <!-- Category Pill -->
-              <div class="absolute top-2 left-2 sm:top-3 sm:left-3 max-w-[70%]">
-                <span class="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-white/95 backdrop-blur-md text-[9px] sm:text-[10px] uppercase font-bold tracking-wider text-slate-800 shadow-sm border border-slate-100 truncate block">
+              <!-- Badges Container (Category + e-Book Badge) -->
+              <div class="absolute top-2 left-2 sm:top-3 sm:left-3 max-w-[75%] flex flex-col gap-1 z-10">
+                <!-- Label Khusus e-Book -->
+                <span 
+                  v-if="book.isEbook" 
+                  class="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-indigo-600 text-white text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider shadow-md flex items-center gap-1 shrink-0"
+                >
+                  <Smartphone class="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                  e-Book
+                </span>
+                
+                <span class="px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full bg-white/95 backdrop-blur-md text-[8px] sm:text-[9px] uppercase font-bold tracking-wider text-slate-800 shadow-sm border border-slate-100 truncate block">
                   {{ book.category }}
                 </span>
               </div>
 
-              <!-- Shelf Location Badge -->
+              <!-- Shelf Location or Format Badge -->
               <div class="absolute top-2 right-2 sm:top-3 sm:right-3">
+                <span 
+                  v-if="book.isEbook"
+                  class="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-indigo-950/85 backdrop-blur-md text-[9px] sm:text-[10px] font-mono font-bold text-indigo-200 flex items-center gap-1 shadow-sm border border-indigo-500/30"
+                  title="Format Digital"
+                >
+                  <Smartphone class="w-2.5 h-2.5 sm:w-3 sm:h-3 text-indigo-400" />
+                  Digital
+                </span>
                 <router-link 
+                  v-else
                   to="/shelves"
                   class="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-slate-900/85 backdrop-blur-md text-[9px] sm:text-[10px] font-mono font-bold text-white flex items-center gap-1 hover:bg-slate-900 shadow-sm"
                   title="Lokasi Rak Fisik"
@@ -162,7 +259,7 @@
                     :class="book.availableCopies > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'"
                   ></span>
                   <span class="font-bold truncate" :class="book.availableCopies > 0 ? 'text-slate-900' : 'text-rose-600'">
-                    {{ book.availableCopies > 0 ? `${book.availableCopies} Ada` : 'Habis' }}
+                    {{ book.isEbook ? (book.availableCopies > 0 ? 'Akses Siap' : 'Penuh') : (book.availableCopies > 0 ? `${book.availableCopies} Ada` : 'Habis') }}
                   </span>
                 </div>
                 <span v-if="book.reservedCopies > 0" class="text-amber-600 font-bold shrink-0">
@@ -199,11 +296,11 @@
                 :disabled="book.availableCopies <= 0"
                 class="flex-1 py-1.5 sm:py-2 px-2 sm:px-3 rounded-full text-[11px] sm:text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer shadow-sm active:scale-95"
                 :class="book.availableCopies > 0 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200' 
+                  ? (book.isEbook ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200') 
                   : 'bg-slate-100 text-slate-400 cursor-not-allowed'"
               >
                 <Bookmark class="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                <span class="truncate">{{ book.availableCopies > 0 ? 'Hold 24h' : 'Habis' }}</span>
+                <span class="truncate">{{ book.availableCopies > 0 ? (book.isEbook ? 'Booking e-Book' : 'Hold 24h') : 'Habis' }}</span>
               </button>
             </div>
           </div>
@@ -247,12 +344,12 @@
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useLibraryStore } from '../stores/library.js';
-import type { Book } from '../types.js';
+import type { Book, Loan } from '../types.js';
 import BookingModal from '../components/BookingModal.vue';
 import BookDetailModal from '../components/BookDetailModal.vue';
 import { 
   Search, QrCode, Sparkles, CheckCircle2, Clock, 
-  Layers, MapPin, Bookmark, BookX 
+  Layers, MapPin, Bookmark, BookX, Smartphone, BookOpen, X
 } from 'lucide-vue-next';
 
 const router = useRouter();
@@ -262,12 +359,43 @@ const searchQuery = ref('');
 const selectedCategory = ref('all');
 const selectedShelfId = ref('all');
 const availabilityFilter = ref('all');
+const bookTypeFilter = ref<'all' | 'physical' | 'ebook'>('all');
 
 const isBookingModalOpen = ref(false);
 const selectedBookForBooking = ref<Book | null>(null);
 
 const isDetailModalOpen = ref(false);
 const selectedBookForDetail = ref<Book | null>(null);
+
+// Counts for book types
+const physicalBooksCount = computed(() => store.books.filter(b => !b.isEbook).length);
+const ebooksCount = computed(() => store.books.filter(b => !!b.isEbook).length);
+
+// Persisted Dismissal of Approved Loan Banner
+const dismissedBanners = ref<string[]>([]);
+try {
+  dismissedBanners.value = JSON.parse(localStorage.getItem('dismissed_approved_banners') || '[]');
+} catch {}
+
+const approvedLoanBanner = computed<Loan | null>(() => {
+  if (!store.currentUser) return null;
+  const recentApproved = store.myActiveLoans.find(l => {
+    if (l.status === 'returned') return false;
+    if (dismissedBanners.value.includes(l.id)) return false;
+    const borrowTime = new Date(l.borrowDate).getTime();
+    return (Date.now() - borrowTime) < (7 * 24 * 60 * 60 * 1000);
+  });
+  return recentApproved || null;
+});
+
+const dismissApprovedBanner = (loanId: string) => {
+  if (!dismissedBanners.value.includes(loanId)) {
+    dismissedBanners.value.push(loanId);
+    try {
+      localStorage.setItem('dismissed_approved_banners', JSON.stringify(dismissedBanners.value));
+    } catch {}
+  }
+};
 
 const categories = computed(() => {
   const list = ['all'];
@@ -281,6 +409,13 @@ const categories = computed(() => {
 
 const filteredBooks = computed(() => {
   let list = [...store.books];
+
+  // Filter jenis buku: Semua / Buku Cetak / e-Book
+  if (bookTypeFilter.value === 'physical') {
+    list = list.filter(b => !b.isEbook);
+  } else if (bookTypeFilter.value === 'ebook') {
+    list = list.filter(b => !!b.isEbook);
+  }
 
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.toLowerCase().trim();
@@ -312,6 +447,7 @@ const resetFilters = () => {
   selectedCategory.value = 'all';
   selectedShelfId.value = 'all';
   availabilityFilter.value = 'all';
+  bookTypeFilter.value = 'all';
 };
 
 const openBooking = (book: Book) => {

@@ -139,6 +139,117 @@
             </div>
           </div>
         </div>
+
+        <!-- TOGGLE SWITCH E-BOOK & PDF UPLOAD AREA -->
+        <div class="p-4 rounded-2xl border transition-all" :class="form.isEbook ? 'bg-indigo-50/60 border-indigo-200' : 'bg-slate-50/90 border-slate-200/80'">
+          <div class="flex items-center justify-between gap-3">
+            <div class="space-y-0.5">
+              <div class="flex items-center gap-2">
+                <Smartphone class="w-4 h-4" :class="form.isEbook ? 'text-indigo-600' : 'text-slate-400'" />
+                <span class="font-bold text-xs sm:text-sm text-slate-900">Format Buku: e-Book Digital</span>
+                <span v-if="form.isEbook" class="px-2 py-0.5 rounded-full bg-indigo-600 text-white text-[10px] font-extrabold tracking-wide uppercase">
+                  e-Book Aktif
+                </span>
+              </div>
+              <p class="text-[11px] text-slate-500">
+                Aktifkan jika buku ini berupa dokumen PDF yang dapat dibaca secara digital oleh anggota setelah booking disetujui.
+              </p>
+            </div>
+
+            <!-- Toggle Switch Control -->
+            <div class="shrink-0 flex items-center">
+              <label class="relative inline-flex items-center cursor-pointer" :class="{ 'cursor-not-allowed opacity-80': isEbookPermanent }">
+                <input 
+                  type="checkbox" 
+                  v-model="form.isEbook" 
+                  :disabled="isEbookPermanent"
+                  class="sr-only peer"
+                />
+                <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Peringatan jika buku sudah tersimpan sebagai e-book -->
+          <div v-if="isEbookPermanent" class="mt-3 p-2.5 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-2 text-[11px] text-amber-800">
+            <AlertCircle class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <p>
+              <strong>Format e-Book Permanen:</strong> Buku ini sudah tersimpan sebagai e-Book dan tidak dapat diubah menjadi buku cetak fisik. Jika ingin mengganti format, silakan hapus buku ini dan buat kembali (file PDF juga akan terhapus otomatis dari server).
+            </p>
+          </div>
+
+          <!-- Area Upload Dokumen PDF e-Book jika Toggle ON -->
+          <div v-if="form.isEbook" class="mt-3 pt-3 border-t border-indigo-100 space-y-3">
+            <div class="flex items-center justify-between">
+              <label class="block font-bold text-slate-800 text-xs">
+                Dokumen File PDF e-Book *
+              </label>
+              <span v-if="form.ebookUrl" class="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-bold">
+                <CheckCircle2 class="w-3.5 h-3.5" />
+                PDF Terunggah
+              </span>
+            </div>
+
+            <!-- Box Upload PDF -->
+            <div 
+              @dragover.prevent="isPdfDragging = true"
+              @dragleave.prevent="isPdfDragging = false"
+              @drop.prevent="handlePdfDrop"
+              @click="triggerPdfFileInput"
+              :class="[
+                isPdfDragging ? 'border-indigo-500 bg-indigo-100/50' : form.ebookUrl ? 'border-emerald-300 bg-emerald-50/40' : 'border-slate-300 hover:border-indigo-400 bg-white',
+                isUploadingPdf ? 'opacity-60 pointer-events-none' : 'cursor-pointer'
+              ]"
+              class="border-2 border-dashed rounded-2xl p-4 text-center transition-all flex flex-col items-center justify-center gap-2"
+            >
+              <input 
+                ref="pdfFileInputRef" 
+                type="file" 
+                accept="application/pdf,.pdf" 
+                class="hidden" 
+                @change="handlePdfFileChange"
+              />
+
+              <div v-if="isUploadingPdf" class="flex items-center gap-2 text-indigo-600 py-2">
+                <Loader2 class="w-5 h-5 animate-spin" />
+                <span class="text-xs font-semibold">Mengunggah file PDF e-Book...</span>
+              </div>
+
+              <!-- State: Sudah ada file PDF -->
+              <template v-else-if="form.ebookUrl">
+                <div class="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shadow-xs">
+                  <FileText class="w-5 h-5" />
+                </div>
+                <div>
+                  <p class="text-xs font-bold text-slate-800">{{ form.ebookFileName || 'dokumen_ebook.pdf' }}</p>
+                  <p class="text-[11px] text-slate-500">
+                    {{ formatFileSize(form.ebookFileSize) }} • Klik untuk ganti file PDF
+                  </p>
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                  <span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px]">
+                    Siap Dibaca In-App
+                  </span>
+                </div>
+              </template>
+
+              <!-- State: Belum ada file PDF -->
+              <template v-else>
+                <div class="w-10 h-10 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center shadow-xs">
+                  <UploadCloud class="w-5 h-5" />
+                </div>
+                <div>
+                  <p class="text-xs font-bold text-slate-800">
+                    Pilih atau Tarik File PDF e-Book ke Sini
+                  </p>
+                  <p class="text-[11px] text-slate-500">
+                    Hanya format .PDF resmi (hingga 100MB)
+                  </p>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
@@ -219,7 +330,7 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div class="space-y-1">
-            <label class="block font-bold text-slate-700">Total Eksemplar (Stok Fisik) *</label>
+            <label class="block font-bold text-slate-700">{{ form.isEbook ? 'Kuota Akses e-Book' : 'Total Eksemplar (Stok Fisik)' }}</label>
             <input 
               v-model.number="form.totalCopies" 
               type="number" 
@@ -228,7 +339,7 @@
               class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-semibold focus:outline-none focus:border-blue-500 text-xs"
             />
             <p v-if="book" class="text-[10px] text-slate-500">
-              Saat ini: Dipinjam {{ book.borrowedCopies || 0 }}, Dibooking {{ book.reservedCopies || 0 }}
+              {{ form.isEbook ? 'Saat ini diakses: ' : 'Saat ini: ' }} Dipinjam {{ book.borrowedCopies || 0 }}, Dibooking {{ book.reservedCopies || 0 }}
             </p>
           </div>
           <div>
@@ -302,7 +413,11 @@ import {
   UploadCloud, 
   Link as LinkIcon, 
   Image as ImageIcon, 
-  Loader2 
+  Loader2,
+  Smartphone,
+  FileText,
+  AlertCircle,
+  CheckCircle2
 } from 'lucide-vue-next';
 
 const props = defineProps<{
@@ -326,6 +441,18 @@ const isUploading = ref(false);
 const isDragging = ref(false);
 const coverSourceMode = ref<'upload' | 'url'>('upload');
 const fileInputRef = ref<HTMLInputElement | null>(null);
+
+// e-Book PDF Upload States
+const isUploadingPdf = ref(false);
+const isPdfDragging = ref(false);
+const pdfFileInputRef = ref<HTMLInputElement | null>(null);
+const isEbookPermanent = computed(() => Boolean(props.book?.isEbook));
+
+const formatFileSize = (bytes?: number) => {
+  if (!bytes) return 'PDF Document';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+};
 
 const randomCovers = [
   'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80',
@@ -353,14 +480,24 @@ const getBlankForm = (): Partial<Book> => ({
   pages: undefined,
   language: 'Bahasa Indonesia',
   cover: '',
-  synopsis: ''
+  synopsis: '',
+  isEbook: false,
+  ebookUrl: '',
+  ebookFileName: '',
+  ebookFileSize: 0
 });
 
 const form = ref<Partial<Book>>(getBlankForm());
 
 const resetForm = () => {
   if (props.book) {
-    form.value = { ...props.book };
+    form.value = { 
+      ...props.book,
+      isEbook: Boolean(props.book.isEbook),
+      ebookUrl: props.book.ebookUrl || '',
+      ebookFileName: props.book.ebookFileName || '',
+      ebookFileSize: props.book.ebookFileSize || 0
+    };
     if (props.book.cover && !props.book.cover.startsWith('/covers/')) {
       coverSourceMode.value = 'url';
     } else {
@@ -372,6 +509,9 @@ const resetForm = () => {
   }
   if (fileInputRef.value) {
     fileInputRef.value.value = '';
+  }
+  if (pdfFileInputRef.value) {
+    pdfFileInputRef.value.value = '';
   }
 };
 
@@ -406,6 +546,49 @@ const handleDrop = async (event: DragEvent) => {
   }
 };
 
+const readFileAsOptimizedDataUrl = (file: File): Promise<string> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 800;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', 0.85));
+            return;
+          }
+        } catch {
+          // fallback to raw data url
+        }
+        resolve(e.target?.result as string || '');
+      };
+      img.onerror = () => {
+        resolve(e.target?.result as string || '');
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => resolve('');
+    reader.readAsDataURL(file);
+  });
+};
+
 const uploadCoverFile = async (file: File) => {
   if (!file.type.startsWith('image/')) {
     store.setError('Format file tidak didukung. Harap pilih gambar (JPG, PNG, WEBP, GIF).');
@@ -422,33 +605,119 @@ const uploadCoverFile = async (file: File) => {
   try {
     const cleanName = (form.value.title || file.name.replace(/\.[^/.]+$/, '')).slice(0, 20);
 
-    // Buat FormData object
     const formData = new FormData();
-    formData.append('cover', file);         // Harus cocok dengan field name di multer: upload.single('cover')
+    formData.append('cover', file);
     formData.append('filename', cleanName);
 
-    const res = await axios.post('/api/upload-cover', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
+    let serverUrl = '';
+    try {
+      const res = await fetch('/api/upload-cover', {
+        method: 'POST',
+        body: formData
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.success && data.url) {
+          serverUrl = data.url;
+        }
       }
-    });
+    } catch (networkErr) {
+      console.warn('Upload cover ke endpoint server mengalami kendala, beralih ke penyimpanan lokal:', networkErr);
+    }
 
-    if (res.data?.success && res.data?.url) {
-      form.value.cover = res.data.url;
+    if (serverUrl) {
+      form.value.cover = serverUrl;
       store.showToast('✅ Gambar sampul berhasil disimpan');
     } else {
-      store.setError(res.data?.error || 'Gagal menyimpan gambar');
+      // Fallback: baca sebagai data URL lokal yang terkompresi
+      const dataUrl = await readFileAsOptimizedDataUrl(file);
+      if (dataUrl) {
+        form.value.cover = dataUrl;
+        store.showToast('✅ Gambar sampul berhasil disimpan');
+      } else {
+        throw new Error('Gagal memproses file gambar sampul');
+      }
     }
   } catch (err: any) {
     console.error('Upload cover error:', err);
-    store.setError(err.response?.data?.error || err.message || 'Gagal mengunggah cover');
+    store.setError(err.message || 'Gagal mengunggah cover');
   } finally {
     isUploading.value = false;
   }
 };
 
+// e-Book PDF Upload Handler
+const triggerPdfFileInput = () => {
+  if (pdfFileInputRef.value) {
+    pdfFileInputRef.value.click();
+  }
+};
+
+const handlePdfFileChange = async (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (target.files && target.files[0]) {
+    await uploadEbookPdf(target.files[0]);
+    if (pdfFileInputRef.value) pdfFileInputRef.value.value = '';
+  }
+};
+
+const handlePdfDrop = async (event: DragEvent) => {
+  isPdfDragging.value = false;
+  if (event.dataTransfer?.files && event.dataTransfer.files[0]) {
+    await uploadEbookPdf(event.dataTransfer.files[0]);
+  }
+};
+
+const uploadEbookPdf = async (file: File) => {
+  const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+  if (!isPdf) {
+    store.setError('Hanya dokumen format PDF yang didukung untuk e-Book.');
+    return;
+  }
+
+  if (file.size > 100 * 1024 * 1024) {
+    store.setError('Ukuran file PDF melebihi batas maksimal 100MB.');
+    return;
+  }
+
+  isUploadingPdf.value = true;
+
+  try {
+    const cleanName = (form.value.title || file.name.replace(/\.[^/.]+$/, '')).slice(0, 30);
+    const formData = new FormData();
+    formData.append('ebook', file);
+    formData.append('filename', cleanName);
+
+    const res = await fetch('/api/upload-ebook', {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Gagal mengunggah file PDF e-Book');
+    }
+
+    form.value.ebookUrl = data.url;
+    form.value.ebookFileName = data.filename;
+    form.value.ebookFileSize = data.size;
+    store.showToast(`✅ File e-Book "${file.name}" berhasil diunggah!`);
+  } catch (err: any) {
+    console.error('Upload e-book error:', err);
+    store.setError(err.message || 'Gagal mengunggah file PDF e-Book');
+  } finally {
+    isUploadingPdf.value = false;
+  }
+};
+
 const handleSaveBook = async () => {
   if (!form.value.title || !form.value.author) return;
+
+  // Validasi jika e-book dipilih, wajib ada file PDF
+  if (form.value.isEbook && !form.value.ebookUrl) {
+    store.setError('File PDF e-Book wajib diunggah sebelum menyimpan buku digital.');
+    return;
+  }
 
   if (!form.value.cover) {
     generateRandomCover();

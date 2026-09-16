@@ -171,6 +171,32 @@ export const initialBooks: Book[] = [
     rating: 4.9,
     pages: 352,
     language: 'Indonesia'
+  },
+  {
+    id: 'BKO-EBK-001',
+    isbn: '978-602-001-EBK',
+    title: 'Panduan Membaca Digital & Literasi Perpustakaan',
+    author: 'Tim Literasi Digital SDN Pengasinan VII',
+    publisher: 'Pustaka Libra Digital',
+    year: 2024,
+    category: 'Teknologi & Komputer',
+    shelfId: 'RAK-A1',
+    shelfCode: 'RAK-A1',
+    shelfName: 'Rak A-01: Rekayasa Perangkat Lunak & AI',
+    cover: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80',
+    synopsis: 'Buku panduan digital resmi mengenai literasi informasi, pemanfaatan e-book di sekolah, dan etika riset akademis di era digital.',
+    totalCopies: 10,
+    availableCopies: 10,
+    borrowedCopies: 0,
+    reservedCopies: 0,
+    barcode: 'EBK-978602001',
+    rating: 4.9,
+    pages: 45,
+    language: 'Indonesia',
+    isEbook: true,
+    ebookUrl: '/uploads/ebooks/sample_panduan_perpustakaan.pdf',
+    ebookFileName: 'sample_panduan_perpustakaan.pdf',
+    ebookFileSize: 1024
   }
 ];
 

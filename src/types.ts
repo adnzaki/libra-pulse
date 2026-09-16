@@ -27,6 +27,10 @@ export interface Book {
   rating: number;
   pages: number;
   language: string;
+  isEbook?: boolean;
+  ebookUrl?: string;
+  ebookFileName?: string;
+  ebookFileSize?: number;
 }
 
 export interface Shelf {
@@ -81,6 +85,7 @@ export interface Booking {
   expiresAt: string;
   status: 'active_hold' | 'collected' | 'cancelled_timeout' | 'cancelled_user';
   notes?: string;
+  isEbook?: boolean;
 }
 
 export interface Loan {
@@ -100,6 +105,8 @@ export interface Loan {
   status: 'active' | 'returned' | 'overdue';
   daysOverdue: number;
   handledBy: string;
+  isEbook?: boolean;
+  ebookUrl?: string;
 }
 
 export interface SuspendConfig {

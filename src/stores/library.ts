@@ -119,7 +119,26 @@ export const useLibraryStore = defineStore('library', {
     
     myActiveLoans: (state) => {
       if (!state.currentUser) return [];
-      return state.loans.filter(l => l.memberId === state.currentUser?.id && (l.status === 'active' || l.status === 'overdue'));
+      const list = state.loans.filter(l => l.memberId === state.currentUser?.id && (l.status === 'active' || l.status === 'overdue'));
+      return list.map(loan => {
+        let ebookUrl = loan.ebookUrl;
+        let isEbook = loan.isEbook;
+        if (!ebookUrl || isEbook === undefined) {
+          const matchedBook = state.books.find(b => 
+            b.id === loan.bookId || 
+            b.title.trim().toLowerCase() === (loan.bookTitle || '').trim().toLowerCase()
+          );
+          if (matchedBook?.isEbook) {
+            isEbook = true;
+            ebookUrl = ebookUrl || matchedBook.ebookUrl || '';
+          }
+        }
+        return {
+          ...loan,
+          isEbook: isEbook ?? false,
+          ebookUrl: ebookUrl || ''
+        };
+      });
     },
     myBookings: (state) => {
       if (!state.currentUser) return [];
@@ -915,7 +934,11 @@ export const useLibraryStore = defineStore('library', {
             totalCopies: newTotal,
             borrowedCopies: borrowed,
             reservedCopies: reserved,
-            availableCopies: newAvailable
+            availableCopies: newAvailable,
+            isEbook: oldBook.isEbook ? true : !!bookData.isEbook,
+            ebookUrl: bookData.ebookUrl || oldBook.ebookUrl || '',
+            ebookFileName: bookData.ebookFileName || oldBook.ebookFileName || '',
+            ebookFileSize: bookData.ebookFileSize || oldBook.ebookFileSize || 0
           };
           this.books[index] = savedBook;
         } else {
@@ -945,7 +968,11 @@ export const useLibraryStore = defineStore('library', {
             rating: bookData.rating || 4.5,
             pages: bookData.pages || 200,
             language: bookData.language || 'Indonesia',
-            ...bookData
+            ...bookData,
+            isEbook: !!bookData.isEbook,
+            ebookUrl: bookData.ebookUrl || '',
+            ebookFileName: bookData.ebookFileName || '',
+            ebookFileSize: bookData.ebookFileSize || 0
           };
 
           savedBook.totalCopies = total;
@@ -984,9 +1011,21 @@ export const useLibraryStore = defineStore('library', {
       try {
         const target = this.books.find(b => b.id === bookId);
         const title = target?.title || 'Buku';
+        const ebookFileName = target?.ebookFileName;
+        const isEbook = target?.isEbook;
+
         this.books = this.books.filter(b => b.id !== bookId);
         this.calculateStats();
         this.persistToLocalCache();
+
+        // Jika buku yang dihapus merupakan e-book, hapus juga file PDF fisik di server
+        if (isEbook && ebookFileName) {
+          import('axios').then(({ default: axios }) => {
+            axios.post('/api/delete-ebook', { filename: ebookFileName }).catch((delErr) => {
+              console.warn('[e-Book] Gagal menghapus file PDF dari server:', delErr);
+            });
+          }).catch(() => {});
+        }
 
         import('../lib/firebase.js').then(({ removeBookDoc }) => {
           removeBookDoc(bookId).catch(() => {
@@ -2450,7 +2489,8 @@ export const useLibraryStore = defineStore('library', {
           createdAt: new Date().toISOString(),
           expiresAt: new Date(Date.now() + (this.suspendConfig.maxHoldHours || 24) * 3600 * 1000).toISOString(),
           status: 'active_hold',
-          notes: notes || 'Booking Online'
+          notes: notes || 'Booking Online',
+          isEbook: !!book.isEbook
         };
 
         book.availableCopies -= 1;
@@ -2573,7 +2613,9 @@ export const useLibraryStore = defineStore('library', {
         returnDate: null,
         status: 'active',
         daysOverdue: 0,
-        handledBy: handledBy || 'Admin Sirkulasi'
+        handledBy: handledBy || 'Admin Sirkulasi',
+        isEbook: !!book.isEbook,
+        ebookUrl: book.ebookUrl || (book as any).ebookFile || ''
       };
 
       if (member) {
@@ -2701,7 +2743,9 @@ export const useLibraryStore = defineStore('library', {
         returnDate: null,
         status: 'active',
         daysOverdue: 0,
-        handledBy: handledBy || 'Admin Sirkulasi'
+        handledBy: handledBy || 'Admin Sirkulasi',
+        isEbook: !!book.isEbook,
+        ebookUrl: book.ebookUrl || (book as any).ebookFile || ''
       };
 
       book.availableCopies -= 1;

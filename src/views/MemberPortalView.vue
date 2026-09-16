@@ -35,6 +35,50 @@
     <!-- Active Member Portal (Bento Modules) -->
     <div v-else class="space-y-6">
       
+      <!-- BANNER NOTIFIKASI PEMINJAMAN DISETUJUI -->
+      <div 
+        v-if="approvedLoanBanner" 
+        class="bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 text-white rounded-3xl p-5 sm:p-6 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-emerald-400/30 animate-in fade-in slide-in-from-top-4 duration-300"
+      >
+        <div class="flex items-start gap-3.5">
+          <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 border border-white/30 text-2xl shadow-sm">
+            🎉
+          </div>
+          <div class="space-y-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="font-extrabold text-xs tracking-wide uppercase px-2.5 py-0.5 rounded-full bg-white/25 text-white">
+                Peminjaman Disetujui Admin
+              </span>
+              <span v-if="approvedLoanBanner.isEbook" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-900/60 text-emerald-200 border border-emerald-300/30">
+                📱 Akses e-Book Aktif
+              </span>
+            </div>
+            <p class="text-xs sm:text-sm text-white/95 font-medium leading-relaxed">
+              Kabar gembira! Peminjaman buku <strong class="text-white underline">{{ approvedLoanBanner.bookTitle }}</strong> telah disetujui oleh admin.
+              <span v-if="approvedLoanBanner.isEbook"> Dokumen e-Book digital Anda telah aktif dan siap langsung dibaca tanpa perlu diunduh.</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 w-full sm:w-auto shrink-0">
+          <button 
+            v-if="approvedLoanBanner.isEbook"
+            @click="openEbookReader(approvedLoanBanner)"
+            class="flex-1 sm:flex-none px-5 py-2.5 rounded-full bg-white text-emerald-900 hover:bg-emerald-50 font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+          >
+            <BookOpen class="w-4 h-4 text-emerald-600" />
+            <span>Mulai Baca e-Book Sekarang →</span>
+          </button>
+          <button 
+            @click="dismissApprovedBanner(approvedLoanBanner.id)"
+            class="p-2 rounded-full hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer"
+            title="Tutup notifikasi ini"
+          >
+            <X class="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
       <!-- Top Member Profile Bento Card -->
       <div 
         class="p-6 sm:p-8 rounded-3xl border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4"
@@ -344,8 +388,8 @@
                   <span class="text-[10px] font-mono font-bold text-amber-700 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200">
                     {{ b.id }}
                   </span>
-                  <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold">
-                    Lokasi: {{ b.shelfCode }}
+                  <span class="text-[10px] px-2.5 py-0.5 rounded-full font-bold" :class="b.isEbook ? 'bg-indigo-50 text-indigo-700' : 'bg-blue-50 text-blue-700'">
+                    {{ b.isEbook ? 'Format e-Book' : `Lokasi: ${b.shelfCode}` }}
                   </span>
                 </div>
                 <h4 class="font-bold text-slate-900 text-sm mt-1.5 line-clamp-1">{{ b.bookTitle }}</h4>
@@ -355,7 +399,7 @@
                 <div class="mt-2.5 p-2.5 rounded-2xl bg-amber-50/60 border border-amber-100 flex items-center justify-between text-xs">
                   <span class="text-slate-600 flex items-center gap-1.5 font-medium">
                     <Timer class="w-3.5 h-3.5 text-amber-600" />
-                    Sisa Waktu Ambil:
+                    {{ b.isEbook ? 'Menunggu Penyerahan:' : 'Sisa Waktu Ambil:' }}
                   </span>
                   <span class="font-mono font-extrabold text-amber-700">
                     {{ formatCountdown(b.expiresAt) }}
@@ -367,7 +411,7 @@
             <!-- Notes & Cancel action -->
             <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
               <span class="text-slate-400 text-[11px] truncate max-w-xs">
-                Tunjukkan kartu member saat mengambil di loket perpustakaan.
+                {{ b.isEbook ? 'e-Book akan aktif di portal setelah admin menyetujui peminjaman.' : 'Tunjukkan kartu member saat mengambil di loket perpustakaan.' }}
               </span>
               <button 
                 @click="cancelMyBooking(b.id)"
@@ -405,29 +449,56 @@
             class="p-5 rounded-3xl border shadow-sm flex flex-col justify-between"
             :class="l.status === 'overdue' ? 'bg-rose-50/50 border-rose-200' : 'bg-white border-slate-100'"
           >
-            <div class="flex gap-3">
-              <img :src="l.bookCover" class="w-14 h-20 object-cover rounded-2xl shadow-sm shrink-0" alt="Cover" />
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center justify-between">
-                  <span class="text-[10px] font-mono text-slate-400 font-medium">{{ l.id }}</span>
-                  <span 
-                    class="text-[10px] px-2.5 py-0.5 rounded-full font-bold"
-                    :class="l.status === 'overdue' ? 'bg-rose-600 text-white' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'"
-                  >
-                    {{ l.status === 'overdue' ? `⚠️ Telat ${l.daysOverdue} Hari` : 'Tepat Waktu' }}
-                  </span>
-                </div>
-                <h4 class="font-bold text-slate-900 text-xs mt-1.5 line-clamp-2 leading-snug">{{ l.bookTitle }}</h4>
-                <div class="text-[11px] text-slate-500 mt-2 space-y-0.5">
-                  <div>Dipinjam: {{ new Date(l.borrowDate).toLocaleDateString('id-ID') }}</div>
-                  <div>Jatuh Tempo: <strong :class="l.status === 'overdue' ? 'text-rose-600' : 'text-slate-800'">{{ new Date(l.dueDate).toLocaleDateString('id-ID') }}</strong></div>
+            <div>
+              <div class="flex gap-3">
+                <img :src="l.bookCover" class="w-14 h-20 object-cover rounded-2xl shadow-sm shrink-0" alt="Cover" />
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[10px] font-mono text-slate-400 font-medium">{{ l.id }}</span>
+                    <span 
+                      class="text-[10px] px-2.5 py-0.5 rounded-full font-bold"
+                      :class="l.status === 'overdue' ? 'bg-rose-600 text-white' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'"
+                    >
+                      {{ l.status === 'overdue' ? `⚠️ Telat ${l.daysOverdue} Hari` : 'Tepat Waktu' }}
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-1.5 mt-1">
+                    <span v-if="l.isEbook" class="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-bold text-[9px] border border-indigo-100 flex items-center gap-1 shrink-0">
+                      <Smartphone class="w-2.5 h-2.5" />
+                      e-Book
+                    </span>
+                    <h4 class="font-bold text-slate-900 text-xs line-clamp-1 leading-snug">{{ l.bookTitle }}</h4>
+                  </div>
+                  <div class="text-[11px] text-slate-500 mt-1.5 space-y-0.5">
+                    <div>Dipinjam: {{ new Date(l.borrowDate).toLocaleDateString('id-ID') }}</div>
+                    <div>Jatuh Tempo: <strong :class="l.status === 'overdue' ? 'text-rose-600' : 'text-slate-800'">{{ new Date(l.dueDate).toLocaleDateString('id-ID') }}</strong></div>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div v-if="l.status === 'overdue'" class="mt-3.5 p-3 rounded-2xl bg-rose-100/70 text-xs text-rose-900 flex justify-between items-center font-medium">
-              <span>Status Peminjaman:</span>
-              <strong class="text-rose-700 font-extrabold">Segera Kembalikan ke Loket</strong>
+              <!-- E-Book Action / Expiry State -->
+              <div v-if="l.isEbook" class="mt-3 pt-2.5 border-t border-slate-100">
+                <button 
+                  v-if="l.status !== 'overdue'"
+                  @click="openEbookReader(l)"
+                  class="w-full py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-indigo-100 active:scale-95 transition"
+                >
+                  <BookOpen class="w-4 h-4" />
+                  <span>Baca e-Book (In-App)</span>
+                </button>
+                <div 
+                  v-else 
+                  class="p-2.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-500 text-[11px] font-semibold flex items-center justify-center gap-1.5 text-center"
+                >
+                  <Lock class="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span>Masa Akses Berakhir (Booking Ulang untuk Membaca)</span>
+                </div>
+              </div>
+
+              <div v-else-if="l.status === 'overdue'" class="mt-3.5 p-3 rounded-2xl bg-rose-100/70 text-xs text-rose-900 flex justify-between items-center font-medium">
+                <span>Status Peminjaman:</span>
+                <strong class="text-rose-700 font-extrabold">Segera Kembalikan ke Loket</strong>
+              </div>
             </div>
           </div>
         </div>
@@ -450,6 +521,13 @@
       :is-open="isEditProfileOpen"
       :initial-tab="editProfileInitialTab"
       @close="isEditProfileOpen = false"
+    />
+
+    <!-- Modal e-Book In-App Reader -->
+    <EbookReaderModal 
+      :is-open="isEbookReaderOpen"
+      :loan="selectedLoanForReading"
+      @close="isEbookReaderOpen = false"
     />
 
     <!-- Modal Konfirmasi Pembatalan Booking -->
@@ -502,11 +580,14 @@ import { useLibraryStore } from '../stores/library.js';
 import ChangePasswordModal from '../components/ChangePasswordModal.vue';
 import EditProfileModal from '../components/EditProfileModal.vue';
 import DeviceSessionsModal from '../components/DeviceSessionsModal.vue';
+import EbookReaderModal from '../components/EbookReaderModal.vue';
 import { useModalBack } from '../composables/useModalBack.js';
+import type { Loan } from '../types.js';
 import { 
   UserCheck, QrCode, AlertTriangle, Clock, 
   Timer, BookmarkCheck, BookMarked, LogIn, KeyRound, UserCog,
-  AlertCircle, CheckCircle2, Camera, Award, ShieldCheck, BookOpen, Sparkles, Laptop
+  AlertCircle, CheckCircle2, Camera, Award, ShieldCheck, BookOpen, Sparkles, Laptop,
+  Smartphone, Lock, X
 } from 'lucide-vue-next';
 
 const store = useLibraryStore();
@@ -516,6 +597,48 @@ const isEditProfileOpen = ref(false);
 const isDeviceSessionsOpen = ref(false);
 const editProfileInitialTab = ref<'profile' | 'upgrade'>('profile');
 let timerInterval: any = null;
+
+// E-Book In-App Reader State
+const isEbookReaderOpen = ref(false);
+const selectedLoanForReading = ref<Loan | null>(null);
+
+const openEbookReader = (loan: Loan) => {
+  selectedLoanForReading.value = loan;
+  isEbookReaderOpen.value = true;
+};
+
+useModalBack(isEbookReaderOpen, () => {
+  isEbookReaderOpen.value = false;
+}, 'member_ebook_reader');
+
+// Approved Loan Banner (Persisted dismissal per loan ID)
+const dismissedBanners = ref<string[]>([]);
+try {
+  dismissedBanners.value = JSON.parse(localStorage.getItem('dismissed_approved_banners') || '[]');
+} catch {}
+
+const approvedLoanBanner = computed<Loan | null>(() => {
+  if (!store.currentUser) return null;
+  // Cari pinjaman aktif terbaru (berjalan) yang belum pernah di-dismiss
+  const recentApproved = store.myActiveLoans.find(l => {
+    if (l.status === 'returned') return false;
+    if (dismissedBanners.value.includes(l.id)) return false;
+    // Cek apakah baru disetujui dalam 7 hari terakhir
+    const borrowTime = new Date(l.borrowDate).getTime();
+    const isRecent = (Date.now() - borrowTime) < (7 * 24 * 60 * 60 * 1000);
+    return isRecent;
+  });
+  return recentApproved || null;
+});
+
+const dismissApprovedBanner = (loanId: string) => {
+  if (!dismissedBanners.value.includes(loanId)) {
+    dismissedBanners.value.push(loanId);
+    try {
+      localStorage.setItem('dismissed_approved_banners', JSON.stringify(dismissedBanners.value));
+    } catch {}
+  }
+};
 
 const isGuru = computed(() => store.currentUser?.memberType === 'guru');
 const maxQuota = computed(() => isGuru.value ? 6 : 3);
