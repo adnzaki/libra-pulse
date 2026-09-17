@@ -114,7 +114,8 @@
     <!-- Main Reader Workspace -->
     <main 
       ref="readerWorkspaceRef"
-      class="flex-1 relative overflow-auto flex flex-col items-center justify-start p-2 sm:p-6 bg-slate-900/90 custom-reader-scroll"
+      class="flex-1 relative overflow-auto flex flex-col items-center justify-start bg-slate-900/90 custom-reader-scroll"
+      :class="readingView === 'reflow' ? 'p-0 sm:p-6' : 'p-2 sm:p-6'"
     >
       
       <!-- STATE 1: EXPIRED / OVERDUE LOCK SCREEN -->
@@ -239,10 +240,10 @@
         <!-- MODE BACA TEKS (FOR PDF - Responsive Reflow Mode, Fits 100% Screen Width) -->
         <div 
           v-else-if="pdfDoc && readingView === 'reflow'"
-          class="w-full max-w-2xl sm:max-w-3xl flex flex-col items-center my-auto transition-all duration-200 shrink-0 relative px-1 sm:px-0"
+          class="w-full max-w-2xl sm:max-w-3xl flex flex-col items-center my-auto transition-all duration-200 shrink-0 relative px-0 sm:px-0"
         >
           <!-- Quick Styling Toolbar (Theme & Typography) -->
-          <div class="w-full mb-3 flex flex-wrap items-center justify-between gap-2 px-1 text-xs">
+          <div class="w-full mb-3 flex flex-wrap items-center justify-between gap-2 px-3 sm:px-1 text-xs pt-2 sm:pt-0">
             <!-- Theme Presets: Sepia, Light, Dark -->
             <div class="flex items-center gap-1 bg-slate-800/95 backdrop-blur-md p-1 rounded-full border border-slate-700/80 shadow-md">
               <button 
@@ -310,9 +311,9 @@
             </div>
           </div>
 
-          <!-- Reflowable Reading Card -->
+          <!-- Reflowable Reading Card: Full-width on mobile without side border/gaps, rounded on desktop -->
           <div 
-            class="relative w-full rounded-2xl sm:rounded-3xl border shadow-2xl p-5 sm:p-10 transition-colors duration-200 overflow-hidden"
+            class="relative w-full rounded-none sm:rounded-3xl border-y sm:border shadow-2xl px-4 sm:px-10 py-5 sm:py-10 transition-colors duration-200 overflow-hidden"
             :class="themeCardClasses"
             :style="{
               fontFamily: readerFontFamily === 'serif' ? 'Georgia, Cambria, &quot;Times New Roman&quot;, serif' : 'system-ui, -apple-system, sans-serif'
@@ -366,7 +367,7 @@
             </div>
 
             <!-- State C: Formatted Reflowable Content -->
-            <div v-else class="space-y-4 select-text relative z-10" :style="{ fontSize: `${readerFontSize}px` }">
+            <div v-else class="space-y-4 select-text relative z-10 pb-4" :style="{ fontSize: `${readerFontSize}px` }">
               <!-- Top Page Info -->
               <div class="flex items-center justify-between pb-3 mb-2 border-b text-[11px] opacity-60 font-mono" :class="readerTheme === 'dark' ? 'border-slate-800' : 'border-slate-300/60'">
                 <span class="truncate max-w-[200px]">{{ loan?.bookTitle }}</span>
@@ -397,34 +398,11 @@
                 <!-- Body Paragraph: perfectly fits mobile screen, wraps text automatically -->
                 <p 
                   v-else 
-                  class="leading-[1.8] text-justify sm:text-left indent-5 sm:indent-8 my-3.5 break-words"
+                  class="leading-[1.8] text-justify sm:text-left indent-4 sm:indent-8 my-3.5 break-words"
                 >
                   {{ paragraph }}
                 </p>
               </template>
-
-              <!-- Bottom Page Navigation inside Card -->
-              <div class="pt-6 mt-6 border-t flex items-center justify-between gap-2 text-xs" :class="readerTheme === 'dark' ? 'border-slate-800 text-slate-400' : 'border-slate-300/60 text-slate-600'">
-                <button 
-                  @click="prevPage" 
-                  :disabled="currentPage <= 1 || isLoadingPage || isLoadingText"
-                  class="px-3 py-1.5 rounded-lg border font-semibold hover:opacity-80 disabled:opacity-30 transition cursor-pointer flex items-center gap-1"
-                >
-                  <ChevronLeft class="w-3.5 h-3.5" />
-                  <span>Sebelumnya</span>
-                </button>
-
-                <span class="font-mono text-[11px]">Halaman {{ currentPage }} dari {{ totalPages }}</span>
-
-                <button 
-                  @click="nextPage" 
-                  :disabled="currentPage >= totalPages || isLoadingPage || isLoadingText"
-                  class="px-3 py-1.5 rounded-lg border font-semibold hover:opacity-80 disabled:opacity-30 transition cursor-pointer flex items-center gap-1"
-                >
-                  <span>Berikutnya</span>
-                  <ChevronRight class="w-3.5 h-3.5" />
-                </button>
-              </div>
             </div>
           </div>
         </div>
