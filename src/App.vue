@@ -78,9 +78,12 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
         
         <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white text-sm shadow-sm">
+          <!-- <div class="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white text-sm shadow-sm">
             L
-          </div>
+          </div> -->
+          <div class="w-9 h-9 rounded-xl overflow-hidden group-hover:scale-105 transition duration-200 flex items-center justify-center">
+              <img :src="'/pwa-192x192.png'" alt="Libra Logo" class="w-full h-full object-cover" />
+            </div>
           <div>
             <div class="font-bold text-slate-800 tracking-tight">Libra • Smart Library</div>
             <div class="text-[11px] text-slate-400">Sistem Otomasi & Sirkulasi Perpustakaan</div>

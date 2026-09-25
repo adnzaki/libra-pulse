@@ -2808,7 +2808,7 @@ const adminTabs = computed(() => [
   { id: 'loans', label: 'Sirkulasi & Peminjaman Aktif', icon: BookMarked, badge: store.activeLoans.length },
   { id: 'bookings', label: 'Booking 24h (Hold)', icon: Clock, badge: store.activeHoldBookings.length },
   { id: 'members', label: 'Kelola Anggota', icon: Users, badge: displayedTotalMembers.value },
-  { id: 'student_verifications', label: 'Verifikasi Siswa (e-Book)', icon: ShieldCheck, badge: store.pendingStudentVerificationsCount },
+  { id: 'student_verifications', label: 'Verifikasi Siswa', icon: ShieldCheck, badge: store.pendingStudentVerificationsCount },
   { id: 'teacher_requests', label: 'Verifikasi Guru', icon: GraduationCap, badge: store.pendingTeacherRequestsCount },
   { id: 'suspends', label: 'Sistem Suspend (1-30 Hari)', icon: Sliders, badge: store.suspendedMembers.length },
   { id: 'notifications', label: 'Notifikasi Keterlambatan', icon: Send, badge: store.overdueLoans.length },
