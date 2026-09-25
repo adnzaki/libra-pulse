@@ -1,67 +1,47 @@
 import type { ChangelogItem, AppVersionConfig } from '../types.js';
 
-export const CURRENT_APP_VERSION = '1.0.0-beta.2';
-export const APP_RELEASE_DATE = '16 September 2026';
-export const APP_RELEASE_CODENAME = 'Libra Aurora Beta 2';
+export const CURRENT_APP_VERSION = '1.0.0-beta.3';
+export const APP_RELEASE_DATE = '25 September 2026';
+export const APP_RELEASE_CODENAME = 'Libra Aurora Beta 3';
 
 export const DEFAULT_APP_VERSION_CONFIG: AppVersionConfig = {
   version: CURRENT_APP_VERSION,
   releaseDate: APP_RELEASE_DATE,
   forceReload: false,
-  minSupportedVersion: '1.0.0-beta.2',
-  updateMessage: 'Pembaruan sistem Libra versi 1.0.0-beta.2 telah dirilis dengan penambahan fitur manajemen sesi multi-perangkat terpusat dan dukungan buku digital (e-Book) interaktif PDF & ePub.',
-  changelogSummary: 'Menambahkan fitur manajemen sesi multi-perangkat real-time, serta dukungan penuh untuk buku digital (e-Book) dalam format PDF & ePub dengan in-app reader tanpa distorsi mobile, watermark halus ergonomis, pagination data buku, dan pencarian independen per-tab.'
+  minSupportedVersion: '1.0.0-beta.3',
+  updateMessage: 'Pembaruan sistem Libra versi 1.0.0-beta.3 telah dirilis dengan verifikasi siswa peminjam e-Book, penerapan logo baru ke seluruh sistem, serta perbaikan instalasi PWA ke homescreen / start menu.',
+  changelogSummary: 'Menambahkan verifikasi siswa yang hendak meminjam e-Book, menerapkan logo baru aplikasi ke seluruh sistem, dan memperbaiki sistem PWA tidak bisa diinstal ke homescreen / start menu.'
 };
 
 export const CHANGELOG_LIST: ChangelogItem[] = [
   {
-    id: 'session-management',
-    title: 'Manajemen Sesi Multi-Perangkat Terpusat',
-    description: 'Menambahkan fitur manajemen sesi terpusat dengan deteksi perangkat aktif, riwayat login, dan kemampuan mengakhiri sesi lain secara jarak jauh (remote logout) secara instan.',
-    targetAudience: 'all',
-    targetAudienceLabel: 'Semua Pengguna',
-    category: 'feature',
-    badge: 'Fitur Unggulan',
-    iconName: 'ShieldCheck'
-  },
-  {
-    id: 'ebook-integration',
-    title: 'Dukungan Koleksi Buku Digital (e-Book) PDF & ePub',
-    description: 'Menambahkan dukungan penuh untuk koleksi buku digital (e-Book) baik dalam format PDF maupun ePub. Pengguna dapat membaca langsung di peramban dengan penyesuaian font reflowable, rasio aspek presisi bebas distorsi di layar ponsel, serta pilihan intensitas watermark.',
+    id: 'student-verification',
+    title: 'Verifikasi Siswa Peminjam e-Book',
+    description: 'Menambahkan alur verifikasi data siswa (NIS, NISN, dan foto selfie) sebelum meminjam dan membaca koleksi buku digital (e-Book), lengkap dengan peninjauan dan persetujuan oleh admin perpustakaan.',
     targetAudience: 'member',
     targetAudienceLabel: 'Khusus Siswa & Guru',
     category: 'feature',
-    badge: 'Koleksi Digital',
-    iconName: 'BookOpen'
+    badge: 'Fitur Baru',
+    iconName: 'ShieldCheck'
   },
   {
-    id: 'search-pagination-improvements',
-    title: 'Pencarian Independen Per-Tab & Pagination Data',
-    description: 'Memperbaiki kotak pencarian di Master Data Buku admin agar berfungsi maksimal dan memisahkan model pencarian antar-tab (Sirkulasi, Booking, Kelola Anggota, Verifikasi Guru, Master Buku, dan Kategori). Menambahkan sistem pagination untuk katalog buku dan master data buku admin.',
-    targetAudience: 'admin',
-    targetAudienceLabel: 'Khusus Admin',
-    category: 'improvement',
-    badge: 'Produktivitas',
-    iconName: 'Sparkles'
-  },
-  {
-    id: 'digital-label-form',
-    title: 'Label Otomatis Digital & Penyempurnaan Form Buku',
-    description: 'Pada form tambah/edit buku digital, isian lokasi rak digantikan secara otomatis dengan label Digital, menyederhanakan proses katalogisasi buku elektronik tanpa memerlukan alokasi rak fisik perpustakaan.',
-    targetAudience: 'admin',
-    targetAudienceLabel: 'Khusus Admin',
-    category: 'improvement',
-    badge: 'Manajemen Data',
-    iconName: 'Bookmark'
-  },
-  {
-    id: 'mobile-reader-comfort',
-    title: 'Kenyamanan Membaca Layar Ponsel & Watermark Halus',
-    description: 'Menghilangkan distorsi regangan teks pada tampilan e-Book di layar ponsel dengan rasio aspek matematis yang presisi, serta menurunkan intensitas watermark menjadi sangat halus agar nyaman dibaca dan tidak menghalangi teks buku.',
+    id: 'new-app-logo',
+    title: 'Penerapan Logo Baru ke Seluruh Sistem',
+    description: 'Menerapkan identitas visual dan logo baru aplikasi Libra secara menyeluruh di seluruh sistem (navbar, halaman login, profil pengguna, dan kartu anggota).',
     targetAudience: 'all',
     targetAudienceLabel: 'Semua Pengguna',
     category: 'improvement',
-    badge: 'Kenyamanan Baca',
+    badge: 'Identitas Visual',
+    iconName: 'Sparkles'
+  },
+  {
+    id: 'pwa-install-fix',
+    title: 'Perbaikan Instalasi PWA ke Homescreen / Start Menu',
+    description: 'Memperbaiki kendala sistem PWA yang sebelumnya tidak bisa diinstal ke homescreen perangkat Android/Chrome maupun start menu desktop, kini dapat dipasang langsung dengan icon resmi Libra.',
+    targetAudience: 'all',
+    targetAudienceLabel: 'Semua Perangkat',
+    category: 'fix',
+    badge: 'Perbaikan Sistem',
     iconName: 'Smartphone'
   }
 ];

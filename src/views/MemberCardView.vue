@@ -58,7 +58,7 @@
             <!-- Top Card Row: Library Logo & Chip -->
             <div class="flex items-start justify-between relative z-10">
               <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-blue-600 text-white font-bold flex items-center justify-center shadow-md shadow-blue-900/30 shrink-0">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl overflow-hidden border border-slate-700/50 bg-slate-900 text-white font-bold flex items-center justify-center shadow-md shadow-blue-900/30 shrink-0">
                   <img :src="'/pwa-192x192.png'" alt="Libra Logo" class="w-full h-full object-cover" />
                 </div>
                 <div>
@@ -306,7 +306,7 @@
             <!-- Top Row: Logo & Status -->
             <div class="flex items-start justify-between relative z-10">
               <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-blue-600 text-white font-bold flex items-center justify-center shadow-md shadow-blue-900/30 shrink-0">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl overflow-hidden border border-slate-700/50 bg-slate-900 text-white font-bold flex items-center justify-center shadow-md shadow-blue-900/30 shrink-0">
                   <img :src="'/pwa-192x192.png'" alt="Libra Logo" class="w-full h-full object-cover" />
                 </div>
                 <div>

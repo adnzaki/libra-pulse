@@ -21,7 +21,6 @@ export default defineConfig(() => {
           'favicon.ico',
           'favicon.png',
           'apple-touch-icon.png',
-          'icon.svg',
           'pwa-192x192.png',
           'pwa-512x512.png',
           'pwa-maskable-512x512.png',

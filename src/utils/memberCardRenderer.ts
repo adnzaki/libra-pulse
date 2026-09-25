@@ -31,7 +31,7 @@ function loadImageSafe(src: string): Promise<HTMLImageElement | null> {
     img.crossOrigin = 'anonymous';
     const timer = setTimeout(() => {
       resolve(null);
-    }, 1500);
+    }, 2500);
 
     img.onload = () => {
       clearTimeout(timer);
@@ -41,7 +41,12 @@ function loadImageSafe(src: string): Promise<HTMLImageElement | null> {
       clearTimeout(timer);
       resolve(null);
     };
-    img.src = src;
+
+    if (src.startsWith('/') && typeof window !== 'undefined' && window.location?.origin) {
+      img.src = `${window.location.origin}${src}`;
+    } else {
+      img.src = src;
+    }
   });
 }
 
@@ -117,31 +122,34 @@ export async function renderMemberCardToCanvas(
   ctx.stroke();
 
   // 4. Top Header Row: Libra Logo & Status Pill
-  // 4a. Libra Icon Squircle
-  drawRoundedRect(ctx, 52, 50, 68, 68, 20);
-  ctx.fillStyle = '#2563eb';
-  ctx.fill();
+  // 4a. Libra Icon Squircle with Official Logo
+  const logoX = 52;
+  const logoY = 50;
+  const logoSize = 68;
+  const logoRadius = 20;
 
-  // Draw Book Icon inside Squircle
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 3.5;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.beginPath();
-  // Open book lines
-  ctx.moveTo(70, 72);
-  ctx.lineTo(86, 64);
-  ctx.lineTo(86, 96);
-  ctx.lineTo(70, 104);
-  ctx.closePath();
-  ctx.stroke();
+  const logoImg = await loadImageSafe('/pwa-192x192.png');
 
-  ctx.beginPath();
-  ctx.moveTo(102, 72);
-  ctx.lineTo(86, 64);
-  ctx.lineTo(86, 96);
-  ctx.lineTo(102, 104);
-  ctx.closePath();
+  ctx.save();
+  drawRoundedRect(ctx, logoX, logoY, logoSize, logoSize, logoRadius);
+  ctx.clip();
+  if (logoImg) {
+    ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+  } else {
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(logoX, logoY, logoSize, logoSize);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '800 32px "Plus Jakarta Sans", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('L', logoX + logoSize / 2, logoY + logoSize / 2);
+  }
+  ctx.restore();
+
+  // Subtle border around logo squircle
+  ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(15, 23, 42, 0.15)';
+  ctx.lineWidth = 2;
+  drawRoundedRect(ctx, logoX, logoY, logoSize, logoSize, logoRadius);
   ctx.stroke();
 
   // 4b. Brand Text
