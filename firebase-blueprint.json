@@ -163,6 +163,28 @@
       },
       "required": ["id", "memberId", "memberName", "memberCardNumber", "memberEmail", "selfieUrl", "status", "requestDate"]
     },
+    "StudentVerificationRequest": {
+      "title": "StudentVerificationRequest",
+      "description": "Permohonan verifikasi identitas siswa SDN Pengasinan VII (NIS, NISN, foto selfie) untuk hak akses peminjaman e-Book berhak cipta",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "memberId": { "type": "string", "maxLength": 64 },
+        "memberName": { "type": "string", "maxLength": 150 },
+        "memberCardNumber": { "type": "string", "maxLength": 50 },
+        "memberEmail": { "type": "string", "maxLength": 150 },
+        "memberPhone": { "type": "string", "maxLength": 50 },
+        "nis": { "type": "string", "maxLength": 50 },
+        "nisn": { "type": "string", "maxLength": 50 },
+        "selfieUrl": { "type": "string", "maxLength": 500 },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "requestDate": { "type": "string", "maxLength": 50 },
+        "reviewedDate": { "type": "string", "maxLength": 50 },
+        "reviewedBy": { "type": "string", "maxLength": 100 },
+        "rejectionReason": { "type": "string", "maxLength": 300 }
+      },
+      "required": ["id", "memberId", "memberName", "memberCardNumber", "memberEmail", "nis", "nisn", "selfieUrl", "status", "requestDate"]
+    },
     "DeviceSession": {
       "title": "DeviceSession",
       "description": "Sesi login aktif perangkat anggota dan perangkat utama (main device)",
@@ -218,6 +240,10 @@
     "/teacher_requests/{requestId}": {
       "schema": "TeacherRequest",
       "description": "Daftar permintaan upgrade keanggotaan menjadi Guru"
+    },
+    "/student_verifications/{requestId}": {
+      "schema": "StudentVerificationRequest",
+      "description": "Daftar permohonan verifikasi siswa SDN Pengasinan VII untuk akses peminjaman e-Book"
     },
     "/device_sessions/{sessionId}": {
       "schema": "DeviceSession",

@@ -232,6 +232,37 @@
       </button>
     </div>
 
+    <!-- STUDENT VERIFICATION REQUESTS NOTIFICATION BANNER (Jika ada verifikasi siswa untuk akses e-book) -->
+    <div 
+      v-if="store.pendingStudentVerificationsCount > 0"
+      class="bg-blue-50 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-blue-200 text-blue-900 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4 shadow-xs animate-in fade-in duration-200 mb-4"
+    >
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shrink-0">
+          <ShieldCheck class="w-5 h-5 animate-pulse" />
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 class="font-bold text-sm sm:text-base text-blue-950">
+              Ada {{ store.pendingStudentVerificationsCount }} Permohonan Verifikasi Siswa SDN Pengasinan VII (e-Book)!
+            </h3>
+            <span class="px-2 py-0.5 rounded-full bg-blue-200 text-blue-900 text-[10px] font-extrabold uppercase animate-pulse">
+              e-Book
+            </span>
+          </div>
+          <p class="text-xs text-blue-700 mt-0.5">
+            Siswa telah mengirimkan NIS, NISN dan foto selfie untuk verifikasi hak cipta peminjaman koleksi e-Book perpustakaan.
+          </p>
+        </div>
+      </div>
+      <button 
+        @click="activeTab = 'student_verifications'"
+        class="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-full shadow-md shadow-blue-200 transition whitespace-nowrap cursor-pointer shrink-0 text-center active:scale-95 flex items-center justify-center gap-1.5"
+      >
+        <span>Tinjau Verifikasi Siswa →</span>
+      </button>
+    </div>
+
     <!-- TEACHER UPGRADE REQUESTS NOTIFICATION BANNER (Jika ada permintaan selfie yang menunggu verifikasi) -->
     <div 
       v-if="store.pendingTeacherRequestsCount > 0"
@@ -951,6 +982,225 @@
                       >
                         <Check class="w-3.5 h-3.5" />
                         <span>Terima Permintaan</span>
+                      </button>
+                    </div>
+
+                    <div v-else class="text-[11px] text-slate-400">
+                      <div>Oleh: {{ req.reviewedBy || 'Admin' }}</div>
+                      <div class="text-[10px]">{{ req.reviewedDate ? formatDateTime(req.reviewedDate) : '' }}</div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tab 3.6: Verifikasi Status Siswa SDN Pengasinan VII (Hak Akses e-Book) -->
+        <div v-if="activeTab === 'student_verifications'" class="space-y-4">
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div>
+              <h3 class="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
+                <span>Verifikasi Siswa SDN Pengasinan VII (Hak Akses e-Book)</span>
+                <span 
+                  v-if="store.pendingStudentVerificationsCount > 0" 
+                  class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold"
+                >
+                  {{ store.pendingStudentVerificationsCount }} Menunggu
+                </span>
+              </h3>
+              <p class="text-[11px] text-slate-500 mt-0.5">
+                Periksa NIS, NISN dan foto selfie siswa untuk memastikan perlindungan hak cipta e-Book digital perpustakaan.
+              </p>
+            </div>
+
+            <!-- Filter Status Permintaan Siswa -->
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button 
+                v-for="st in ['all', 'pending', 'approved', 'rejected']"
+                :key="st"
+                @click="studentVerificationFilter = st"
+                class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer"
+                :class="studentVerificationFilter === st ? 'bg-slate-900 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200/60'"
+              >
+                {{ st === 'all' ? 'Semua' : st === 'pending' ? 'Menunggu Review' : st === 'approved' ? 'Disetujui' : 'Ditolak' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div v-if="filteredStudentVerifications.length === 0" class="p-10 rounded-2xl bg-slate-50 border border-slate-100 text-center text-slate-400 text-xs space-y-2">
+            <div class="w-12 h-12 rounded-2xl bg-slate-200 text-slate-500 flex items-center justify-center mx-auto">
+              <ShieldCheck class="w-6 h-6" />
+            </div>
+            <div class="font-bold text-slate-700">Belum Ada Permohonan Verifikasi Siswa</div>
+            <p class="text-[11px]">Tidak ada permohonan verifikasi siswa yang sesuai dengan filter yang dipilih.</p>
+          </div>
+
+          <!-- Mobile Cards for Student Verifications -->
+          <div v-else class="grid grid-cols-1 gap-3.5 md:hidden">
+            <div 
+              v-for="req in filteredStudentVerifications" 
+              :key="req.id"
+              class="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3"
+            >
+              <div class="flex items-start gap-3">
+                <!-- Selfie Preview (Clickable) -->
+                <div class="relative group cursor-pointer shrink-0" @click="openSelfiePreview(req.selfieUrl, req.memberName)">
+                  <img 
+                    :src="req.selfieUrl" 
+                    class="w-16 h-20 rounded-xl object-cover border border-slate-200 shadow-xs" 
+                    alt="Selfie" 
+                    referrerpolicy="no-referrer"
+                  />
+                  <div class="absolute inset-0 bg-black/30 rounded-xl flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition">
+                    <Eye class="w-4 h-4" />
+                  </div>
+                </div>
+
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between gap-1">
+                    <span class="font-mono text-[10px] text-slate-400">{{ req.id }}</span>
+                    <span 
+                      class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
+                      :class="req.status === 'pending' ? 'bg-amber-100 text-amber-800 animate-pulse' : req.status === 'approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'"
+                    >
+                      {{ req.status === 'pending' ? 'Menunggu' : req.status === 'approved' ? 'Disetujui' : 'Ditolak' }}
+                    </span>
+                  </div>
+                  <h4 class="font-bold text-slate-900 text-sm mt-0.5 truncate">{{ req.memberName }}</h4>
+                  <div class="text-[11px] text-blue-600 font-mono font-medium">{{ req.memberCardNumber }}</div>
+                  
+                  <!-- NIS & NISN Info -->
+                  <div class="mt-1.5 p-2 rounded-xl bg-slate-50 border border-slate-200/80 text-[11px] space-y-0.5">
+                    <div class="flex justify-between">
+                      <span class="text-slate-500">NIS:</span>
+                      <strong class="font-mono text-slate-800">{{ req.nis }}</strong>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-slate-500">NISN:</span>
+                      <strong class="font-mono text-slate-800">{{ req.nisn }}</strong>
+                    </div>
+                  </div>
+
+                  <div class="text-[10px] text-slate-400 mt-1">Diajukan: {{ formatDateTime(req.requestDate) }}</div>
+                </div>
+              </div>
+
+              <!-- Rejection Reason Note if rejected -->
+              <div v-if="req.status === 'rejected'" class="p-2.5 rounded-xl bg-rose-50 border border-rose-100 text-[11px] text-rose-700">
+                <strong>Alasan Penolakan:</strong> {{ req.rejectionReason || '-' }}
+              </div>
+
+              <!-- Action Buttons for Pending Requests -->
+              <div v-if="req.status === 'pending'" class="pt-2 border-t border-slate-100 grid grid-cols-2 gap-2">
+                <button 
+                  @click="promptRejectStudentRequest(req)"
+                  class="py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <X class="w-3.5 h-3.5" />
+                  <span>Tolak</span>
+                </button>
+                <button 
+                  @click="promptApproveStudentRequest(req)"
+                  class="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Check class="w-3.5 h-3.5" />
+                  <span>Setujui Siswa</span>
+                </button>
+              </div>
+
+              <div v-else class="pt-2 border-t border-slate-100 text-[11px] text-slate-500 flex justify-between">
+                <span>Ditinjau oleh: <strong>{{ req.reviewedBy || 'Admin' }}</strong></span>
+                <span>{{ req.reviewedDate ? formatDateTime(req.reviewedDate) : '-' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Desktop Table for Student Verifications -->
+          <div v-if="filteredStudentVerifications.length > 0" class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100">
+            <table class="w-full text-left text-xs text-slate-600">
+              <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] tracking-wider border-b border-slate-100 font-bold">
+                <tr>
+                  <th class="py-3.5 px-4 text-center">Foto Selfie</th>
+                  <th class="py-3.5 px-4">Nama & No. Kartu</th>
+                  <th class="py-3.5 px-4">Identitas Siswa (NIS / NISN)</th>
+                  <th class="py-3.5 px-4">Kontak Pemohon</th>
+                  <th class="py-3.5 px-4">Waktu Pengajuan</th>
+                  <th class="py-3.5 px-4 text-center">Status</th>
+                  <th class="py-3.5 px-4 text-right">Aksi Verifikasi</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr v-for="req in filteredStudentVerifications" :key="req.id" class="hover:bg-slate-50/80">
+                  <td class="py-3 px-4 text-center">
+                    <div 
+                      class="relative inline-block group cursor-pointer" 
+                      @click="openSelfiePreview(req.selfieUrl, req.memberName)"
+                      title="Klik untuk memperbesar foto selfie"
+                    >
+                      <img 
+                        :src="req.selfieUrl" 
+                        class="w-12 h-14 rounded-xl object-cover border-2 border-slate-200 shadow-xs group-hover:scale-105 transition" 
+                        alt="Selfie" 
+                        referrerpolicy="no-referrer"
+                      />
+                      <div class="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition">
+                        <Eye class="w-4 h-4" />
+                      </div>
+                    </div>
+                  </td>
+
+                  <td class="py-3 px-4">
+                    <div class="font-bold text-slate-900">{{ req.memberName }}</div>
+                    <div class="text-[11px] text-blue-600 font-mono font-medium">{{ req.memberCardNumber }}</div>
+                    <div class="text-[10px] text-slate-400 font-mono">ID: {{ req.id }}</div>
+                  </td>
+
+                  <td class="py-3 px-4">
+                    <div class="font-mono text-slate-900">NIS: <strong>{{ req.nis }}</strong></div>
+                    <div class="font-mono text-slate-600 text-[11px]">NISN: <strong>{{ req.nisn }}</strong></div>
+                  </td>
+
+                  <td class="py-3 px-4">
+                    <div class="text-slate-800">{{ req.memberEmail || '-' }}</div>
+                    <div class="text-[11px] text-slate-500 font-mono">{{ req.memberPhone || '-' }}</div>
+                  </td>
+
+                  <td class="py-3 px-4 text-slate-600 font-medium">
+                    {{ formatDateTime(req.requestDate) }}
+                  </td>
+
+                  <td class="py-3 px-4 text-center">
+                    <span 
+                      class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                      :class="req.status === 'pending' ? 'bg-amber-100 text-amber-800 border border-amber-200 animate-pulse' : req.status === 'approved' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-rose-100 text-rose-800 border border-rose-200'"
+                    >
+                      {{ req.status === 'pending' ? 'Menunggu Review' : req.status === 'approved' ? 'Disetujui' : 'Ditolak' }}
+                    </span>
+                    <div v-if="req.status === 'rejected' && req.rejectionReason" class="text-[10px] text-rose-600 max-w-xs truncate mx-auto mt-0.5" :title="req.rejectionReason">
+                      {{ req.rejectionReason }}
+                    </div>
+                  </td>
+
+                  <td class="py-3 px-4 text-right">
+                    <div v-if="req.status === 'pending'" class="flex items-center justify-end gap-1.5">
+                      <button 
+                        @click="promptRejectStudentRequest(req)"
+                        class="px-3 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs transition cursor-pointer flex items-center gap-1"
+                        title="Tolak permohonan verifikasi siswa"
+                      >
+                        <X class="w-3.5 h-3.5" />
+                        <span>Tolak</span>
+                      </button>
+
+                      <button 
+                        @click="promptApproveStudentRequest(req)"
+                        class="px-4 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer flex items-center gap-1"
+                        title="Setujui verifikasi siswa untuk akses e-Book"
+                      >
+                        <Check class="w-3.5 h-3.5" />
+                        <span>Setujui Siswa</span>
                       </button>
                     </div>
 
@@ -1852,6 +2102,212 @@
       </div>
     </div>
 
+    <!-- Modal Penolakan Permohonan Verifikasi Siswa (e-Book) -->
+    <div v-if="isRejectStudentModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
+      <div class="bg-white w-full max-w-md rounded-3xl border border-slate-200 shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 max-h-[90vh]">
+        <!-- Header -->
+        <div class="px-6 py-4 bg-rose-600 text-white flex items-center justify-between shrink-0">
+          <div class="flex items-center gap-2.5">
+            <div class="p-2 rounded-xl bg-white/20">
+              <ShieldCheck class="w-5 h-5" />
+            </div>
+            <div>
+              <h3 class="font-bold text-sm leading-tight">Tolak Verifikasi Siswa</h3>
+              <p class="text-[11px] text-rose-100 mt-0.5">Penolakan Akses e-Book SDN Pengasinan VII</p>
+            </div>
+          </div>
+          <button 
+            @click="closeRejectStudentModal"
+            class="p-2 rounded-xl text-rose-100 hover:text-white hover:bg-white/20 transition cursor-pointer"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+
+        <form @submit.prevent="confirmRejectStudentRequest" class="p-4 sm:p-6 space-y-4 flex-1 flex flex-col justify-between overflow-y-auto">
+          <div class="space-y-3">
+            <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center gap-3">
+              <img 
+                :src="selectedStudentReqForReject?.selfieUrl" 
+                class="w-12 h-14 rounded-xl object-cover border border-slate-200" 
+                alt="Selfie"
+              />
+              <div class="min-w-0">
+                <div class="font-bold text-sm text-slate-900 truncate">{{ selectedStudentReqForReject?.memberName }}</div>
+                <div class="text-xs text-blue-600 font-mono">{{ selectedStudentReqForReject?.memberCardNumber }}</div>
+                <div class="text-[11px] text-slate-500 font-mono">NIS: {{ selectedStudentReqForReject?.nis }} • NISN: {{ selectedStudentReqForReject?.nisn }}</div>
+              </div>
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="block text-xs font-bold text-slate-700">Alasan Penolakan *</label>
+              
+              <!-- Quick reason chips -->
+              <div class="flex flex-wrap gap-1 mb-1.5">
+                <button 
+                  type="button"
+                  v-for="preset in [
+                    'NIS/NISN tidak sesuai buku induk',
+                    'Foto selfie wajah buram / tidak jelas',
+                    'Wajah tidak cocok dengan identitas siswa',
+                    'Bukan siswa aktif SDN Pengasinan VII'
+                  ]"
+                  :key="preset"
+                  @click="rejectStudentReasonInput = preset"
+                  class="text-[10px] px-2.5 py-1 rounded-full bg-slate-100 hover:bg-rose-50 hover:text-rose-700 text-slate-600 border border-slate-200 transition cursor-pointer"
+                >
+                  {{ preset }}
+                </button>
+              </div>
+
+              <textarea 
+                v-model="rejectStudentReasonInput"
+                rows="3"
+                placeholder="Tuliskan alasan penolakan..."
+                class="w-full px-3.5 py-2.5 rounded-2xl border border-slate-300 text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
+                required
+              ></textarea>
+              <p class="text-[11px] text-slate-400">Alasan ini akan ditampilkan kepada siswa di portal anggota mereka agar dapat diperbaiki.</p>
+            </div>
+          </div>
+
+          <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100 shrink-0">
+            <button 
+              type="button"
+              @click="closeRejectStudentModal"
+              class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 hover:bg-slate-200/60 transition cursor-pointer"
+            >
+              Batal
+            </button>
+            <button 
+              type="submit"
+              :disabled="isProcessingRejectStudent"
+              class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-rose-200 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Check class="w-4 h-4" />
+              <span>{{ isProcessingRejectStudent ? 'Memproses...' : 'Konfirmasi Tolak' }}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal Persetujuan Permohonan Verifikasi Siswa (e-Book) -->
+    <div v-if="isApproveStudentModalOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200">
+      <div class="bg-white w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-lg sm:rounded-3xl rounded-none border-0 sm:border sm:border-slate-200 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+        <!-- Sticky Header -->
+        <div class="px-4 sm:px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white flex items-center justify-between shrink-0 sticky top-0 z-20">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-2xl bg-white/20 backdrop-blur-xs text-white shrink-0">
+              <ShieldCheck class="w-6 h-6" />
+            </div>
+            <div>
+              <h3 class="font-bold text-sm sm:text-base leading-tight">Persetujuan Verifikasi Siswa</h3>
+              <p class="text-[11px] sm:text-xs text-blue-100 mt-0.5">Aktivasi Hak Akses e-Book SDN Pengasinan VII</p>
+            </div>
+          </div>
+          <button 
+            @click="closeApproveStudentModal"
+            type="button"
+            aria-label="Tutup modal persetujuan siswa"
+            class="p-2 rounded-xl text-blue-100 hover:text-white hover:bg-white/20 transition cursor-pointer shrink-0"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+
+        <div class="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto flex-1">
+          <!-- Student Detail & Selfie Card -->
+          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center gap-4">
+            <div 
+              class="relative group cursor-pointer shrink-0"
+              @click="openSelfiePreview(selectedStudentReqForApprove?.selfieUrl, selectedStudentReqForApprove?.memberName)"
+              title="Klik untuk perbesar selfie"
+            >
+              <img 
+                :src="selectedStudentReqForApprove?.selfieUrl" 
+                class="w-16 h-20 rounded-xl object-cover border-2 border-blue-500 shadow-sm"
+                alt="Selfie Pemohon"
+                referrerpolicy="no-referrer"
+              />
+              <div class="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition">
+                <Eye class="w-4 h-4" />
+              </div>
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 uppercase">
+                  Siswa
+                </span>
+                <span class="text-[10px] text-slate-400 font-mono">
+                  ID: {{ selectedStudentReqForApprove?.id }}
+                </span>
+              </div>
+              <h4 class="text-sm font-bold text-slate-900 mt-1 truncate">
+                {{ selectedStudentReqForApprove?.memberName }}
+              </h4>
+              <div class="text-xs font-mono font-bold text-blue-600 mt-0.5">
+                {{ selectedStudentReqForApprove?.memberCardNumber }}
+              </div>
+              <div class="text-[11px] text-slate-500 mt-0.5 truncate">
+                {{ selectedStudentReqForApprove?.memberEmail || '-' }} • {{ selectedStudentReqForApprove?.memberPhone || '-' }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Identitas NIS & NISN -->
+          <div class="p-4 rounded-2xl bg-blue-50/70 border border-blue-200/80 space-y-2.5">
+            <div class="flex items-center gap-2 text-blue-950 font-bold text-xs">
+              <CheckCircle2 class="w-4 h-4 text-blue-600 shrink-0" />
+              <span>Data Identitas Resmi Siswa Terdaftar:</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <div class="p-3 rounded-xl bg-white border border-blue-100 text-slate-700">
+                <div class="text-[10px] text-blue-700 font-bold uppercase tracking-wider">Nomor Induk Sekolah (NIS)</div>
+                <div class="font-mono font-extrabold text-slate-900 text-base mt-0.5">{{ selectedStudentReqForApprove?.nis }}</div>
+              </div>
+              <div class="p-3 rounded-xl bg-white border border-blue-100 text-slate-700">
+                <div class="text-[10px] text-blue-700 font-bold uppercase tracking-wider">NISN Siswa Nasional</div>
+                <div class="font-mono font-extrabold text-slate-900 text-base mt-0.5">{{ selectedStudentReqForApprove?.nisn }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hak Akses e-Book Notice -->
+          <div class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 space-y-1.5 text-xs text-emerald-950">
+            <div class="font-bold flex items-center gap-1.5 text-emerald-800">
+              <ShieldCheck class="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Perlindungan Hak Cipta & Hak Akses Digital:</span>
+            </div>
+            <p class="text-[11px] text-emerald-900 leading-relaxed">
+              Dengan menyetujui, akun ini diverifikasi sah sebagai siswa SDN Pengasinan VII dan akan langsung diizinkan meminjam dan membaca seluruh koleksi <strong>e-Book digital</strong> perpustakaan.
+            </p>
+          </div>
+        </div>
+
+        <!-- Sticky Footer Actions -->
+        <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-white/95 backdrop-blur-md border-t border-slate-100 flex items-center justify-end gap-3 shrink-0 sticky bottom-0 z-20">
+          <button 
+            type="button" 
+            @click="closeApproveStudentModal"
+            class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 hover:bg-slate-200/60 transition cursor-pointer"
+          >
+            Batal
+          </button>
+          <button 
+            type="button" 
+            @click="confirmApproveStudentRequest"
+            :disabled="isProcessingApproveStudent"
+            class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <Check class="w-4 h-4" />
+            <span>{{ isProcessingApproveStudent ? 'Menyetujui...' : 'Ya, Setujui Akses Siswa' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal Penangguhan Sanksi Anggota (Suspend) -->
     <div 
       v-if="isSuspendMemberModalOpen" 
@@ -2034,6 +2490,7 @@ const triggerAutoReturnEbooks = async () => {
 const circulationSearch = ref('');
 const bookingSearch = ref('');
 const memberSearch = ref('');
+const studentVerificationSearch = ref('');
 const teacherRequestSearch = ref('');
 const bookSearch = ref('');
 const categorySearch = ref('');
@@ -2042,7 +2499,7 @@ const categorySearch = ref('');
 const loanSearch = circulationSearch;
 
 const hasSearchForActiveTab = computed(() => {
-  return ['loans', 'bookings', 'members', 'teacher_requests', 'books', 'categories'].includes(activeTab.value);
+  return ['loans', 'bookings', 'members', 'student_verifications', 'teacher_requests', 'books', 'categories'].includes(activeTab.value);
 });
 
 const searchPlaceholder = computed(() => {
@@ -2050,6 +2507,7 @@ const searchPlaceholder = computed(() => {
     case 'loans': return 'Cari transaksi sirkulasi / peminjam / judul...';
     case 'bookings': return 'Cari booking aktif / nama / judul...';
     case 'members': return 'Cari anggota / no kartu / email / no HP...';
+    case 'student_verifications': return 'Cari verifikasi siswa / NIS / NISN / nama...';
     case 'teacher_requests': return 'Cari verifikasi guru / NIP / nama...';
     case 'books': return 'Cari judul buku / pengarang / rak / ISBN...';
     case 'categories': return 'Cari nama kategori buku...';
@@ -2063,6 +2521,7 @@ const currentSearchInput = computed({
       case 'loans': return circulationSearch.value;
       case 'bookings': return bookingSearch.value;
       case 'members': return memberSearch.value;
+      case 'student_verifications': return studentVerificationSearch.value;
       case 'teacher_requests': return teacherRequestSearch.value;
       case 'books': return bookSearch.value;
       case 'categories': return categorySearch.value;
@@ -2074,6 +2533,7 @@ const currentSearchInput = computed({
       case 'loans': circulationSearch.value = val; break;
       case 'bookings': bookingSearch.value = val; break;
       case 'members': memberSearch.value = val; break;
+      case 'student_verifications': studentVerificationSearch.value = val; break;
       case 'teacher_requests': teacherRequestSearch.value = val; break;
       case 'books': bookSearch.value = val; break;
       case 'categories': categorySearch.value = val; break;
@@ -2348,6 +2808,7 @@ const adminTabs = computed(() => [
   { id: 'loans', label: 'Sirkulasi & Peminjaman Aktif', icon: BookMarked, badge: store.activeLoans.length },
   { id: 'bookings', label: 'Booking 24h (Hold)', icon: Clock, badge: store.activeHoldBookings.length },
   { id: 'members', label: 'Kelola Anggota', icon: Users, badge: displayedTotalMembers.value },
+  { id: 'student_verifications', label: 'Verifikasi Siswa (e-Book)', icon: ShieldCheck, badge: store.pendingStudentVerificationsCount },
   { id: 'teacher_requests', label: 'Verifikasi Guru', icon: GraduationCap, badge: store.pendingTeacherRequestsCount },
   { id: 'suspends', label: 'Sistem Suspend (1-30 Hari)', icon: Sliders, badge: store.suspendedMembers.length },
   { id: 'notifications', label: 'Notifikasi Keterlambatan', icon: Send, badge: store.overdueLoans.length },
@@ -2631,6 +3092,94 @@ const filteredTeacherRequests = computed(() => {
   return list;
 });
 
+// Student Verification Requests Management State & Handlers
+const studentVerificationFilter = ref('all');
+const isRejectStudentModalOpen = ref(false);
+const selectedStudentReqForReject = ref<any>(null);
+const rejectStudentReasonInput = ref('');
+const isProcessingRejectStudent = ref(false);
+
+const filteredStudentVerifications = computed(() => {
+  let list = store.studentVerifications;
+  if (studentVerificationFilter.value !== 'all') {
+    list = list.filter(r => r.status === studentVerificationFilter.value);
+  }
+  if (studentVerificationSearch.value.trim()) {
+    const q = studentVerificationSearch.value.toLowerCase().trim();
+    list = list.filter(r => 
+      r.memberName.toLowerCase().includes(q) ||
+      r.memberCardNumber.toLowerCase().includes(q) ||
+      (r.memberEmail && r.memberEmail.toLowerCase().includes(q)) ||
+      (r.memberPhone && r.memberPhone.includes(q)) ||
+      (r.nis && r.nis.toLowerCase().includes(q)) ||
+      (r.nisn && r.nisn.toLowerCase().includes(q))
+    );
+  }
+  return list;
+});
+
+// Student Verification Approval Custom Modal State
+const isApproveStudentModalOpen = ref(false);
+const selectedStudentReqForApprove = ref<any>(null);
+const isProcessingApproveStudent = ref(false);
+
+const promptApproveStudentRequest = (req: any) => {
+  selectedStudentReqForApprove.value = req;
+  isApproveStudentModalOpen.value = true;
+};
+
+const closeApproveStudentModal = () => {
+  isApproveStudentModalOpen.value = false;
+  selectedStudentReqForApprove.value = null;
+};
+
+const confirmApproveStudentRequest = async () => {
+  if (!selectedStudentReqForApprove.value) return;
+  const targetReq = selectedStudentReqForApprove.value;
+  isProcessingApproveStudent.value = true;
+  try {
+    const res = await store.reviewStudentVerification(targetReq.id, true);
+    if (res.success) {
+      store.showToast(`Verifikasi siswa ${targetReq.memberName} berhasil disetujui! Siswa kini dapat meminjam e-Book.`);
+    }
+    closeApproveStudentModal();
+  } catch (err) {
+    console.error('Failed to approve student verification:', err);
+  } finally {
+    isProcessingApproveStudent.value = false;
+  }
+};
+
+const promptRejectStudentRequest = (req: any) => {
+  selectedStudentReqForReject.value = req;
+  rejectStudentReasonInput.value = '';
+  isRejectStudentModalOpen.value = true;
+};
+
+const closeRejectStudentModal = () => {
+  isRejectStudentModalOpen.value = false;
+  selectedStudentReqForReject.value = null;
+  rejectStudentReasonInput.value = '';
+};
+
+const confirmRejectStudentRequest = async () => {
+  if (!selectedStudentReqForReject.value) return;
+  const targetReq = selectedStudentReqForReject.value;
+  const reason = rejectStudentReasonInput.value.trim() || 'Data NIS/NISN atau selfie belum sesuai data siswa SDN Pengasinan VII';
+  isProcessingRejectStudent.value = true;
+  try {
+    const res = await store.reviewStudentVerification(targetReq.id, false, reason);
+    if (res.success) {
+      store.showToast(`Permohonan verifikasi siswa ${targetReq.memberName} telah ditolak.`);
+    }
+  } catch (err) {
+    console.error('Failed to reject student verification:', err);
+  } finally {
+    closeRejectStudentModal();
+    isProcessingRejectStudent.value = false;
+  }
+};
+
 // Teacher Request Approval Custom Modal State
 const isApproveTeacherModalOpen = ref(false);
 const selectedRequestForApprove = ref<any>(null);
@@ -2714,6 +3263,8 @@ useModalBack(isResetMemberPasswordOpen, () => { isResetMemberPasswordOpen.value 
 useModalBack(computed(() => !!previewSelfieUrl.value), () => { previewSelfieUrl.value = null; }, 'admin_preview_selfie');
 useModalBack(isRejectTeacherModalOpen, () => { closeRejectTeacherModal(); }, 'admin_reject_teacher');
 useModalBack(isApproveTeacherModalOpen, () => { closeApproveTeacherModal(); }, 'admin_approve_teacher');
+useModalBack(isRejectStudentModalOpen, () => { closeRejectStudentModal(); }, 'admin_reject_student');
+useModalBack(isApproveStudentModalOpen, () => { closeApproveStudentModal(); }, 'admin_approve_student');
 useModalBack(isSuspendMemberModalOpen, () => { closeSuspendMemberModal(); }, 'admin_suspend_member');
 useModalBack(computed(() => confirmDialog.value.isOpen), () => { closeConfirmDialog(); }, 'admin_confirm_dialog');
 </script>

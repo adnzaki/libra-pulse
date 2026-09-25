@@ -57,6 +57,80 @@
           </div>
         </div>
 
+        <!-- E-Book Copyright & Student Verification Status (Khusus e-Book) -->
+        <div v-if="book?.isEbook" class="space-y-2.5">
+          <!-- Status Guru / Admin -->
+          <div v-if="isGuruOrAdmin" class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-start gap-2.5 text-xs text-emerald-900">
+            <CheckCircle2 class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+            <div>
+              <span class="font-bold">Akses e-Book Warga Sekolah (Guru / Admin):</span>
+              <p class="text-[11px] text-emerald-800 mt-0.5">
+                Akun berstatus <strong class="font-bold">{{ targetMember?.memberType === 'guru' ? 'Dewan Guru' : 'Administrator' }}</strong> otomatis memiliki hak akses penuh peminjaman koleksi e-Book perpustakaan.
+              </p>
+            </div>
+          </div>
+
+          <!-- Status Siswa Terverifikasi -->
+          <div v-else-if="targetMember && studentVerificationStatus === 'verified'" class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-start gap-2.5 text-xs text-emerald-900">
+            <CheckCircle2 class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+            <div>
+              <div class="flex items-center gap-1.5 font-bold">
+                <span>Siswa Terverifikasi SDN Pengasinan VII</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">e-Book Aktif</span>
+              </div>
+              <p class="text-[11px] text-slate-600 mt-0.5">
+                NIS: <strong class="font-mono text-slate-800">{{ targetMember.nis }}</strong> • NISN: <strong class="font-mono text-slate-800">{{ targetMember.nisn }}</strong>. Anda dapat langsung melanjutkan peminjaman e-Book ini.
+              </p>
+            </div>
+          </div>
+
+          <!-- Status Siswa Sedang Pending Review -->
+          <div v-else-if="targetMember && studentVerificationStatus === 'pending'" class="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-2">
+            <div class="flex items-center gap-2 font-bold text-amber-800">
+              <Clock class="w-4 h-4 text-amber-600 shrink-0" />
+              <span>Verifikasi Siswa Sedang Menunggu Persetujuan Admin</span>
+            </div>
+            <p class="text-[11px] text-slate-600 leading-relaxed">
+              Permohonan verifikasi siswa SDN Pengasinan VII Anda sedang menunggu persetujuan Admin perpustakaan. Peminjaman e-Book ini akan aktif setelah disetujui.
+            </p>
+            <button 
+              type="button" 
+              @click="isStudentVerificationOpen = true"
+              class="text-[11px] font-bold text-amber-700 hover:text-amber-900 underline cursor-pointer"
+            >
+              Lihat Detail Pengajuan Verifikasi Siswa →
+            </button>
+          </div>
+
+          <!-- Status Siswa Belum Terverifikasi atau Ditolak -->
+          <div v-else class="p-4 rounded-2xl bg-blue-50 border border-blue-200 text-xs text-blue-950 space-y-2.5">
+            <div class="flex items-start gap-2.5">
+              <ShieldCheck class="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+              <div class="space-y-1">
+                <span class="font-bold text-slate-900">Hak Cipta: Wajib Verifikasi Siswa SDN Pengasinan VII</span>
+                <p class="text-[11px] text-slate-600 leading-relaxed">
+                  Peminjaman koleksi <strong>e-Book</strong> dilindungi hak cipta digital dan khusus diperuntukkan bagi siswa resmi SDN Pengasinan VII. Silakan lengkapi <strong>NIS, NISN, dan foto selfie wajah</strong> terlebih dahulu.
+                </p>
+              </div>
+            </div>
+
+            <div v-if="!store.currentUser && authMode === 'card' && !verifiedMember" class="p-2.5 rounded-xl bg-white border border-blue-100 text-[11px] text-slate-500">
+              💡 Masukkan nomor kartu anggota siswa Anda terlebih dahulu untuk memverifikasi atau login ke akun Anda.
+            </div>
+
+            <div v-else>
+              <button 
+                type="button" 
+                @click="isStudentVerificationOpen = true"
+                class="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-200 transition flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+              >
+                <GraduationCap class="w-4 h-4" />
+                <span>{{ studentVerificationStatus === 'rejected' ? 'Ajukan Ulang Verifikasi Siswa (Selfie)' : 'Verifikasi Siswa Sekarang (NIS, NISN & Selfie) →' }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Booking Method Selection (if not logged in) -->
         <div v-if="!store.currentUser" class="space-y-4">
           <div class="flex rounded-full bg-slate-100 p-1 text-xs">
@@ -245,15 +319,22 @@
         <button 
           type="button" 
           @click="handleSubmitBooking"
-          :disabled="isSubmitting || (book && book.availableCopies <= 0) || isTargetMemberBlocked"
+          :disabled="isSubmitting || (book && book.availableCopies <= 0) || isTargetMemberBlocked || isEbookBlockedByVerification"
           class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
         >
           <Bookmark class="w-4 h-4" />
-          {{ isSubmitting ? 'Memproses...' : 'Konfirmasi Booking (Hold 24 Jam)' }}
+          {{ isSubmitting ? 'Memproses...' : isEbookBlockedByVerification ? 'Wajib Verifikasi Siswa' : 'Konfirmasi Booking (Hold 24 Jam)' }}
         </button>
       </div>
 
     </div>
+
+    <!-- Modal Verifikasi Siswa Terpadu -->
+    <StudentVerificationModal 
+      :isOpen="isStudentVerificationOpen"
+      @close="isStudentVerificationOpen = false"
+      @submitted="isStudentVerificationOpen = false"
+    />
   </div>
 </template>
 
@@ -261,10 +342,11 @@
 import { ref, computed, onBeforeUnmount, nextTick, toRef } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import type { Book, Member } from '../types.js';
-import { BookmarkCheck, Bookmark, X, Clock, AlertCircle, Camera, QrCode } from 'lucide-vue-next';
+import { BookmarkCheck, Bookmark, X, Clock, AlertCircle, Camera, QrCode, ShieldCheck, GraduationCap, CheckCircle2 } from 'lucide-vue-next';
 import { Html5Qrcode } from 'html5-qrcode';
 import confetti from 'canvas-confetti';
 import { useModalBack } from '../composables/useModalBack.js';
+import StudentVerificationModal from './StudentVerificationModal.vue';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -282,9 +364,33 @@ const bookingNotes = ref('');
 const isSubmitting = ref(false);
 const modalError = ref('');
 const verifiedMember = ref<Member | null>(null);
+const isStudentVerificationOpen = ref(false);
 
 const isCameraActive = ref(false);
 let html5QrScanner: Html5Qrcode | null = null;
+
+const targetMember = computed<Member | null>(() => {
+  if (store.currentUser) return store.currentUser;
+  if (authMode.value === 'card' && verifiedMember.value) return verifiedMember.value;
+  return null;
+});
+
+const isGuruOrAdmin = computed(() => {
+  if (!targetMember.value) return false;
+  return targetMember.value.memberType === 'guru' || targetMember.value.role === 'admin';
+});
+
+const studentVerificationStatus = computed(() => {
+  if (!targetMember.value) return 'unverified';
+  return targetMember.value.studentVerificationStatus || 'unverified';
+});
+
+const isEbookBlockedByVerification = computed(() => {
+  if (!props.book?.isEbook) return false;
+  if (!targetMember.value) return false;
+  if (isGuruOrAdmin.value) return false;
+  return studentVerificationStatus.value !== 'verified';
+});
 
 const regForm = ref({
   name: '',
@@ -397,6 +503,21 @@ const handleSubmitBooking = async () => {
   if (isTargetMemberBlocked.value) {
     modalError.value = 'Booking ditolak: Akun anggota sedang disuspend atau memiliki pinjaman yang terlambat.';
     return;
+  }
+
+  // Pengecekan Hak Cipta e-Book: Hanya untuk siswa terverifikasi atau guru/admin
+  if (props.book.isEbook) {
+    if (targetMember.value && !isGuruOrAdmin.value) {
+      if (studentVerificationStatus.value !== 'verified') {
+        if (studentVerificationStatus.value === 'pending') {
+          modalError.value = 'Peminjaman e-Book ditolak: Permohonan verifikasi siswa Anda sedang menunggu persetujuan Admin SDN Pengasinan VII.';
+        } else {
+          modalError.value = 'Peminjaman e-Book dibatasi: Terkait perlindungan hak cipta digital, peminjaman e-Book hanya dapat dilakukan oleh siswa SDN Pengasinan VII yang telah terverifikasi. Silakan lakukan verifikasi siswa terlebih dahulu.';
+          isStudentVerificationOpen.value = true;
+        }
+        return;
+      }
+    }
   }
 
   let targetCardNumber = '';

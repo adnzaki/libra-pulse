@@ -9,8 +9,8 @@
         <!-- Brand / Logo -->
         <div class="flex items-center gap-3">
           <router-link to="/" class="flex items-center gap-2.5 group">
-            <div class="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center font-bold text-lg text-white shadow-md group-hover:scale-105 transition duration-200">
-              L
+            <div class="w-9 h-9 rounded-xl overflow-hidden shadow-md shadow-blue-900/40 group-hover:scale-105 transition duration-200 border border-slate-700/60 flex items-center justify-center bg-slate-900">
+              <img src="/pwa-192x192.png" alt="Libra Logo" class="w-full h-full object-cover" />
             </div>
             <div>
               <div class="flex items-center gap-2">
@@ -74,7 +74,10 @@
           >
             <ShieldCheck class="w-4 h-4 text-blue-300" />
             Admin Panel
-            <span v-if="store.pendingTeacherRequestsCount > 0" class="px-1.5 py-0.2 text-[10px] rounded-full bg-amber-500 text-white font-bold animate-pulse flex items-center gap-0.5" title="Permintaan Verifikasi Guru Menunggu Konfirmasi">
+            <span v-if="store.pendingStudentVerificationsCount > 0" class="px-1.5 py-0.2 text-[10px] rounded-full bg-blue-500 text-white font-bold animate-pulse flex items-center gap-0.5" title="Permohonan Verifikasi Siswa Menunggu Konfirmasi">
+              <span>🎒</span> {{ store.pendingStudentVerificationsCount }}
+            </span>
+            <span v-else-if="store.pendingTeacherRequestsCount > 0" class="px-1.5 py-0.2 text-[10px] rounded-full bg-amber-500 text-white font-bold animate-pulse flex items-center gap-0.5" title="Permintaan Verifikasi Guru Menunggu Konfirmasi">
               <span>👨‍🏫</span> {{ store.pendingTeacherRequestsCount }}
             </span>
             <span v-else-if="store.overdueLoans.length" class="px-1.5 py-0.2 text-[10px] rounded-full bg-rose-500 text-white font-bold animate-pulse">
@@ -197,6 +200,22 @@
                   </button>
                 </div>
 
+                <!-- PWA Install Guide Item -->
+                <div class="p-1 border-t border-slate-800">
+                  <button 
+                    @click="triggerPwaInstall"
+                    class="w-full text-left px-3.5 py-2 hover:bg-slate-800 rounded-xl flex items-center justify-between text-slate-200 transition text-xs font-semibold cursor-pointer"
+                  >
+                    <div class="flex items-center gap-2.5">
+                      <Smartphone class="w-4 h-4 text-emerald-400" />
+                      <span>Pasang Aplikasi (PWA)</span>
+                    </div>
+                    <span class="px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">
+                      App
+                    </span>
+                  </button>
+                </div>
+
                 <!-- Changelog Menu Item for All Users -->
                 <div class="p-1 border-t border-slate-800">
                   <button 
@@ -313,8 +332,11 @@
         class="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-blue-300 bg-blue-500/10 border border-blue-500/20"
       >
         <span>⚡ Admin Dashboard Console</span>
-        <span v-if="store.pendingTeacherRequestsCount > 0" class="px-2 py-0.5 rounded-full bg-amber-500 text-white font-bold text-[10px] animate-pulse">
-          👨‍🏫 {{ store.pendingTeacherRequestsCount }} Permintaan
+        <span v-if="store.pendingStudentVerificationsCount > 0" class="px-2 py-0.5 rounded-full bg-blue-500 text-white font-bold text-[10px] animate-pulse">
+          🎒 {{ store.pendingStudentVerificationsCount }} Siswa
+        </span>
+        <span v-else-if="store.pendingTeacherRequestsCount > 0" class="px-2 py-0.5 rounded-full bg-amber-500 text-white font-bold text-[10px] animate-pulse">
+          👨‍🏫 {{ store.pendingTeacherRequestsCount }} Guru
         </span>
       </router-link>
       <button 
@@ -345,6 +367,20 @@
         </span>
       </button>
 
+      <!-- PWA Install button for mobile drawer -->
+      <button 
+        @click="triggerPwaInstall"
+        class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-200 hover:bg-slate-800 flex items-center justify-between cursor-pointer"
+      >
+        <span class="flex items-center gap-2">
+          <Smartphone class="w-4 h-4 text-emerald-400" />
+          <span>Pasang Aplikasi Libra (PWA)</span>
+        </span>
+        <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">
+          Homescreen
+        </span>
+      </button>
+
       <router-link 
         v-if="!store.currentUser"
         to="/login" 
@@ -369,7 +405,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useLibraryStore } from '../stores/library.js';
 import { 
   BookMarked, Layers, QrCode, UserCheck, 
-  ShieldCheck, User, ChevronDown, Menu, X, LogIn, UserPlus, LogOut, Settings, Laptop, Sparkles
+  ShieldCheck, User, ChevronDown, Menu, X, LogIn, UserPlus, LogOut, Settings, Laptop, Sparkles, Smartphone
 } from 'lucide-vue-next';
 import { logoutUser } from '../lib/firebase.js';
 import DeviceSessionsModal from './DeviceSessionsModal.vue';
@@ -380,6 +416,12 @@ const isUserMenuOpen = ref(false);
 const isMobileMenuOpen = ref(false);
 const isScrolled = ref(false);
 const isDeviceModalOpen = ref(false);
+
+const triggerPwaInstall = () => {
+  isUserMenuOpen.value = false;
+  isMobileMenuOpen.value = false;
+  window.dispatchEvent(new CustomEvent('open-pwa-install-modal'));
+};
 
 const handleScroll = () => {
   isScrolled.value = window.scrollY > 8;

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { Book, Shelf, Member, Booking, Loan, SuspendConfig, NotificationLog, LibraryStats, BookCategory, TeacherRequest, UserDeviceSession, AppVersionConfig } from '../types.js';
+import type { Book, Shelf, Member, Booking, Loan, SuspendConfig, NotificationLog, LibraryStats, BookCategory, TeacherRequest, StudentVerificationRequest, UserDeviceSession, AppVersionConfig } from '../types.js';
 import { 
   getOfflineCachedData, 
   downloadAllForOfflineAccess, 
@@ -65,6 +65,7 @@ export const useLibraryStore = defineStore('library', {
     loans: [] as Loan[],
     notifications: [] as NotificationLog[],
     teacherRequests: [] as TeacherRequest[],
+    studentVerifications: [] as StudentVerificationRequest[],
     deviceSessions: [] as UserDeviceSession[],
     stats: null as LibraryStats | null,
     suspendConfig: defaultSuspendConfig,
@@ -179,6 +180,35 @@ export const useLibraryStore = defineStore('library', {
       );
       if (userReqs.length === 0) return null;
       return [...userReqs].sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime())[0];
+    },
+
+    // Student Verification Requests
+    pendingStudentVerifications: (state) => state.studentVerifications.filter(r => r.status === 'pending'),
+    pendingStudentVerificationsCount: (state) => state.studentVerifications.filter(r => r.status === 'pending').length,
+    myPendingStudentVerification: (state) => {
+      if (!state.currentUser) return null;
+      return state.studentVerifications.find(r => 
+        (r.memberId === state.currentUser?.id ||
+         (r.memberCardNumber && r.memberCardNumber === state.currentUser?.cardNumber) ||
+         (r.memberEmail && state.currentUser?.email && r.memberEmail.toLowerCase() === state.currentUser?.email.toLowerCase())
+        ) && r.status === 'pending'
+      ) || null;
+    },
+    myLatestStudentVerification: (state) => {
+      if (!state.currentUser) return null;
+      const userReqs = state.studentVerifications.filter(r => 
+        r.memberId === state.currentUser?.id ||
+        (r.memberCardNumber && r.memberCardNumber === state.currentUser?.cardNumber) ||
+        (r.memberEmail && state.currentUser?.email && r.memberEmail.toLowerCase() === state.currentUser?.email.toLowerCase())
+      );
+      if (userReqs.length === 0) return null;
+      return [...userReqs].sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime())[0];
+    },
+    isCurrentUserVerifiedForEbook: (state): boolean => {
+      if (!state.currentUser) return false;
+      if (state.currentUser.role === 'admin') return true;
+      if (state.currentUser.memberType === 'guru') return true;
+      return state.currentUser.studentVerificationStatus === 'verified';
     },
 
     // Manajemen Sesi & Perangkat
@@ -352,6 +382,11 @@ export const useLibraryStore = defineStore('library', {
         subscribeToFirestoreCollection<TeacherRequest>('teacher_requests', (items) => {
           if (items) {
             this.teacherRequests = items.sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
+          }
+        });
+        subscribeToFirestoreCollection<StudentVerificationRequest>('student_verifications', (items) => {
+          if (items) {
+            this.studentVerifications = items.sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
           }
         });
         subscribeToFirestoreCollection<any>('config', (items) => {
@@ -977,7 +1012,7 @@ export const useLibraryStore = defineStore('library', {
         }
 
         if (fBooks.length > 0) {
-          const [fShelves, fCats, fMembers, fLoans, fBookings, fConfig, fNotifs, fTeacherReqs, fDeviceSessions] = await Promise.all([
+          const [fShelves, fCats, fMembers, fLoans, fBookings, fConfig, fNotifs, fTeacherReqs, fStudentVerifs, fDeviceSessions] = await Promise.all([
             getFirestoreCollection<Shelf>('shelves'),
             getFirestoreCollection<BookCategory>('categories'),
             getFirestoreCollection<Member>('members'),
@@ -986,6 +1021,7 @@ export const useLibraryStore = defineStore('library', {
             getFirestoreCollection<SuspendConfig>('config'),
             getFirestoreCollection<NotificationLog>('notifications'),
             getFirestoreCollection<TeacherRequest>('teacher_requests'),
+            getFirestoreCollection<StudentVerificationRequest>('student_verifications'),
             getFirestoreCollection<UserDeviceSession>('device_sessions'),
           ]);
 
@@ -997,6 +1033,7 @@ export const useLibraryStore = defineStore('library', {
           this.bookings = fBookings || [];
           this.notifications = fNotifs || [];
           this.teacherRequests = (fTeacherReqs || []).sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
+          this.studentVerifications = (fStudentVerifs || []).sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
           this.deviceSessions = fDeviceSessions || [];
           if (fConfig && fConfig.length > 0) {
             const susp = fConfig.find(c => (c as any).maxActiveLoans !== undefined || (c as any).id === 'suspend_config');
@@ -2151,6 +2188,226 @@ export const useLibraryStore = defineStore('library', {
       }
     },
 
+    async submitStudentVerification(payload: { nis: string; nisn: string; selfieUrl: string }) {
+      this.isLoading = true;
+      try {
+        if (!this.currentUser) {
+          throw new Error('Anda harus login terlebih dahulu.');
+        }
+
+        const cleanNis = (payload.nis || '').trim();
+        const cleanNisn = (payload.nisn || '').trim();
+
+        if (!cleanNis) {
+          throw new Error('Nomor Induk Sekolah (NIS) wajib diisi.');
+        }
+        if (!cleanNisn) {
+          throw new Error('Nomor Induk Siswa Nasional (NISN) wajib diisi.');
+        }
+        if (!payload.selfieUrl) {
+          throw new Error('Foto selfie verifikasi wajah wajib diambil.');
+        }
+
+        const isMyReq = (r: StudentVerificationRequest) => (
+          r.memberId === this.currentUser?.id ||
+          (Boolean(r.memberCardNumber && this.currentUser?.cardNumber) && r.memberCardNumber === this.currentUser?.cardNumber) ||
+          (Boolean(r.memberEmail && this.currentUser?.email) && r.memberEmail?.toLowerCase() === this.currentUser?.email.toLowerCase())
+        );
+
+        // Cek jika sudah pending
+        const existingPending = this.studentVerifications.find(r => isMyReq(r) && r.status === 'pending');
+        if (existingPending) {
+          this.setError('Anda sudah memiliki pengajuan verifikasi siswa yang sedang menunggu persetujuan Admin.');
+          return { success: false };
+        }
+
+        const { syncStudentVerificationDoc, removeStudentVerificationDoc, syncMemberDoc, syncNotificationDoc } = await import('../lib/firebase.js');
+        const nowIso = new Date().toISOString();
+
+        // Cek apakah ada riwayat permohonan sebelumnya
+        const prevReqIdx = this.studentVerifications.findIndex(r => isMyReq(r));
+        let activeReq: StudentVerificationRequest;
+
+        if (prevReqIdx !== -1) {
+          const prev = this.studentVerifications[prevReqIdx];
+          activeReq = {
+            id: prev.id,
+            memberId: this.currentUser.id,
+            memberName: this.currentUser.name,
+            memberCardNumber: this.currentUser.cardNumber,
+            memberEmail: this.currentUser.email,
+            memberPhone: this.currentUser.phone,
+            nis: cleanNis,
+            nisn: cleanNisn,
+            selfieUrl: payload.selfieUrl,
+            status: 'pending',
+            requestDate: nowIso,
+            reviewedBy: null,
+            reviewedDate: null,
+            rejectionReason: ''
+          };
+
+          // Hapus dokumen duplikat lama jika ada
+          const duplicateReqs = this.studentVerifications.filter((r, idx) => isMyReq(r) && idx !== prevReqIdx);
+          for (const dup of duplicateReqs) {
+            removeStudentVerificationDoc(dup.id).catch(() => {});
+          }
+
+          this.studentVerifications = [
+            activeReq,
+            ...this.studentVerifications.filter(r => !isMyReq(r))
+          ];
+        } else {
+          const requestId = `REQ-SISWA-${Date.now().toString().slice(-6)}`;
+          activeReq = {
+            id: requestId,
+            memberId: this.currentUser.id,
+            memberName: this.currentUser.name,
+            memberCardNumber: this.currentUser.cardNumber,
+            memberEmail: this.currentUser.email,
+            memberPhone: this.currentUser.phone,
+            nis: cleanNis,
+            nisn: cleanNisn,
+            selfieUrl: payload.selfieUrl,
+            status: 'pending',
+            requestDate: nowIso,
+            reviewedBy: null,
+            reviewedDate: null,
+            rejectionReason: ''
+          };
+          this.studentVerifications.unshift(activeReq);
+        }
+
+        // Urutkan berdasarkan requestDate terbaru
+        this.studentVerifications.sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
+
+        // Update profil akun siswa
+        this.currentUser.nis = cleanNis;
+        this.currentUser.nisn = cleanNisn;
+        this.currentUser.studentVerificationStatus = 'pending';
+        this.currentUser.studentVerificationSelfie = payload.selfieUrl;
+        localStorage.setItem('pustaka_user', JSON.stringify(this.currentUser));
+
+        const memIdx = this.members.findIndex(m => m.id === this.currentUser?.id);
+        if (memIdx !== -1) {
+          this.members[memIdx] = {
+            ...this.members[memIdx],
+            nis: cleanNis,
+            nisn: cleanNisn,
+            studentVerificationStatus: 'pending',
+            studentVerificationSelfie: payload.selfieUrl
+          };
+          await syncMemberDoc(this.members[memIdx]);
+        }
+
+        await syncStudentVerificationDoc(activeReq);
+
+        // Buat notifikasi sistem untuk Admin bahwa ada permohonan verifikasi siswa
+        const notifId = `NOTIF-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+        const adminNotif: NotificationLog = {
+          id: notifId,
+          memberId: this.currentUser.id,
+          memberName: this.currentUser.name,
+          recipient: 'Admin Perpustakaan SDN Pengasinan VII',
+          type: 'in_app' as any,
+          subject: 'Permohonan Verifikasi Siswa SDN Pengasinan VII',
+          message: `Terdapat permohonan verifikasi siswa dari ${this.currentUser.name} (NIS: ${cleanNis}, NISN: ${cleanNisn}) untuk akses peminjaman e-Book.`,
+          sentAt: nowIso,
+          status: 'sent',
+          triggerReason: 'student_verification_request' as any
+        };
+        this.notifications.unshift(adminNotif);
+        await syncNotificationDoc(adminNotif);
+
+        this.persistToLocalCache();
+        this.showToast('Permohonan verifikasi siswa berhasil diajukan! Admin SDN Pengasinan VII akan segera meninjau identitas Anda.');
+        return { success: true, request: activeReq };
+      } catch (err: any) {
+        console.error('Submit student verification error:', err);
+        this.setError(err?.message || 'Gagal mengajukan verifikasi siswa');
+        return { success: false, error: err?.message };
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    async reviewStudentVerification(requestId: string, approve: boolean, rejectionReason?: string) {
+      this.isLoading = true;
+      try {
+        const reqIdx = this.studentVerifications.findIndex(r => r.id === requestId);
+        if (reqIdx === -1) {
+          throw new Error('Permohonan verifikasi siswa tidak ditemukan.');
+        }
+
+        const currentReq = this.studentVerifications[reqIdx];
+        const updatedReq: StudentVerificationRequest = {
+          ...currentReq,
+          status: approve ? 'approved' : 'rejected',
+          reviewedDate: new Date().toISOString(),
+          reviewedBy: this.currentUser?.name || 'Administrator',
+          rejectionReason: !approve ? (rejectionReason || 'Nomor NIS/NISN atau foto selfie tidak sesuai data siswa SDN Pengasinan VII.') : ''
+        };
+
+        this.studentVerifications[reqIdx] = updatedReq;
+
+        const { syncStudentVerificationDoc, syncMemberDoc, syncNotificationDoc } = await import('../lib/firebase.js');
+        await syncStudentVerificationDoc(updatedReq);
+
+        // Update profil member siswa di koleksi members
+        const memIdx = this.members.findIndex(m => m.id === currentReq.memberId);
+        if (memIdx !== -1) {
+          const updatedMember: Member = {
+            ...this.members[memIdx],
+            studentVerificationStatus: approve ? 'verified' : 'rejected',
+            studentVerificationDate: new Date().toISOString(),
+            studentVerifiedBy: this.currentUser?.name || 'Administrator',
+            studentRejectReason: !approve ? updatedReq.rejectionReason : '',
+            nis: currentReq.nis,
+            nisn: currentReq.nisn
+          };
+          this.members[memIdx] = updatedMember;
+          await syncMemberDoc(updatedMember);
+
+          if (this.currentUser && this.currentUser.id === currentReq.memberId) {
+            this.currentUser.studentVerificationStatus = approve ? 'verified' : 'rejected';
+            this.currentUser.nis = currentReq.nis;
+            this.currentUser.nisn = currentReq.nisn;
+            this.currentUser.studentRejectReason = !approve ? updatedReq.rejectionReason : '';
+            localStorage.setItem('pustaka_user', JSON.stringify(this.currentUser));
+          }
+        }
+
+        // Kirim notifikasi hasil review kepada siswa
+        const notifId = `NOTIF-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+        const resultNotif: NotificationLog = {
+          id: notifId,
+          memberId: currentReq.memberId,
+          memberName: currentReq.memberName,
+          recipient: currentReq.memberEmail || currentReq.memberName,
+          type: 'in_app' as any,
+          subject: approve ? 'Verifikasi Siswa SDN Pengasinan VII Disetujui' : 'Verifikasi Siswa SDN Pengasinan VII Ditolak',
+          message: approve
+            ? `Selamat! Identitas Anda sebagai siswa SDN Pengasinan VII (NIS: ${currentReq.nis}, NISN: ${currentReq.nisn}) telah diverifikasi oleh Admin. Anda kini berhak meminjam dan membaca koleksi e-Book perpustakaan.`
+            : `Permohonan verifikasi siswa Anda ditolak oleh Admin. Alasan: ${updatedReq.rejectionReason}. Silakan ajukan ulang dengan data NIS, NISN, dan selfie yang valid.`,
+          sentAt: new Date().toISOString(),
+          status: 'sent',
+          triggerReason: 'student_verification_result' as any
+        };
+        this.notifications.unshift(resultNotif);
+        await syncNotificationDoc(resultNotif);
+
+        this.persistToLocalCache();
+        this.showToast(approve ? `Verifikasi siswa ${currentReq.memberName} disetujui! Hak akses e-Book telah aktif.` : `Verifikasi siswa ${currentReq.memberName} telah ditolak.`);
+        return { success: true, request: updatedReq };
+      } catch (err: any) {
+        console.error('Review student verification error:', err);
+        this.setError(err?.message || 'Gagal memproses verifikasi siswa');
+        return { success: false, error: err?.message };
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
     async logout() {
       // Tandai sesi login perangkat saat ini sebagai 'logged_out' di Firestore sebelum logout
       if (this.currentUser) {
@@ -2666,6 +2923,22 @@ export const useLibraryStore = defineStore('library', {
         }
 
         const isGuru = member.memberType === 'guru';
+        const isAdminUser = member.role === 'admin';
+
+        // Pengecekan Hak Cipta e-Book Digital:
+        // Peminjaman e-Book dibatasi khusus warga sekolah SDN Pengasinan VII.
+        // - Guru & Admin otomatis diizinkan meminjam e-Book sesuai kuota
+        // - Siswa wajib terverifikasi NIS, NISN & Foto Selfie
+        // - Buku fisik dapat dipinjam tanpa kewajiban verifikasi siswa
+        if (book.isEbook && !isGuru && !isAdminUser) {
+          const isVerified = member.studentVerificationStatus === 'verified';
+          if (!isVerified) {
+            if (member.studentVerificationStatus === 'pending') {
+              throw new Error('Peminjaman e-Book ditolak: Permohonan verifikasi siswa Anda sedang menunggu persetujuan Admin SDN Pengasinan VII.');
+            }
+            throw new Error('Peminjaman e-Book dibatasi: Terkait perlindungan hak cipta digital, peminjaman e-Book hanya dapat dilakukan oleh siswa SDN Pengasinan VII yang telah terverifikasi (NIS, NISN & Foto Selfie). Silakan lakukan verifikasi siswa terlebih dahulu.');
+          }
+        }
 
         // Pengecekan keterlambatan untuk siswa (guru dikecualikan dari pemblokiran auto)
         const memOverdue = this.loans.filter(

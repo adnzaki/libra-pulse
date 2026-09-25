@@ -69,6 +69,13 @@ export interface Member {
   address?: string;
   password?: string;
   mainDeviceId?: string;
+  nis?: string;
+  nisn?: string;
+  studentVerificationStatus?: 'unverified' | 'pending' | 'verified' | 'rejected';
+  studentVerificationSelfie?: string;
+  studentVerificationDate?: string;
+  studentVerifiedBy?: string;
+  studentRejectReason?: string;
 }
 
 export interface Booking {
@@ -155,6 +162,23 @@ export interface TeacherRequest {
   memberCardNumber: string;
   memberEmail: string;
   memberPhone: string;
+  selfieUrl: string;
+  status: 'pending' | 'approved' | 'rejected';
+  requestDate: string;
+  reviewedDate?: string | null;
+  reviewedBy?: string | null;
+  rejectionReason?: string;
+}
+
+export interface StudentVerificationRequest {
+  id: string;
+  memberId: string;
+  memberName: string;
+  memberCardNumber: string;
+  memberEmail: string;
+  memberPhone: string;
+  nis: string;
+  nisn: string;
   selfieUrl: string;
   status: 'pending' | 'approved' | 'rejected';
   requestDate: string;

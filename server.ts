@@ -48,6 +48,20 @@ app.use('/uploads/avatar', express.static(avatarsDir))
 app.use('/uploads/selfie', express.static(selfiesDir))
 app.use('/uploads/ebooks', express.static(ebooksDir))
 
+// PWA Static Assets & Service Worker
+const publicDir = path.join(process.cwd(), 'public')
+app.use((req, res, next) => {
+  if (req.path === '/sw.js' || req.path.startsWith('/workbox-')) {
+    res.setHeader('Service-Worker-Allowed', '/')
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+  } else if (req.path === '/manifest.webmanifest') {
+    res.setHeader('Content-Type', 'application/manifest+json; charset=utf-8')
+    res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate')
+  }
+  next()
+})
+app.use(express.static(publicDir))
+
 // 3. Konfigurasi Multer
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {

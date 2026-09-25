@@ -67,6 +67,12 @@ service cloud.firestore {
       allow write: if true;
     }
 
+    // Student Verification Requests: Verifikasi Siswa untuk peminjaman e-Book
+    match /student_verifications/{requestId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
     // Device Sessions: Active login sessions & Main Device management
     match /device_sessions/{sessionId} {
       allow read: if true;

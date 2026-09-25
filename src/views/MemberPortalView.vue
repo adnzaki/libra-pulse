@@ -104,6 +104,32 @@
                 <span v-else>🎒 Siswa</span>
               </span>
 
+              <!-- Badge Status Verifikasi Siswa (Khusus Siswa) -->
+              <template v-if="store.currentUser.memberType !== 'guru'">
+                <span 
+                  v-if="studentStatus === 'verified'"
+                  class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1"
+                >
+                  <CheckCircle2 class="w-3 h-3 text-emerald-600" />
+                  <span>Siswa Terverifikasi (e-Book Aktif)</span>
+                </span>
+                <span 
+                  v-else-if="studentStatus === 'pending'"
+                  class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1 animate-pulse"
+                >
+                  <Clock class="w-3 h-3 text-amber-600" />
+                  <span>Verifikasi Siswa Menunggu Admin</span>
+                </span>
+                <button 
+                  v-else
+                  @click="isStudentVerificationOpen = true"
+                  class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1 transition cursor-pointer active:scale-95"
+                >
+                  <ShieldCheck class="w-3 h-3 text-amber-600" />
+                  <span>Verifikasi Siswa (e-Book)</span>
+                </button>
+              </template>
+
               <!-- Badge Status Akun -->
               <span 
                 class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
@@ -171,6 +197,16 @@
           >
             <Sparkles class="w-4 h-4 text-blue-600" />
             <span>Catatan Rilis (v{{ store.currentAppVersion }})</span>
+          </button>
+
+          <!-- Tombol Pasang Aplikasi (PWA) -->
+          <button 
+            @click="triggerPwaInstallModal"
+            class="px-4 py-2.5 bg-gradient-to-r from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 text-blue-800 border border-blue-200 font-bold rounded-full text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+            title="Pasang aplikasi Libra ke layar utama ponsel / komputer"
+          >
+            <Smartphone class="w-4 h-4 text-blue-600" />
+            <span>Pasang Aplikasi (PWA)</span>
           </button>
 
           <router-link 
@@ -312,7 +348,7 @@
                 </span>
               </div>
               <p class="text-xs text-slate-500 mt-0.5">
-                Privilese khusus pendidik untuk mendukung pengajaran dan literasi di SDN Pengasinan VII.
+                Keistimewaan khusus pendidik untuk mendukung pengajaran dan literasi di SDN Pengasinan VII.
               </p>
             </div>
           </div>
@@ -384,6 +420,119 @@
           >
             Guru Pengajar? Ajukan Upgrade →
           </button>
+        </div>
+      </div>
+
+      <!-- Bento Card: Hak Akses e-Book & Status Verifikasi Siswa SDN Pengasinan VII -->
+      <div 
+        v-if="!isGuru"
+        class="p-5 sm:p-6 rounded-3xl border shadow-sm transition animate-in fade-in space-y-4"
+        :class="studentStatus === 'verified' 
+          ? 'bg-gradient-to-br from-emerald-50/70 via-white to-blue-50/30 border-emerald-200/80' 
+          : studentStatus === 'pending'
+            ? 'bg-gradient-to-br from-amber-50/80 via-white to-orange-50/30 border-amber-200/80'
+            : studentStatus === 'rejected'
+              ? 'bg-gradient-to-br from-rose-50/80 via-white to-orange-50/30 border-rose-200/80'
+              : 'bg-gradient-to-br from-blue-50/80 via-white to-indigo-50/40 border-blue-200/80'"
+      >
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <div 
+              class="w-10 h-10 rounded-2xl flex items-center justify-center font-bold shadow-xs shrink-0"
+              :class="studentStatus === 'verified' 
+                ? 'bg-emerald-600 text-white' 
+                : studentStatus === 'pending'
+                  ? 'bg-amber-500 text-white'
+                  : studentStatus === 'rejected'
+                    ? 'bg-rose-600 text-white'
+                    : 'bg-blue-600 text-white'"
+            >
+              <ShieldCheck class="w-5 h-5" v-if="studentStatus === 'verified'" />
+              <Clock class="w-5 h-5" v-else-if="studentStatus === 'pending'" />
+              <AlertCircle class="w-5 h-5" v-else-if="studentStatus === 'rejected'" />
+              <GraduationCap class="w-5 h-5" v-else />
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="font-extrabold text-sm sm:text-base text-slate-900">
+                  Verifikasi Siswa SDN Pengasinan VII (Akses e-Book)
+                </h3>
+                <span 
+                  class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                  :class="studentStatus === 'verified'
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : studentStatus === 'pending'
+                      ? 'bg-amber-100 text-amber-800 animate-pulse'
+                      : studentStatus === 'rejected'
+                        ? 'bg-rose-100 text-rose-800'
+                        : 'bg-blue-100 text-blue-800'"
+                >
+                  {{ studentStatus === 'verified' ? 'Terverifikasi' : studentStatus === 'pending' ? 'Menunggu Review Admin' : studentStatus === 'rejected' ? 'Perlu Diajukan Ulang' : 'Wajib Verifikasi e-Book' }}
+                </span>
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5">
+                Perlindungan hak cipta digital penerbit buku perpustakaan.
+              </p>
+            </div>
+          </div>
+
+          <!-- Action Button -->
+          <button 
+            type="button"
+            @click="isStudentVerificationOpen = true"
+            class="px-4 py-2 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer flex items-center gap-2 shrink-0 active:scale-95"
+            :class="studentStatus === 'verified'
+              ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200'
+              : studentStatus === 'pending'
+                ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-200'
+                : studentStatus === 'rejected'
+                  ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-200'
+                  : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200'"
+          >
+            <ShieldCheck class="w-3.5 h-3.5" />
+            <span>{{ studentStatus === 'verified' ? 'Lihat Detail Verifikasi' : studentStatus === 'pending' ? 'Status Pengajuan' : studentStatus === 'rejected' ? 'Ajukan Ulang Selfie' : 'Mulai Verifikasi Siswa →' }}</span>
+          </button>
+        </div>
+
+        <!-- Description & Details -->
+        <div v-if="studentStatus === 'verified'" class="p-3.5 rounded-2xl bg-white border border-emerald-100 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div class="space-y-0.5">
+            <span class="text-emerald-900 font-bold">Identitas Siswa Terverifikasi:</span>
+            <div class="text-[11px] text-slate-500 flex flex-wrap items-center gap-x-3">
+              <span>NIS: <strong class="font-mono text-slate-800">{{ store.currentUser?.nis || myStudentVerification?.nis }}</strong></span>
+              <span>•</span>
+              <span>NISN: <strong class="font-mono text-slate-800">{{ store.currentUser?.nisn || myStudentVerification?.nisn }}</strong></span>
+            </div>
+          </div>
+          <span class="text-[11px] px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">
+            Akses Seluruh Koleksi e-Book Digital Aktif
+          </span>
+        </div>
+
+        <div v-else-if="studentStatus === 'pending'" class="p-3.5 rounded-2xl bg-white border border-amber-100 shadow-xs text-xs text-amber-900 space-y-1">
+          <div class="flex items-center gap-2 font-bold">
+            <Clock class="w-4 h-4 text-amber-600 shrink-0" />
+            <span>Permohonan Sedang Diproses Oleh Admin</span>
+          </div>
+          <p class="text-[11px] text-slate-600 leading-relaxed">
+            Data NIS, NISN dan foto selfie Anda telah diterima sistem. Setelah admin perpustakaan menyetujui, peminjaman e-Book akan otomatis diaktifkan.
+          </p>
+        </div>
+
+        <div v-else-if="studentStatus === 'rejected'" class="p-3.5 rounded-2xl bg-white border border-rose-100 shadow-xs text-xs text-rose-900 space-y-1">
+          <div class="font-bold flex items-center gap-1.5 text-rose-800">
+            <AlertCircle class="w-4 h-4 text-rose-600 shrink-0" />
+            <span>Alasan Penolakan: {{ store.currentUser?.studentRejectReason || myStudentVerification?.rejectionReason || 'Data NIS/NISN atau selfie belum sesuai.' }}</span>
+          </div>
+          <p class="text-[11px] text-slate-600">
+            Silakan klik tombol <strong>"Ajukan Ulang Selfie"</strong> untuk memperbaiki nomor induk atau mengambil foto selfie ulang.
+          </p>
+        </div>
+
+        <div v-else class="p-3.5 rounded-2xl bg-white border border-blue-100 shadow-xs text-xs text-slate-700 space-y-1.5">
+          <p class="text-[11px] text-slate-600 leading-relaxed">
+            Buku fisik perpustakaan dapat langsung dipinjam tanpa verifikasi. Namun untuk <strong>e-Book digital</strong>, Anda diwajibkan melakukan verifikasi NIS, NISN dan selfie 1x untuk menjamin bahwa peminjam adalah siswa resmi SDN Pengasinan VII.
+          </p>
         </div>
       </div>
 
@@ -612,6 +761,13 @@
       @close="isDeviceSessionsOpen = false" 
     />
 
+    <!-- Student Verification Modal -->
+    <StudentVerificationModal 
+      :isOpen="isStudentVerificationOpen" 
+      @close="isStudentVerificationOpen = false" 
+      @submitted="isStudentVerificationOpen = false"
+    />
+
   </div>
 </template>
 
@@ -622,13 +778,14 @@ import ChangePasswordModal from '../components/ChangePasswordModal.vue';
 import EditProfileModal from '../components/EditProfileModal.vue';
 import DeviceSessionsModal from '../components/DeviceSessionsModal.vue';
 import EbookReaderModal from '../components/EbookReaderModal.vue';
+import StudentVerificationModal from '../components/StudentVerificationModal.vue';
 import { useModalBack } from '../composables/useModalBack.js';
 import type { Loan } from '../types.js';
 import { 
   UserCheck, QrCode, AlertTriangle, Clock, 
   Timer, BookmarkCheck, BookMarked, LogIn, KeyRound, UserCog,
   AlertCircle, CheckCircle2, Camera, Award, ShieldCheck, BookOpen, Sparkles, Laptop,
-  Smartphone, Lock, X
+  Smartphone, Lock, X, GraduationCap
 } from 'lucide-vue-next';
 
 const store = useLibraryStore();
@@ -636,8 +793,24 @@ const now = ref(Date.now());
 const isChangePasswordOpen = ref(false);
 const isEditProfileOpen = ref(false);
 const isDeviceSessionsOpen = ref(false);
+const isStudentVerificationOpen = ref(false);
 const editProfileInitialTab = ref<'profile' | 'upgrade'>('profile');
 let timerInterval: any = null;
+
+const triggerPwaInstallModal = () => {
+  window.dispatchEvent(new CustomEvent('open-pwa-install-modal'));
+};
+
+const myStudentVerification = computed(() => store.myLatestStudentVerification);
+const studentStatus = computed(() => {
+  if (store.currentUser?.studentVerificationStatus) return store.currentUser.studentVerificationStatus;
+  if (myStudentVerification.value) return myStudentVerification.value.status;
+  return 'unverified';
+});
+
+useModalBack(isStudentVerificationOpen, () => {
+  isStudentVerificationOpen.value = false;
+});
 
 // E-Book In-App Reader State
 const isEbookReaderOpen = ref(false);
