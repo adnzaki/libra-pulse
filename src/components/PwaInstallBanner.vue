@@ -8,7 +8,7 @@
       <div class="flex items-center gap-3 min-w-0 pr-2">
         <!-- Libra App Icon Preview -->
         <div class="w-9 h-9 rounded-xl overflow-hidden shrink-0 border border-blue-400/40 shadow-md shadow-blue-500/20 bg-slate-950 p-0.5">
-          <img src="/pwa-192x192.png" alt="Libra Logo" class="w-full h-full object-cover rounded-lg" />
+          <img :src="'/pwa-192x192.png'" alt="Libra Logo" class="w-full h-full object-cover rounded-lg" />
         </div>
 
         <div class="min-w-0">
@@ -54,7 +54,7 @@
         <div class="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
           <div class="flex items-center gap-3">
             <div class="w-12 h-12 rounded-2xl overflow-hidden border border-cyan-400/40 shadow-lg shadow-cyan-500/20 bg-slate-950 p-0.5 shrink-0">
-              <img src="/pwa-192x192.png" alt="Libra App Icon" class="w-full h-full object-cover rounded-xl" />
+              <img :src="'/pwa-192x192.png'" alt="Libra App Icon" class="w-full h-full object-cover rounded-xl" />
             </div>
             <div>
               <h3 class="font-bold text-base text-white flex items-center gap-1.5">
@@ -78,7 +78,7 @@
           <div class="bg-gradient-to-br from-slate-950 to-slate-900 border border-slate-800 p-4 rounded-xl flex items-center gap-4">
             <div class="flex flex-col items-center gap-1.5 shrink-0">
               <div class="w-14 h-14 rounded-2xl overflow-hidden shadow-lg shadow-blue-600/30 border border-cyan-400/50 bg-slate-950 flex items-center justify-center">
-                <img src="/pwa-192x192.png" alt="Logo Libra Homescreen" class="w-full h-full object-cover" />
+                <img :src="'/pwa-192x192.png'" alt="Logo Libra Homescreen" class="w-full h-full object-cover" />
               </div>
               <span class="text-[11px] font-semibold text-slate-300">Libra</span>
             </div>

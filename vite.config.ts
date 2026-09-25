@@ -7,7 +7,13 @@ import {VitePWA} from 'vite-plugin-pwa';
 export default defineConfig(() => {
   return {
     plugins: [
-      vue(),
+      vue({
+        template: {
+          transformAssetUrls: {
+            includeAbsolute: false,
+          },
+        },
+      }),
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',

@@ -10,7 +10,7 @@
         <div class="flex items-center gap-3">
           <router-link to="/" class="flex items-center gap-2.5 group">
             <div class="w-9 h-9 rounded-xl overflow-hidden shadow-md shadow-blue-900/40 group-hover:scale-105 transition duration-200 border border-slate-700/60 flex items-center justify-center bg-slate-900">
-              <img src="/pwa-192x192.png" alt="Libra Logo" class="w-full h-full object-cover" />
+              <img :src="'/pwa-192x192.png'" alt="Libra Logo" class="w-full h-full object-cover" />
             </div>
             <div>
               <div class="flex items-center gap-2">

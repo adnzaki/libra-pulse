@@ -51,6 +51,10 @@ app.use('/uploads/ebooks', express.static(ebooksDir))
 // PWA Static Assets & Service Worker
 const publicDir = path.join(process.cwd(), 'public')
 app.use((req, res, next) => {
+  // If Vite is handling an ESM asset import (e.g. ?import), pass directly to Vite
+  if (req.url.includes('?import') || req.query.import !== undefined) {
+    return next()
+  }
   if (req.path === '/sw.js' || req.path.startsWith('/workbox-')) {
     res.setHeader('Service-Worker-Allowed', '/')
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
@@ -60,7 +64,12 @@ app.use((req, res, next) => {
   }
   next()
 })
-app.use(express.static(publicDir))
+app.use((req, res, next) => {
+  if (req.url.includes('?import') || req.query.import !== undefined) {
+    return next()
+  }
+  express.static(publicDir)(req, res, next)
+})
 
 // 3. Konfigurasi Multer
 const storage = multer.diskStorage({
