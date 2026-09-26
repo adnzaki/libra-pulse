@@ -90,13 +90,13 @@
         <div class="flex items-center gap-3">
           
           <!-- Scanner Status Pill Indicator -->
-          <router-link 
+          <!-- <router-link 
             to="/member-card"
             class="hidden sm:flex items-center gap-2.5 bg-slate-800/80 hover:bg-slate-800 px-3.5 py-1.5 rounded-full border border-slate-700/80 transition"
           >
             <span class="text-[10px] font-bold uppercase tracking-wider text-slate-300">Scanner Ready</span>
             <div class="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse"></div>
-          </router-link>
+          </router-link> -->
 
             <!-- User Auth Dropdown -->
             <div class="relative">

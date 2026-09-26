@@ -23,7 +23,7 @@
         <div class="relative p-1">
           <Layers class="w-5 h-5 transition-transform" :class="$route.name === 'shelves' ? 'scale-110' : ''" />
         </div>
-        <span class="text-[10px] tracking-tight mt-0.5">Peta Rak</span>
+        <span class="text-[10px] tracking-tight mt-0.5">Rak</span>
       </router-link>
 
       <!-- QR Scanner / Kartu (Elevated Center Button) -->

@@ -2995,7 +2995,6 @@ const adminTabs = computed(() => [
   { id: 'notifications', label: 'Notifikasi Keterlambatan', icon: Send, badge: store.overdueLoans.length },
   { id: 'books', label: 'Master Data Buku', icon: BookOpen, badge: store.books.length },
   { id: 'categories', label: 'Pengelolaan Kategori', icon: Tag, badge: store.categories.length },
-  { id: 'shelves', label: 'Tata Letak & Urutan Rak', icon: Layers, badge: store.shelves.length }
 ]);
 
 const getCategoryColor = (categoryName: string) => {
