@@ -203,6 +203,17 @@ export async function syncShelfDoc(shelf: any) {
   await withTimeout(setDoc(doc(db, 'shelves', shelf.id), clean, { merge: true }), 7000);
 }
 
+export async function syncShelvesOrder(orderUpdates: { id: string; order: number }[]) {
+  if (!orderUpdates || orderUpdates.length === 0) return;
+  const batch = writeBatch(db);
+  for (const item of orderUpdates) {
+    if (item.id) {
+      batch.set(doc(db, 'shelves', item.id), { order: item.order }, { merge: true });
+    }
+  }
+  await withTimeout(batch.commit(), 7000);
+}
+
 export async function removeShelfDoc(shelfId: string) {
   if (!shelfId) return;
   await withTimeout(deleteDoc(doc(db, 'shelves', shelfId)), 7000);

@@ -47,6 +47,7 @@ export interface Shelf {
   description: string;
   shelfRow?: string;
   createdAt?: string;
+  order?: number;
 }
 
 export interface Member {

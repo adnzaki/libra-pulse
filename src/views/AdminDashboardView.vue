@@ -1754,6 +1754,178 @@
           </div>
         </div>
 
+        <!-- Tab 7: Manajemen & Urutan Rak (Drag & Drop Sorting) -->
+        <div v-if="activeTab === 'shelves'" class="space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200/80">
+            <div>
+              <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 flex-wrap">
+                <span>Manajemen &amp; Urutan Posisi Rak</span>
+                <span class="text-[11px] font-bold text-blue-700 bg-blue-100/70 px-2.5 py-0.5 rounded-full">
+                  {{ store.shelves.length }} Rak
+                </span>
+                <span v-if="hasShelvesCustomOrder" class="text-[10px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full">
+                  Urutan Kustom Tersimpan
+                </span>
+              </h3>
+              <p class="text-xs text-slate-500 mt-0.5">
+                Tarik (drag &amp; drop) kartu rak untuk menyusun urutannya, atau klik panah geser. Pengguna umum hanya dapat melihat urutan ini.
+              </p>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <button 
+                v-if="hasShelvesCustomOrder"
+                @click="handleResetShelvesOrderAdmin"
+                :disabled="isReorderingAdminShelves"
+                class="px-3.5 py-2 rounded-full bg-white hover:bg-slate-200 text-slate-700 font-bold text-xs transition flex items-center gap-1.5 border border-slate-200 shadow-2xs cursor-pointer active:scale-95"
+                title="Kembalikan urutan rak ke susunan standar"
+              >
+                <RotateCcw class="w-3.5 h-3.5 text-slate-500" />
+                <span>Reset Urutan</span>
+              </button>
+              <button 
+                @click="openAddShelfModalAdmin"
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full text-xs shadow-sm transition flex items-center gap-1.5 cursor-pointer shrink-0 active:scale-95"
+              >
+                <Plus class="w-4 h-4" />
+                Tambah Rak Baru
+              </button>
+              <router-link
+                to="/shelves"
+                class="px-3.5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-full text-xs transition flex items-center gap-1.5 cursor-pointer shrink-0"
+                title="Buka halaman penuh tata letak rak perpustakaan"
+              >
+                <Layers class="w-3.5 h-3.5 text-slate-600" />
+                <span>Lihat Tata Letak Lengkap</span>
+              </router-link>
+            </div>
+          </div>
+
+          <!-- Floor Filter -->
+          <div class="flex flex-wrap items-center gap-2">
+            <button 
+              v-for="floor in [0, 1, 2, 3]" 
+              :key="floor"
+              @click="adminSelectedFloor = floor"
+              class="px-3.5 py-1.5 rounded-full text-xs font-bold transition cursor-pointer flex items-center gap-1.5 active:scale-95"
+              :class="adminSelectedFloor === floor ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+            >
+              <Building2 class="w-3.5 h-3.5" />
+              <span>{{ floor === 0 ? 'Semua Lantai' : `Lantai ${floor}` }}</span>
+              <span class="text-[10px] px-1.5 py-0.2 rounded-full font-bold" :class="adminSelectedFloor === floor ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-600'">
+                {{ floor === 0 ? store.shelves.length : store.shelves.filter(s => s.floor === floor).length }}
+              </span>
+            </button>
+          </div>
+
+          <!-- Shelves Grid with Drag & Drop Sorting -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div 
+              v-for="(shelf, index) in adminDisplayedShelves" 
+              :key="shelf.id"
+              draggable="true"
+              @dragstart="handleAdminDragStart(shelf, $event)"
+              @dragover.prevent="handleAdminDragOver(shelf, $event)"
+              @dragenter.prevent="handleAdminDragEnter(shelf)"
+              @dragleave="handleAdminDragLeave(shelf)"
+              @drop.prevent="handleAdminDrop(shelf)"
+              @dragend="handleAdminDragEnd"
+              class="bg-white p-5 rounded-2xl border border-slate-100 hover:border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between cursor-grab active:cursor-grabbing relative group"
+              :class="[
+                adminDraggedShelfId === shelf.id ? 'opacity-40 scale-95 border-dashed border-blue-400 bg-blue-50/30' : '',
+                adminDragOverShelfId === shelf.id && adminDraggedShelfId !== shelf.id ? 'ring-2 ring-blue-500 scale-[1.02] shadow-lg border-blue-500 bg-blue-50/20' : ''
+              ]"
+            >
+              <div>
+                <!-- Top position bar & quick move buttons -->
+                <div class="mb-3 pb-2 border-b border-slate-100 flex items-center justify-between text-xs select-none">
+                  <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 text-slate-600 font-mono text-[11px] font-bold border border-slate-200/80">
+                    <GripVertical class="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                    <span>Urutan #{{ index + 1 }}</span>
+                  </div>
+                  <div class="flex items-center gap-1" @click.stop>
+                    <button 
+                      type="button"
+                      @click="moveAdminShelfStep(shelf.id, 'prev')"
+                      :disabled="index === 0 || isReorderingAdminShelves"
+                      class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 flex items-center justify-center transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                      title="Geser ke posisi sebelumnya"
+                    >
+                      <ChevronLeft class="w-3.5 h-3.5" />
+                    </button>
+                    <button 
+                      type="button"
+                      @click="moveAdminShelfStep(shelf.id, 'next')"
+                      :disabled="index === adminDisplayedShelves.length - 1 || isReorderingAdminShelves"
+                      class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 flex items-center justify-center transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                      title="Geser ke posisi berikutnya"
+                    >
+                      <ChevronRight class="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                <div class="flex items-start justify-between gap-2">
+                  <div class="flex items-center gap-3">
+                    <div 
+                      class="w-10 h-10 rounded-xl flex items-center justify-center font-mono font-extrabold text-sm shadow-xs shrink-0 border select-none"
+                      :style="{ backgroundColor: `${shelf.color}15`, color: shelf.color, borderColor: `${shelf.color}30` }"
+                    >
+                      {{ shelf.code }}
+                    </div>
+                    <div>
+                      <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                        Lantai {{ shelf.floor }} • {{ shelf.zone }}
+                      </span>
+                      <h4 class="font-bold text-sm text-slate-900 line-clamp-1 mt-0.5">{{ shelf.name }}</h4>
+                    </div>
+                  </div>
+                </div>
+
+                <p class="text-xs text-slate-500 mt-2.5 line-clamp-2 leading-relaxed">
+                  {{ shelf.description || `Koleksi kategori ${shelf.category}.` }}
+                </p>
+
+                <!-- Capacity Info -->
+                <div class="mt-3.5 p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs space-y-1.5">
+                  <div class="flex justify-between text-slate-600 text-[11px]">
+                    <span>Kapasitas:</span>
+                    <span class="font-bold text-slate-800">{{ getShelfBooksCount(shelf.id) }} / {{ shelf.capacity }} Buku</span>
+                  </div>
+                  <div class="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                    <div 
+                      class="h-full rounded-full transition-all duration-300"
+                      :style="{ 
+                        width: `${Math.min(100, (getShelfBooksCount(shelf.id) / shelf.capacity) * 100)}%`,
+                        backgroundColor: shelf.color || '#3b82f6'
+                      }"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between" @click.stop>
+                <span class="text-[10px] font-mono text-slate-400 font-bold uppercase">{{ shelf.shelfRow || 'Baris A1' }}</span>
+                <div class="flex items-center gap-1">
+                  <button 
+                    @click="openEditShelfModalAdmin(shelf)"
+                    class="p-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
+                    title="Edit Rak"
+                  >
+                    <Pencil class="w-3.5 h-3.5" />
+                  </button>
+                  <button 
+                    @click="handleDeleteShelfAdmin(shelf.id, shelf.name)"
+                    class="p-1.5 rounded-full bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 transition cursor-pointer"
+                    title="Hapus Rak"
+                  >
+                    <Trash2 class="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
 
     </div>
@@ -2450,6 +2622,13 @@
       @close="isDeviceSessionsOpen = false" 
     />
 
+    <!-- Shelf Modal (Admin Dashboard) -->
+    <ShelfModal 
+      :is-open="isShelfModalOpenAdmin"
+      :shelf="selectedShelfForEditAdmin"
+      @close="isShelfModalOpenAdmin = false"
+    />
+
     </div>
   </div>
 </template>
@@ -2457,7 +2636,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
-import type { Loan, Book, BookCategory, Member, Booking } from '../types.js';
+import type { Loan, Book, BookCategory, Member, Booking, Shelf } from '../types.js';
 import DirectLoanModal from '../components/DirectLoanModal.vue';
 import ReturnBookModal from '../components/ReturnBookModal.vue';
 import NotificationModal from '../components/NotificationModal.vue';
@@ -2467,12 +2646,14 @@ import MemberFormModal from '../components/MemberFormModal.vue';
 import ChangePasswordModal from '../components/ChangePasswordModal.vue';
 import CollectBookingModal from '../components/CollectBookingModal.vue';
 import DeviceSessionsModal from '../components/DeviceSessionsModal.vue';
+import ShelfModal from '../components/ShelfModal.vue';
 import { useModalBack } from '../composables/useModalBack.js';
 import { 
   ShieldCheck, BookPlus, CheckCircle2, BookOpen, CheckCircle, 
   BookMarked, Clock, AlertTriangle, UserX, Sliders, Send, 
   Plus, Pencil, Trash2, Tag, Users, UserPlus, LogIn, KeyRound, X, Eye, EyeOff, Check, RefreshCw, Database,
-  GraduationCap, Laptop, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight
+  GraduationCap, Laptop, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
+  Layers, GripVertical, RotateCcw, Building2
 } from 'lucide-vue-next';
 
 const store = useLibraryStore();
@@ -2813,7 +2994,8 @@ const adminTabs = computed(() => [
   { id: 'suspends', label: 'Sistem Suspend (1-30 Hari)', icon: Sliders, badge: store.suspendedMembers.length },
   { id: 'notifications', label: 'Notifikasi Keterlambatan', icon: Send, badge: store.overdueLoans.length },
   { id: 'books', label: 'Master Data Buku', icon: BookOpen, badge: store.books.length },
-  { id: 'categories', label: 'Pengelolaan Kategori', icon: Tag, badge: store.categories.length }
+  { id: 'categories', label: 'Pengelolaan Kategori', icon: Tag, badge: store.categories.length },
+  { id: 'shelves', label: 'Tata Letak & Urutan Rak', icon: Layers, badge: store.shelves.length }
 ]);
 
 const getCategoryColor = (categoryName: string) => {
@@ -2844,6 +3026,156 @@ const handleDeleteCategory = (catId: string, catName: string) => {
     type: 'danger',
     onConfirm: async () => {
       await store.deleteCategory(catId);
+    }
+  });
+};
+
+// ----------------------------------------------------------------------------
+// Shelves Management & Drag & Drop Sorting in Admin Dashboard
+// ----------------------------------------------------------------------------
+const adminSelectedFloor = ref(0);
+const isShelfModalOpenAdmin = ref(false);
+const selectedShelfForEditAdmin = ref<Shelf | null>(null);
+
+const adminDisplayedShelves = computed(() => {
+  const list = store.sortedShelves || store.shelves;
+  if (adminSelectedFloor.value === 0) return list;
+  return list.filter(s => s.floor === adminSelectedFloor.value);
+});
+
+const hasShelvesCustomOrder = computed(() => {
+  return store.shelves.some(s => typeof s.order === 'number');
+});
+
+const getShelfBooksCount = (shelfId: string) => {
+  return store.books.filter(b => b.shelfId === shelfId).reduce((acc, b) => acc + (b.totalCopies || 0), 0);
+};
+
+const adminDraggedShelfId = ref<string | null>(null);
+const adminDragOverShelfId = ref<string | null>(null);
+const isReorderingAdminShelves = ref(false);
+
+const handleAdminDragStart = (shelf: Shelf, event: DragEvent) => {
+  adminDraggedShelfId.value = shelf.id;
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', shelf.id);
+  }
+};
+
+const handleAdminDragOver = (shelf: Shelf, event: DragEvent) => {
+  if (adminDraggedShelfId.value === shelf.id) return;
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = 'move';
+  }
+};
+
+const handleAdminDragEnter = (shelf: Shelf) => {
+  if (adminDraggedShelfId.value !== shelf.id) {
+    adminDragOverShelfId.value = shelf.id;
+  }
+};
+
+const handleAdminDragLeave = (shelf: Shelf) => {
+  if (adminDragOverShelfId.value === shelf.id) {
+    adminDragOverShelfId.value = null;
+  }
+};
+
+const handleAdminDrop = async (targetShelf: Shelf) => {
+  const sourceId = adminDraggedShelfId.value;
+  const targetId = targetShelf.id;
+
+  adminDraggedShelfId.value = null;
+  adminDragOverShelfId.value = null;
+
+  if (!sourceId || sourceId === targetId) return;
+
+  const currentList = [...adminDisplayedShelves.value];
+  const sourceIndex = currentList.findIndex(s => s.id === sourceId);
+  const targetIndex = currentList.findIndex(s => s.id === targetId);
+
+  if (sourceIndex === -1 || targetIndex === -1) return;
+
+  const [moved] = currentList.splice(sourceIndex, 1);
+  currentList.splice(targetIndex, 0, moved);
+
+  let finalOrderedList: Shelf[];
+  if (adminSelectedFloor.value === 0) {
+    finalOrderedList = currentList;
+  } else {
+    const otherShelves = store.shelves.filter(s => s.floor !== adminSelectedFloor.value);
+    finalOrderedList = [...currentList, ...otherShelves];
+  }
+
+  isReorderingAdminShelves.value = true;
+  try {
+    await store.reorderShelves(finalOrderedList);
+  } finally {
+    isReorderingAdminShelves.value = false;
+  }
+};
+
+const handleAdminDragEnd = () => {
+  adminDraggedShelfId.value = null;
+  adminDragOverShelfId.value = null;
+};
+
+const moveAdminShelfStep = async (shelfId: string, direction: 'prev' | 'next') => {
+  const currentList = [...adminDisplayedShelves.value];
+  const index = currentList.findIndex(s => s.id === shelfId);
+  if (index === -1) return;
+
+  const targetIndex = direction === 'prev' ? index - 1 : index + 1;
+  if (targetIndex < 0 || targetIndex >= currentList.length) return;
+
+  const [moved] = currentList.splice(index, 1);
+  currentList.splice(targetIndex, 0, moved);
+
+  let finalOrderedList: Shelf[];
+  if (adminSelectedFloor.value === 0) {
+    finalOrderedList = currentList;
+  } else {
+    const otherShelves = store.shelves.filter(s => s.floor !== adminSelectedFloor.value);
+    finalOrderedList = [...currentList, ...otherShelves];
+  }
+
+  isReorderingAdminShelves.value = true;
+  try {
+    await store.reorderShelves(finalOrderedList);
+  } finally {
+    isReorderingAdminShelves.value = false;
+  }
+};
+
+const handleResetShelvesOrderAdmin = async () => {
+  isReorderingAdminShelves.value = true;
+  try {
+    await store.resetShelvesOrder();
+  } finally {
+    isReorderingAdminShelves.value = false;
+  }
+};
+
+const openAddShelfModalAdmin = () => {
+  selectedShelfForEditAdmin.value = null;
+  isShelfModalOpenAdmin.value = true;
+};
+
+const openEditShelfModalAdmin = (shelf: Shelf) => {
+  selectedShelfForEditAdmin.value = shelf;
+  isShelfModalOpenAdmin.value = true;
+};
+
+const handleDeleteShelfAdmin = (shelfId: string, shelfName?: string) => {
+  openConfirmDialog({
+    title: 'Hapus Lokasi Rak',
+    message: `Apakah Anda yakin ingin menghapus rak "${shelfName || shelfId}"?`,
+    subMessage: 'Buku di dalam rak ini akan dialihkan ke lokasi default perpustakaan.',
+    confirmText: 'Hapus Rak',
+    type: 'danger',
+    onConfirm: async () => {
+      await store.deleteShelf(shelfId);
     }
   });
 };

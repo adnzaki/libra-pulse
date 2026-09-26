@@ -40,6 +40,7 @@ export const shelves = pgTable('shelves', {
   color: text('color').default('#3b82f6'),
   description: text('description'),
   shelfRow: text('shelf_row'),
+  order: integer('order').default(0),
   createdAt: timestamp('created_at').defaultNow(),
 });
 

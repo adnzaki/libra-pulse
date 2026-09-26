@@ -27,6 +27,18 @@ export const isSuperAdminMember = (m: any): boolean => {
 export const sortShelves = (shelvesList: Shelf[]): Shelf[] => {
   if (!Array.isArray(shelvesList)) return [];
   return [...shelvesList].sort((a, b) => {
+    // 0. Prioritaskan field order/posisi kustom jika telah diatur oleh admin
+    const hasOrderA = typeof a.order === 'number' && !isNaN(a.order);
+    const hasOrderB = typeof b.order === 'number' && !isNaN(b.order);
+
+    if (hasOrderA && hasOrderB) {
+      if (a.order !== b.order) return (a.order as number) - (b.order as number);
+    } else if (hasOrderA) {
+      return -1;
+    } else if (hasOrderB) {
+      return 1;
+    }
+
     const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
     const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
 
@@ -1314,6 +1326,7 @@ export const useLibraryStore = defineStore('library', {
           savedShelf = { 
             ...this.shelves[idx], 
             ...shelfData,
+            order: typeof shelfData.order === 'number' ? shelfData.order : (this.shelves[idx]?.order ?? idx),
             createdAt: this.shelves[idx]?.createdAt || shelfData.createdAt || new Date().toISOString()
           };
           this.shelves[idx] = savedShelf;
@@ -1329,6 +1342,7 @@ export const useLibraryStore = defineStore('library', {
             category: shelfData.category || 'Umum',
             color: shelfData.color || '#3b82f6',
             description: shelfData.description || '',
+            order: typeof shelfData.order === 'number' ? shelfData.order : this.shelves.length,
             createdAt: shelfData.createdAt || new Date().toISOString(),
             ...shelfData
           };
@@ -1353,6 +1367,69 @@ export const useLibraryStore = defineStore('library', {
         this.setError(err?.message || 'Gagal menyimpan rak');
         return { success: false };
       }
+    },
+
+    async reorderShelves(orderedShelves: Shelf[]) {
+      if (!this.isAdmin) {
+        this.setError('Akses ditolak: Hanya Administrator yang berwenang mengatur urutan posisi rak.');
+        return false;
+      }
+
+      if (!Array.isArray(orderedShelves) || orderedShelves.length === 0) return false;
+
+      const orderMap = new Map<string, number>();
+      orderedShelves.forEach((s, idx) => {
+        orderMap.set(s.id, idx);
+      });
+
+      // Update in-memory state with explicit sequential indices
+      this.shelves = this.shelves.map(s => {
+        if (orderMap.has(s.id)) {
+          return { ...s, order: orderMap.get(s.id)! };
+        }
+        return s;
+      });
+
+      this.shelves = sortShelves(this.shelves);
+      this.persistToLocalCache();
+
+      // Persist to Firebase in background
+      const updates = Array.from(orderMap.entries()).map(([id, order]) => ({ id, order }));
+      import('../lib/firebase.js').then(({ syncShelvesOrder }) => {
+        syncShelvesOrder(updates).catch((err) => {
+          console.warn('Sync shelves order offline fallback:', err);
+          updates.forEach(u => {
+            queueOfflineMutation({ action: 'saveShelf', collection: 'shelves', docId: u.id, data: { order: u.order } });
+            this.pendingMutationsCount++;
+          });
+        });
+      }).catch(() => {});
+
+      this.showToast('Urutan posisi rak berhasil disimpan.');
+      return true;
+    },
+
+    async resetShelvesOrder() {
+      if (!this.isAdmin) {
+        this.setError('Akses ditolak: Hanya Administrator yang berwenang mereset urutan posisi rak.');
+        return false;
+      }
+
+      this.shelves = this.shelves.map(s => {
+        const { order, ...rest } = s;
+        return rest;
+      });
+
+      this.shelves = sortShelves(this.shelves);
+      this.persistToLocalCache();
+
+      const updates = this.shelves.map((s, idx) => ({ id: s.id, order: idx }));
+      import('../lib/firebase.js').then(({ syncShelvesOrder }) => {
+        syncShelvesOrder(updates).catch(() => {});
+      }).catch(() => {});
+
+      this.showToast('Urutan rak dikembalikan ke susunan default.');
+      return true;
     },
 
     async deleteShelf(shelfId: string) {
