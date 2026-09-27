@@ -299,21 +299,24 @@
       <router-link 
         to="/" 
         @click="isMobileMenuOpen = false"
-        class="block px-3 py-2 rounded-xl text-xs font-semibold text-slate-200 hover:bg-slate-800"
+        class="block px-3.5 py-2.5 rounded-xl text-xs transition"
+        :class="$route.name === 'catalog' ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-900/30' : 'font-semibold text-slate-200 hover:bg-slate-800'"
       >
         📖 Katalog Publik
       </router-link>
       <router-link 
         to="/shelves" 
         @click="isMobileMenuOpen = false"
-        class="block px-3 py-2 rounded-xl text-xs font-semibold text-slate-200 hover:bg-slate-800"
+        class="block px-3.5 py-2.5 rounded-xl text-xs transition"
+        :class="$route.name === 'shelves' ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-900/30' : 'font-semibold text-slate-200 hover:bg-slate-800'"
       >
         🗄️ Peta Rak
       </router-link>
       <router-link 
         to="/member-card" 
         @click="isMobileMenuOpen = false"
-        class="block px-3 py-2 rounded-xl text-xs font-semibold text-slate-200 hover:bg-slate-800"
+        class="block px-3.5 py-2.5 rounded-xl text-xs transition"
+        :class="$route.name === 'member-card' ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-900/30' : 'font-semibold text-slate-200 hover:bg-slate-800'"
       >
         💳 Kartu Member QR
       </router-link>
@@ -321,7 +324,8 @@
         v-if="store.currentUser"
         to="/member-portal" 
         @click="isMobileMenuOpen = false"
-        class="block px-3 py-2 rounded-xl text-xs font-semibold text-slate-200 hover:bg-slate-800"
+        class="block px-3.5 py-2.5 rounded-xl text-xs transition"
+        :class="$route.name === 'member-portal' ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-900/30' : 'font-semibold text-slate-200 hover:bg-slate-800'"
       >
         👤 Portal Pinjaman Saya
       </router-link>
@@ -329,7 +333,8 @@
         v-if="store.isAdmin"
         to="/admin" 
         @click="isMobileMenuOpen = false"
-        class="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-blue-300 bg-blue-500/10 border border-blue-500/20"
+        class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition"
+        :class="$route.name === 'admin' ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-900/30' : 'font-semibold text-slate-200 hover:bg-slate-800'"
       >
         <span>⚡ Admin Dashboard Console</span>
         <span v-if="store.pendingStudentVerificationsCount > 0" class="px-2 py-0.5 rounded-full bg-blue-500 text-white font-bold text-[10px] animate-pulse">

@@ -264,6 +264,11 @@ export async function syncBookingDoc(booking: any) {
   await withTimeout(setDoc(doc(db, 'bookings', booking.id), clean, { merge: true }), 7000);
 }
 
+export async function removeBookingDoc(bookingId: string) {
+  if (!bookingId) return;
+  await withTimeout(deleteDoc(doc(db, 'bookings', bookingId)), 7000);
+}
+
 export async function syncConfigDoc(config: any) {
   const clean = sanitizeForFirestore(config);
   await withTimeout(setDoc(doc(db, 'config', 'suspend_config'), clean, { merge: true }), 7000);

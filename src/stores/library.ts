@@ -136,7 +136,24 @@ export const useLibraryStore = defineStore('library', {
     isAdmin: (state) => state.currentUser?.role === 'admin',
     isSuperAdmin: (state) => isSuperAdminMember(state.currentUser),
     isMember: (state) => state.currentUser?.role === 'member',
-    activeHoldBookings: (state) => state.bookings.filter(b => b.status === 'active_hold'),
+    activeHoldBookings: (state) => {
+      const now = Date.now();
+      return state.bookings.filter(b => 
+        b.status === 'active_hold' &&
+        Boolean(b.expiresAt && new Date(b.expiresAt).getTime() > now)
+      );
+    },
+    myActiveHoldBookings: (state) => {
+      if (!state.currentUser) return [];
+      const now = Date.now();
+      const currentId = state.currentUser.id;
+      const currentCard = state.currentUser.cardNumber;
+      return state.bookings.filter(b => 
+        (b.memberId === currentId || (currentCard && b.memberCardNumber === currentCard)) &&
+        b.status === 'active_hold' &&
+        Boolean(b.expiresAt && new Date(b.expiresAt).getTime() > now)
+      );
+    },
     activeLoans: (state) => state.loans.filter(l => l.status === 'active' || l.status === 'overdue'),
     overdueLoans: (state) => state.loans.filter(l => l.status === 'overdue'),
     suspendedMembers: (state) => state.members.filter(m => m.isSuspended),
@@ -166,7 +183,14 @@ export const useLibraryStore = defineStore('library', {
     },
     myBookings: (state) => {
       if (!state.currentUser) return [];
-      return state.bookings.filter(b => b.memberId === state.currentUser?.id);
+      const now = Date.now();
+      const currentId = state.currentUser.id;
+      const currentCard = state.currentUser.cardNumber;
+      return state.bookings.filter(b => 
+        (b.memberId === currentId || (currentCard && b.memberCardNumber === currentCard)) &&
+        b.status === 'active_hold' &&
+        Boolean(b.expiresAt && new Date(b.expiresAt).getTime() > now)
+      );
     },
     toastMessage: (state) => state.successToast,
     error: (state) => state.errorMessage,
@@ -381,6 +405,7 @@ export const useLibraryStore = defineStore('library', {
         subscribeToFirestoreCollection<Booking>('bookings', (items) => {
           if (items) {
             this.bookings = items;
+            this.checkAndCleanExpiredBookings({ silent: true });
             this.calculateStats();
             this.persistToLocalCache();
           }
@@ -469,12 +494,12 @@ export const useLibraryStore = defineStore('library', {
         ).length;
         const activeBookingsForBook = this.bookings.filter(
           bk => bk.bookId === b.id && 
-               (bk.status === 'active_hold' || bk.status === 'pending' || bk.status === 'active') &&
-               (!bk.expiresAt || new Date(bk.expiresAt).getTime() > Date.now())
+               (bk.status === 'active_hold' || bk.status === 'pending' || bk.status === 'active' || bk.status === 'booked') &&
+               Boolean(bk.expiresAt && new Date(bk.expiresAt).getTime() > Date.now())
         ).length;
 
-        const borrowed = Math.min(total, activeLoansForBook > 0 ? activeLoansForBook : (Number(b.borrowedCopies) || 0));
-        const reserved = Math.min(Math.max(0, total - borrowed), activeBookingsForBook > 0 ? activeBookingsForBook : (Number(b.reservedCopies) || 0));
+        const borrowed = Math.min(total, activeLoansForBook);
+        const reserved = Math.min(Math.max(0, total - borrowed), activeBookingsForBook);
         
         b.totalCopies = total;
         b.borrowedCopies = borrowed;
@@ -918,6 +943,8 @@ export const useLibraryStore = defineStore('library', {
       this.isUsingOfflineData = true;
       this.calculateStats();
       this.restoreUserSession();
+      this.startBookingExpiryWatcher();
+      this.checkAndCleanExpiredBookings({ silent: true });
     },
 
     async downloadForOffline() {
@@ -961,6 +988,7 @@ export const useLibraryStore = defineStore('library', {
           removeMemberDoc, 
           syncLoanDoc, 
           syncBookingDoc, 
+          removeBookingDoc,
           syncConfigDoc,
           syncNotificationDoc,
           removeNotificationDoc
@@ -978,6 +1006,7 @@ export const useLibraryStore = defineStore('library', {
             case 'deleteMember': await removeMemberDoc(item.docId); break;
             case 'saveLoan': await syncLoanDoc(item.data); break;
             case 'saveBooking': await syncBookingDoc(item.data); break;
+            case 'deleteBooking': await removeBookingDoc(item.docId); break;
             case 'saveConfig': await syncConfigDoc(item.data); break;
             case 'saveNotification': await syncNotificationDoc(item.data); break;
             case 'deleteNotification': await removeNotificationDoc(item.docId); break;
@@ -1071,6 +1100,8 @@ export const useLibraryStore = defineStore('library', {
         this.restoreUserSession();
         this.checkCurrentDeviceSessionStatus();
         this.checkAndAutoRegisterCurrentDevice();
+        this.startBookingExpiryWatcher();
+        await this.checkAndCleanExpiredBookings({ silent: true });
         // Bersihkan antrean mutasi lama agar tidak ada auto-replay write yang membebani Firestore
         clearPendingOfflineMutations();
         this.pendingMutationsCount = 0;
@@ -3094,27 +3125,106 @@ export const useLibraryStore = defineStore('library', {
       const bk = this.bookings.find(b => b.id === bookingId);
       if (!bk) return { success: false };
 
-      bk.status = 'cancelled_user';
-      const book = this.books.find(b => b.id === bk.bookId);
+      const bookId = bk.bookId;
+      // Langsung hapus booking dari daftar aktif
+      this.bookings = this.bookings.filter(b => b.id !== bookingId);
+
+      const book = this.books.find(b => b.id === bookId);
       if (book) {
-        book.availableCopies += 1;
-        if (book.reservedCopies > 0) book.reservedCopies -= 1;
+        if (book.reservedCopies && book.reservedCopies > 0) book.reservedCopies -= 1;
       }
       this.calculateStats();
       this.persistToLocalCache();
 
       try {
-        const { syncBookingDoc, syncBookDoc } = await import('../lib/firebase.js');
-        await syncBookingDoc(bk);
+        const { removeBookingDoc, syncBookDoc } = await import('../lib/firebase.js');
+        await removeBookingDoc(bookingId);
         if (book) await syncBookDoc(book);
       } catch {
-        queueOfflineMutation({ action: 'saveBooking', collection: 'bookings', docId: bk.id, data: bk });
+        queueOfflineMutation({ action: 'deleteBooking', collection: 'bookings', docId: bookingId });
         if (book) queueOfflineMutation({ action: 'saveBook', collection: 'books', docId: book.id, data: book });
         this.pendingMutationsCount++;
       }
 
-      this.showToast('Booking berhasil dibatalkan.');
+      this.showToast('Booking berhasil dibatalkan dan buku dikembalikan ke stok.');
       return { success: true };
+    },
+
+    async checkAndCleanExpiredBookings(options?: { silent?: boolean }) {
+      const now = Date.now();
+      // Cari semua booking yang sudah kadaluarsa atau berstatus dibatalkan
+      const expiredBookings = this.bookings.filter(b => {
+        if (b.status === 'expired' || b.status === 'cancelled_user' || b.status === 'cancelled_system') {
+          return true;
+        }
+        if ((b.status === 'active_hold' || b.status === 'booked' || b.status === 'pending') && (!b.expiresAt || new Date(b.expiresAt).getTime() <= now)) {
+          return true;
+        }
+        return false;
+      });
+
+      if (expiredBookings.length === 0) {
+        return { expiredCount: 0 };
+      }
+
+      const affectedBookIds = new Set<string>();
+      const expiredBookingIds = new Set<string>(expiredBookings.map(b => b.id));
+
+      for (const bk of expiredBookings) {
+        affectedBookIds.add(bk.bookId);
+      }
+
+      // Hapus data booking kadaluarsa langsung dari daftar ("lgsg hapus dr sini")
+      this.bookings = this.bookings.filter(b => !expiredBookingIds.has(b.id));
+
+      // Kembalikan buku ke stok rak perpustakaan ("kembalikannya bukunya ke stok")
+      this.calculateStats();
+      this.persistToLocalCache();
+
+      // Hapus dokumen booking dari Firestore & perbarui stok buku
+      try {
+        const { removeBookingDoc, syncBookDoc } = await import('../lib/firebase.js');
+        for (const bk of expiredBookings) {
+          await removeBookingDoc(bk.id);
+        }
+        for (const bookId of affectedBookIds) {
+          const book = this.books.find(b => b.id === bookId);
+          if (book) await syncBookDoc(book);
+        }
+      } catch {
+        for (const bk of expiredBookings) {
+          queueOfflineMutation({ action: 'deleteBooking', collection: 'bookings', docId: bk.id });
+          this.pendingMutationsCount++;
+        }
+        for (const bookId of affectedBookIds) {
+          const book = this.books.find(b => b.id === bookId);
+          if (book) {
+            queueOfflineMutation({ action: 'saveBook', collection: 'books', docId: book.id, data: book });
+            this.pendingMutationsCount++;
+          }
+        }
+      }
+
+      if (!options?.silent) {
+        this.showToast(`Berhasil membersihkan ${expiredBookings.length} booking kadaluarsa & buku dikembalikan ke stok.`);
+      }
+
+      return { expiredCount: expiredBookings.length };
+    },
+
+    startBookingExpiryWatcher() {
+      if (typeof window === 'undefined') return;
+      if ((window as any).__booking_expiry_interval) return;
+      (window as any).__booking_expiry_interval = setInterval(() => {
+        const now = Date.now();
+        const hasExpired = this.bookings.some(b => 
+          (b.status === 'active_hold' || b.status === 'booked' || b.status === 'pending' || b.status === 'expired' || b.status === 'cancelled_user' || b.status === 'cancelled_system') &&
+          (!b.expiresAt || new Date(b.expiresAt).getTime() <= now || b.status === 'expired' || b.status === 'cancelled_user' || b.status === 'cancelled_system')
+        );
+        if (hasExpired) {
+          this.checkAndCleanExpiredBookings({ silent: true });
+        }
+      }, 3000);
     },
 
     async collectBooking(bookingId: string, days?: number, handledBy?: string) {

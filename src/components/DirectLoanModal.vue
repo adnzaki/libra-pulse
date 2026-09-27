@@ -393,8 +393,11 @@ const memberActiveBookingsCount = computed(() => {
   if (!matchedMember.value) return 0;
   const memId = matchedMember.value.id;
   const cardNum = matchedMember.value.cardNumber;
+  const now = Date.now();
   return store.bookings.filter(b => 
-    (b.memberId === memId || b.memberCardNumber === cardNum) && b.status === 'active_hold'
+    (b.memberId === memId || (cardNum && b.memberCardNumber === cardNum)) && 
+    (b.status === 'active_hold' || b.status === 'booked') &&
+    Boolean(b.expiresAt && new Date(b.expiresAt).getTime() > now)
   ).length;
 });
 

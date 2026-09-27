@@ -960,8 +960,20 @@ const dismissExpiredEbookInfo = (id: string) => {
 };
 
 onMounted(() => {
+  // Langsung bersihkan booking kadaluarsa saat portal member dibuka
+  store.checkAndCleanExpiredBookings({ silent: true });
+
   timerInterval = setInterval(() => {
     now.value = Date.now();
+    // Otomatis bersihkan jika ada booking yang sudah kadaluarsa
+    const hasExpired = store.bookings.some(b => 
+      (b.status === 'active_hold' || b.status === 'booked' || b.status === 'pending') &&
+      b.expiresAt &&
+      new Date(b.expiresAt).getTime() <= now.value
+    );
+    if (hasExpired) {
+      store.checkAndCleanExpiredBookings({ silent: true });
+    }
   }, 1000);
 
   // Pengecekan background e-book hemat kuota (hanya akun pengguna aktif, cooldown 10 menit)
@@ -975,14 +987,18 @@ onBeforeUnmount(() => {
 });
 
 const activeHoldBookings = computed(() => {
-  return store.myBookings.filter(b => b.status === 'active_hold');
+  return store.myActiveHoldBookings.filter(b => b.expiresAt && new Date(b.expiresAt).getTime() > now.value);
 });
 
 const formatCountdown = (expiresAtStr: string) => {
+  if (!expiresAtStr) return '00:00:00';
   const expiry = new Date(expiresAtStr).getTime();
   const diff = expiry - now.value;
 
-  if (diff <= 0) return '00:00:00 (Kadaluarsa)';
+  if (diff <= 0) {
+    store.checkAndCleanExpiredBookings({ silent: true });
+    return '00:00:00';
+  }
 
   const hours = Math.floor(diff / (1000 * 60 * 60));
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));

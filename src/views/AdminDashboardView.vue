@@ -505,9 +505,20 @@
                 Sistem otomatis menahan buku selama 24 jam. Jika tidak diambil di sirkulasi, sistem membatalkannya agar anggota lain dapat meminjam.
               </div>
             </div>
-            <span class="text-xs text-amber-800 font-bold font-mono px-3 py-1 bg-amber-200/60 rounded-full">
-              {{ filteredBookings.length }} Booking Aktif
-            </span>
+            <div class="flex items-center gap-2">
+              <button 
+                @click="handleCleanExpiredBookingsManual"
+                :disabled="isCleaningExpiredBookings"
+                class="px-3 py-1 bg-amber-200/80 hover:bg-amber-300 text-amber-900 rounded-full text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                title="Periksa & bersihkan booking yang sudah kadaluarsa"
+              >
+                <RefreshCw class="w-3 h-3" :class="{ 'animate-spin': isCleaningExpiredBookings }" />
+                Bersihkan Kadaluarsa
+              </button>
+              <span class="text-xs text-amber-800 font-bold font-mono px-3 py-1 bg-amber-200/60 rounded-full">
+                {{ filteredBookings.length }} Booking Aktif
+              </span>
+            </div>
           </div>
 
           <div v-if="filteredBookings.length === 0" class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs">
@@ -2760,7 +2771,10 @@ watch([bookSearch, bookItemsPerPage], () => {
 
 // Booking: Search
 const filteredBookings = computed(() => {
-  let list = store.activeHoldBookings;
+  let list = store.bookings.filter(b => 
+    (b.status === 'active_hold' || b.status === 'booked') &&
+    Boolean(b.expiresAt && new Date(b.expiresAt).getTime() > now.value)
+  );
   if (bookingSearch.value.trim()) {
     const q = bookingSearch.value.toLowerCase().trim();
     list = list.filter(b => 
@@ -2956,8 +2970,20 @@ onMounted(() => {
     };
   }
 
+  // Langsung bersihkan booking kadaluarsa saat dashboard admin dibuka
+  store.checkAndCleanExpiredBookings({ silent: true });
+
   timerInterval = setInterval(() => {
     now.value = Date.now();
+    // Otomatis bersihkan jika ada booking yang telah melewati waktu kadaluarsa
+    const hasExpired = store.bookings.some(b => 
+      (b.status === 'active_hold' || b.status === 'booked' || b.status === 'pending') &&
+      b.expiresAt &&
+      new Date(b.expiresAt).getTime() <= now.value
+    );
+    if (hasExpired) {
+      store.checkAndCleanExpiredBookings({ silent: true });
+    }
   }, 1000);
 });
 
@@ -3260,10 +3286,14 @@ const filteredLoans = computed(() => {
 });
 
 const formatCountdown = (expiresAtStr: string) => {
+  if (!expiresAtStr) return '00:00:00';
   const expiry = new Date(expiresAtStr).getTime();
   const diff = expiry - now.value;
 
-  if (diff <= 0) return '00:00:00 (Kadaluarsa)';
+  if (diff <= 0) {
+    store.checkAndCleanExpiredBookings({ silent: true });
+    return '00:00:00';
+  }
 
   const hours = Math.floor(diff / (1000 * 60 * 60));
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -3326,6 +3356,19 @@ const handleCollectBooking = async (bookingId: string) => {
   const bk = store.bookings.find(b => b.id === bookingId);
   if (bk) {
     openCollectBookingModal(bk);
+  }
+};
+
+const isCleaningExpiredBookings = ref(false);
+const handleCleanExpiredBookingsManual = async () => {
+  isCleaningExpiredBookings.value = true;
+  try {
+    const res = await store.checkAndCleanExpiredBookings({ silent: false });
+    if (res.expiredCount === 0) {
+      store.showToast('ℹ️ Tidak ada booking kadaluarsa. Semua data booking aktif dan stok buku valid.');
+    }
+  } finally {
+    isCleaningExpiredBookings.value = false;
   }
 };
 

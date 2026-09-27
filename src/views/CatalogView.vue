@@ -145,10 +145,57 @@
         </div>
       </div>
 
-      <!-- Category Filter Tabs (Flex-wrap with clean spacing, never clipped or truncated) -->
+      <!-- Category Filter Section (Compact Mobile Button + Modal, Tabs for Desktop) -->
       <div class="pt-2 border-t border-slate-100">
-        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Kategori Buku:</div>
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="flex items-center justify-between mb-2">
+          <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Kategori Buku:</div>
+          <button 
+            v-if="selectedCategory !== 'all'"
+            type="button"
+            @click="selectedCategory = 'all'"
+            class="text-[11px] text-blue-600 hover:text-blue-700 font-semibold transition cursor-pointer flex items-center gap-1"
+          >
+            <span>Reset Kategori</span>
+            <X class="w-3 h-3" />
+          </button>
+        </div>
+
+        <!-- Mobile Trigger Button: Replaces tall vertical wrap with a sleek compact modal trigger -->
+        <div class="sm:hidden">
+          <button 
+            type="button"
+            @click="isCategoryModalOpen = true"
+            class="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100/90 active:scale-[0.99] border border-slate-200/90 rounded-2xl text-xs transition cursor-pointer shadow-xs group"
+          >
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div 
+                class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border transition"
+                :class="selectedCategory !== 'all' ? 'bg-blue-600 text-white border-blue-600 shadow-xs' : 'bg-blue-50 text-blue-600 border-blue-200/60'"
+              >
+                <Tag class="w-4 h-4" />
+              </div>
+              <div class="text-left min-w-0">
+                <span class="text-slate-400 text-[10px] block font-semibold uppercase tracking-wider">Kategori Terpilih</span>
+                <span class="text-slate-900 font-extrabold text-xs sm:text-sm truncate block group-hover:text-blue-600 transition">
+                  {{ selectedCategory === 'all' ? 'Semua Kategori' : selectedCategory }}
+                </span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0 pl-2">
+              <span 
+                class="px-2.5 py-1 rounded-full text-[10px] font-bold transition"
+                :class="selectedCategory !== 'all' ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-200 text-slate-700'"
+              >
+                {{ getCategoryBookCount(selectedCategory) }} Buku
+              </span>
+              <ChevronRight class="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition" />
+            </div>
+          </button>
+        </div>
+
+        <!-- Desktop Category Filter Tabs (hidden on mobile, visible on sm and up) -->
+        <div class="hidden sm:flex flex-wrap items-center gap-2">
           <button 
             v-for="cat in categories" 
             :key="cat"
@@ -157,6 +204,16 @@
             :class="selectedCategory === cat ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'"
           >
             {{ cat === 'all' ? 'Semua Kategori' : cat }}
+          </button>
+          
+          <button
+            type="button"
+            @click="isCategoryModalOpen = true"
+            class="px-3 py-1.5 rounded-full text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 border border-blue-200 transition cursor-pointer flex items-center gap-1"
+            title="Buka daftar kategori lengkap di modal"
+          >
+            <Tag class="w-3 h-3" />
+            <span>Pilih di Modal</span>
           </button>
         </div>
       </div>
@@ -408,6 +465,128 @@
       @book="openBookingFromDetail"
     />
 
+    <!-- Modal Pemilihan Kategori Buku (Mobile / Desktop) -->
+    <div 
+      v-if="isCategoryModalOpen"
+      class="fixed inset-0 z-80 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200"
+      @click.self="isCategoryModalOpen = false"
+    >
+      <div 
+        class="bg-white text-slate-900 w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200 max-h-[88dvh] flex flex-col"
+      >
+        <!-- Modal Header -->
+        <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-3 bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-slate-50 shrink-0">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-200 shrink-0">
+              <Tag class="w-5 h-5" />
+            </div>
+            <div class="min-w-0">
+              <h3 class="font-extrabold text-base text-slate-900 tracking-tight">Kategori Buku</h3>
+              <p class="text-xs text-slate-500 truncate">Pilih kategori untuk menyaring katalog buku</p>
+            </div>
+          </div>
+          <button 
+            @click="isCategoryModalOpen = false"
+            class="w-8 h-8 rounded-full bg-slate-200/70 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition cursor-pointer shrink-0"
+            aria-label="Tutup"
+          >
+            <X class="w-4 h-4" />
+          </button>
+        </div>
+
+        <!-- Search Box inside Modal -->
+        <div class="p-3.5 border-b border-slate-100 bg-white shrink-0">
+          <div class="relative">
+            <Search class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input 
+              v-model="categorySearchQuery"
+              type="text"
+              placeholder="Cari nama kategori..."
+              class="w-full pl-9 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium transition"
+            />
+            <button 
+              v-if="categorySearchQuery"
+              @click="categorySearchQuery = ''"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+            >
+              <X class="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
+        <!-- Category Items List -->
+        <div class="p-3 sm:p-4 overflow-y-auto flex-1 space-y-1.5 divide-y divide-slate-100/60">
+          <div 
+            v-if="filteredModalCategories.length === 0"
+            class="py-10 text-center text-slate-400 text-xs space-y-2"
+          >
+            <BookX class="w-8 h-8 text-slate-300 mx-auto" />
+            <p>Kategori "{{ categorySearchQuery }}" tidak ditemukan.</p>
+          </div>
+
+          <button
+            v-for="cat in filteredModalCategories"
+            :key="cat"
+            @click="selectCategoryAndClose(cat)"
+            class="w-full flex items-center justify-between p-3 rounded-2xl text-left transition cursor-pointer active:scale-[0.99]"
+            :class="selectedCategory === cat 
+              ? 'bg-blue-50 text-blue-900 border border-blue-200 font-bold shadow-xs' 
+              : 'hover:bg-slate-50 text-slate-700 border border-transparent font-medium'"
+          >
+            <div class="flex items-center gap-3 min-w-0">
+              <div 
+                class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition"
+                :class="selectedCategory === cat ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-100 text-slate-500'"
+              >
+                <Tag class="w-4 h-4" />
+              </div>
+              <div class="truncate">
+                <span class="text-xs sm:text-sm block truncate">
+                  {{ cat === 'all' ? 'Semua Kategori' : cat }}
+                </span>
+                <span class="text-[10px] text-slate-400 block font-normal mt-0.5">
+                  {{ getCategoryBookCount(cat) }} buku tersedia
+                </span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0 pl-2">
+              <span 
+                v-if="selectedCategory === cat"
+                class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs shadow-xs"
+              >
+                <Check class="w-3.5 h-3.5 stroke-[3]" />
+              </span>
+              <span 
+                v-else
+                class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-semibold"
+              >
+                {{ getCategoryBookCount(cat) }}
+              </span>
+            </div>
+          </button>
+        </div>
+
+        <!-- Modal Footer Actions -->
+        <div class="px-5 py-3.5 border-t border-slate-100 bg-slate-50 flex items-center justify-between gap-3 shrink-0">
+          <button 
+            type="button"
+            @click="selectCategoryAndClose('all')"
+            class="text-xs font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer px-3 py-2 rounded-xl hover:bg-slate-200/60"
+          >
+            Reset Semua
+          </button>
+          <button 
+            type="button"
+            @click="isCategoryModalOpen = false"
+            class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold rounded-xl text-xs transition shadow-md shadow-blue-200 cursor-pointer"
+          >
+            Terapkan &amp; Tutup
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -418,10 +597,12 @@ import { useLibraryStore } from '../stores/library.js';
 import type { Book, Loan } from '../types.js';
 import BookingModal from '../components/BookingModal.vue';
 import BookDetailModal from '../components/BookDetailModal.vue';
+import { useModalBack } from '../composables/useModalBack.js';
 import { 
   Search, QrCode, Sparkles, CheckCircle2, Clock, 
   Layers, MapPin, Bookmark, BookX, Smartphone, BookOpen, X,
-  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight
+  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
+  Tag, Check
 } from 'lucide-vue-next';
 
 const router = useRouter();
@@ -432,6 +613,14 @@ const selectedCategory = ref('all');
 const selectedShelfId = ref('all');
 const availabilityFilter = ref('all');
 const bookTypeFilter = ref<'all' | 'physical' | 'ebook'>('all');
+
+// Category Selection Modal State
+const isCategoryModalOpen = ref(false);
+const categorySearchQuery = ref('');
+
+useModalBack(isCategoryModalOpen, () => {
+  isCategoryModalOpen.value = false;
+}, 'catalog_category_modal');
 
 const isBookingModalOpen = ref(false);
 const selectedBookForBooking = ref<Book | null>(null);
@@ -478,6 +667,36 @@ const categories = computed(() => {
   }
   return list;
 });
+
+const getCategoryBookCount = (cat: string) => {
+  if (cat === 'all') {
+    if (bookTypeFilter.value === 'physical') {
+      return store.books.filter(b => !b.isEbook).length;
+    } else if (bookTypeFilter.value === 'ebook') {
+      return store.books.filter(b => !!b.isEbook).length;
+    }
+    return store.books.length;
+  }
+  return store.books.filter(b => {
+    if (bookTypeFilter.value === 'physical' && b.isEbook) return false;
+    if (bookTypeFilter.value === 'ebook' && !b.isEbook) return false;
+    return b.category === cat;
+  }).length;
+};
+
+const filteredModalCategories = computed(() => {
+  const q = categorySearchQuery.value.toLowerCase().trim();
+  if (!q) return categories.value;
+  return categories.value.filter(cat => {
+    if (cat === 'all') return 'semua kategori'.includes(q);
+    return cat.toLowerCase().includes(q);
+  });
+});
+
+const selectCategoryAndClose = (cat: string) => {
+  selectedCategory.value = cat;
+  isCategoryModalOpen.value = false;
+};
 
 const filteredBooks = computed(() => {
   let list = [...store.books];
@@ -565,6 +784,7 @@ const resetFilters = () => {
   availabilityFilter.value = 'all';
   bookTypeFilter.value = 'all';
   currentPage.value = 1;
+  categorySearchQuery.value = '';
 };
 
 const openBooking = (book: Book) => {

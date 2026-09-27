@@ -92,7 +92,7 @@ export interface Booking {
   memberEmail: string;
   createdAt: string;
   expiresAt: string;
-  status: 'active_hold' | 'collected' | 'cancelled_timeout' | 'cancelled_user';
+  status: 'active_hold' | 'collected' | 'cancelled_timeout' | 'cancelled_user' | 'expired';
   notes?: string;
   isEbook?: boolean;
   ebookFormat?: 'pdf' | 'epub';

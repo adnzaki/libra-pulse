@@ -9,33 +9,88 @@
           Sistem Smart Member Card Digital
         </div>
         <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1">
-          Kartu Member & Scanner Sirkulasi
+          {{ store.isAdmin ? 'Kartu Member & Scanner Sirkulasi' : 'Kartu Anggota Digital Perpustakaan' }}
         </h1>
         <p class="text-xs text-slate-500 mt-0.5">
-          Scan QR kartu member untuk validasi cepat, cek riwayat pinjaman, dan integrasi sirkulasi.
+          {{ store.isAdmin 
+            ? 'Scan QR kartu member untuk validasi cepat, cek riwayat pinjaman, dan integrasi sirkulasi.' 
+            : 'Tunjukkan kartu digital atau kode QR ini kepada petugas perpustakaan saat meminjam buku fisik.' }}
         </p>
       </div>
 
-      <!-- Admin-Only Member Card Switcher -->
-      <div v-if="store.isAdmin" class="flex items-center gap-2">
-        <label class="text-xs text-slate-500 font-medium">Inspeksi Kartu (Admin):</label>
-        <select 
-          v-model="selectedMemberId" 
-          class="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-full text-slate-700 text-xs focus:outline-none focus:border-blue-500 font-semibold"
+      <!-- Admin-Only Member Card Switcher (Searchable Combobox) -->
+      <div v-if="store.isAdmin" class="relative w-full md:w-80">
+        <div class="flex items-center justify-between mb-1 text-xs">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            Inspeksi Kartu (Admin):
+          </span>
+          <button 
+            v-if="selectedMemberId" 
+            @click="clearSelectedMember" 
+            type="button"
+            class="text-[10px] text-blue-600 hover:text-blue-700 font-semibold cursor-pointer"
+          >
+            Reset Pilihan
+          </button>
+        </div>
+
+        <div class="relative">
+          <Search class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input 
+            v-model="adminSearchQuery"
+            @focus="isAdminSearchOpen = true"
+            type="text"
+            :placeholder="activeSelectedMember ? `${activeSelectedMember.name} (${activeSelectedMember.cardNumber})` : 'Ketik nama / no. kartu...'"
+            class="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-800 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium transition"
+          />
+          <button 
+            v-if="adminSearchQuery || selectedMemberId"
+            @click="clearSelectedMember"
+            type="button"
+            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+            title="Reset"
+            aria-label="Bersihkan"
+          >
+            <X class="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <!-- Floating Dropdown Suggestions -->
+        <div 
+          v-if="isAdminSearchOpen && adminSearchQuery.trim()" 
+          class="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden divide-y divide-slate-100 max-h-60 overflow-y-auto"
         >
-          <option value="">-- Pilih Anggota --</option>
-          <option v-for="m in store.members.filter(mem => mem.role === 'member')" :key="m.id" :value="m.id">
-            {{ m.name }} ({{ m.cardNumber }})
-          </option>
-        </select>
+          <div v-if="adminFilteredMembers.length === 0" class="p-3 text-center text-slate-400 text-xs">
+            Anggota "{{ adminSearchQuery }}" tidak ditemukan.
+          </div>
+          <button 
+            v-for="m in adminFilteredMembers" 
+            :key="m.id"
+            @click="selectMemberFromAdminSearch(m)"
+            type="button"
+            class="w-full p-2.5 text-left flex items-center justify-between hover:bg-blue-50/70 transition cursor-pointer"
+            :class="selectedMemberId === m.id ? 'bg-blue-50 font-bold' : ''"
+          >
+            <div class="min-w-0 pr-2">
+              <div class="text-xs font-bold text-slate-800 truncate">{{ m.name }}</div>
+              <div class="text-[10px] font-mono text-blue-600 font-medium">{{ m.cardNumber }} • {{ m.memberType === 'guru' ? 'GURU' : 'SISWA' }}</div>
+            </div>
+            <span 
+              class="text-[9px] px-2 py-0.5 rounded-full font-bold shrink-0"
+              :class="m.isSuspended ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'"
+            >
+              {{ m.isSuspended ? 'SUSPEND' : 'AKTIF' }}
+            </span>
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- Main Bento Grid: Left Digital Member Card, Right Scanner -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- Main Layout: Centered for Members, 2-Column Bento Grid for Admin -->
+    <div :class="store.isAdmin ? 'grid grid-cols-1 lg:grid-cols-12 gap-6' : 'max-w-xl mx-auto space-y-6'">
       
-      <!-- Left Column: The Digital Card -->
-      <div class="lg:col-span-5 space-y-4">
+      <!-- Card Column: Takes full width in centered member view, or 5 cols in admin view -->
+      <div :class="store.isAdmin ? 'lg:col-span-5 space-y-4' : 'space-y-4'">
         <div class="flex items-center justify-between">
           <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Tampilan Kartu Member Digital</div>
           <span v-if="activeMember" class="text-[10px] text-blue-600 font-bold">Terverifikasi</span>
@@ -46,7 +101,7 @@
           <!-- The Physical-style Hologram Card -->
           <div 
             id="member-card-canvas"
-            class="relative w-full aspect-[1.586/1] rounded-3xl p-6 sm:p-7 shadow-xl overflow-hidden flex flex-col justify-between border transition duration-300 group"
+            class="relative w-full rounded-3xl p-4 sm:p-6 shadow-xl overflow-hidden flex flex-col justify-between border transition duration-300 min-h-[220px] sm:min-h-0 sm:aspect-[1.586/1] group"
             :class="activeMember.isSuspended 
               ? 'bg-gradient-to-br from-rose-950 via-slate-900 to-rose-900 border-rose-500/40 text-rose-100 shadow-rose-950/20' 
               : 'bg-gradient-to-br from-[#0b162c] via-[#09152e] to-[#060e20] border-slate-800 text-white shadow-slate-950/40'"
@@ -56,75 +111,101 @@
             <div class="absolute -left-16 -bottom-16 w-56 h-56 bg-indigo-500/15 rounded-full blur-2xl pointer-events-none"></div>
 
             <!-- Top Card Row: Library Logo & Chip -->
-            <div class="flex items-start justify-between relative z-10">
-              <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl overflow-hidden border border-slate-700/50 bg-slate-900 text-white font-bold flex items-center justify-center shadow-md shadow-blue-900/30 shrink-0">
+            <div class="flex items-center justify-between gap-2 relative z-10">
+              <div class="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl overflow-hidden border border-slate-700/50 bg-slate-900 text-white font-bold flex items-center justify-center shadow-md shadow-blue-900/30 shrink-0">
                   <img :src="'/pwa-192x192.png'" alt="Libra Logo" class="w-full h-full object-cover" />
                 </div>
-                <div>
-                  <div class="font-extrabold text-base tracking-tight text-white leading-tight">Libra</div>
-                  <div class="text-[9px] uppercase tracking-widest text-blue-300 font-mono font-bold">DIGITAL MEMBER PASS</div>
+                <div class="min-w-0">
+                  <div class="font-extrabold text-sm sm:text-base tracking-tight text-white leading-tight">Libra</div>
+                  <div class="text-[8px] sm:text-[9px] uppercase tracking-widest text-blue-300 font-mono font-bold truncate">DIGITAL MEMBER PASS</div>
                 </div>
               </div>
 
               <!-- Role & Status Pills on Card -->
-              <div class="flex items-center gap-1.5">
+              <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
                 <span 
-                  class="px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-wider shadow-sm"
+                  class="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[9px] sm:text-[11px] font-black uppercase tracking-wider shadow-sm"
                   :class="activeMember.memberType === 'guru' ? 'bg-indigo-600 text-white' : 'bg-blue-600 text-white'"
                 >
                   {{ activeMember.memberType === 'guru' ? '👨‍🏫 GURU' : '🎒 SISWA' }}
                 </span>
                 <div 
-                  class="px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5"
+                  class="px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[9px] sm:text-[11px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1 sm:gap-1.5"
                   :class="activeMember.isSuspended ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'"
                 >
                   <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
-                  {{ activeMember.isSuspended ? 'DISUSPEND' : 'AKTIF' }}
+                  <span>{{ activeMember.isSuspended ? 'DISUSPEND' : 'AKTIF' }}</span>
                 </div>
               </div>
             </div>
 
             <!-- Middle Card Row: Member Details & QR Code -->
-            <div class="flex items-center justify-between gap-4 my-2 relative z-10">
-              <div class="flex items-center gap-3 min-w-0">
-                <img 
-                  :src="activeMember.avatar" 
-                  crossorigin="anonymous"
-                  class="w-13 h-13 sm:w-16 sm:h-16 rounded-2xl object-cover border-2 shadow-md shrink-0" 
-                  :class="activeMember.isSuspended ? 'border-rose-400' : 'border-blue-400'"
-                  alt="Member Photo" 
-                />
-                <div class="min-w-0">
-                  <h3 class="font-extrabold text-base sm:text-lg truncate tracking-tight text-white">{{ activeMember.name }}</h3>
-                  <div class="text-[11px] sm:text-xs text-slate-300 truncate font-medium">{{ activeMember.email }}</div>
-                  <div class="text-[10px] text-blue-300 mt-0.5 font-medium">Bergabung: {{ activeMember.joinDate }}</div>
+            <div class="flex items-center justify-between gap-3 sm:gap-4 my-2 sm:my-3 relative z-10">
+              <div class="flex items-center gap-2.5 sm:gap-3.5 min-w-0 flex-1">
+                <!-- Avatar with graceful initials fallback -->
+                <div class="relative w-12 h-12 sm:w-16 sm:h-16 shrink-0">
+                  <img 
+                    v-if="activeMember.avatar && !avatarLoadError"
+                    :src="activeMember.avatar" 
+                    @error="avatarLoadError = true"
+                    class="w-full h-full rounded-2xl object-cover border-2 shadow-md" 
+                    :class="activeMember.isSuspended ? 'border-rose-400' : 'border-blue-400'"
+                    alt="Foto Member" 
+                  />
+                  <div 
+                    v-else 
+                    class="w-full h-full rounded-2xl flex items-center justify-center font-extrabold text-sm sm:text-base border-2 shadow-md uppercase tracking-wide"
+                    :class="activeMember.isSuspended 
+                      ? 'bg-rose-900 border-rose-400 text-rose-100' 
+                      : 'bg-gradient-to-br from-blue-600 to-indigo-700 border-blue-400 text-white'"
+                  >
+                    {{ getMemberInitials(activeMember.name) }}
+                  </div>
+                </div>
+
+                <!-- Member Info -->
+                <div class="min-w-0 flex-1">
+                  <h3 class="font-extrabold text-sm sm:text-lg leading-snug tracking-tight text-white line-clamp-1" :title="activeMember.name">
+                    {{ activeMember.name }}
+                  </h3>
+                  <div class="text-[10px] sm:text-xs text-slate-300 truncate font-medium mt-0.5">
+                    {{ activeMember.email || (activeMember.nis ? `NIS: ${activeMember.nis}` : 'Perpustakaan') }}
+                  </div>
+                  <div class="text-[9px] sm:text-[10px] text-blue-300 mt-0.5 font-medium flex items-center gap-1">
+                    <span>Bergabung:</span>
+                    <span class="font-mono">{{ activeMember.joinDate }}</span>
+                  </div>
                 </div>
               </div>
 
               <!-- Dynamic QR Code rendered via high-res image / canvas -->
-              <div class="bg-white p-2 sm:p-2.5 rounded-2xl shadow-xl shrink-0 flex items-center justify-center border border-slate-100">
+              <div class="bg-white p-1.5 sm:p-2.5 rounded-2xl shadow-xl shrink-0 flex items-center justify-center border border-slate-100">
                 <img 
                   v-if="qrDataUrl"
                   :src="qrDataUrl" 
-                  class="w-16 h-16 sm:w-20 sm:h-20 object-contain" 
+                  class="w-14 h-14 sm:w-20 sm:h-20 object-contain" 
                   alt="Member QR Code" 
                 />
-                <canvas v-else ref="qrCanvas" class="w-16 h-16 sm:w-20 sm:h-20"></canvas>
+                <canvas v-else ref="qrCanvas" class="w-14 h-14 sm:w-20 sm:h-20"></canvas>
               </div>
             </div>
 
             <!-- Bottom Card Row: Card Number & Barcode String -->
-            <div class="flex items-end justify-between pt-2.5 sm:pt-3 border-t border-white/15 relative z-10">
-              <div>
-                <div class="text-[9px] uppercase tracking-widest text-slate-400 font-mono font-medium">NOMOR KARTU ANGGOTA</div>
-                <div class="font-mono font-black text-sm sm:text-lg text-amber-300 tracking-wider">
+            <div class="flex items-end justify-between pt-2 sm:pt-3 border-t border-white/15 relative z-10">
+              <div class="min-w-0 pr-2">
+                <div class="text-[8px] sm:text-[9px] uppercase tracking-widest text-slate-400 font-mono font-medium">
+                  NOMOR KARTU ANGGOTA
+                </div>
+                <div class="font-mono font-black text-sm sm:text-lg text-amber-300 tracking-wider truncate">
                   {{ activeMember.cardNumber }}
                 </div>
               </div>
 
-              <div class="text-right">
-                <div class="text-[9px] uppercase tracking-widest text-slate-400 font-mono font-medium">PINJAMAN AKTIF</div>
+              <div class="text-right shrink-0">
+                <div class="text-[8px] sm:text-[9px] uppercase tracking-widest text-slate-400 font-mono font-medium">
+                  PINJAMAN AKTIF
+                </div>
                 <div class="font-black text-xs sm:text-sm text-white">
                   {{ getActiveLoansCount(activeMember.id) }} / {{ activeMember.memberType === 'guru' ? 6 : 3 }} Buku
                 </div>
@@ -168,20 +249,20 @@
           </div>
 
           <!-- Action Tools for Member Card -->
-          <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="grid grid-cols-2 gap-2.5 text-xs">
             <button 
               @click="copyCardNumber"
-              class="py-2.5 px-3 rounded-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+              class="py-3 px-3 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-95 min-h-[46px]"
             >
               <Copy class="w-3.5 h-3.5 text-blue-600" />
-              Salin No. Kartu
+              <span>Salin No. Kartu</span>
             </button>
             <button 
               @click="openPrintModal"
-              class="py-2.5 px-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-blue-500/20"
+              class="py-3 px-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-blue-500/20 active:scale-95 min-h-[46px]"
             >
               <Printer class="w-3.5 h-3.5" />
-              Cetak / Unduh Kartu
+              <span>Cetak / Unduh Kartu</span>
             </button>
           </div>
 
@@ -224,7 +305,9 @@
           <div>
             <h3 class="font-bold text-slate-900 text-base">Kartu Member Digital Belum Dimuat</h3>
             <p class="text-xs text-slate-500 mt-1 max-w-xs mx-auto leading-relaxed">
-              Anda saat ini belum login. Masuk ke akun Anda untuk melihat kartu member digital Anda, atau pindai kartu QR/Barcode melalui scanner di sebelah kanan.
+              {{ store.isAdmin 
+                ? 'Pilih anggota pada menu inspeksi atau pindai kartu QR/Barcode melalui scanner di sebelah kanan.' 
+                : 'Anda saat ini belum login. Masuk ke akun Anda untuk melihat kartu member digital Anda.' }}
             </p>
           </div>
 
@@ -248,8 +331,8 @@
 
       </div>
 
-      <!-- Right Column: Integrated Scanner & Live Member Lookup -->
-      <div class="lg:col-span-7 space-y-6">
+      <!-- Right Column: Integrated Scanner & Live Member Lookup (HANYA UNTUK ADMIN) -->
+      <div v-if="store.isAdmin" class="lg:col-span-7 space-y-6">
         <MemberCardScanner @selected="handleScannerSelected" />
       </div>
 
@@ -483,12 +566,47 @@ import { renderMemberCardToCanvas } from '../utils/memberCardRenderer.js';
 import MemberCardScanner from '../components/MemberCardScanner.vue';
 import { 
   QrCode, BookOpen, AlertTriangle, Copy, Printer, 
-  CreditCard, LogIn, UserPlus, Download, X, Moon, Sun, Loader2, Award
+  CreditCard, LogIn, UserPlus, Download, X, Moon, Sun, Loader2, Award,
+  Search
 } from 'lucide-vue-next';
 import { useModalBack } from '../composables/useModalBack.js';
 
 const store = useLibraryStore();
 const selectedMemberId = ref('');
+const adminSearchQuery = ref('');
+const isAdminSearchOpen = ref(false);
+
+const activeSelectedMember = computed(() => {
+  if (!selectedMemberId.value) return null;
+  return store.members.find(m => m.id === selectedMemberId.value) || null;
+});
+
+const adminFilteredMembers = computed(() => {
+  const q = adminSearchQuery.value.toLowerCase().trim();
+  if (!q) return [];
+  return store.members
+    .filter(m => m.role === 'member')
+    .filter(m => 
+      (m.name && m.name.toLowerCase().includes(q)) ||
+      (m.cardNumber && m.cardNumber.toLowerCase().includes(q)) ||
+      (m.nis && m.nis.toLowerCase().includes(q)) ||
+      (m.email && m.email.toLowerCase().includes(q))
+    )
+    .slice(0, 6);
+});
+
+const selectMemberFromAdminSearch = (m: Member) => {
+  selectedMemberId.value = m.id;
+  adminSearchQuery.value = '';
+  isAdminSearchOpen.value = false;
+};
+
+const clearSelectedMember = () => {
+  selectedMemberId.value = '';
+  adminSearchQuery.value = '';
+  isAdminSearchOpen.value = false;
+};
+
 const scannedMember = ref<Member | null>(null);
 const qrCanvas = ref<HTMLCanvasElement | null>(null);
 const qrModalCanvas = ref<HTMLCanvasElement | null>(null);
@@ -551,7 +669,17 @@ const generateQr = async () => {
   }
 };
 
+const avatarLoadError = ref(false);
+
+const getMemberInitials = (name?: string) => {
+  if (!name) return 'MB';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
 watch(activeMember, () => {
+  avatarLoadError.value = false;
   generateQr();
 }, { immediate: true });
 
