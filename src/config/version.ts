@@ -1,48 +1,48 @@
 import type { ChangelogItem, AppVersionConfig } from '../types.js';
 
-export const CURRENT_APP_VERSION = '1.0.0-beta.3';
-export const APP_RELEASE_DATE = '25 September 2026';
-export const APP_RELEASE_CODENAME = 'Libra Aurora Beta 3';
+export const CURRENT_APP_VERSION = '1.0.0-beta.4';
+export const APP_RELEASE_DATE = '27 September 2026';
+export const APP_RELEASE_CODENAME = 'Libra Aurora Beta 4';
 
 export const DEFAULT_APP_VERSION_CONFIG: AppVersionConfig = {
   version: CURRENT_APP_VERSION,
   releaseDate: APP_RELEASE_DATE,
   forceReload: false,
-  minSupportedVersion: '1.0.0-beta.3',
-  updateMessage: 'Pembaruan sistem Libra versi 1.0.0-beta.3 telah dirilis dengan verifikasi siswa peminjam e-Book, penerapan logo baru ke seluruh sistem, serta perbaikan instalasi PWA ke homescreen / start menu.',
-  changelogSummary: 'Menambahkan verifikasi siswa yang hendak meminjam e-Book, menerapkan logo baru aplikasi ke seluruh sistem, dan memperbaiki sistem PWA tidak bisa diinstal ke homescreen / start menu.'
+  minSupportedVersion: '1.0.0-beta.4',
+  updateMessage: 'Pembaruan sistem Libra versi 1.0.0-beta.4 telah dirilis dengan peningkatan fitur manajemen booking (auto delete expired booking), penyelarasan tampilan antarmuka mobile yang lebih rapi, dan fitur urutan rak khusus admin.',
+  changelogSummary: 'Peningkatan manajemen booking dengan auto-delete expired booking, penyelarasan tampilan antarmuka mobile yang lebih rapi, dan penambahan fitur urutan rak khusus admin.'
 };
 
 export const CHANGELOG_LIST: ChangelogItem[] = [
   {
-    id: 'student-verification',
-    title: 'Verifikasi Siswa Peminjam e-Book',
-    description: 'Menambahkan alur verifikasi data siswa (NIS, NISN, dan foto selfie) sebelum meminjam dan membaca koleksi buku digital (e-Book), lengkap dengan peninjauan dan persetujuan oleh admin perpustakaan.',
-    targetAudience: 'member',
-    targetAudienceLabel: 'Khusus Siswa & Guru',
-    category: 'feature',
-    badge: 'Fitur Baru',
-    iconName: 'ShieldCheck'
-  },
-  {
-    id: 'new-app-logo',
-    title: 'Penerapan Logo Baru ke Seluruh Sistem',
-    description: 'Menerapkan identitas visual dan logo baru aplikasi Libra secara menyeluruh di seluruh sistem (navbar, halaman login, profil pengguna, dan kartu anggota).',
+    id: 'auto-delete-expired-booking',
+    title: 'Peningkatan Fitur Manajemen Booking (Auto-Delete Expired Booking)',
+    description: 'Sistem kini otomatis membersihkan data booking yang telah kadaluarsa (melewati batas waktu 24 jam) secara real-time dan langsung mengembalikan stok buku ke rak perpustakaan baik di sisi member maupun admin.',
     targetAudience: 'all',
     targetAudienceLabel: 'Semua Pengguna',
     category: 'improvement',
-    badge: 'Identitas Visual',
-    iconName: 'Sparkles'
+    badge: 'Otomatisasi Sistem',
+    iconName: 'Clock'
   },
   {
-    id: 'pwa-install-fix',
-    title: 'Perbaikan Instalasi PWA ke Homescreen / Start Menu',
-    description: 'Memperbaiki kendala sistem PWA yang sebelumnya tidak bisa diinstal ke homescreen perangkat Android/Chrome maupun start menu desktop, kini dapat dipasang langsung dengan icon resmi Libra.',
+    id: 'mobile-ui-enhancement',
+    title: 'Peningkatan Kualitas Tampilan Antarmuka Versi Mobile',
+    description: 'Penyelarasan tata letak menu dan tombol pada layar mobile ke dalam susunan grid 2-kolom yang rapi, seragam, dan proporsional tanpa ada menu yang panjang-pendek tidak seimbang.',
     targetAudience: 'all',
-    targetAudienceLabel: 'Semua Perangkat',
-    category: 'fix',
-    badge: 'Perbaikan Sistem',
+    targetAudienceLabel: 'Semua Pengguna',
+    category: 'improvement',
+    badge: 'Tampilan & UX',
     iconName: 'Smartphone'
+  },
+  {
+    id: 'shelf-ordering-admin',
+    title: 'Fitur Urutan & Tata Letak Rak (Khusus Admin)',
+    description: 'Menambahkan fitur bagi Administrator untuk mengatur ulang urutan dan posisi penataan rak buku secara fleksibel melalui metode drag-and-drop maupun tombol cepat di halaman tata letak rak.',
+    targetAudience: 'admin',
+    targetAudienceLabel: 'Khusus Admin',
+    category: 'feature',
+    badge: 'Fitur Baru',
+    iconName: 'Layers'
   }
 ];
 

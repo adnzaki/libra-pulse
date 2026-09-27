@@ -81,23 +81,36 @@
 
       <!-- Top Member Profile Bento Card -->
       <div 
-        class="p-6 sm:p-8 rounded-3xl border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4"
+        class="p-5 sm:p-7 rounded-3xl border shadow-sm flex flex-col gap-5"
         :class="store.currentUser.isSuspended ? 'bg-rose-50/50 border-rose-200' : 'bg-white border-slate-100'"
       >
-        <div class="flex items-center gap-4">
-          <img 
-            :src="store.currentUser.avatar" 
-            class="w-16 h-16 rounded-2xl object-cover border-2 shadow-sm"
-            :class="store.currentUser.isSuspended ? 'border-rose-400' : 'border-blue-400'"
-            alt="Avatar" 
-          />
-          <div>
-            <div class="flex flex-wrap items-center gap-2.5">
-              <h1 class="font-extrabold text-2xl text-slate-900 tracking-tight">{{ store.currentUser.name }}</h1>
+        <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+          <!-- Avatar with fallback -->
+          <div class="relative w-16 h-16 shrink-0">
+            <img 
+              v-if="store.currentUser.avatar && !avatarLoadError"
+              :src="store.currentUser.avatar" 
+              class="w-16 h-16 rounded-2xl object-cover border-2 shadow-sm"
+              :class="store.currentUser.isSuspended ? 'border-rose-400' : 'border-blue-400'"
+              alt="Avatar"
+              @error="avatarLoadError = true" 
+            />
+            <div 
+              v-else
+              class="w-16 h-16 rounded-2xl border-2 flex items-center justify-center font-extrabold text-xl shadow-sm text-white"
+              :class="store.currentUser.isSuspended ? 'border-rose-400 bg-rose-600' : 'border-blue-500 bg-gradient-to-br from-blue-600 to-indigo-600'"
+            >
+              {{ (store.currentUser.name || 'M').charAt(0).toUpperCase() }}
+            </div>
+          </div>
+
+          <div class="flex-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <h1 class="font-extrabold text-xl sm:text-2xl text-slate-900 tracking-tight">{{ store.currentUser.name }}</h1>
               
               <!-- Badge Tipe Anggota: Guru atau Siswa -->
               <span 
-                class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-xs"
+                class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-2xs"
                 :class="store.currentUser.memberType === 'guru' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' : 'bg-blue-100 text-blue-800 border border-blue-200'"
               >
                 <span v-if="store.currentUser.memberType === 'guru'">👨‍🏫 Guru</span>
@@ -108,14 +121,14 @@
               <template v-if="store.currentUser.memberType !== 'guru'">
                 <span 
                   v-if="studentStatus === 'verified'"
-                  class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1"
+                  class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1"
                 >
                   <CheckCircle2 class="w-3 h-3 text-emerald-600" />
                   <span>Siswa Terverifikasi (e-Book Aktif)</span>
                 </span>
                 <span 
                   v-else-if="studentStatus === 'pending'"
-                  class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1 animate-pulse"
+                  class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1 animate-pulse"
                 >
                   <Clock class="w-3 h-3 text-amber-600" />
                   <span>Verifikasi Siswa Menunggu Admin</span>
@@ -123,7 +136,7 @@
                 <button 
                   v-else
                   @click="isStudentVerificationOpen = true"
-                  class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1 transition cursor-pointer active:scale-95"
+                  class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1 transition cursor-pointer active:scale-95"
                 >
                   <ShieldCheck class="w-3 h-3 text-amber-600" />
                   <span>Verifikasi Siswa (e-Book)</span>
@@ -132,7 +145,7 @@
 
               <!-- Badge Status Akun -->
               <span 
-                class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
                 :class="store.currentUser.isSuspended ? 'bg-rose-100 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'"
               >
                 {{ store.currentUser.isSuspended ? 'AKUN DISUSPEND' : 'MEMBER AKTIF' }}
@@ -147,75 +160,81 @@
           </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2">
-          <!-- Tombol Ubah Profil (Sesuai panah biru di screenshot pengguna) -->
+        <!-- Menu Action Grid (Rapi, Selaras & Proporsional di Layar Mobile & Desktop) -->
+        <div class="pt-4 border-t border-slate-100 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-2.5 w-full">
+          <!-- 1. Buka Kartu QR -->
+          <router-link 
+            to="/member-card"
+            class="w-full h-11 px-2.5 sm:px-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl text-xs transition flex items-center justify-center gap-2 shadow-xs active:scale-95 cursor-pointer"
+            title="Buka Kartu Anggota Digital & QR Scanner"
+          >
+            <QrCode class="w-4 h-4 text-amber-300 shrink-0" />
+            <span class="truncate">Buka Kartu QR</span>
+          </router-link>
+
+          <!-- 2. Ubah Profil -->
           <button 
             @click="openEditProfile('profile')"
-            class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full text-xs transition flex items-center gap-1.5 cursor-pointer shadow-md shadow-blue-200 active:scale-95 relative"
+            class="w-full h-11 px-2.5 sm:px-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl text-xs transition flex items-center justify-center gap-2 cursor-pointer shadow-xs shadow-blue-200 active:scale-95 relative"
             title="Ubah Foto Profil, Nama, Email, HP, Alamat dan Status Keanggotaan"
           >
-            <UserCog class="w-4 h-4" />
-            <span>Ubah Profil</span>
+            <UserCog class="w-4 h-4 shrink-0" />
+            <span class="truncate">Ubah Profil</span>
             <span 
               v-if="store.myPendingTeacherRequest" 
-              class="w-2 h-2 rounded-full bg-amber-300 animate-ping"
+              class="w-2 h-2 rounded-full bg-amber-300 animate-ping absolute top-2 right-2"
               title="Pengajuan status Guru sedang diproses"
             ></span>
             <span 
               v-else-if="myRejectedTeacherRequest" 
-              class="w-2 h-2 rounded-full bg-rose-400"
+              class="w-2 h-2 rounded-full bg-rose-400 absolute top-2 right-2"
               title="Pengajuan status Guru ditolak"
             ></span>
           </button>
 
+          <!-- 3. Ganti Password -->
           <button 
             @click="isChangePasswordOpen = true"
-            class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-full text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+            class="w-full h-11 px-2.5 sm:px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl text-xs transition flex items-center justify-center gap-2 cursor-pointer border border-slate-200/60 active:scale-95 shadow-2xs"
+            title="Ganti Kata Sandi Akun"
           >
-            <KeyRound class="w-4 h-4 text-slate-500" />
-            Ganti Password
+            <KeyRound class="w-4 h-4 text-slate-500 shrink-0" />
+            <span class="truncate">Ganti Password</span>
           </button>
           
-          <!-- Tombol Manajemen Sesi & Perangkat -->
+          <!-- 4. Manajemen Sesi & Perangkat -->
           <button 
             @click="isDeviceSessionsOpen = true"
-            class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-full text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+            class="w-full h-11 px-2.5 sm:px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl text-xs transition flex items-center justify-center gap-1.5 cursor-pointer border border-slate-200/60 active:scale-95 shadow-2xs"
             title="Kelola sesi login perangkat & Perangkat Utama"
           >
-            <Laptop class="w-4 h-4 text-blue-600" />
-            <span>Sesi & Perangkat</span>
-            <span v-if="store.isCurrentDeviceMain" class="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold flex items-center gap-0.5">
-              👑 Utama
+            <Laptop class="w-4 h-4 text-blue-600 shrink-0" />
+            <span class="truncate">Sesi & Perangkat</span>
+            <span v-if="store.isCurrentDeviceMain" class="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold shrink-0">
+              👑
             </span>
           </button>
 
-          <!-- Tombol Catatan Rilis (Changelog) -->
+          <!-- 5. Catatan Rilis (Changelog) -->
           <button 
             @click="store.openChangelog()"
-            class="px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-bold rounded-full text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+            class="w-full h-11 px-2.5 sm:px-3 bg-blue-50/80 hover:bg-blue-100 text-blue-700 border border-blue-200/80 font-bold rounded-2xl text-xs transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs"
             title="Lihat riwayat pembaruan sistem dan fitur terbaru"
           >
-            <Sparkles class="w-4 h-4 text-blue-600" />
-            <span>Catatan Rilis (v{{ store.currentAppVersion }})</span>
+            <Sparkles class="w-4 h-4 text-blue-600 shrink-0" />
+            <span class="truncate">Catatan Rilis</span>
+            <span class="text-[9px] font-mono px-1 py-0.5 rounded bg-blue-100/90 text-blue-700 font-bold shrink-0">v{{ store.currentAppVersion }}</span>
           </button>
 
-          <!-- Tombol Pasang Aplikasi (PWA) -->
+          <!-- 6. Pasang Aplikasi (PWA) -->
           <button 
             @click="triggerPwaInstallModal"
-            class="px-4 py-2.5 bg-gradient-to-r from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 text-blue-800 border border-blue-200 font-bold rounded-full text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+            class="w-full h-11 px-2.5 sm:px-3 bg-gradient-to-r from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 text-blue-800 border border-blue-200/80 font-bold rounded-2xl text-xs transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs"
             title="Pasang aplikasi Libra ke layar utama ponsel / komputer"
           >
-            <Smartphone class="w-4 h-4 text-blue-600" />
-            <span>Pasang Aplikasi (PWA)</span>
+            <Smartphone class="w-4 h-4 text-blue-600 shrink-0" />
+            <span class="truncate">Pasang Aplikasi</span>
           </button>
-
-          <router-link 
-            to="/member-card"
-            class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-full text-xs transition flex items-center gap-2 shadow-sm"
-          >
-            <QrCode class="w-4 h-4 text-amber-300" />
-            Buka Kartu QR
-          </router-link>
         </div>
       </div>
 
@@ -772,7 +791,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import ChangePasswordModal from '../components/ChangePasswordModal.vue';
 import EditProfileModal from '../components/EditProfileModal.vue';
@@ -790,6 +809,11 @@ import {
 
 const store = useLibraryStore();
 const now = ref(Date.now());
+const avatarLoadError = ref(false);
+watch(() => store.currentUser?.avatar, () => {
+  avatarLoadError.value = false;
+});
+
 const isChangePasswordOpen = ref(false);
 const isEditProfileOpen = ref(false);
 const isDeviceSessionsOpen = ref(false);
