@@ -687,14 +687,24 @@
 
               <!-- E-Book Action / Expiry State -->
               <div v-if="l.isEbook" class="mt-3 pt-2.5 border-t border-slate-100">
-                <button 
-                  v-if="l.status !== 'overdue'"
-                  @click="openEbookReader(l)"
-                  class="w-full py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-indigo-100 active:scale-95 transition"
-                >
-                  <BookOpen class="w-4 h-4" />
-                  <span>Baca e-Book (In-App)</span>
-                </button>
+                <div v-if="l.status !== 'overdue'" class="flex items-center gap-2">
+                  <button 
+                    @click="openEbookReader(l)"
+                    class="flex-1 py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-indigo-100 active:scale-95 transition"
+                    title="Buka dokumen e-Book di reader internal"
+                  >
+                    <BookOpen class="w-4 h-4 shrink-0" />
+                    <span>Baca e-Book (In-App)</span>
+                  </button>
+                  <button 
+                    @click="promptReturnEbook(l)"
+                    class="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-200 hover:border-rose-200 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition shrink-0"
+                    title="Kembalikan e-Book sekarang secara mandiri untuk membebaskan kuota pinjam"
+                  >
+                    <RotateCcw class="w-3.5 h-3.5 text-slate-500 hover:text-rose-600 shrink-0" />
+                    <span>Kembalikan</span>
+                  </button>
+                </div>
                 <div 
                   v-else 
                   class="p-2.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-500 text-[11px] font-semibold flex items-center justify-center gap-1.5 text-center"
@@ -737,6 +747,7 @@
       :is-open="isEbookReaderOpen"
       :loan="selectedLoanForReading"
       @close="isEbookReaderOpen = false"
+      @return-ebook="handleReturnEbookFromReader"
     />
 
     <!-- Modal Konfirmasi Pembatalan Booking -->
@@ -774,6 +785,49 @@
       </div>
     </div>
 
+    <!-- Modal Konfirmasi Pengembalian Mandiri e-Book -->
+    <div v-if="loanToReturn" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
+      <div class="bg-white w-full max-w-sm rounded-3xl border border-slate-200 shadow-2xl p-6 text-center space-y-4 animate-in zoom-in-95 duration-200">
+        <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center mx-auto shadow-xs">
+          <BookMarked class="w-7 h-7" />
+        </div>
+        <div class="space-y-2">
+          <h3 class="text-base font-bold text-slate-900">Kembalikan e-Book Mandiri?</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Apakah Anda sudah selesai membaca dan ingin mengembalikan e-Book <strong>"{{ loanToReturn.bookTitle }}"</strong> sekarang?
+          </p>
+          <div class="p-3 rounded-2xl bg-emerald-50 border border-emerald-100 text-left text-xs text-emerald-900 space-y-1">
+            <div class="font-bold flex items-center gap-1.5 text-emerald-800">
+              <CheckCircle2 class="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Bebaskan Kuota Peminjaman</span>
+            </div>
+            <p class="text-[11px] text-emerald-700/90 leading-snug">
+              Setelah dikembalikan, 1 slot kuota peminjaman Anda akan langsung bebas sehingga Anda dapat langsung meminjam atau membaca buku lainnya.
+            </p>
+          </div>
+        </div>
+        <div class="pt-2 flex items-center justify-center gap-3">
+          <button 
+            type="button" 
+            @click="loanToReturn = null"
+            class="flex-1 px-4 py-2.5 rounded-full border border-slate-200 font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer text-xs"
+          >
+            Batal
+          </button>
+          <button 
+            type="button" 
+            @click="confirmReturnEbook"
+            :disabled="isReturningEbook"
+            class="flex-1 px-4 py-2.5 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition shadow-md shadow-indigo-200 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+          >
+            <RotateCcw v-if="!isReturningEbook" class="w-3.5 h-3.5" />
+            <Loader2 v-else class="w-3.5 h-3.5 animate-spin" />
+            <span>{{ isReturningEbook ? 'Memproses...' : 'Ya, Kembalikan' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Device Sessions Modal -->
     <DeviceSessionsModal 
       :isOpen="isDeviceSessionsOpen" 
@@ -804,7 +858,7 @@ import {
   UserCheck, QrCode, AlertTriangle, Clock, 
   Timer, BookmarkCheck, BookMarked, LogIn, KeyRound, UserCog,
   AlertCircle, CheckCircle2, Camera, Award, ShieldCheck, BookOpen, Sparkles, Laptop,
-  Smartphone, Lock, X, GraduationCap
+  Smartphone, Lock, X, GraduationCap, RotateCcw, Loader2
 } from 'lucide-vue-next';
 
 const store = useLibraryStore();
@@ -1049,6 +1103,34 @@ const confirmCancelMyBooking = async () => {
     bookingToCancel.value = null;
   } finally {
     isCancellingBooking.value = false;
+  }
+};
+
+// Pengembalian Mandiri e-Book oleh Member
+const loanToReturn = ref<Loan | null>(null);
+const isReturningEbook = ref(false);
+
+const promptReturnEbook = (loan: Loan) => {
+  loanToReturn.value = loan;
+};
+
+const handleReturnEbookFromReader = (loan: Loan) => {
+  loanToReturn.value = loan;
+};
+
+useModalBack(computed(() => !!loanToReturn.value), () => { loanToReturn.value = null; }, 'member_return_ebook');
+
+const confirmReturnEbook = async () => {
+  if (!loanToReturn.value) return;
+  isReturningEbook.value = true;
+  try {
+    await store.returnEbookSelf(loanToReturn.value.id);
+    if (selectedLoanForReading.value?.id === loanToReturn.value.id) {
+      isEbookReaderOpen.value = false;
+    }
+    loanToReturn.value = null;
+  } finally {
+    isReturningEbook.value = false;
   }
 };
 </script>

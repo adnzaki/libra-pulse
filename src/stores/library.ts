@@ -3471,7 +3471,7 @@ export const useLibraryStore = defineStore('library', {
       return this.createLoan(bookId, memberIdOrCard, days, handledBy);
     },
 
-    async returnLoan(loanId: string) {
+    async returnLoan(loanId: string, options?: { customToast?: string }) {
       const loan = this.loans.find(l => l.id === loanId);
       if (!loan) return { success: false };
 
@@ -3534,8 +3534,17 @@ export const useLibraryStore = defineStore('library', {
       // Reconcile all suspensions and sync any remaining updates
       await this.checkOverdueAndAutoSuspend();
 
-      this.showToast('✅ Buku berhasil dikembalikan!');
+      this.showToast(options?.customToast || '✅ Buku berhasil dikembalikan!');
       return { success: true };
+    },
+
+    async returnEbookSelf(loanId: string) {
+      const loan = this.loans.find(l => l.id === loanId);
+      if (!loan) return { success: false, error: 'Data peminjaman e-Book tidak ditemukan.' };
+
+      return this.returnLoan(loanId, {
+        customToast: `✅ e-Book "${loan.bookTitle}" berhasil dikembalikan! Kuota peminjaman Anda telah bebas kembali.`
+      });
     },
 
     async updateSuspendConfig(newConfig: Partial<SuspendConfig>) {

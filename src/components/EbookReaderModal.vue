@@ -100,6 +100,17 @@
           </span>
         </button>
 
+        <!-- Return e-Book Early Button -->
+        <button
+          v-if="!isExpired && loan"
+          @click="emit('return-ebook', loan)"
+          class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-rose-500/10 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 hover:text-white text-xs font-semibold transition cursor-pointer active:scale-95 shadow-xs"
+          title="Selesai membaca dan kembalikan e-Book sekarang untuk membebaskan kuota pinjam"
+        >
+          <RotateCcw class="w-3.5 h-3.5 text-rose-400" />
+          <span class="text-[11px] hidden sm:inline">Kembalikan e-Book</span>
+        </button>
+
         <!-- Close Button -->
         <button 
           @click="handleClose" 
@@ -621,7 +632,8 @@ import { useLibraryStore } from '../stores/library.js';
 import { 
   BookOpen, Lock, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, 
   X, Loader2, AlertTriangle, ShieldCheck, Sparkles, Eye, EyeOff, Shield,
-  Maximize, Minimize, ChevronDown, ChevronUp, AlignLeft, FileText, Type
+  Maximize, Minimize, ChevronDown, ChevronUp, AlignLeft, FileText, Type,
+  RotateCcw
 } from 'lucide-vue-next';
 
 // Configure pdfjs worker
@@ -632,7 +644,10 @@ const props = defineProps<{
   loan: Loan | null;
 }>();
 
-const emit = defineEmits(['close']);
+const emit = defineEmits<{
+  (e: 'close'): void;
+  (e: 'return-ebook', loan: Loan): void;
+}>();
 
 const router = useRouter();
 const store = useLibraryStore();
