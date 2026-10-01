@@ -261,7 +261,7 @@
         <div class="px-4 py-3 sm:px-6 sm:py-3.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/90 flex items-center justify-end gap-2 shrink-0">
           <button 
             @click="handleClose"
-            class="w-full sm:w-auto px-6 py-2.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 font-bold rounded-full text-xs transition cursor-pointer text-center active:scale-95 shadow-md shadow-black/40"
+            class="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 font-bold rounded-full text-xs transition cursor-pointer text-center active:scale-95 shadow-md shadow-black/40"
           >
             Tutup
           </button>
