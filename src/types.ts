@@ -224,3 +224,6 @@ export interface ChangelogItem {
   badge: string;
   iconName?: string;
 }
+
+export type AppTheme = 'light' | 'dark' | 'elegant';
+

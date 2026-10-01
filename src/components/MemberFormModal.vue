@@ -3,20 +3,20 @@
     v-if="isOpen" 
     class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-sm overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200"
   >
-    <div class="bg-white w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-lg sm:rounded-3xl rounded-none shadow-2xl border-0 sm:border sm:border-slate-100 overflow-hidden flex flex-col">
+    <div class="bg-white dark:bg-slate-900 w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-lg sm:rounded-3xl rounded-none shadow-2xl border-0 sm:border sm:border-slate-100 dark:sm:border-slate-800 overflow-hidden flex flex-col">
       
       <!-- Sticky Modal Header -->
-      <div class="px-4 sm:px-6 py-3.5 sm:py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/95 backdrop-blur-md shrink-0 sticky top-0 z-20">
+      <div class="px-4 sm:px-6 py-3.5 sm:py-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md shrink-0 sticky top-0 z-20">
         <div class="flex items-center gap-3">
-          <div class="w-9 sm:w-10 h-9 sm:h-10 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold shadow-sm shrink-0">
+          <div class="w-9 sm:w-10 h-9 sm:h-10 rounded-2xl bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 flex items-center justify-center font-bold shadow-sm shrink-0 border border-blue-200/60 dark:border-blue-900/40">
             <UserPlus v-if="!member" class="w-5 h-5" />
             <UserCheck v-else class="w-5 h-5" />
           </div>
           <div>
-            <h3 class="text-sm sm:text-base font-bold text-slate-900">
+            <h3 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
               {{ member ? 'Edit Data Anggota' : 'Daftarkan Anggota Baru' }}
             </h3>
-            <p class="text-[11px] sm:text-xs text-slate-500">
+            <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">
               {{ member ? `Perbarui informasi ${member.name}` : 'Buat kartu digital & QR anggota baru perpustakaan' }}
             </p>
           </div>
@@ -25,7 +25,7 @@
           @click="$emit('close')"
           type="button"
           aria-label="Tutup modal anggota"
-          class="p-2 sm:p-2.5 rounded-full hover:bg-slate-200/80 text-slate-500 hover:text-slate-800 transition cursor-pointer flex items-center justify-center shrink-0"
+          class="p-2 sm:p-2.5 rounded-full hover:bg-slate-200/80 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition cursor-pointer flex items-center justify-center shrink-0"
         >
           <X class="w-5 h-5" />
         </button>
@@ -38,13 +38,13 @@
         
         <!-- Avatar Upload Section -->
         <div>
-          <label class="block font-bold text-slate-700 mb-1.5">Foto Profil Anggota</label>
-          <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center gap-3.5">
+          <label class="block font-bold text-slate-700 dark:text-slate-200 mb-1.5">Foto Profil Anggota</label>
+          <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-850/70 border border-slate-200/80 dark:border-slate-800 flex items-center gap-3.5">
             <div class="relative shrink-0">
               <img 
                 :src="form.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80'" 
                 alt="Avatar" 
-                class="w-14 h-14 rounded-2xl object-cover border border-slate-200 bg-white shadow-xs"
+                class="w-14 h-14 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xs"
                 referrerpolicy="no-referrer"
               />
               <div 
@@ -58,10 +58,10 @@
             <div class="flex-1 space-y-1">
               <div class="flex items-center gap-2">
                 <label 
-                  class="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold rounded-xl text-[11px] cursor-pointer shadow-2xs transition flex items-center gap-1.5"
+                  class="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-[11px] cursor-pointer shadow-2xs transition flex items-center gap-1.5"
                   :class="{ 'opacity-50 pointer-events-none': isUploadingAvatar }"
                 >
-                  <Upload class="w-3.5 h-3.5 text-blue-600" />
+                  <Upload class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                   <span>{{ isUploadingAvatar ? 'Mengunggah...' : 'Upload Foto Profil' }}</span>
                   <input 
                     type="file" 
@@ -79,30 +79,30 @@
                   Hapus
                 </button>
               </div>
-              <p class="text-[10px] text-slate-400">Tersimpan di folder uploads/avatar perpustakaan.</p>
+              <p class="text-[10px] text-slate-400 dark:text-slate-500">Tersimpan di folder uploads/avatar perpustakaan.</p>
             </div>
           </div>
         </div>
 
         <!-- Full Name -->
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Nama Lengkap Anggota *</label>
+          <label class="block font-bold text-slate-700 dark:text-slate-200 mb-1">Nama Lengkap Anggota *</label>
           <input 
             v-model="form.name" 
             type="text" 
             required 
             placeholder="Contoh: Muhammad Farhan"
-            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-slate-800 text-xs transition"
+            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 outline-none text-xs transition"
           />
         </div>
 
         <!-- Tipe Pengguna: Guru atau Siswa (Default: Siswa) -->
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Tipe Pengguna / Keanggotaan Sekolah *</label>
+          <label class="block font-bold text-slate-700 dark:text-slate-200 mb-1">Tipe Pengguna / Keanggotaan Sekolah *</label>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <label 
               class="p-3 rounded-2xl border flex items-center gap-3 cursor-pointer transition"
-              :class="form.memberType === 'siswa' ? 'bg-blue-50/80 border-blue-500 text-blue-900 font-bold shadow-2xs' : 'bg-slate-50 border-slate-200 text-slate-600'"
+              :class="form.memberType === 'siswa' ? 'bg-blue-50/80 dark:bg-blue-950/60 border-blue-500 text-blue-900 dark:text-blue-200 font-bold shadow-2xs' : 'bg-slate-50 dark:bg-slate-850/70 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300'"
             >
               <input type="radio" v-model="form.memberType" value="siswa" class="text-blue-600" />
               <div>
@@ -110,13 +110,13 @@
                   <span>🎒</span>
                   <span>Siswa (Default)</span>
                 </div>
-                <div class="text-[10px] text-slate-400 font-normal">Siswa-siswi sekolah</div>
+                <div class="text-[10px] text-slate-400 dark:text-slate-500 font-normal">Siswa-siswi sekolah</div>
               </div>
             </label>
 
             <label 
               class="p-3 rounded-2xl border flex items-center gap-3 cursor-pointer transition"
-              :class="form.memberType === 'guru' ? 'bg-indigo-50/80 border-indigo-500 text-indigo-900 font-bold shadow-2xs' : 'bg-slate-50 border-slate-200 text-slate-600'"
+              :class="form.memberType === 'guru' ? 'bg-indigo-50/80 dark:bg-indigo-950/60 border-indigo-500 text-indigo-900 dark:text-indigo-200 font-bold shadow-2xs' : 'bg-slate-50 dark:bg-slate-850/70 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300'"
             >
               <input type="radio" v-model="form.memberType" value="guru" class="text-indigo-600" />
               <div>
@@ -124,7 +124,7 @@
                   <span>👨‍🏫</span>
                   <span>Guru</span>
                 </div>
-                <div class="text-[10px] text-slate-400 font-normal">Dewan Guru / Tenaga Pendidik</div>
+                <div class="text-[10px] text-slate-400 dark:text-slate-500 font-normal">Dewan Guru / Tenaga Pendidik</div>
               </div>
             </label>
           </div>
@@ -133,52 +133,52 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <!-- Email -->
           <div>
-            <label class="block font-bold text-slate-700 mb-1">Alamat Email *</label>
+            <label class="block font-bold text-slate-700 dark:text-slate-200 mb-1">Alamat Email *</label>
             <input 
               v-model="form.email" 
               type="email" 
               required 
               placeholder="farhan@gmail.com"
-              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-slate-800 text-xs transition"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 outline-none text-xs transition"
             />
           </div>
 
           <!-- Phone -->
           <div>
-            <label class="block font-bold text-slate-700 mb-1">No. WhatsApp / HP *</label>
+            <label class="block font-bold text-slate-700 dark:text-slate-200 mb-1">No. WhatsApp / HP *</label>
             <input 
               v-model="form.phone" 
               type="tel" 
               required 
               placeholder="+6281234567890"
-              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-slate-800 text-xs transition"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 outline-none text-xs transition"
             />
           </div>
         </div>
 
         <!-- Role -->
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Hak Akses / Peran</label>
+          <label class="block font-bold text-slate-700 dark:text-slate-200 mb-1">Hak Akses / Peran</label>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <label 
               class="p-3 rounded-2xl border flex items-center gap-3 cursor-pointer transition"
-              :class="form.role === 'member' ? 'bg-blue-50/70 border-blue-500 text-blue-900 font-bold' : 'bg-slate-50 border-slate-200 text-slate-600'"
+              :class="form.role === 'member' ? 'bg-blue-50/70 dark:bg-blue-950/60 border-blue-500 text-blue-900 dark:text-blue-200 font-bold' : 'bg-slate-50 dark:bg-slate-850/70 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300'"
             >
               <input type="radio" v-model="form.role" value="member" class="text-blue-600" />
               <div>
                 <div class="text-xs">Anggota Perpustakaan</div>
-                <div class="text-[10px] text-slate-400 font-normal">Peminjaman & booking buku</div>
+                <div class="text-[10px] text-slate-400 dark:text-slate-500 font-normal">Peminjaman & booking buku</div>
               </div>
             </label>
 
             <label 
               class="p-3 rounded-2xl border flex items-center gap-3 cursor-pointer transition"
-              :class="form.role === 'admin' ? 'bg-blue-50/70 border-blue-500 text-blue-900 font-bold' : 'bg-slate-50 border-slate-200 text-slate-600'"
+              :class="form.role === 'admin' ? 'bg-blue-50/70 dark:bg-blue-950/60 border-blue-500 text-blue-900 dark:text-blue-200 font-bold' : 'bg-slate-50 dark:bg-slate-850/70 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300'"
             >
               <input type="radio" v-model="form.role" value="admin" class="text-blue-600" />
               <div>
                 <div class="text-xs">Pengelola / Admin</div>
-                <div class="text-[10px] text-slate-400 font-normal">Akses penuh sirkulasi</div>
+                <div class="text-[10px] text-slate-400 dark:text-slate-500 font-normal">Akses penuh sirkulasi</div>
               </div>
             </label>
           </div>
@@ -186,37 +186,37 @@
 
         <!-- Address -->
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Alamat Domisili / Instansi</label>
+          <label class="block font-bold text-slate-700 dark:text-slate-200 mb-1">Alamat Domisili / Instansi</label>
           <textarea 
             v-model="form.address" 
             rows="2" 
             placeholder="Jl. Pustaka Indah No. 10, Jakarta"
-            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-slate-800 text-xs transition"
+            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 outline-none text-xs transition"
           ></textarea>
         </div>
 
         <!-- Section: Kata Sandi Akun & Konfirmasi -->
-        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-3">
+        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-850/70 border border-slate-200/90 dark:border-slate-800 space-y-3">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <KeyRound class="w-4 h-4 text-blue-600" />
-              <label class="block font-bold text-slate-800 text-xs">
+              <KeyRound class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <label class="block font-bold text-slate-800 dark:text-slate-200 text-xs">
                 {{ member ? 'Ganti Kata Sandi Akun (Opsional)' : 'Kata Sandi Akun Anggota *' }}
               </label>
             </div>
-            <span class="text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+            <span class="text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-full border border-blue-100 dark:border-blue-900/50">
               Min. 6 Karakter
             </span>
           </div>
 
-          <p class="text-[11px] text-slate-500">
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">
             {{ member ? 'Biarkan kosong jika tidak ingin mengubah kata sandi akun anggota ini.' : 'Kata sandi akan digunakan oleh anggota untuk login ke portal web atau kartu digital.' }}
           </p>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <!-- Input Password -->
             <div>
-              <label class="block text-[11px] font-semibold text-slate-700 mb-1">
+              <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 {{ member ? 'Kata Sandi Baru' : 'Kata Sandi *' }}
               </label>
               <div class="relative">
@@ -226,14 +226,14 @@
                   :required="!member"
                   minlength="6"
                   placeholder="Minimal 6 karakter"
-                  class="w-full pl-9 pr-9 py-2.5 rounded-xl border bg-white focus:ring-2 outline-none text-slate-800 text-xs transition"
-                  :class="passwordError && (!member || form.password) ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-100' : 'border-slate-200 focus:border-blue-500 focus:ring-blue-100'"
+                  class="w-full pl-9 pr-9 py-2.5 rounded-xl border bg-white dark:bg-slate-900 focus:ring-2 outline-none text-slate-800 dark:text-slate-100 text-xs transition"
+                  :class="passwordError && (!member || form.password) ? 'border-rose-300 dark:border-rose-700 focus:border-rose-500 focus:ring-rose-100 dark:focus:ring-rose-950' : 'border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-950'"
                 />
                 <Lock class="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                 <button 
                   type="button" 
                   @click="showPassword = !showPassword"
-                  class="absolute right-2.5 top-2.5 p-0.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  class="absolute right-2.5 top-2.5 p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                   tabindex="-1"
                 >
                   <Eye v-if="!showPassword" class="w-4 h-4" />
@@ -244,7 +244,7 @@
 
             <!-- Input Konfirmasi Password -->
             <div>
-              <label class="block text-[11px] font-semibold text-slate-700 mb-1">
+              <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Konfirmasi Kata Sandi {{ !member ? '*' : '' }}
               </label>
               <div class="relative">
@@ -254,14 +254,14 @@
                   :required="!member || !!form.password"
                   minlength="6"
                   placeholder="Ulangi kata sandi"
-                  class="w-full pl-9 pr-9 py-2.5 rounded-xl border bg-white focus:ring-2 outline-none text-slate-800 text-xs transition"
-                  :class="passwordError && (!member || form.password) ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-100' : 'border-slate-200 focus:border-blue-500 focus:ring-blue-100'"
+                  class="w-full pl-9 pr-9 py-2.5 rounded-xl border bg-white dark:bg-slate-900 focus:ring-2 outline-none text-slate-800 dark:text-slate-100 text-xs transition"
+                  :class="passwordError && (!member || form.password) ? 'border-rose-300 dark:border-rose-700 focus:border-rose-500 focus:ring-rose-100 dark:focus:ring-rose-950' : 'border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-950'"
                 />
                 <KeyRound class="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                 <button 
                   type="button" 
                   @click="showConfirmPassword = !showConfirmPassword"
-                  class="absolute right-2.5 top-2.5 p-0.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  class="absolute right-2.5 top-2.5 p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                   tabindex="-1"
                 >
                   <Eye v-if="!showConfirmPassword" class="w-4 h-4" />
@@ -273,34 +273,34 @@
 
           <!-- Indikator Validasi & Kekuatan Kata Sandi -->
           <div v-if="form.password || form.confirmPassword || passwordError" class="space-y-1.5 pt-1">
-            <div v-if="passwordError" class="text-[11px] text-rose-600 flex items-center gap-1.5 font-semibold bg-rose-50 p-2 rounded-xl border border-rose-100">
+            <div v-if="passwordError" class="text-[11px] text-rose-600 dark:text-rose-400 flex items-center gap-1.5 font-semibold bg-rose-50 dark:bg-rose-950/40 p-2 rounded-xl border border-rose-100 dark:border-rose-900/50">
               <AlertCircle class="w-3.5 h-3.5 shrink-0" />
               <span>{{ passwordError }}</span>
             </div>
 
-            <div v-else-if="form.password && form.confirmPassword && form.password === form.confirmPassword && form.password.length >= 6" class="text-[11px] text-emerald-700 flex items-center gap-1.5 font-semibold bg-emerald-50 p-2 rounded-xl border border-emerald-100">
-              <CheckCircle2 class="w-3.5 h-3.5 shrink-0 text-emerald-600" />
+            <div v-else-if="form.password && form.confirmPassword && form.password === form.confirmPassword && form.password.length >= 6" class="text-[11px] text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5 font-semibold bg-emerald-50 dark:bg-emerald-950/40 p-2 rounded-xl border border-emerald-100 dark:border-emerald-900/50">
+              <CheckCircle2 class="w-3.5 h-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
               <span>Kata sandi cocok dan memenuhi syarat ({{ form.password.length }} karakter)</span>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2 text-[10px] text-slate-500 pt-0.5">
+            <div class="flex flex-wrap items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 pt-0.5">
               <span class="inline-flex items-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full" :class="form.password.length >= 6 ? 'bg-emerald-500' : 'bg-slate-300'"></span>
+                <span class="w-1.5 h-1.5 rounded-full" :class="form.password.length >= 6 ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'"></span>
                 Min. 6 karakter
               </span>
               <span>•</span>
               <span class="inline-flex items-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full" :class="/[0-9]/.test(form.password) ? 'bg-emerald-500' : 'bg-slate-300'"></span>
+                <span class="w-1.5 h-1.5 rounded-full" :class="/[0-9]/.test(form.password) ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'"></span>
                 Ada angka
               </span>
               <span>•</span>
               <span class="inline-flex items-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full" :class="/[a-zA-Z]/.test(form.password) ? 'bg-emerald-500' : 'bg-slate-300'"></span>
+                <span class="w-1.5 h-1.5 rounded-full" :class="/[a-zA-Z]/.test(form.password) ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'"></span>
                 Ada huruf
               </span>
               <span>•</span>
               <span class="inline-flex items-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full" :class="form.password && form.confirmPassword && form.password === form.confirmPassword ? 'bg-emerald-500' : 'bg-slate-300'"></span>
+                <span class="w-1.5 h-1.5 rounded-full" :class="form.password && form.confirmPassword && form.password === form.confirmPassword ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'"></span>
                 Konfirmasi cocok
               </span>
             </div>
@@ -308,25 +308,25 @@
         </div>
 
         <!-- Info Card -->
-        <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-2.5 text-[11px] text-slate-600">
-          <QrCode class="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-          <p>Nomor Kartu Anggota (misal: <strong class="text-slate-800 font-mono">LIB-2026-XXXX</strong>) dan barcode QR digital akan otomatis dibuat dan siap dicetak/di-scan.</p>
+        <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-850/70 border border-slate-200/80 dark:border-slate-800 flex items-start gap-2.5 text-[11px] text-slate-600 dark:text-slate-300">
+          <QrCode class="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+          <p>Nomor Kartu Anggota (misal: <strong class="text-slate-800 dark:text-slate-100 font-mono">LIB-2026-XXXX</strong>) dan barcode QR digital akan otomatis dibuat dan siap dicetak/di-scan.</p>
         </div>
       </div>
 
       <!-- Sticky Action Buttons Footer -->
-      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 backdrop-blur-md border-t border-slate-100 flex items-center justify-end gap-3 shrink-0 sticky bottom-0 z-20">
+      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3 shrink-0 sticky bottom-0 z-20">
         <button 
           type="button" 
           @click="$emit('close')"
-          class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 hover:bg-slate-200/60 transition cursor-pointer"
+          class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
         >
           Batal
         </button>
         <button 
           type="submit" 
           :disabled="isSubmitting"
-          class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+          class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-slate-900/25 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
         >
           <Check class="w-4 h-4" />
           {{ member ? 'Simpan Perubahan' : 'Daftarkan Anggota' }}

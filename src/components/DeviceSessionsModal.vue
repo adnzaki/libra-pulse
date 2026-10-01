@@ -9,23 +9,23 @@
         class="bg-white text-slate-900 w-full max-w-full sm:max-w-2xl max-h-[calc(100dvh-1.25rem)] sm:max-h-[90vh] rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200/80 animate-in zoom-in-95 duration-200 my-auto"
       >
         <!-- Modal Header -->
-        <div class="px-3.5 py-3 sm:px-6 sm:py-4 border-b border-slate-100 flex items-center justify-between gap-2.5 bg-slate-50/90 shrink-0 w-full">
+        <div class="px-3.5 py-3 sm:px-6 sm:py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2.5 bg-slate-50/90 dark:bg-slate-900/90 shrink-0 w-full">
           <div class="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shrink-0">
+            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-900/60 shrink-0">
               <Laptop class="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div class="min-w-0 flex-1">
-              <h2 class="font-extrabold text-xs sm:text-base text-slate-900 tracking-tight truncate sm:whitespace-normal">
+              <h2 class="font-extrabold text-xs sm:text-base text-slate-900 dark:text-white tracking-tight truncate sm:whitespace-normal">
                 Manajemen Sesi & Perangkat
               </h2>
-              <p class="text-[10px] sm:text-xs text-slate-500 line-clamp-1 sm:line-clamp-none">
+              <p class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 line-clamp-1 sm:line-clamp-none">
                 Pantau perangkat login aktif dan kelola hak akses Perangkat Utama
               </p>
             </div>
           </div>
           <button 
             @click="handleClose"
-            class="w-8 h-8 rounded-full bg-slate-200/80 hover:bg-slate-300 active:bg-slate-400 text-slate-600 flex items-center justify-center transition cursor-pointer shrink-0 ml-1 active:scale-95"
+            class="w-8 h-8 rounded-full bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition cursor-pointer shrink-0 ml-1 active:scale-95"
             aria-label="Tutup Modal"
           >
             <X class="w-4 h-4" />
@@ -38,18 +38,18 @@
           <!-- Banner Status Perangkat Saat Ini -->
           <div 
             v-if="store.isCurrentDeviceMain"
-            class="p-3.5 sm:p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-emerald-900"
+            class="p-3.5 sm:p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-emerald-900 dark:text-emerald-200"
           >
             <div class="flex items-start gap-2.5 sm:gap-3 min-w-0 flex-1">
               <div class="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5 sm:mt-0">
                 <Crown class="w-4 h-4" />
               </div>
               <div class="min-w-0 flex-1">
-                <div class="font-bold flex flex-wrap items-center gap-1.5 text-emerald-950 text-xs sm:text-sm">
+                <div class="font-bold flex flex-wrap items-center gap-1.5 text-emerald-950 dark:text-emerald-100 text-xs sm:text-sm">
                   <span>Perangkat Ini Adalah Perangkat Utama</span>
                   <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 </div>
-                <p class="text-[11px] text-emerald-700 mt-0.5 leading-relaxed">
+                <p class="text-[11px] text-emerald-700 dark:text-emerald-300 mt-0.5 leading-relaxed">
                   Anda memiliki wewenang penuh untuk mencabut sesi login aktif pada perangkat lain demi mengamankan akun Anda.
                 </p>
               </div>
@@ -59,7 +59,7 @@
             <button 
               v-if="otherSessionsCount > 0"
               @click="confirmRevokeAll"
-              class="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-full text-xs transition flex items-center justify-center gap-1.5 shrink-0 cursor-pointer shadow-xs active:scale-95"
+              class="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-full text-xs transition flex items-center justify-center gap-1.5 shrink-0 cursor-pointer shadow-md shadow-slate-900/30 active:scale-95"
             >
               <LogOut class="w-3.5 h-3.5" />
               <span>Cabut Semua Perangkat Lain ({{ otherSessionsCount }})</span>
@@ -69,15 +69,15 @@
           <!-- Banner Jika Perangkat Ini Bukan Utama -->
           <div 
             v-else-if="store.userHasMainDevice"
-            class="p-3.5 sm:p-4 rounded-2xl bg-blue-50/80 border border-blue-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-blue-900"
+            class="p-3.5 sm:p-4 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-blue-900 dark:text-blue-200"
           >
             <div class="flex items-start gap-2.5 sm:gap-3 min-w-0 flex-1">
-              <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 border border-blue-200 mt-0.5 sm:mt-0">
+              <div class="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 flex items-center justify-center shrink-0 border border-blue-200 dark:border-blue-800/60 mt-0.5 sm:mt-0">
                 <ShieldAlert class="w-4 h-4" />
               </div>
               <div class="min-w-0 flex-1">
-                <div class="font-bold text-blue-950 text-xs sm:text-sm">Perangkat Ini Belum Menjadi Perangkat Utama</div>
-                <p class="text-[11px] text-blue-700 mt-0.5 leading-relaxed">
+                <div class="font-bold text-blue-950 dark:text-blue-100 text-xs sm:text-sm">Perangkat Ini Belum Menjadi Perangkat Utama</div>
+                <p class="text-[11px] text-blue-700 dark:text-blue-300 mt-0.5 leading-relaxed">
                   Hanya Perangkat Utama yang dapat mencabut sesi login di perangkat lain. Ingin menjadikan perangkat ini sebagai yang utama?
                 </p>
               </div>
@@ -85,7 +85,7 @@
 
             <button 
               @click="openMakeMainModal"
-              class="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full text-xs transition flex items-center justify-center gap-1.5 shrink-0 cursor-pointer shadow-xs active:scale-95"
+              class="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full text-xs transition flex items-center justify-center gap-1.5 shrink-0 cursor-pointer shadow-md shadow-slate-900/30 active:scale-95"
             >
               <Crown class="w-3.5 h-3.5 text-amber-300" />
               <span>Jadikan Perangkat Utama</span>
@@ -95,15 +95,15 @@
           <!-- Banner Jika Belum Ada Perangkat Utama Sama Sekali -->
           <div 
             v-else
-            class="p-3.5 sm:p-4 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-900"
+            class="p-3.5 sm:p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-900 dark:text-amber-200"
           >
             <div class="flex items-start gap-2.5 sm:gap-3 min-w-0 flex-1">
-              <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 border border-amber-200 mt-0.5 sm:mt-0">
+              <div class="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0 border border-amber-200 dark:border-amber-800/60 mt-0.5 sm:mt-0">
                 <Crown class="w-4 h-4" />
               </div>
               <div class="min-w-0 flex-1">
-                <div class="font-bold text-amber-950 text-xs sm:text-sm">Belum Ada Perangkat Utama Ditetapkan</div>
-                <p class="text-[11px] text-amber-700 mt-0.5 leading-relaxed">
+                <div class="font-bold text-amber-950 dark:text-amber-100 text-xs sm:text-sm">Belum Ada Perangkat Utama Ditetapkan</div>
+                <p class="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5 leading-relaxed">
                   Tetapkan perangkat ini sebagai Perangkat Utama dengan verifikasi email untuk mengontrol sesi akun Anda.
                 </p>
               </div>
@@ -111,7 +111,7 @@
 
             <button 
               @click="openMakeMainModal"
-              class="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-full text-xs transition flex items-center justify-center gap-1.5 shrink-0 cursor-pointer shadow-xs active:scale-95"
+              class="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-full text-xs transition flex items-center justify-center gap-1.5 shrink-0 cursor-pointer shadow-md shadow-black/40 active:scale-95"
             >
               <Crown class="w-3.5 h-3.5 text-amber-200" />
               <span>Jadikan Perangkat Utama</span>
@@ -122,10 +122,10 @@
           <div>
             <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
               <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0">
-                <h3 class="font-extrabold text-[11px] sm:text-xs text-slate-700 uppercase tracking-wider">
+                <h3 class="font-extrabold text-[11px] sm:text-xs text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                   Daftar Sesi Login Aktif ({{ store.myDeviceSessions.length }})
                 </h3>
-                <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[9px] sm:text-[10px] font-bold whitespace-nowrap">
+                <span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[9px] sm:text-[10px] font-bold whitespace-nowrap">
                   Cloud Firestore Real-time
                 </span>
               </div>
@@ -133,7 +133,7 @@
                 @click="refreshSessions"
                 type="button"
                 :disabled="isRefreshing"
-                class="text-[11px] text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 disabled:opacity-50 transition active:scale-95"
+                class="text-[11px] text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 disabled:opacity-50 transition active:scale-95"
               >
                 <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': isRefreshing }" />
                 <span class="text-[11px]">Perbarui</span>
@@ -146,13 +146,13 @@
                 v-for="session in store.myDeviceSessions" 
                 :key="session.id"
                 class="p-3.5 sm:p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full min-w-0"
-                :class="session.isCurrentDevice ? 'bg-blue-50/40 border-blue-200 shadow-xs' : 'bg-white border-slate-200/80 hover:border-slate-300'"
+                :class="session.isCurrentDevice ? 'bg-blue-50/40 dark:bg-slate-900/90 border-blue-200 dark:border-blue-800/60 shadow-xs' : 'bg-white dark:bg-slate-900/60 border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'"
               >
                 <!-- Device Info & Icon -->
                 <div class="flex items-start gap-3 min-w-0 flex-1">
                   <div 
                     class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 border mt-0.5"
-                    :class="session.isCurrentDevice ? 'bg-blue-600 text-white border-blue-700 shadow-xs' : 'bg-slate-100 text-slate-600 border-slate-200'"
+                    :class="session.isCurrentDevice ? 'bg-blue-600 text-white border-blue-700 shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'"
                   >
                     <Smartphone v-if="session.deviceType === 'mobile'" class="w-4 h-4 sm:w-5 sm:h-5" />
                     <Tablet v-else-if="session.deviceType === 'tablet'" class="w-4 h-4 sm:w-5 sm:h-5" />
@@ -161,48 +161,48 @@
 
                   <div class="space-y-1 min-w-0 flex-1">
                     <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                      <span class="font-bold text-xs sm:text-sm text-slate-900 break-words">{{ session.deviceName }}</span>
+                      <span class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white break-words">{{ session.deviceName }}</span>
                       
                       <!-- Badge Perangkat Ini -->
                       <span 
                         v-if="session.isCurrentDevice"
-                        class="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-extrabold bg-blue-100 text-blue-800 border border-blue-200 flex items-center gap-1 whitespace-nowrap"
+                        class="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-extrabold bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex items-center gap-1 whitespace-nowrap"
                       >
-                        <span class="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse"></span>
                         Perangkat Ini
                       </span>
 
                       <!-- Badge Perangkat Utama -->
                       <span 
                         v-if="session.isMainDevice"
-                        class="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1 whitespace-nowrap"
+                        class="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-extrabold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1 whitespace-nowrap"
                       >
-                        <Crown class="w-3 h-3 text-emerald-600" />
+                        <Crown class="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                         Perangkat Utama
                       </span>
                     </div>
 
-                    <div class="text-[10px] sm:text-[11px] text-slate-500 flex flex-wrap items-center gap-y-1 gap-x-2.5">
-                      <span>Peramban: <strong class="text-slate-700">{{ session.browser || 'Web' }}</strong></span>
-                      <span>OS: <strong class="text-slate-700">{{ session.os || 'Lainnya' }}</strong></span>
+                    <div class="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-y-1 gap-x-2.5">
+                      <span>Peramban: <strong class="text-slate-700 dark:text-slate-300">{{ session.browser || 'Web' }}</strong></span>
+                      <span>OS: <strong class="text-slate-700 dark:text-slate-300">{{ session.os || 'Lainnya' }}</strong></span>
                       <span class="flex items-center gap-1">
                         Terakhir Aktif:
                         <span v-if="isOnlineNow(session)" class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
-                        <strong :class="isOnlineNow(session) ? 'text-emerald-700 font-semibold' : 'text-slate-700'">{{ formatRelativeTime(session.lastActive, session.isCurrentDevice) }}</strong>
+                        <strong :class="isOnlineNow(session) ? 'text-emerald-700 dark:text-emerald-400 font-semibold' : 'text-slate-700 dark:text-slate-300'">{{ formatRelativeTime(session.lastActive, session.isCurrentDevice) }}</strong>
                       </span>
                     </div>
                   </div>
                 </div>
 
                 <!-- Actions per session -->
-                <div class="flex items-center gap-2 self-stretch sm:self-center justify-end sm:justify-start shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                <div class="flex items-center gap-2 self-stretch sm:self-center justify-end sm:justify-start shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800">
                   
                   <!-- Jika sesi ini adalah Perangkat Ini -->
                   <template v-if="session.isCurrentDevice">
                     <button 
                       v-if="!session.isMainDevice"
                       @click="openMakeMainModal"
-                      class="px-3.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-bold rounded-full text-[11px] transition flex items-center gap-1 cursor-pointer active:scale-95"
+                      class="px-3.5 py-1.5 bg-blue-50 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-slate-700 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-slate-700 font-bold rounded-full text-[11px] transition flex items-center gap-1 cursor-pointer active:scale-95 shadow-md shadow-black/40"
                       title="Jadikan perangkat ini sebagai Perangkat Utama"
                     >
                       <Crown class="w-3.5 h-3.5 text-amber-500" />
@@ -210,9 +210,9 @@
                     </button>
                     <span 
                       v-else
-                      class="text-[11px] text-emerald-700 font-bold flex items-center gap-1 px-3 py-1 bg-emerald-50 rounded-full border border-emerald-200"
+                      class="text-[11px] text-emerald-700 dark:text-emerald-300 font-bold flex items-center gap-1 px-3 py-1 bg-emerald-50 dark:bg-emerald-950/60 rounded-full border border-emerald-200 dark:border-emerald-800"
                     >
-                      <CheckCircle2 class="w-3.5 h-3.5 text-emerald-600" />
+                      <CheckCircle2 class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                       <span>Aktif Sebagai Utama</span>
                     </span>
                   </template>
@@ -223,7 +223,7 @@
                     <button 
                       v-if="store.isCurrentDeviceMain"
                       @click="confirmRevokeSession(session)"
-                      class="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold rounded-full text-[11px] transition flex items-center gap-1 cursor-pointer active:scale-95"
+                      class="px-3.5 py-1.5 bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 font-bold rounded-full text-[11px] transition flex items-center gap-1 cursor-pointer active:scale-95 shadow-md shadow-black/40"
                       title="Cabut sesi login perangkat ini"
                     >
                       <Trash2 class="w-3.5 h-3.5 text-rose-500" />
@@ -232,7 +232,7 @@
                     
                     <span 
                       v-else
-                      class="text-[10px] text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200"
+                      class="text-[10px] text-slate-400 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-700"
                       title="Hanya Perangkat Utama yang dapat mencabut sesi ini"
                     >
                       Terkunci (Bukan Utama)
@@ -245,12 +245,12 @@
           </div>
 
           <!-- Catatan Keamanan / Petunjuk Informasi -->
-          <div class="p-3 sm:p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-600 text-[11px] space-y-1">
-            <div class="font-bold text-slate-800 flex items-center gap-1.5">
-              <ShieldCheck class="w-4 h-4 text-blue-600 shrink-0" />
+          <div class="p-3 sm:p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 text-[11px] space-y-1">
+            <div class="font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
+              <ShieldCheck class="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
               <span>Tentang Keamanan Perangkat Utama</span>
             </div>
-            <p class="text-slate-500 leading-relaxed">
+            <p class="text-slate-500 dark:text-slate-400 leading-relaxed">
               Perangkat Utama adalah perangkat terpercaya Anda. Ketika Anda mencabut sesi perangkat lain, pengguna di perangkat tersebut akan secara otomatis ter-logout dari sistem secara seketika (real-time).
             </p>
           </div>
@@ -258,10 +258,10 @@
         </div>
 
         <!-- Modal Footer -->
-        <div class="px-4 py-3 sm:px-6 sm:py-3.5 border-t border-slate-100 bg-slate-50/90 flex items-center justify-end gap-2 shrink-0">
+        <div class="px-4 py-3 sm:px-6 sm:py-3.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/90 flex items-center justify-end gap-2 shrink-0">
           <button 
             @click="handleClose"
-            class="w-full sm:w-auto px-6 py-2.5 bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-800 font-bold rounded-full text-xs transition cursor-pointer text-center active:scale-95"
+            class="w-full sm:w-auto px-6 py-2.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 font-bold rounded-full text-xs transition cursor-pointer text-center active:scale-95 shadow-md shadow-black/40"
           >
             Tutup
           </button>
@@ -276,21 +276,21 @@
       @click.self="isVerifyModalOpen = false"
     >
       <div 
-        class="bg-white text-slate-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200 max-h-[95dvh] flex flex-col"
+        class="bg-white dark:bg-slate-900 text-slate-900 dark:text-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200 max-h-[95dvh] flex flex-col"
       >
-        <div class="px-4 py-3.5 sm:px-5 sm:py-4 border-b border-slate-100 flex items-center justify-between gap-2 bg-blue-50/50 shrink-0">
+        <div class="px-4 py-3.5 sm:px-5 sm:py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 bg-blue-50/50 dark:bg-slate-900/90 shrink-0">
           <div class="flex items-center gap-2.5 min-w-0 flex-1">
             <div class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs shrink-0">
               <Crown class="w-4 h-4 text-amber-300" />
             </div>
             <div class="min-w-0 flex-1">
-              <h3 class="font-bold text-sm text-slate-900 truncate">Verifikasi Perangkat Utama</h3>
-              <p class="text-[11px] text-slate-500 truncate">Kirim kode verifikasi ke email</p>
+              <h3 class="font-bold text-sm text-slate-900 dark:text-white truncate">Verifikasi Perangkat Utama</h3>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Kirim kode verifikasi ke email</p>
             </div>
           </div>
           <button 
             @click="isVerifyModalOpen = false"
-            class="w-8 h-8 rounded-full bg-slate-200/70 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition cursor-pointer shrink-0"
+            class="w-8 h-8 rounded-full bg-slate-200/70 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 flex items-center justify-center transition cursor-pointer shrink-0"
             aria-label="Tutup"
           >
             <X class="w-4 h-4" />
@@ -299,11 +299,11 @@
 
         <div class="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1">
           <!-- State: Sebelum Kode Dikirim atau Sedang Menunggu Input Kode -->
-          <div class="text-xs text-slate-600 space-y-2">
+          <div class="text-xs text-slate-600 dark:text-slate-300 space-y-2">
             <p>
               Untuk menetapkan perangkat <strong>{{ currentDeviceName }}</strong> sebagai <strong>Perangkat Utama</strong>, sistem akan mengirimkan 6-digit kode verifikasi ke email akun Anda:
             </p>
-            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 font-mono font-bold text-slate-800 text-center text-xs break-all">
+            <div class="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 font-mono font-bold text-slate-800 dark:text-slate-200 text-center text-xs break-all">
               {{ maskedEmail }}
             </div>
           </div>
@@ -311,7 +311,7 @@
           <!-- Alert Error jika ada -->
           <div 
             v-if="verificationError"
-            class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2"
+            class="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2"
           >
             <AlertCircle class="w-4 h-4 shrink-0" />
             <span>{{ verificationError }}</span>
@@ -320,12 +320,12 @@
           <!-- Simulated Code Notice untuk kemudahan preview -->
           <div 
             v-if="simulatedCodeNotice"
-            class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex flex-wrap items-center justify-between gap-2"
+            class="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-200 text-xs flex flex-wrap items-center justify-between gap-2"
           >
             <span class="break-words">Kode pengujian (simulasi): <strong>{{ simulatedCodeNotice }}</strong></span>
             <button 
               @click="otpCode = simulatedCodeNotice"
-              class="px-2.5 py-1 bg-amber-200 hover:bg-amber-300 rounded-lg text-[10px] font-bold text-amber-900 cursor-pointer"
+              class="px-2.5 py-1 bg-amber-200 dark:bg-amber-800 hover:bg-amber-300 dark:hover:bg-amber-700 rounded-lg text-[10px] font-bold text-amber-900 dark:text-amber-100 cursor-pointer"
             >
               Isi Otomatis
             </button>
@@ -333,7 +333,7 @@
 
           <!-- Form Input OTP -->
           <div class="space-y-1.5">
-            <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+            <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
               Masukkan 6-Digit Kode Verifikasi
             </label>
             <input 
@@ -341,40 +341,40 @@
               type="text"
               maxlength="6"
               placeholder="Contoh: 123456"
-              class="w-full px-4 py-3 bg-slate-50 border border-slate-300 focus:border-blue-500 focus:bg-white rounded-xl text-center text-xl font-mono font-bold tracking-widest text-slate-900 outline-none transition"
+              class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 rounded-xl text-center text-xl font-mono font-bold tracking-widest text-slate-900 dark:text-white outline-none transition"
               @keyup.enter="handleVerifySubmit"
               autofocus
             />
           </div>
 
           <!-- Resend Timer -->
-          <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+          <div class="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-1">
             <span>Tidak menerima email?</span>
             <button 
               v-if="resendCountdown === 0"
               @click="requestOtpCode"
               :disabled="isSendingOtp"
-              class="text-blue-600 hover:text-blue-700 font-bold cursor-pointer transition disabled:opacity-50"
+              class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-bold cursor-pointer transition disabled:opacity-50"
             >
               {{ isSendingOtp ? 'Mengirim...' : 'Kirim Ulang Kode' }}
             </button>
-            <span v-else class="text-slate-400 font-medium">
+            <span v-else class="text-slate-400 dark:text-slate-500 font-medium">
               Kirim ulang dalam {{ resendCountdown }}s
             </span>
           </div>
         </div>
 
-        <div class="px-4 py-3 sm:px-5 sm:py-3.5 border-t border-slate-100 bg-slate-50 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 shrink-0">
+        <div class="px-4 py-3 sm:px-5 sm:py-3.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 shrink-0">
           <button 
             @click="isVerifyModalOpen = false"
-            class="w-full sm:w-auto px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-full text-xs transition cursor-pointer text-center"
+            class="w-full sm:w-auto px-5 py-2.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-full text-xs transition cursor-pointer text-center"
           >
             Batal
           </button>
           <button 
             @click="handleVerifySubmit"
             :disabled="isVerifying || !otpCode || otpCode.length < 6"
-            class="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-blue-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 text-center"
+            class="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-slate-900/30 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 text-center"
           >
             <Crown class="w-3.5 h-3.5 text-amber-300" />
             <span>{{ isVerifying ? 'Memverifikasi...' : 'Verifikasi & Jadikan Utama' }}</span>
@@ -390,31 +390,31 @@
       @click.self="revokeTargetSession = null"
     >
       <div 
-        class="bg-white text-slate-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200"
+        class="bg-white dark:bg-slate-900 text-slate-900 dark:text-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200"
       >
         <div class="p-5 sm:p-6 text-center space-y-3 sm:space-y-4">
-          <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto border border-rose-100 shadow-xs">
+          <div class="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto border border-rose-100 dark:border-rose-900/50 shadow-xs">
             <Trash2 class="w-6 h-6" />
           </div>
           <div>
-            <h3 class="font-extrabold text-base text-slate-900">Cabut Sesi Perangkat?</h3>
-            <p class="text-xs text-slate-500 mt-1">
-              Apakah Anda yakin ingin mencabut sesi login pada <strong class="text-slate-800 break-words">{{ revokeTargetSession.deviceName }}</strong>? Pengguna pada perangkat tersebut akan langsung dikeluarkan (logout) dari aplikasi.
+            <h3 class="font-extrabold text-base text-slate-900 dark:text-white">Cabut Sesi Perangkat?</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Apakah Anda yakin ingin mencabut sesi login pada <strong class="text-slate-800 dark:text-slate-200 break-words">{{ revokeTargetSession.deviceName }}</strong>? Pengguna pada perangkat tersebut akan langsung dikeluarkan (logout) dari aplikasi.
             </p>
           </div>
         </div>
 
-        <div class="px-4 py-3 sm:px-5 sm:py-3.5 border-t border-slate-100 bg-slate-50 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2">
+        <div class="px-4 py-3 sm:px-5 sm:py-3.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2">
           <button 
             @click="revokeTargetSession = null"
-            class="w-full sm:w-auto px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-full text-xs transition cursor-pointer text-center"
+            class="w-full sm:w-auto px-5 py-2.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-full text-xs transition cursor-pointer text-center"
           >
             Batal
           </button>
           <button 
             @click="executeRevokeSession"
             :disabled="isRevoking"
-            class="w-full sm:w-auto px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-full text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-rose-200 disabled:opacity-50 active:scale-95 text-center"
+            class="w-full sm:w-auto px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-full text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-slate-900/30 disabled:opacity-50 active:scale-95 text-center"
           >
             <Trash2 class="w-3.5 h-3.5" />
             <span>{{ isRevoking ? 'Mencabut...' : 'Ya, Cabut Sesi' }}</span>
@@ -430,31 +430,31 @@
       @click.self="isRevokeAllConfirmOpen = false"
     >
       <div 
-        class="bg-white text-slate-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200"
+        class="bg-white dark:bg-slate-900 text-slate-900 dark:text-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200"
       >
         <div class="p-5 sm:p-6 text-center space-y-3 sm:space-y-4">
-          <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto border border-rose-100 shadow-xs">
+          <div class="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto border border-rose-100 dark:border-rose-900/50 shadow-xs">
             <LogOut class="w-6 h-6" />
           </div>
           <div>
-            <h3 class="font-extrabold text-base text-slate-900">Cabut Semua Sesi Lain?</h3>
-            <p class="text-xs text-slate-500 mt-1">
+            <h3 class="font-extrabold text-base text-slate-900 dark:text-white">Cabut Semua Sesi Lain?</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
               Tindakan ini akan mengeluarkan (logout) akun Anda dari seluruh {{ otherSessionsCount }} perangkat lain yang sedang aktif. Hanya perangkat utama ini yang akan tetap login.
             </p>
           </div>
         </div>
 
-        <div class="px-4 py-3 sm:px-5 sm:py-3.5 border-t border-slate-100 bg-slate-50 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2">
+        <div class="px-4 py-3 sm:px-5 sm:py-3.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2">
           <button 
             @click="isRevokeAllConfirmOpen = false"
-            class="w-full sm:w-auto px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-full text-xs transition cursor-pointer text-center"
+            class="w-full sm:w-auto px-5 py-2.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-full text-xs transition cursor-pointer text-center"
           >
             Batal
           </button>
           <button 
             @click="executeRevokeAll"
             :disabled="isRevoking"
-            class="w-full sm:w-auto px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-full text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-rose-200 disabled:opacity-50 active:scale-95 text-center"
+            class="w-full sm:w-auto px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-full text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-slate-900/30 disabled:opacity-50 active:scale-95 text-center"
           >
             <LogOut class="w-3.5 h-3.5" />
             <span>{{ isRevoking ? 'Memproses...' : 'Ya, Cabut Semua' }}</span>

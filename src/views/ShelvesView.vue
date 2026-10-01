@@ -22,16 +22,16 @@
           v-if="hasCustomOrder"
           @click="handleResetOrder"
           :disabled="isReordering"
-          class="px-3.5 sm:px-4 py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 active:scale-95"
+          class="px-3.5 sm:px-4 py-2.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 active:scale-95 border border-slate-200 dark:border-slate-700"
           title="Kembalikan urutan rak ke urutan standar (kode/tanggal)"
         >
-          <RotateCcw class="w-3.5 h-3.5 text-slate-500" />
+          <RotateCcw class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
           <span>Reset Urutan</span>
         </button>
 
         <button 
           @click="openAddShelfModal"
-          class="w-full sm:w-auto px-4 sm:px-5 py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-200 transition flex items-center justify-center gap-2 shrink-0 cursor-pointer active:scale-95"
+          class="w-full sm:w-auto px-4 sm:px-5 py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-slate-900/25 transition flex items-center justify-center gap-2 shrink-0 cursor-pointer active:scale-95"
         >
           <Plus class="w-4 h-4" />
           Tambah Rak Baru
@@ -39,7 +39,7 @@
       </div>
 
       <div v-else class="text-right">
-        <span class="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-500 bg-slate-50 px-3.5 py-1.5 rounded-full border border-slate-200/80">
+        <span class="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-1.5 rounded-full border border-slate-200/80 dark:border-slate-700">
           <Eye class="w-3.5 h-3.5 text-slate-400" />
           Mode Katalog Publik (Hanya Lihat)
         </span>
@@ -49,17 +49,17 @@
     <!-- Drag & Drop Sorting Info Banner (Admin vs Member) -->
     <div 
       v-if="store.isAdmin" 
-      class="p-4 rounded-3xl bg-gradient-to-r from-blue-50/90 via-indigo-50/60 to-white border border-blue-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+      class="p-4 rounded-3xl bg-gradient-to-r from-blue-50/90 via-indigo-50/60 to-white dark:from-slate-900/90 dark:via-blue-950/40 dark:to-slate-900 border border-blue-200/80 dark:border-blue-900/50 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
     >
       <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-blue-200">
+        <div class="w-9 h-9 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-slate-900/25">
           <GripVertical class="w-4 h-4 animate-pulse" />
         </div>
         <div>
-          <div class="font-extrabold text-slate-900 flex items-center gap-2 flex-wrap">
+          <div class="font-extrabold text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
             <span>Fitur Sorting Posisi Rak Aktif</span>
             <span class="px-2 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold">Khusus Admin</span>
-            <span v-if="hasCustomOrder" class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+            <span v-if="hasCustomOrder" class="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 text-[10px] font-bold">
               Urutan Kustom Tersimpan
             </span>
           </div>
@@ -292,16 +292,16 @@
 
     <!-- Delete Shelf Confirm Modal -->
     <div v-if="shelfToDelete" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
-      <div class="bg-white w-full max-w-sm rounded-3xl border border-slate-200 shadow-2xl p-6 text-center space-y-4 animate-in zoom-in-95 duration-200">
-        <div class="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto shadow-xs">
+      <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 text-center space-y-4 animate-in zoom-in-95 duration-200">
+        <div class="w-14 h-14 rounded-2xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50 flex items-center justify-center mx-auto shadow-xs">
           <Trash2 class="w-7 h-7" />
         </div>
         <div class="space-y-1.5">
-          <h3 class="text-base font-bold text-slate-900">Hapus Lokasi Rak</h3>
-          <p class="text-xs text-slate-600 leading-relaxed">
-            Apakah Anda yakin ingin menghapus rak <strong class="text-slate-900 font-mono">{{ shelfToDelete }}</strong>?
+          <h3 class="text-base font-bold text-slate-900 dark:text-white">Hapus Lokasi Rak</h3>
+          <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+            Apakah Anda yakin ingin menghapus rak <strong class="text-slate-900 dark:text-white font-mono">{{ shelfToDelete }}</strong>?
           </p>
-          <p class="text-[11px] text-slate-400">
+          <p class="text-[11px] text-slate-400 dark:text-slate-500">
             Buku yang tersimpan di rak ini akan dialihkan ke lokasi default.
           </p>
         </div>
@@ -309,7 +309,7 @@
           <button 
             type="button" 
             @click="shelfToDelete = null"
-            class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full border border-slate-200 font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer text-xs"
+            class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full border border-slate-200 dark:border-slate-700 font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer text-xs"
           >
             Batal
           </button>
@@ -317,7 +317,7 @@
             type="button" 
             @click="confirmDeleteShelf"
             :disabled="isDeletingShelf"
-            class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shadow-md shadow-rose-200 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+            class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shadow-md shadow-slate-900/25 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
           >
             <span>{{ isDeletingShelf ? 'Menghapus...' : 'Hapus Rak' }}</span>
           </button>

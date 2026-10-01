@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *, [data-theme="elegant"], [data-theme="elegant"] *));
+
 @layer base {
   html {
     scroll-behavior: smooth;
@@ -124,4 +126,735 @@
     print-color-adjust: exact !important;
   }
 }
+
+/* ========================================================
+   THEME STYLING SYSTEM: LIGHT | DARK | ELEGANT (WINDOWS 11 MICA/ACRYLIC)
+/* ========================================================
+   THEME STYLING SYSTEM: LIGHT | DARK | ELEGANT (WINDOWS 11 MICA/ACRYLIC)
+   ======================================================== */
+
+/* --- UNIVERSAL BUTTON SHADOW DISCIPLINE (NO HARSH WHITE / NEON HALO) --- */
+/* User requirement: Replace bright white/fluorescent button shadows with smooth, subtle semi-dark/gray shadows */
+[class*="shadow-blue-100"],
+[class*="shadow-blue-200"],
+[class*="shadow-blue-300"],
+[class*="shadow-indigo-100"],
+[class*="shadow-indigo-200"],
+[class*="shadow-emerald-100"],
+[class*="shadow-emerald-200"],
+[class*="shadow-amber-100"],
+[class*="shadow-amber-200"],
+[class*="shadow-rose-100"],
+[class*="shadow-rose-200"] {
+  --tw-shadow-color: rgba(15, 23, 42, 0.25) !important;
+  box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.25) !important;
+}
+
+/* --- 0. LIGHT THEME SYSTEM (CLEAN, SHARP & HIGH CONTRAST) --- */
+html[data-theme="light"],
+html:not([data-theme="dark"]):not([data-theme="elegant"]) {
+  color-scheme: light;
+}
+
+html[data-theme="light"] body,
+html:not([data-theme="dark"]):not([data-theme="elegant"]) body {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* Light Theme Surfaces & Cards */
+html[data-theme="light"] .bg-white,
+html:not([data-theme="dark"]):not([data-theme="elegant"]) .bg-white {
+  background-color: #ffffff !important;
+  border-color: #f1f5f9 !important;
+}
+
+html[data-theme="light"] .bg-slate-50,
+html:not([data-theme="dark"]):not([data-theme="elegant"]) .bg-slate-50,
+html[data-theme="light"] [class*="bg-slate-50/"],
+html:not([data-theme="dark"]):not([data-theme="elegant"]) [class*="bg-slate-50/"] {
+  background-color: #f8fafc !important;
+}
+
+html[data-theme="light"] .bg-slate-100,
+html:not([data-theme="dark"]):not([data-theme="elegant"]) .bg-slate-100 {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Light Theme Typography */
+html[data-theme="light"] .text-slate-900,
+html:not([data-theme="dark"]):not([data-theme="elegant"]) .text-slate-900,
+html[data-theme="light"] .text-slate-800,
+html:not([data-theme="dark"]):not([data-theme="elegant"]) .text-slate-800 {
+  color: #0f172a !important;
+}
+
+html[data-theme="light"] .text-slate-700,
+html:not([data-theme="dark"]):not([data-theme="elegant"]) .text-slate-700,
+html[data-theme="light"] .text-slate-600,
+html:not([data-theme="dark"]):not([data-theme="elegant"]) .text-slate-600 {
+  color: #334155 !important;
+}
+
+html[data-theme="light"] .text-slate-500,
+html:not([data-theme="dark"]):not([data-theme="elegant"]) .text-slate-500 {
+  color: #64748b !important;
+}
+
+html[data-theme="light"] .text-slate-400,
+html:not([data-theme="dark"]):not([data-theme="elegant"]) .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+/* Light Theme Inputs */
+html[data-theme="light"] input:not([type="checkbox"]):not([type="radio"]),
+html:not([data-theme="dark"]):not([data-theme="elegant"]) input:not([type="checkbox"]):not([type="radio"]),
+html[data-theme="light"] select,
+html:not([data-theme="dark"]):not([data-theme="elegant"]) select,
+html[data-theme="light"] textarea,
+html:not([data-theme="dark"]):not([data-theme="elegant"]) textarea {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+html[data-theme="light"] input::placeholder,
+html:not([data-theme="dark"]):not([data-theme="elegant"]) input::placeholder,
+html[data-theme="light"] textarea::placeholder,
+html:not([data-theme="dark"]):not([data-theme="elegant"]) textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Light Theme Chrome & Navs */
+html[data-theme="light"] .nav-header-bg,
+html:not([data-theme="dark"]):not([data-theme="elegant"]) .nav-header-bg {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+}
+
+html[data-theme="light"] nav.md\:hidden,
+html:not([data-theme="dark"]):not([data-theme="elegant"]) nav.md\:hidden {
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-top-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+html[data-theme="light"] footer,
+html:not([data-theme="dark"]):not([data-theme="elegant"]) footer {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #64748b !important;
+}
+
+/* --- 1. DARK THEME --- */
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+html[data-theme="dark"] body {
+  background-color: #0b0f19 !important;
+  color: #f1f5f9 !important;
+}
+
+/* Base Surfaces & Cards */
+html[data-theme="dark"] .bg-slate-50,
+html[data-theme="dark"] [class*="bg-slate-50/"] {
+  background-color: #0f172a !important;
+  color: #f1f5f9 !important;
+}
+
+html[data-theme="dark"] .bg-white {
+  background-color: #151e2e !important;
+  border-color: #243044 !important;
+  color: #f1f5f9 !important;
+}
+
+html[data-theme="dark"] .bento-card {
+  background-color: #151e2e !important;
+  border-color: #243044 !important;
+}
+
+html[data-theme="dark"] .bg-slate-100 {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .bg-slate-200,
+html[data-theme="dark"] .hover\:bg-slate-200:hover {
+  background-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+/* Tinted Panels & Notice Banners in Dark Mode */
+html[data-theme="dark"] .bg-blue-50,
+html[data-theme="dark"] [class*="bg-blue-50/"] {
+  background-color: rgba(30, 58, 138, 0.28) !important;
+  border-color: rgba(59, 130, 246, 0.35) !important;
+  color: #bfdbfe !important;
+}
+
+html[data-theme="dark"] .bg-indigo-50,
+html[data-theme="dark"] [class*="bg-indigo-50/"] {
+  background-color: rgba(49, 46, 129, 0.28) !important;
+  border-color: rgba(99, 102, 241, 0.35) !important;
+  color: #c7d2fe !important;
+}
+
+html[data-theme="dark"] .bg-emerald-50,
+html[data-theme="dark"] [class*="bg-emerald-50/"] {
+  background-color: rgba(6, 78, 59, 0.28) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+  color: #a7f3d0 !important;
+}
+
+html[data-theme="dark"] .bg-amber-50,
+html[data-theme="dark"] [class*="bg-amber-50/"] {
+  background-color: rgba(120, 53, 15, 0.28) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  color: #fde68a !important;
+}
+
+html[data-theme="dark"] .bg-rose-50,
+html[data-theme="dark"] [class*="bg-rose-50/"] {
+  background-color: rgba(136, 19, 55, 0.28) !important;
+  border-color: rgba(244, 63, 94, 0.35) !important;
+  color: #fecdd3 !important;
+}
+
+/* Light Gradient Cards Override in Dark Mode */
+html[data-theme="dark"] [class*="bg-gradient-to-br from-indigo-50"],
+html[data-theme="dark"] [class*="bg-gradient-to-br from-blue-50"],
+html[data-theme="dark"] [class*="bg-gradient-to-br from-amber-50"],
+html[data-theme="dark"] [class*="bg-gradient-to-br from-rose-50"],
+html[data-theme="dark"] [class*="bg-gradient-to-r from-blue-50"] {
+  background-image: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98)) !important;
+  border-color: #243044 !important;
+}
+
+/* Typography Hierarchy in Dark Mode */
+html[data-theme="dark"] .text-slate-900,
+html[data-theme="dark"] .text-slate-800 {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .text-slate-700,
+html[data-theme="dark"] .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .text-blue-900,
+html[data-theme="dark"] .text-blue-800 {
+  color: #bfdbfe !important;
+}
+
+html[data-theme="dark"] .text-indigo-900,
+html[data-theme="dark"] .text-indigo-800 {
+  color: #c7d2fe !important;
+}
+
+html[data-theme="dark"] .text-emerald-900,
+html[data-theme="dark"] .text-emerald-800 {
+  color: #a7f3d0 !important;
+}
+
+html[data-theme="dark"] .text-amber-900,
+html[data-theme="dark"] .text-amber-800 {
+  color: #fde68a !important;
+}
+
+html[data-theme="dark"] .text-rose-900,
+html[data-theme="dark"] .text-rose-800,
+html[data-theme="dark"] .text-rose-950 {
+  color: #fecdd3 !important;
+}
+
+/* Borders & Dividers in Dark Mode (Soft & Seamless) */
+html[data-theme="dark"] [class*="border-slate-"],
+html[data-theme="dark"] .border-slate-100,
+html[data-theme="dark"] .border-slate-200,
+html[data-theme="dark"] .border-slate-300,
+html[data-theme="dark"] table,
+html[data-theme="dark"] thead,
+html[data-theme="dark"] tbody,
+html[data-theme="dark"] tr,
+html[data-theme="dark"] th,
+html[data-theme="dark"] td {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+html[data-theme="dark"] .divide-y > :not([hidden]) ~ :not([hidden]),
+html[data-theme="dark"] [class*="divide-slate-"] > :not([hidden]) ~ :not([hidden]),
+html[data-theme="dark"] .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+html[data-theme="dark"] .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+/* Badges & Status Pills in Dark Mode (Vibrant & High Contrast) */
+html[data-theme="dark"] .bg-emerald-100,
+html[data-theme="dark"] [class*="bg-emerald-100/"] {
+  background-color: rgba(6, 78, 59, 0.55) !important;
+  color: #6ee7b7 !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+html[data-theme="dark"] .bg-indigo-100,
+html[data-theme="dark"] [class*="bg-indigo-100/"] {
+  background-color: rgba(49, 46, 129, 0.55) !important;
+  color: #c7d2fe !important;
+  border-color: rgba(99, 102, 241, 0.4) !important;
+}
+
+html[data-theme="dark"] .bg-blue-100,
+html[data-theme="dark"] [class*="bg-blue-100/"] {
+  background-color: rgba(30, 58, 138, 0.5) !important;
+  color: #93c5fd !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+}
+
+html[data-theme="dark"] .bg-amber-100,
+html[data-theme="dark"] [class*="bg-amber-100/"] {
+  background-color: rgba(120, 53, 15, 0.55) !important;
+  color: #fde68a !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+html[data-theme="dark"] .bg-rose-100,
+html[data-theme="dark"] [class*="bg-rose-100/"] {
+  background-color: rgba(136, 19, 55, 0.55) !important;
+  color: #fca5a5 !important;
+  border-color: rgba(244, 63, 94, 0.4) !important;
+}
+
+html[data-theme="dark"] [class*="text-amber-900"],
+html[data-theme="dark"] [class*="text-amber-800"],
+html[data-theme="dark"] [class*="text-amber-700"] {
+  color: #fde68a !important;
+}
+
+/* Form Controls in Dark Mode */
+html[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]),
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* Chrome in Dark Mode */
+html[data-theme="dark"] .nav-header-bg {
+  background-color: rgba(11, 15, 25, 0.90) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-bottom: 1px solid #1e293b !important;
+}
+
+html[data-theme="dark"] nav.md\:hidden {
+  background-color: rgba(11, 15, 25, 0.92) !important;
+  backdrop-filter: blur(16px) !important;
+  border-top-color: #1e293b !important;
+}
+
+html[data-theme="dark"] footer {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] tr:hover {
+  background-color: rgba(30, 41, 59, 0.45) !important;
+}
+
+/* Soft dark button shadow for colored shadow utilities only */
+html[data-theme="dark"] [class*="shadow-blue-"],
+html[data-theme="dark"] [class*="shadow-indigo-"],
+html[data-theme="dark"] [class*="shadow-emerald-"],
+html[data-theme="dark"] [class*="shadow-amber-"],
+html[data-theme="dark"] [class*="shadow-rose-"] {
+  --tw-shadow-color: rgba(0, 0, 0, 0.45) !important;
+  box-shadow: 0 4px 14px -1px rgba(0, 0, 0, 0.4) !important;
+}
+
+
+/* --- 2. ELEGANT THEME (WINDOWS 11 MICA / ACRYLIC BLUR WITH LIBRA ROYAL BLUE BASE) --- */
+html[data-theme="elegant"] {
+  color-scheme: dark;
+}
+
+html[data-theme="elegant"] body {
+  background-color: #070d1e !important;
+  background-image: 
+    radial-gradient(ellipse 90% 60% at 50% -10%, rgba(30, 64, 175, 0.38) 0%, transparent 70%),
+    radial-gradient(circle 700px at 0% 35%, rgba(29, 78, 216, 0.22) 0%, transparent 60%),
+    radial-gradient(circle 600px at 100% 65%, rgba(14, 165, 233, 0.16) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 50% 110%, rgba(30, 58, 138, 0.32) 0%, transparent 70%) !important;
+  background-attachment: fixed !important;
+  background-repeat: no-repeat !important;
+  color: #f8fafc !important;
+}
+
+/* Windows 11 Acrylic Glassmorphic Cards & Containers */
+html[data-theme="elegant"] .bg-white {
+  background-color: rgba(13, 23, 48, 0.72) !important;
+  backdrop-filter: blur(20px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(190%) !important;
+  border: 1px solid rgba(147, 197, 253, 0.2) !important;
+  box-shadow: 0 12px 36px -6px rgba(2, 6, 23, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.14) !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="elegant"] .bento-card {
+  background-color: rgba(13, 23, 48, 0.72) !important;
+  backdrop-filter: blur(20px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(190%) !important;
+  border: 1px solid rgba(147, 197, 253, 0.2) !important;
+  box-shadow: 0 12px 36px -6px rgba(2, 6, 23, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.14) !important;
+}
+
+/* Translucent Mica Sub-panels */
+html[data-theme="elegant"] .bg-slate-50,
+html[data-theme="elegant"] [class*="bg-slate-50/"] {
+  background-color: rgba(10, 18, 38, 0.55) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border-color: rgba(147, 197, 253, 0.18) !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="elegant"] .bg-slate-100 {
+  background-color: rgba(20, 32, 64, 0.6) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border-color: rgba(147, 197, 253, 0.18) !important;
+  color: #e2e8f0 !important;
+}
+
+html[data-theme="elegant"] .bg-slate-200,
+html[data-theme="elegant"] .hover\:bg-slate-200:hover {
+  background-color: rgba(30, 48, 88, 0.7) !important;
+  color: #ffffff !important;
+}
+
+/* Tinted Panels in Elegant Mica */
+html[data-theme="elegant"] .bg-blue-50,
+html[data-theme="elegant"] [class*="bg-blue-50/"] {
+  background-color: rgba(30, 64, 175, 0.24) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border-color: rgba(147, 197, 253, 0.25) !important;
+  color: #bfdbfe !important;
+}
+
+html[data-theme="elegant"] .bg-indigo-50,
+html[data-theme="elegant"] [class*="bg-indigo-50/"] {
+  background-color: rgba(67, 56, 202, 0.24) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border-color: rgba(165, 180, 252, 0.25) !important;
+  color: #c7d2fe !important;
+}
+
+html[data-theme="elegant"] .bg-emerald-50,
+html[data-theme="elegant"] [class*="bg-emerald-50/"] {
+  background-color: rgba(6, 95, 70, 0.24) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border-color: rgba(110, 231, 183, 0.25) !important;
+  color: #a7f3d0 !important;
+}
+
+html[data-theme="elegant"] .bg-amber-50,
+html[data-theme="elegant"] [class*="bg-amber-50/"] {
+  background-color: rgba(146, 64, 14, 0.25) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border-color: rgba(253, 230, 138, 0.25) !important;
+  color: #fde68a !important;
+}
+
+html[data-theme="elegant"] .bg-rose-50,
+html[data-theme="elegant"] [class*="bg-rose-50/"] {
+  background-color: rgba(159, 18, 57, 0.24) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border-color: rgba(254, 205, 211, 0.25) !important;
+  color: #fecdd3 !important;
+}
+
+/* Light Gradient Cards Override in Elegant Theme */
+html[data-theme="elegant"] [class*="bg-gradient-to-br from-indigo-50"],
+html[data-theme="elegant"] [class*="bg-gradient-to-br from-blue-50"],
+html[data-theme="elegant"] [class*="bg-gradient-to-br from-amber-50"],
+html[data-theme="elegant"] [class*="bg-gradient-to-br from-rose-50"],
+html[data-theme="elegant"] [class*="bg-gradient-to-r from-blue-50"] {
+  background-image: linear-gradient(135deg, rgba(20, 32, 68, 0.75), rgba(10, 18, 42, 0.85)) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-color: rgba(147, 197, 253, 0.22) !important;
+}
+
+/* Luminous Typography in Elegant Theme */
+html[data-theme="elegant"] .text-slate-900,
+html[data-theme="elegant"] .text-slate-800 {
+  color: #ffffff !important;
+}
+
+html[data-theme="elegant"] .text-slate-700,
+html[data-theme="elegant"] .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+
+html[data-theme="elegant"] .text-slate-500 {
+  color: #93c5fd !important;
+}
+
+html[data-theme="elegant"] .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="elegant"] .text-blue-900,
+html[data-theme="elegant"] .text-blue-800 {
+  color: #bfdbfe !important;
+}
+
+html[data-theme="elegant"] .text-indigo-900,
+html[data-theme="elegant"] .text-indigo-800 {
+  color: #c7d2fe !important;
+}
+
+html[data-theme="elegant"] .text-emerald-900,
+html[data-theme="elegant"] .text-emerald-800 {
+  color: #a7f3d0 !important;
+}
+
+html[data-theme="elegant"] .text-amber-900,
+html[data-theme="elegant"] .text-amber-800 {
+  color: #fde68a !important;
+}
+
+html[data-theme="elegant"] .text-rose-900,
+html[data-theme="elegant"] .text-rose-800,
+html[data-theme="elegant"] .text-rose-950 {
+  color: #fecdd3 !important;
+}
+
+/* Crisp & Subtle Glassmorphic Borders in Elegant Theme */
+html[data-theme="elegant"] [class*="border-slate-"],
+html[data-theme="elegant"] .border-slate-100,
+html[data-theme="elegant"] .border-slate-200,
+html[data-theme="elegant"] .border-slate-300,
+html[data-theme="elegant"] table,
+html[data-theme="elegant"] thead,
+html[data-theme="elegant"] tbody,
+html[data-theme="elegant"] tr,
+html[data-theme="elegant"] th,
+html[data-theme="elegant"] td {
+  border-color: rgba(147, 197, 253, 0.14) !important;
+}
+
+html[data-theme="elegant"] .divide-y > :not([hidden]) ~ :not([hidden]),
+html[data-theme="elegant"] [class*="divide-slate-"] > :not([hidden]) ~ :not([hidden]),
+html[data-theme="elegant"] .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+html[data-theme="elegant"] .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(147, 197, 253, 0.12) !important;
+}
+
+/* Badges & Status Pills in Elegant Theme */
+html[data-theme="elegant"] .bg-emerald-100,
+html[data-theme="elegant"] [class*="bg-emerald-100/"] {
+  background-color: rgba(6, 95, 70, 0.45) !important;
+  color: #a7f3d0 !important;
+  border-color: rgba(110, 231, 183, 0.35) !important;
+}
+
+html[data-theme="elegant"] .bg-indigo-100,
+html[data-theme="elegant"] [class*="bg-indigo-100/"] {
+  background-color: rgba(67, 56, 202, 0.45) !important;
+  color: #c7d2fe !important;
+  border-color: rgba(165, 180, 252, 0.35) !important;
+}
+
+html[data-theme="elegant"] .bg-blue-100,
+html[data-theme="elegant"] [class*="bg-blue-100/"] {
+  background-color: rgba(30, 64, 175, 0.45) !important;
+  color: #bfdbfe !important;
+  border-color: rgba(147, 197, 253, 0.35) !important;
+}
+
+html[data-theme="elegant"] .bg-amber-100,
+html[data-theme="elegant"] [class*="bg-amber-100/"] {
+  background-color: rgba(146, 64, 14, 0.45) !important;
+  color: #fde68a !important;
+  border-color: rgba(253, 230, 138, 0.35) !important;
+}
+
+html[data-theme="elegant"] .bg-rose-100,
+html[data-theme="elegant"] [class*="bg-rose-100/"] {
+  background-color: rgba(159, 18, 57, 0.45) !important;
+  color: #fecdd3 !important;
+  border-color: rgba(254, 205, 211, 0.35) !important;
+}
+
+html[data-theme="elegant"] [class*="text-amber-900"],
+html[data-theme="elegant"] [class*="text-amber-800"],
+html[data-theme="elegant"] [class*="text-amber-700"] {
+  color: #fde68a !important;
+}
+
+/* Input Fields in Elegant Theme */
+html[data-theme="elegant"] input:not([type="checkbox"]):not([type="radio"]),
+html[data-theme="elegant"] select,
+html[data-theme="elegant"] textarea {
+  background-color: rgba(10, 18, 38, 0.65) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border-color: rgba(147, 197, 253, 0.25) !important;
+  color: #ffffff !important;
+}
+
+html[data-theme="elegant"] input::placeholder,
+html[data-theme="elegant"] textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Acrylic Top Header in Elegant Theme */
+html[data-theme="elegant"] .nav-header-bg {
+  background-color: rgba(7, 13, 30, 0.85) !important;
+  backdrop-filter: blur(24px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.25) !important;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Acrylic Bottom Nav in Elegant Theme */
+html[data-theme="elegant"] nav.md\:hidden {
+  background-color: rgba(7, 13, 30, 0.82) !important;
+  backdrop-filter: blur(24px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
+  border-top-color: rgba(59, 130, 246, 0.25) !important;
+}
+
+/* Acrylic Footer in Elegant Theme */
+html[data-theme="elegant"] footer {
+  background-color: rgba(8, 15, 34, 0.8) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-color: rgba(59, 130, 246, 0.2) !important;
+  color: #93c5fd !important;
+}
+
+/* Acrylic Dropdowns and Modals in Elegant Theme */
+html[data-theme="elegant"] .bg-slate-900 {
+  background-color: rgba(10, 18, 38, 0.88) !important;
+  backdrop-filter: blur(28px) saturate(195%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(195%) !important;
+  border-color: rgba(96, 165, 250, 0.25) !important;
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Specific Acrylic Blur + Translucent Styling for User Account Menu in Elegant Theme */
+html[data-theme="elegant"] .account-dropdown-menu {
+  background: linear-gradient(145deg, rgba(11, 22, 54, 0.78) 0%, rgba(7, 14, 34, 0.86) 100%) !important;
+  backdrop-filter: blur(24px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
+  border: 1px solid rgba(147, 197, 253, 0.35) !important;
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.12) inset, 0 1px 0 rgba(255, 255, 255, 0.22) inset, 0 0 18px rgba(59, 130, 246, 0.15) !important;
+}
+
+html[data-theme="elegant"] .account-dropdown-menu .dropdown-subpanel {
+  background: linear-gradient(135deg, rgba(30, 58, 138, 0.35) 0%, rgba(15, 26, 60, 0.45) 100%) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-bottom: none !important;
+}
+
+html[data-theme="elegant"] .account-dropdown-menu .theme-selector-box {
+  background: rgba(6, 12, 32, 0.55) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(147, 197, 253, 0.25) !important;
+}
+
+html[data-theme="elegant"] .account-dropdown-menu a:hover,
+html[data-theme="elegant"] .account-dropdown-menu button:hover {
+  background-color: rgba(59, 130, 246, 0.28) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  color: #ffffff !important;
+}
+
+/* Universal borderless internal sections for Account Dropdown Menu across Light, Dark, and Elegant themes */
+.account-dropdown-menu [class*="border-t"],
+.account-dropdown-menu [class*="border-b"],
+.account-dropdown-menu .dropdown-subpanel,
+.account-dropdown-menu .border-t,
+.account-dropdown-menu .border-b {
+  border-top: none !important;
+  border-bottom: none !important;
+  border-top-width: 0px !important;
+  border-bottom-width: 0px !important;
+}
+
+/* Universal removal of box-shadow and borders for Manajemen Sesi, Pasang Aplikasi, Catatan Rilis & Nav Menu items in Dark and Elegant themes */
+.account-dropdown-menu button,
+.account-dropdown-menu a,
+html[data-theme="dark"] .account-dropdown-menu button,
+html[data-theme="elegant"] .account-dropdown-menu button,
+html[data-theme="dark"] .account-dropdown-menu a,
+html[data-theme="elegant"] .account-dropdown-menu a,
+.mobile-nav-drawer button,
+.mobile-nav-drawer a,
+html[data-theme="dark"] .mobile-nav-drawer button,
+html[data-theme="elegant"] .mobile-nav-drawer button,
+html[data-theme="dark"] .seamless-menu-item,
+html[data-theme="elegant"] .seamless-menu-item,
+html[data-theme="dark"] .member-action-btn-seamless,
+html[data-theme="elegant"] .member-action-btn-seamless {
+  box-shadow: none !important;
+  --tw-shadow: none !important;
+  --tw-shadow-colored: none !important;
+  border-color: transparent !important;
+}
+
+/* Keep subtle active pill shadow for theme option selector buttons only */
+.account-dropdown-menu .theme-selector-box button.bg-blue-600,
+.account-dropdown-menu .theme-selector-box button.bg-slate-800,
+.account-dropdown-menu .theme-selector-box button.bg-gradient-to-br {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+}
+
+html[data-theme="elegant"] tr:hover {
+  background-color: rgba(30, 58, 138, 0.25) !important;
+}
+
+/* Soft subtle semi-dark button shadow in Elegant Theme (No white glare) for colored shadow utilities only */
+html[data-theme="elegant"] [class*="shadow-blue-"],
+html[data-theme="elegant"] [class*="shadow-indigo-"],
+html[data-theme="elegant"] [class*="shadow-emerald-"],
+html[data-theme="elegant"] [class*="shadow-amber-"],
+html[data-theme="elegant"] [class*="shadow-rose-"] {
+  --tw-shadow-color: rgba(0, 0, 0, 0.55) !important;
+  box-shadow: 0 4px 14px -1px rgba(0, 0, 0, 0.48) !important;
+}
+
+
 

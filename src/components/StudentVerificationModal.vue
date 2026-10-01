@@ -1,25 +1,25 @@
 <template>
-  <div v-if="isOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-hidden sm:overflow-y-auto">
-    <div class="bg-white border-0 sm:border sm:border-slate-100 w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-xl sm:rounded-3xl rounded-none shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+  <div v-if="isOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-xs overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200">
+    <div class="bg-white dark:bg-slate-900 border-0 sm:border sm:border-slate-100 dark:sm:border-slate-800 w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-xl sm:rounded-3xl rounded-none shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
       
       <!-- Sticky Header -->
-      <div class="px-5 py-4 bg-slate-50/95 backdrop-blur-md border-b border-slate-100 flex items-center justify-between shrink-0 sticky top-0 z-20">
+      <div class="px-5 py-4 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 sticky top-0 z-20">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 shadow-xs">
+          <div class="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 shadow-xs">
             <GraduationCap class="w-5 h-5" />
           </div>
           <div>
-            <h3 class="font-bold text-base text-slate-900 flex items-center gap-2">
+            <h3 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
               <span>Verifikasi Siswa SDN Pengasinan VII</span>
             </h3>
-            <p class="text-xs text-slate-500">Akses Peminjaman e-Book Berhak Cipta</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Akses Peminjaman e-Book Berhak Cipta</p>
           </div>
         </div>
         <button 
           @click="handleClose" 
           type="button"
           aria-label="Tutup modal verifikasi"
-          class="p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 active:scale-95 transition cursor-pointer flex items-center justify-center shrink-0"
+          class="p-2 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800 active:scale-95 transition cursor-pointer flex items-center justify-center shrink-0"
         >
           <X class="w-5 h-5" />
         </button>
@@ -29,83 +29,83 @@
       <div class="p-5 sm:p-6 space-y-5 flex-1 overflow-y-auto">
 
         <!-- Error Alert -->
-        <div v-if="modalError" class="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-center justify-between gap-2.5 animate-in fade-in">
+        <div v-if="modalError" class="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-xs text-rose-800 dark:text-rose-200 flex items-center justify-between gap-2.5 animate-in fade-in">
           <div class="flex items-center gap-2">
-            <AlertCircle class="w-4 h-4 shrink-0 text-rose-600" />
+            <AlertCircle class="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
             <span class="font-semibold leading-tight">{{ modalError }}</span>
           </div>
-          <button @click="modalError = ''" type="button" class="text-rose-500 hover:text-rose-800 text-sm font-bold p-1 cursor-pointer">✕</button>
+          <button @click="modalError = ''" type="button" class="text-rose-500 hover:text-rose-800 dark:hover:text-rose-200 text-sm font-bold p-1 cursor-pointer">✕</button>
         </div>
 
         <!-- Banner Hak Cipta e-Book -->
-        <div class="p-4 rounded-2xl bg-blue-50/80 border border-blue-200/80 flex items-start gap-3 text-xs text-blue-900">
-          <ShieldCheck class="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+        <div class="p-4 rounded-2xl bg-blue-50/80 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/40 flex items-start gap-3 text-xs text-blue-900 dark:text-blue-200">
+          <ShieldCheck class="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
           <div class="space-y-1">
-            <span class="font-bold text-slate-900">Perlindungan Hak Cipta e-Book Digital</span>
-            <p class="text-slate-600 leading-relaxed text-[11px]">
+            <span class="font-bold text-slate-900 dark:text-white">Perlindungan Hak Cipta e-Book Digital</span>
+            <p class="text-slate-600 dark:text-slate-300 leading-relaxed text-[11px]">
               Sesuai lisensi hak cipta digital, peminjaman e-Book hanya diperuntukkan bagi warga sekolah resmi SDN Pengasinan VII. Admin perpustakaan perlu memverifikasi kesesuaian NIS, NISN, dan foto selfie Anda.
             </p>
           </div>
         </div>
 
         <!-- Status: Already Verified -->
-        <div v-if="currentVerificationStatus === 'verified'" class="p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-950 space-y-3">
-          <div class="flex items-center gap-2.5 text-emerald-800 font-bold text-sm">
-            <CheckCircle2 class="w-5 h-5 text-emerald-600 shrink-0" />
+        <div v-if="currentVerificationStatus === 'verified'" class="p-5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 text-xs text-emerald-950 dark:text-emerald-200 space-y-3">
+          <div class="flex items-center gap-2.5 text-emerald-800 dark:text-emerald-300 font-bold text-sm">
+            <CheckCircle2 class="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span>Akun Siswa Terverifikasi Aktif</span>
           </div>
-          <p class="text-slate-600 leading-relaxed text-xs">
+          <p class="text-slate-600 dark:text-slate-300 leading-relaxed text-xs">
             Selamat! Akun Anda telah terverifikasi sebagai siswa SDN Pengasinan VII. Anda dapat meminjam dan membaca seluruh koleksi e-Book berhak cipta.
           </p>
-          <div class="p-3 rounded-xl bg-white border border-emerald-200/80 grid grid-cols-2 gap-2 text-[11px]">
+          <div class="p-3 rounded-xl bg-white dark:bg-slate-900/90 border border-emerald-200/80 dark:border-emerald-800/40 grid grid-cols-2 gap-2 text-[11px]">
             <div>
-              <span class="text-slate-400">NIS:</span>
-              <div class="font-bold font-mono text-slate-800">{{ store.currentUser?.nis || '-' }}</div>
+              <span class="text-slate-400 dark:text-slate-500">NIS:</span>
+              <div class="font-bold font-mono text-slate-800 dark:text-slate-200">{{ store.currentUser?.nis || '-' }}</div>
             </div>
             <div>
-              <span class="text-slate-400">NISN:</span>
-              <div class="font-bold font-mono text-slate-800">{{ store.currentUser?.nisn || '-' }}</div>
+              <span class="text-slate-400 dark:text-slate-500">NISN:</span>
+              <div class="font-bold font-mono text-slate-800 dark:text-slate-200">{{ store.currentUser?.nisn || '-' }}</div>
             </div>
           </div>
         </div>
 
         <!-- Status: Currently Pending Review -->
-        <div v-else-if="currentVerificationStatus === 'pending'" class="p-5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-950 space-y-3">
-          <div class="flex items-center gap-2.5 text-amber-800 font-bold text-sm">
-            <Clock class="w-5 h-5 text-amber-600 shrink-0 animate-spin" />
+        <div v-else-if="currentVerificationStatus === 'pending'" class="p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 text-xs text-amber-950 dark:text-amber-200 space-y-3">
+          <div class="flex items-center gap-2.5 text-amber-800 dark:text-amber-300 font-bold text-sm">
+            <Clock class="w-5 h-5 text-amber-600 dark:text-amber-400 animate-spin" />
             <span>Permohonan Sedang Ditinjau Admin</span>
           </div>
-          <p class="text-amber-800/90 leading-relaxed text-xs">
+          <p class="text-amber-800/90 dark:text-amber-200 leading-relaxed text-xs">
             Permohonan verifikasi siswa Anda telah terkirim dan sedang dalam antrean peninjauan oleh Admin Perpustakaan SDN Pengasinan VII. Mohon tunggu beberapa saat.
           </p>
-          <div class="p-3.5 rounded-xl bg-white border border-amber-200/80 space-y-2 text-[11px]">
+          <div class="p-3.5 rounded-xl bg-white dark:bg-slate-900/90 border border-amber-200/80 dark:border-amber-800/40 space-y-2 text-[11px]">
             <div class="grid grid-cols-2 gap-2">
               <div>
-                <span class="text-slate-400">NIS Terkirim:</span>
-                <div class="font-bold font-mono text-slate-800">{{ pendingRequest?.nis || store.currentUser?.nis || '-' }}</div>
+                <span class="text-slate-400 dark:text-slate-500">NIS Terkirim:</span>
+                <div class="font-bold font-mono text-slate-800 dark:text-slate-200">{{ pendingRequest?.nis || store.currentUser?.nis || '-' }}</div>
               </div>
               <div>
-                <span class="text-slate-400">NISN Terkirim:</span>
-                <div class="font-bold font-mono text-slate-800">{{ pendingRequest?.nisn || store.currentUser?.nisn || '-' }}</div>
+                <span class="text-slate-400 dark:text-slate-500">NISN Terkirim:</span>
+                <div class="font-bold font-mono text-slate-800 dark:text-slate-200">{{ pendingRequest?.nisn || store.currentUser?.nisn || '-' }}</div>
               </div>
             </div>
-            <div class="text-[10px] text-slate-400 pt-1 border-t border-slate-100 flex items-center justify-between">
+            <div class="text-[10px] text-slate-400 dark:text-slate-500 pt-1 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <span>Waktu Pengajuan:</span>
-              <span class="font-medium text-slate-600">{{ formatDateTime(pendingRequest?.requestDate) }}</span>
+              <span class="font-medium text-slate-600 dark:text-slate-300">{{ formatDateTime(pendingRequest?.requestDate) }}</span>
             </div>
           </div>
         </div>
 
         <!-- Status: Rejected Warning Banner -->
-        <div v-else-if="currentVerificationStatus === 'rejected'" class="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-900 space-y-2">
-          <div class="flex items-center gap-2 font-bold text-rose-800">
-            <AlertCircle class="w-4 h-4 text-rose-600 shrink-0" />
+        <div v-else-if="currentVerificationStatus === 'rejected'" class="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 text-xs text-rose-900 dark:text-rose-200 space-y-2">
+          <div class="flex items-center gap-2 font-bold text-rose-800 dark:text-rose-300">
+            <AlertCircle class="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
             <span>Pengajuan Sebelumnya Belum Disetujui</span>
           </div>
-          <p class="text-[11px] text-rose-700 leading-relaxed">
+          <p class="text-[11px] text-rose-700 dark:text-rose-300 leading-relaxed">
             Alasan penolakan: <strong>{{ rejectionReason || 'Data NIS/NISN atau foto selfie belum memenuhi kriteria verifikasi siswa SDN Pengasinan VII.' }}</strong>
           </p>
-          <p class="text-[11px] text-slate-600">
+          <p class="text-[11px] text-slate-600 dark:text-slate-300">
             Silakan periksa kembali nomor NIS dan NISN Anda, lalu ambil foto selfie baru yang jelas di bawah ini untuk mengajukan ulang.
           </p>
         </div>
@@ -116,31 +116,31 @@
           <!-- Identity Number Inputs -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5 flex items-center justify-between">
                 <span>Nomor Induk Sekolah (NIS) *</span>
-                <span class="text-[10px] text-slate-400 font-normal">Dari Sekolah</span>
+                <span class="text-[10px] text-slate-400 dark:text-slate-500 font-normal">Dari Sekolah</span>
               </label>
               <input 
                 v-model="nisInput"
                 type="text" 
                 maxlength="20"
                 placeholder="Contoh: 20241088"
-                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 font-mono font-semibold"
+                class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-500 font-mono font-semibold"
                 @input="modalError = ''"
               />
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5 flex items-center justify-between">
                 <span>Nomor Induk Siswa Nasional (NISN) *</span>
-                <span class="text-[10px] text-slate-400 font-normal">10 Digit</span>
+                <span class="text-[10px] text-slate-400 dark:text-slate-500 font-normal">10 Digit</span>
               </label>
               <input 
                 v-model="nisnInput"
                 type="text" 
                 maxlength="12"
                 placeholder="Contoh: 0123456789"
-                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 font-mono font-semibold"
+                class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-500 font-mono font-semibold"
                 @input="modalError = ''"
               />
             </div>
@@ -149,28 +149,28 @@
           <!-- Selfie Verification Area -->
           <div class="space-y-2 pt-1">
             <div class="flex items-center justify-between">
-              <label class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <Camera class="w-4 h-4 text-blue-600" />
+              <label class="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
+                <Camera class="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 <span>Verifikasi Wajah (Foto Selfie) *</span>
               </label>
-              <span class="text-[10px] text-slate-400">Pastikan wajah terlihat jelas & terang</span>
+              <span class="text-[10px] text-slate-400 dark:text-slate-500">Pastikan wajah terlihat jelas & terang</span>
             </div>
 
             <!-- STEP 1: Idle / Not taken yet -->
             <div 
               v-if="cameraState === 'idle'" 
-              class="p-6 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/60 hover:bg-slate-50 transition flex flex-col items-center justify-center text-center space-y-3 cursor-pointer"
+              class="p-6 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700/80 bg-slate-50/60 dark:bg-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition flex flex-col items-center justify-center text-center space-y-3 cursor-pointer"
               @click="startCameraCapture"
             >
-              <div class="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center shadow-xs">
+              <div class="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-xs">
                 <Camera class="w-6 h-6" />
               </div>
               <div>
-                <div class="text-xs font-bold text-slate-800">Buka Kamera & Ambil Foto Selfie</div>
-                <div class="text-[11px] text-slate-500 mt-0.5">Ambil foto selfie langsung untuk mencocokkan identitas siswa</div>
+                <div class="text-xs font-bold text-slate-800 dark:text-white">Buka Kamera & Ambil Foto Selfie</div>
+                <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Ambil foto selfie langsung untuk mencocokkan identitas siswa</div>
               </div>
               <button 
-                type="button"
+                type="button" 
                 @click.stop="startCameraCapture"
                 class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-2 cursor-pointer active:scale-95"
               >
@@ -213,7 +213,7 @@
                 <button 
                   type="button" 
                   @click="captureSelfie"
-                  class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-900 transition flex items-center gap-2 cursor-pointer active:scale-95"
+                  class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-slate-900/40 transition flex items-center gap-2 cursor-pointer active:scale-95"
                 >
                   <Camera class="w-4 h-4" />
                   <span>Ambil Foto</span>
@@ -228,7 +228,7 @@
             </div>
 
             <!-- STEP 3: Preview Captured Image -->
-            <div v-else-if="cameraState === 'preview'" class="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-center gap-4">
+            <div v-else-if="cameraState === 'preview'" class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-center gap-4">
               <div class="relative shrink-0">
                 <img 
                   :src="capturedImageBase64" 
@@ -240,20 +240,20 @@
                 </span>
               </div>
               <div class="flex-1 text-center sm:text-left space-y-2">
-                <div class="text-xs font-bold text-slate-800">Foto Selfie Berhasil Diambil</div>
-                <p class="text-[11px] text-slate-500 leading-relaxed">
+                <div class="text-xs font-bold text-slate-800 dark:text-white">Foto Selfie Berhasil Diambil</div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
                   Periksa apakah wajah Anda sudah terlihat jelas dan tidak buram sebelum mengirimkan permohonan.
                 </p>
                 <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
                   <button 
                     type="button" 
                     @click="retakeSelfie"
-                    class="px-3.5 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                    class="px-3.5 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
                   >
                     <RefreshCw class="w-3.5 h-3.5" />
                     <span>Ambil Ulang</span>
                   </button>
-                  <label class="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium transition cursor-pointer flex items-center gap-1.5">
+                  <label class="px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-medium transition cursor-pointer flex items-center gap-1.5">
                     <UploadCloud class="w-3.5 h-3.5" />
                     <span>Ganti File</span>
                     <input type="file" accept="image/*" class="hidden" @change="handleFileUpload" />
@@ -264,7 +264,7 @@
 
             <!-- Secondary File Upload alternative when idle -->
             <div v-if="cameraState === 'idle'" class="text-center">
-              <label class="text-[11px] text-slate-500 hover:text-blue-600 cursor-pointer inline-flex items-center gap-1">
+              <label class="text-[11px] text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer inline-flex items-center gap-1">
                 <UploadCloud class="w-3.5 h-3.5" />
                 <span>Atau unggah foto selfie dari perangkat</span>
                 <input type="file" accept="image/*" class="hidden" @change="handleFileUpload" />
@@ -278,11 +278,11 @@
       </div>
 
       <!-- Sticky Footer Actions -->
-      <div class="px-5 py-3.5 bg-slate-50/95 backdrop-blur-md border-t border-slate-100 flex items-center justify-between gap-3 shrink-0 sticky bottom-0 z-20">
+      <div class="px-5 py-3.5 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3 shrink-0 sticky bottom-0 z-20">
         <button 
           type="button" 
           @click="handleClose"
-          class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 hover:bg-slate-200/60 transition cursor-pointer"
+          class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
         >
           {{ currentVerificationStatus === 'verified' || currentVerificationStatus === 'pending' ? 'Tutup' : 'Batal' }}
         </button>
@@ -292,7 +292,7 @@
             type="button" 
             @click="handleSubmitVerification"
             :disabled="isSubmitting || !nisInput.trim() || !nisnInput.trim() || !capturedImageBase64"
-            class="px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center gap-2 cursor-pointer active:scale-95"
+            class="px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-slate-900/25 transition disabled:opacity-50 flex items-center gap-2 cursor-pointer active:scale-95"
           >
             <Send class="w-4 h-4" v-if="!isSubmitting" />
             <RefreshCw class="w-4 h-4 animate-spin" v-else />
@@ -304,7 +304,7 @@
           <button 
             type="button" 
             @click="handleClose"
-            class="px-5 py-2.5 rounded-full text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-200 transition flex items-center gap-2 cursor-pointer"
+            class="px-5 py-2.5 rounded-full text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-slate-900/25 transition flex items-center gap-2 cursor-pointer active:scale-95"
           >
             <Check class="w-4 h-4" />
             <span>Selesai</span>

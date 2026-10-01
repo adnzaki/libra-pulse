@@ -2,12 +2,12 @@
   <div>
     <!-- Access Denied Gate if not logged in as Admin -->
     <div v-if="!store.isAdmin" class="max-w-md mx-auto py-12 px-4 text-center space-y-5 animate-in fade-in duration-300">
-      <div class="w-16 h-16 rounded-3xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto shadow-sm">
+      <div class="w-16 h-16 rounded-3xl bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto shadow-sm">
         <ShieldCheck class="w-8 h-8" />
       </div>
       <div>
-        <h2 class="text-xl font-extrabold text-slate-900">Akses Pengelola Terbatas</h2>
-        <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+        <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">Akses Pengelola Terbatas</h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
           Halaman Admin Library Console hanya dapat diakses oleh Administrator / Petugas Perpustakaan yang sah.
         </p>
       </div>
@@ -15,14 +15,14 @@
       <div class="pt-2 flex flex-col gap-2.5">
         <router-link 
           to="/login?mode=admin"
-          class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl text-xs flex items-center justify-center gap-2 shadow-md shadow-blue-200 transition"
+          class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl text-xs flex items-center justify-center gap-2 shadow-md shadow-slate-900/25 transition cursor-pointer"
         >
           <LogIn class="w-4 h-4" />
           <span>Masuk Sebagai Administrator</span>
         </router-link>
         <router-link 
           to="/"
-          class="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl text-xs flex items-center justify-center gap-2 transition"
+          class="w-full py-2.5 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-2xl text-xs flex items-center justify-center gap-2 transition cursor-pointer"
         >
           Kembali ke Katalog Publik
         </router-link>
@@ -36,19 +36,19 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
       <div>
         <div class="flex items-center gap-2 mb-1">
-          <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-full bg-blue-100 text-blue-700 border border-blue-200">
+          <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
             Control Hub
           </span>
-          <span class="text-[11px] sm:text-xs text-slate-400 font-medium">Real-time Sirkulasi & Pelaporan</span>
+          <span class="text-[11px] sm:text-xs text-slate-400 dark:text-slate-500 font-medium">Real-time Sirkulasi & Pelaporan</span>
         </div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Admin Library Console</h1>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Admin Library Console</h1>
       </div>
 
       <!-- Quick Action Buttons (Wrapped cleanly on mobile) -->
       <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
         <button 
           @click="openDirectLoanModal"
-          class="px-3.5 sm:px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-full shadow-md shadow-blue-200 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+          class="px-3.5 sm:px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-full shadow-md shadow-slate-900/25 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
         >
           <BookPlus class="w-4 h-4 shrink-0" />
           <span class="truncate">Scan Pinjam</span>
@@ -56,7 +56,7 @@
 
         <button 
           @click="openReturnModal(null)"
-          class="px-3.5 sm:px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-full shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+          class="px-3.5 sm:px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-full shadow-md shadow-slate-900/25 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
         >
           <CheckCircle2 class="w-4 h-4 shrink-0" />
           <span class="truncate">Pengembalian</span>
@@ -64,7 +64,7 @@
 
         <button 
           @click="openNotifyModal(null)"
-          class="px-3.5 sm:px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs rounded-full shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+          class="px-3.5 sm:px-4 py-2.5 bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-full shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
         >
           <Send class="w-4 h-4 text-amber-500 shrink-0" />
           <span class="truncate">Notifikasi</span>
@@ -72,27 +72,25 @@
 
         <button 
           @click="openAddBookModal"
-          class="px-3.5 sm:px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs rounded-full shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+          class="px-3.5 sm:px-4 py-2.5 bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-full shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
         >
-          <Plus class="w-4 h-4 text-slate-500 shrink-0" />
+          <Plus class="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
           <span class="truncate">Tambah Buku</span>
         </button>
 
         <button 
           @click="handleDownloadOffline"
           :disabled="isDownloadingOffline"
-          class="px-3.5 sm:px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 font-semibold text-xs rounded-full shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 disabled:opacity-50"
+          class="px-3.5 sm:px-4 py-2.5 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800/60 text-indigo-700 dark:text-indigo-300 font-semibold text-xs rounded-full shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 disabled:opacity-50"
           title="Unduh seluruh data untuk diakses secara offline"
         >
-          <Download class="w-4 h-4 text-indigo-600 shrink-0" :class="{ 'animate-bounce': isDownloadingOffline }" />
+          <Download class="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" :class="{ 'animate-bounce': isDownloadingOffline }" />
           <span class="truncate">{{ isDownloadingOffline ? 'Mengunduh...' : 'Unduh ke Lokal' }}</span>
         </button>
 
-        
-
         <button 
           @click="isChangeAdminPasswordOpen = true"
-          class="px-3.5 sm:px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-full shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+          class="px-3.5 sm:px-4 py-2.5 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white font-semibold text-xs rounded-full shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 border border-slate-800 dark:border-slate-700"
         >
           <KeyRound class="w-4 h-4 text-blue-400 shrink-0" />
           <span class="truncate">Ganti Sandi Admin</span>
@@ -100,12 +98,12 @@
 
         <button 
           @click="isDeviceSessionsOpen = true"
-          class="px-3.5 sm:px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs rounded-full shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+          class="px-3.5 sm:px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold text-xs rounded-full shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 border border-slate-200/80 dark:border-slate-700"
           title="Kelola sesi login perangkat & status Perangkat Utama"
         >
-          <Laptop class="w-4 h-4 text-blue-600 shrink-0" />
+          <Laptop class="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
           <span class="truncate">Sesi & Perangkat</span>
-          <span v-if="store.isCurrentDeviceMain" class="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+          <span v-if="store.isCurrentDeviceMain" class="px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold border border-emerald-200 dark:border-emerald-800/60">
             👑
           </span>
         </button>
@@ -116,16 +114,16 @@
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
       
       <!-- Bento Card 1: Total Koleksi Buku -->
-      <div class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+      <div class="bg-white dark:bg-slate-900/80 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
         <div class="flex items-center justify-between">
-          <span class="text-slate-400 text-[10px] sm:text-xs font-bold uppercase tracking-widest">Total Fisik</span>
-          <span class="px-2 py-0.5 bg-green-100 text-green-700 text-[9px] sm:text-[10px] font-bold rounded-full uppercase">Katalog</span>
+          <span class="text-slate-400 dark:text-slate-500 text-[10px] sm:text-xs font-bold uppercase tracking-widest">Total Fisik</span>
+          <span class="px-2 py-0.5 bg-green-100 dark:bg-green-950/60 text-green-700 dark:text-green-300 text-[9px] sm:text-[10px] font-bold rounded-full uppercase border border-green-200 dark:border-green-800/60">Katalog</span>
         </div>
         <div class="my-2.5 sm:my-4">
-          <div class="text-2xl sm:text-4xl font-extrabold font-sans text-slate-900">{{ store.stats?.totalBooks || 0 }}</div>
-          <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate">{{ store.stats?.totalTitles || 0 }} Judul Koleksi</p>
+          <div class="text-2xl sm:text-4xl font-extrabold font-sans text-slate-900 dark:text-white">{{ store.stats?.totalBooks || 0 }}</div>
+          <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">{{ store.stats?.totalTitles || 0 }} Judul Koleksi</p>
         </div>
-        <div class="w-full bg-slate-100 h-1.5 sm:h-2 rounded-full overflow-hidden">
+        <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 sm:h-2 rounded-full overflow-hidden">
           <div 
             class="bg-blue-600 h-full rounded-full transition-all duration-500" 
             :style="{ width: `${Math.min(100, ((store.stats?.availableBooks || 1) / (store.stats?.totalBooks || 1)) * 100)}%` }"
@@ -134,53 +132,53 @@
       </div>
 
       <!-- Bento Card 2: Sedang Dipinjam -->
-      <div class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+      <div class="bg-white dark:bg-slate-900/80 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
         <div class="flex items-center justify-between">
-          <span class="text-slate-400 text-[10px] sm:text-xs font-bold uppercase tracking-widest">Dipinjam</span>
-          <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-[9px] sm:text-[10px] font-bold rounded-full uppercase">Sirkulasi</span>
+          <span class="text-slate-400 dark:text-slate-500 text-[10px] sm:text-xs font-bold uppercase tracking-widest">Dipinjam</span>
+          <span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-[9px] sm:text-[10px] font-bold rounded-full uppercase border border-blue-200 dark:border-blue-800/60">Sirkulasi</span>
         </div>
         <div class="my-2.5 sm:my-4">
-          <div class="text-2xl sm:text-4xl font-extrabold font-sans text-slate-900">{{ store.stats?.borrowedBooks || 0 }}</div>
-          <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate">{{ store.activeLoans.length }} Pinjaman Aktif</p>
+          <div class="text-2xl sm:text-4xl font-extrabold font-sans text-slate-900 dark:text-white">{{ store.stats?.borrowedBooks || 0 }}</div>
+          <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">{{ store.activeLoans.length }} Pinjaman Aktif</p>
         </div>
-        <div class="w-full bg-slate-100 h-1.5 sm:h-2 rounded-full overflow-hidden">
+        <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 sm:h-2 rounded-full overflow-hidden">
           <div class="bg-indigo-500 h-full rounded-full" style="width: 72%"></div>
         </div>
       </div>
 
       <!-- Bento Card 3: Overdue / Terlambat -->
-      <div class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+      <div class="bg-white dark:bg-slate-900/80 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
         <div class="flex items-center justify-between">
-          <span class="text-slate-400 text-[10px] sm:text-xs font-bold uppercase tracking-widest">Telat</span>
+          <span class="text-slate-400 dark:text-slate-500 text-[10px] sm:text-xs font-bold uppercase tracking-widest">Telat</span>
           <span 
-            class="px-2 py-0.5 text-[9px] sm:text-[10px] font-bold rounded-full uppercase"
-            :class="store.overdueLoans.length ? 'bg-rose-100 text-rose-700' : 'bg-green-100 text-green-700'"
+            class="px-2 py-0.5 text-[9px] sm:text-[10px] font-bold rounded-full uppercase border"
+            :class="store.overdueLoans.length ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60' : 'bg-green-100 dark:bg-green-950/60 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800/60'"
           >
             {{ store.overdueLoans.length ? 'Perlu Aksi' : 'Aman' }}
           </span>
         </div>
         <div class="my-2.5 sm:my-4">
-          <div class="text-2xl sm:text-4xl font-extrabold font-sans" :class="store.overdueLoans.length ? 'text-rose-600' : 'text-slate-900'">
+          <div class="text-2xl sm:text-4xl font-extrabold font-sans" :class="store.overdueLoans.length ? 'text-rose-600 dark:text-rose-400' : 'text-slate-900 dark:text-white'">
             {{ store.overdueLoans.length }}
           </div>
-          <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate">{{ store.suspendedMembers.length }} Disuspend</p>
+          <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">{{ store.suspendedMembers.length }} Disuspend</p>
         </div>
         <button 
           v-if="store.overdueLoans.length"
           @click="openNotifyModal(null)"
-          class="text-[11px] sm:text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 pt-0.5 cursor-pointer truncate"
+          class="text-[11px] sm:text-xs font-bold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 flex items-center gap-1 pt-0.5 cursor-pointer truncate"
         >
           <Send class="w-3 h-3 shrink-0" />
           Kirim Notif →
         </button>
-        <div v-else class="text-[10px] sm:text-[11px] text-emerald-600 font-medium flex items-center gap-1">
+        <div v-else class="text-[10px] sm:text-[11px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
           <CheckCircle class="w-3 h-3 shrink-0" />
           Tepat waktu
         </div>
       </div>
 
       <!-- Bento Card 4: Dark Accent Bento Card (Hold 24h & System Status) -->
-      <div class="bg-slate-900 text-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl relative overflow-hidden flex flex-col justify-between">
+      <div class="bg-slate-900 text-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl relative overflow-hidden flex flex-col justify-between border border-slate-800">
         <div class="absolute -right-8 -top-8 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl pointer-events-none"></div>
         <div class="absolute -left-8 -bottom-8 w-32 h-32 bg-amber-400/15 rounded-full blur-2xl pointer-events-none"></div>
 
@@ -213,20 +211,20 @@
     <!-- OVERDUE WARNING BENTO BOX (If overdue loans exist) -->
     <div 
       v-if="store.overdueLoans.length > 0"
-      class="bg-rose-50 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-rose-100 text-rose-900 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4"
+      class="bg-rose-50 dark:bg-rose-950/40 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-rose-200 dark:border-rose-900/50 text-rose-900 dark:text-rose-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4 shadow-xs"
     >
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-2xl bg-rose-500 text-white flex items-center justify-center shadow-md shrink-0">
+        <div class="w-10 h-10 rounded-2xl bg-rose-500 text-white flex items-center justify-center shadow-md shadow-slate-900/25 shrink-0">
           <AlertTriangle class="w-5 h-5" />
         </div>
         <div>
-          <h3 class="font-bold text-sm sm:text-base text-rose-900">Perhatian: {{ store.overdueLoans.length }} Peminjaman Melewati Batas Waktu!</h3>
-          <p class="text-xs text-rose-700 mt-0.5">Sanksi penangguhan (suspend) kartu anggota berlaku otomatis hingga buku dikembalikan.</p>
+          <h3 class="font-bold text-sm sm:text-base text-rose-950 dark:text-rose-100">Perhatian: {{ store.overdueLoans.length }} Peminjaman Melewati Batas Waktu!</h3>
+          <p class="text-xs text-rose-700 dark:text-rose-300 mt-0.5">Sanksi penangguhan (suspend) kartu anggota berlaku otomatis hingga buku dikembalikan.</p>
         </div>
       </div>
       <button 
         @click="openNotifyModal(null)"
-        class="w-full sm:w-auto px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-full shadow-sm transition whitespace-nowrap cursor-pointer shrink-0 text-center active:scale-95"
+        class="w-full sm:w-auto px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-full shadow-md shadow-slate-900/25 transition whitespace-nowrap cursor-pointer shrink-0 text-center active:scale-95"
       >
         Kirim Broadcast Peringatan
       </button>
@@ -235,29 +233,29 @@
     <!-- STUDENT VERIFICATION REQUESTS NOTIFICATION BANNER (Jika ada verifikasi siswa untuk akses e-book) -->
     <div 
       v-if="store.pendingStudentVerificationsCount > 0"
-      class="bg-blue-50 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-blue-200 text-blue-900 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4 shadow-xs animate-in fade-in duration-200 mb-4"
+      class="bg-blue-50 dark:bg-blue-950/40 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-blue-200 dark:border-blue-800/60 text-blue-900 dark:text-blue-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4 shadow-xs animate-in fade-in duration-200 mb-4"
     >
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shrink-0">
+        <div class="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-slate-900/25 shrink-0">
           <ShieldCheck class="w-5 h-5 animate-pulse" />
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <h3 class="font-bold text-sm sm:text-base text-blue-950">
+            <h3 class="font-bold text-sm sm:text-base text-blue-950 dark:text-blue-100">
               Ada {{ store.pendingStudentVerificationsCount }} Permohonan Verifikasi Siswa SDN Pengasinan VII (e-Book)!
             </h3>
-            <span class="px-2 py-0.5 rounded-full bg-blue-200 text-blue-900 text-[10px] font-extrabold uppercase animate-pulse">
+            <span class="px-2 py-0.5 rounded-full bg-blue-200 dark:bg-blue-900/80 text-blue-900 dark:text-blue-200 text-[10px] font-extrabold uppercase animate-pulse border border-blue-300 dark:border-blue-700">
               e-Book
             </span>
           </div>
-          <p class="text-xs text-blue-700 mt-0.5">
+          <p class="text-xs text-blue-700 dark:text-blue-300 mt-0.5">
             Siswa telah mengirimkan NIS, NISN dan foto selfie untuk verifikasi hak cipta peminjaman koleksi e-Book perpustakaan.
           </p>
         </div>
       </div>
       <button 
         @click="activeTab = 'student_verifications'"
-        class="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-full shadow-md shadow-blue-200 transition whitespace-nowrap cursor-pointer shrink-0 text-center active:scale-95 flex items-center justify-center gap-1.5"
+        class="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-full shadow-md shadow-slate-900/25 transition whitespace-nowrap cursor-pointer shrink-0 text-center active:scale-95 flex items-center justify-center gap-1.5"
       >
         <span>Tinjau Verifikasi Siswa →</span>
       </button>
@@ -266,39 +264,39 @@
     <!-- TEACHER UPGRADE REQUESTS NOTIFICATION BANNER (Jika ada permintaan selfie yang menunggu verifikasi) -->
     <div 
       v-if="store.pendingTeacherRequestsCount > 0"
-      class="bg-amber-50 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-amber-200 text-amber-900 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4 shadow-xs animate-in fade-in duration-200"
+      class="bg-amber-50 dark:bg-amber-950/40 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4 shadow-xs animate-in fade-in duration-200"
     >
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-md shrink-0">
+        <div class="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-md shadow-slate-900/25 shrink-0">
           <GraduationCap class="w-5 h-5 animate-pulse" />
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <h3 class="font-bold text-sm sm:text-base text-amber-950">
+            <h3 class="font-bold text-sm sm:text-base text-amber-950 dark:text-amber-100">
               Ada {{ store.pendingTeacherRequestsCount }} Permintaan Verifikasi Status Guru Menunggu Peninjauan!
             </h3>
-            <span class="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 text-[10px] font-extrabold uppercase animate-pulse">
+            <span class="px-2 py-0.5 rounded-full bg-amber-200 dark:bg-amber-900/80 text-amber-900 dark:text-amber-200 text-[10px] font-extrabold uppercase animate-pulse border border-amber-300 dark:border-amber-700">
               Baru
             </span>
           </div>
-          <p class="text-xs text-amber-700 mt-0.5">
+          <p class="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
             Anggota perpustakaan telah mengirimkan foto selfie untuk diverifikasi menjadi Guru SDN Pengasinan VII.
           </p>
         </div>
       </div>
       <button 
         @click="activeTab = 'teacher_requests'"
-        class="w-full sm:w-auto px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-full shadow-md shadow-amber-200 transition whitespace-nowrap cursor-pointer shrink-0 text-center active:scale-95 flex items-center justify-center gap-1.5"
+        class="w-full sm:w-auto px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-full shadow-md shadow-slate-900/25 transition whitespace-nowrap cursor-pointer shrink-0 text-center active:scale-95 flex items-center justify-center gap-1.5"
       >
         <span>Lihat & Verifikasi Foto Selfie →</span>
       </button>
     </div>
 
     <!-- MAIN INTERACTIVE BENTO CARD: Tabs & Circulation Tables -->
-    <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+    <div class="bg-white dark:bg-slate-900/80 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
       
       <!-- Bento Tab Bar (Responsive flex-wrap layout, prevents clipping and overflow) -->
-      <div class="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3.5 bg-slate-50/60">
+      <div class="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 dark:border-slate-800 flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3.5 bg-slate-50/60 dark:bg-slate-900/90">
         
         <!-- Tab Navigation (Flex-wrap with clean gap, ensuring all menu pills are visible) -->
         <div class="flex flex-wrap items-center gap-2 flex-1 min-w-0">
@@ -308,15 +306,15 @@
             @click="activeTab = tab.id"
             class="px-3.5 py-2 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 active:scale-95 whitespace-nowrap"
             :class="activeTab === tab.id 
-              ? 'bg-slate-900 text-white shadow-sm' 
-              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+              ? 'bg-slate-900 dark:bg-blue-600 text-white shadow-sm' 
+              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'"
           >
             <component :is="tab.icon" class="w-3.5 h-3.5" />
             <span>{{ tab.label }}</span>
             <span 
               v-if="tab.badge" 
               class="px-2 py-0.5 rounded-full text-[10px] font-bold"
-              :class="activeTab === tab.id ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-700'"
+              :class="activeTab === tab.id ? 'bg-blue-500 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200'"
             >
               {{ tab.badge }}
             </span>
@@ -329,13 +327,13 @@
             v-model="currentSearchInput"
             type="text" 
             :placeholder="searchPlaceholder"
-            class="w-full pl-9 pr-8 py-2 bg-white border border-slate-200 rounded-full text-xs text-slate-900 focus:outline-none focus:border-blue-500 shadow-sm font-medium placeholder:text-slate-400"
+            class="w-full pl-9 pr-8 py-2 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-full text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500 shadow-sm font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500"
           />
           <Search class="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
           <button 
             v-if="currentSearchInput"
             @click="currentSearchInput = ''"
-            class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-700 p-0.5 rounded-full cursor-pointer transition"
+            class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-0.5 rounded-full cursor-pointer transition"
             title="Hapus kata kunci pencarian"
           >
             <X class="w-3.5 h-3.5" />
@@ -349,22 +347,22 @@
         
         <!-- Tab 1: Peminjaman & Sirkulasi Aktif -->
         <div v-if="activeTab === 'loans'" class="space-y-4">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 dark:bg-slate-900/80 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
             <div>
-              <h3 class="text-xs sm:text-sm font-bold text-slate-900">Daftar Peminjaman Aktif & Overdue</h3>
-              <p class="text-[11px] text-slate-500">Buku fisik yang telat dikenakan sanksi; e-Book yang lewat tempo otomatis dikembalikan sistem (bebas sanksi suspend).</p>
+              <h3 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">Daftar Peminjaman Aktif & Overdue</h3>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">Buku fisik yang telat dikenakan sanksi; e-Book yang lewat tempo otomatis dikembalikan sistem (bebas sanksi suspend).</p>
             </div>
             <div class="flex items-center gap-2">
               <button 
                 @click="triggerAutoReturnEbooks"
                 :disabled="isProcessingEbookAutoReturn"
-                class="px-3.5 py-2 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                class="px-3.5 py-2 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50 active:scale-95"
                 title="Pindai dan proses pengembalian otomatis e-Book kedaluwarsa secara hemat kuota database"
               >
                 <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': isProcessingEbookAutoReturn }" />
                 <span>{{ isProcessingEbookAutoReturn ? 'Memproses...' : 'Sinkron e-Book Kedaluwarsa' }}</span>
               </button>
-              <span class="text-[11px] sm:text-xs text-slate-600 font-mono bg-white px-3 py-1.5 rounded-full border border-slate-200">{{ filteredLoans.length }} Transaksi</span>
+              <span class="text-[11px] sm:text-xs text-slate-600 dark:text-slate-300 font-mono bg-white dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200/80 dark:border-slate-700">{{ filteredLoans.length }} Transaksi</span>
             </div>
           </div>
 
@@ -373,35 +371,35 @@
             <div 
               v-for="l in filteredLoans" 
               :key="l.id"
-              class="p-4 rounded-2xl border space-y-3"
-              :class="l.status === 'overdue' ? 'bg-rose-50/40 border-rose-200' : 'bg-slate-50/60 border-slate-200'"
+              class="p-4 rounded-2xl border space-y-3 transition-colors"
+              :class="l.status === 'overdue' ? 'bg-rose-50/40 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50' : 'bg-white dark:bg-slate-900/80 border-slate-100 dark:border-slate-800'"
             >
               <div class="flex items-start justify-between gap-2">
                 <div>
-                  <span class="text-[10px] font-mono font-bold text-blue-600">{{ l.id }}</span>
-                  <h4 class="font-bold text-sm text-slate-900 leading-snug">{{ l.bookTitle }}</h4>
-                  <div class="text-xs text-slate-500 mt-0.5">Lokasi Rak: <strong class="font-mono text-slate-800">{{ l.shelfCode }}</strong></div>
+                  <span class="text-[10px] font-mono font-bold text-blue-600 dark:text-blue-400">{{ l.id }}</span>
+                  <h4 class="font-bold text-sm text-slate-900 dark:text-white leading-snug">{{ l.bookTitle }}</h4>
+                  <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Lokasi Rak: <strong class="font-mono text-slate-800 dark:text-slate-200">{{ l.shelfCode }}</strong></div>
                 </div>
                 <span 
-                  class="px-2.5 py-1 rounded-full text-[10px] font-bold shrink-0"
-                  :class="l.status === 'overdue' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'"
+                  class="px-2.5 py-1 rounded-full text-[10px] font-bold shrink-0 border"
+                  :class="l.status === 'overdue' ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60' : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60'"
                 >
                   {{ l.status === 'overdue' ? `⚠️ Telat ${l.daysOverdue}h` : 'Aktif' }}
                 </span>
               </div>
 
-              <div class="p-2.5 rounded-xl bg-white border border-slate-200 text-xs space-y-1">
+              <div class="p-2.5 rounded-xl bg-slate-50/80 dark:bg-slate-850/80 border border-slate-100 dark:border-slate-800 text-xs space-y-1">
                 <div class="flex justify-between">
-                  <span class="text-slate-500">Peminjam:</span>
-                  <strong class="text-slate-800 font-semibold">{{ l.memberName }} ({{ l.memberCardNumber }})</strong>
+                  <span class="text-slate-500 dark:text-slate-400">Peminjam:</span>
+                  <strong class="text-slate-800 dark:text-slate-200 font-semibold">{{ l.memberName }} ({{ l.memberCardNumber }})</strong>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-slate-500">Tgl Pinjam:</span>
-                  <span class="text-slate-700">{{ new Date(l.borrowDate).toLocaleDateString('id-ID') }}</span>
+                  <span class="text-slate-500 dark:text-slate-400">Tgl Pinjam:</span>
+                  <span class="text-slate-700 dark:text-slate-300">{{ new Date(l.borrowDate).toLocaleDateString('id-ID') }}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-slate-500">Jatuh Tempo:</span>
-                  <strong :class="l.status === 'overdue' ? 'text-rose-600' : 'text-slate-800'">
+                  <span class="text-slate-500 dark:text-slate-400">Jatuh Tempo:</span>
+                  <strong :class="l.status === 'overdue' ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-200'">
                     {{ new Date(l.dueDate).toLocaleDateString('id-ID') }}
                   </strong>
                 </div>
@@ -411,7 +409,7 @@
                 <button 
                   v-if="l.status === 'overdue'"
                   @click="openNotifyModal(l)"
-                  class="flex-1 py-2 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold text-xs transition cursor-pointer text-center active:scale-95"
+                  class="flex-1 py-2 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition cursor-pointer text-center active:scale-95 shadow-xs"
                 >
                   Peringatan
                 </button>
@@ -426,9 +424,9 @@
           </div>
 
           <!-- Desktop Table View -->
-          <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100">
-            <table class="w-full text-left text-xs text-slate-600">
-              <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] tracking-wider border-b border-slate-100 font-bold">
+          <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80">
+            <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+              <thead class="bg-slate-50 dark:bg-slate-850/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 font-bold">
                 <tr>
                   <th class="py-3.5 px-4">ID Transaksi</th>
                   <th class="py-3.5 px-4">Buku & Lokasi Rak</th>
@@ -439,35 +437,35 @@
                   <th class="py-3.5 px-4 text-right">Aksi Sirkulasi</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-100">
+              <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
                 <tr 
                   v-for="l in filteredLoans" 
                   :key="l.id"
-                  class="hover:bg-slate-50/80 transition"
-                  :class="l.status === 'overdue' ? 'bg-rose-50/30' : ''"
+                  class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition"
+                  :class="l.status === 'overdue' ? 'bg-rose-50/30 dark:bg-rose-950/20' : ''"
                 >
-                  <td class="py-3 px-4 font-mono font-bold text-blue-600">{{ l.id }}</td>
+                  <td class="py-3 px-4 font-mono font-bold text-blue-600 dark:text-blue-400">{{ l.id }}</td>
                   <td class="py-3 px-4">
-                    <div class="font-bold text-slate-900 truncate max-w-xs">{{ l.bookTitle }}</div>
-                    <div class="text-[10px] text-slate-400 font-mono">{{ l.shelfCode }}</div>
+                    <div class="font-bold text-slate-900 dark:text-white truncate max-w-xs">{{ l.bookTitle }}</div>
+                    <div class="text-[10px] text-slate-400 dark:text-slate-400 font-mono">{{ l.shelfCode }}</div>
                   </td>
                   <td class="py-3 px-4">
-                    <div class="font-semibold text-slate-900">{{ l.memberName }}</div>
-                    <div class="text-[10px] font-mono text-slate-400">{{ l.memberCardNumber }}</div>
+                    <div class="font-semibold text-slate-900 dark:text-slate-100">{{ l.memberName }}</div>
+                    <div class="text-[10px] font-mono text-slate-400 dark:text-slate-400">{{ l.memberCardNumber }}</div>
                   </td>
-                  <td class="py-3 px-4 text-slate-600">{{ new Date(l.borrowDate).toLocaleDateString('id-ID') }}</td>
+                  <td class="py-3 px-4 text-slate-600 dark:text-slate-300">{{ new Date(l.borrowDate).toLocaleDateString('id-ID') }}</td>
                   <td class="py-3 px-4">
-                    <span :class="l.status === 'overdue' ? 'text-rose-600 font-bold' : 'text-slate-700 font-medium'">
+                    <span :class="l.status === 'overdue' ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300 font-medium'">
                       {{ new Date(l.dueDate).toLocaleDateString('id-ID') }}
                     </span>
                   </td>
                   <td class="py-3 px-4">
                     <div v-if="l.status === 'overdue'" class="space-y-0.5">
-                      <span class="px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 font-bold text-[10px] inline-flex items-center gap-1">
+                      <span class="px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60 font-bold text-[10px] inline-flex items-center gap-1">
                         ⚠️ Telat {{ l.daysOverdue }} Hari
                       </span>
                     </div>
-                    <span v-else class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px]">
+                    <span v-else class="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 font-bold text-[10px]">
                       Aktif
                     </span>
                   </td>
@@ -475,14 +473,14 @@
                     <button 
                       v-if="l.status === 'overdue'"
                       @click="openNotifyModal(l)"
-                      class="px-3 py-1.5 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold text-xs transition cursor-pointer"
+                      class="px-3 py-1.5 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs transition cursor-pointer shadow-xs active:scale-95"
                       title="Kirim Notifikasi Keterlambatan"
                     >
                       Peringatan
                     </button>
                     <button 
                       @click="openReturnModal(l)"
-                      class="px-3 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition cursor-pointer"
+                      class="px-3 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition cursor-pointer active:scale-95"
                     >
                       Terima Pengembalian
                     </button>
@@ -495,73 +493,73 @@
 
         <!-- Tab 2: Manajemen Booking 24 Jam (Auto Hold & Auto-Cancel) -->
         <div v-if="activeTab === 'bookings'" class="space-y-4">
-          <div class="p-4 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-between">
+          <div class="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold">
+              <div class="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
                 <Clock class="w-4 h-4" />
               </div>
-              <div class="text-xs text-amber-900">
-                <strong class="font-bold">Otomatisasi Hold 24 Jam:</strong>
+              <div class="text-xs text-amber-900 dark:text-amber-200">
+                <strong class="font-bold text-amber-950 dark:text-amber-100">Otomatisasi Hold 24 Jam:</strong>
                 Sistem otomatis menahan buku selama 24 jam. Jika tidak diambil di sirkulasi, sistem membatalkannya agar anggota lain dapat meminjam.
               </div>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 shrink-0">
               <button 
                 @click="handleCleanExpiredBookingsManual"
                 :disabled="isCleaningExpiredBookings"
-                class="px-3 py-1 bg-amber-200/80 hover:bg-amber-300 text-amber-900 rounded-full text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                class="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-full text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-xs active:scale-95"
                 title="Periksa & bersihkan booking yang sudah kadaluarsa"
               >
-                <RefreshCw class="w-3 h-3" :class="{ 'animate-spin': isCleaningExpiredBookings }" />
-                Bersihkan Kadaluarsa
+                <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': isCleaningExpiredBookings }" />
+                <span>Bersihkan Kadaluarsa</span>
               </button>
-              <span class="text-xs text-amber-800 font-bold font-mono px-3 py-1 bg-amber-200/60 rounded-full">
+              <span class="text-xs text-amber-900 dark:text-amber-200 font-bold font-mono px-3 py-1.5 bg-amber-100 dark:bg-amber-900/50 border border-amber-300/60 dark:border-amber-700/60 rounded-full">
                 {{ filteredBookings.length }} Booking Aktif
               </span>
             </div>
           </div>
 
-          <div v-if="filteredBookings.length === 0" class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs">
-            <Clock class="w-8 h-8 text-slate-300 mx-auto mb-2" />
-            <p class="font-bold text-slate-700">Tidak Ada Data Booking</p>
+          <div v-if="filteredBookings.length === 0" class="p-8 text-center bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-800 text-slate-400 text-xs">
+            <Clock class="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+            <p class="font-bold text-slate-700 dark:text-slate-200">Tidak Ada Data Booking</p>
             <p class="text-[11px]" v-if="bookingSearch">Tidak ada booking yang cocok dengan kata kunci "{{ bookingSearch }}".</p>
           </div>
 
           <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div 
-              v-for="b in filteredBookings"
+              v-for="b in filteredBookings" 
               :key="b.id"
-              class="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-4"
+              class="p-5 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-100 dark:border-slate-800 shadow-sm space-y-4"
             >
               <div class="flex gap-3.5">
-                <img :src="b.bookCover" class="w-16 h-22 object-cover rounded-xl shadow-sm" alt="Cover" />
+                <img :src="b.bookCover" class="w-16 h-22 object-cover rounded-xl shadow-sm border border-slate-100 dark:border-slate-800" alt="Cover" />
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center justify-between">
-                    <span class="text-[10px] font-mono font-bold text-blue-600 px-2 py-0.5 rounded bg-blue-50">{{ b.id }}</span>
-                    <span class="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-mono">{{ b.shelfCode }}</span>
+                    <span class="text-[10px] font-mono font-bold text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/50">{{ b.id }}</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono border border-slate-200/60 dark:border-slate-700/60">{{ b.shelfCode }}</span>
                   </div>
-                  <h4 class="font-bold text-slate-900 text-sm mt-1 truncate">{{ b.bookTitle }}</h4>
-                  <p class="text-xs text-slate-700 mt-0.5">Pemesan: <strong>{{ b.memberName }}</strong> ({{ b.memberCardNumber }})</p>
-                  <div class="text-[11px] text-slate-500">HP: {{ b.memberPhone }} • {{ b.memberEmail }}</div>
+                  <h4 class="font-bold text-slate-900 dark:text-white text-sm mt-1 truncate">{{ b.bookTitle }}</h4>
+                  <p class="text-xs text-slate-700 dark:text-slate-300 mt-0.5">Pemesan: <strong class="text-slate-900 dark:text-white font-bold">{{ b.memberName }}</strong> ({{ b.memberCardNumber }})</p>
+                  <div class="text-[11px] text-slate-500 dark:text-slate-400">HP: {{ b.memberPhone }} • {{ b.memberEmail }}</div>
                   
                   <!-- Countdown Timer -->
-                  <div class="mt-2 p-2 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
-                    <span class="text-slate-500">Sisa Waktu Hold:</span>
-                    <span class="font-mono font-bold text-amber-600">{{ formatCountdown(b.expiresAt) }}</span>
+                  <div class="mt-2 p-2 rounded-xl bg-slate-50/80 dark:bg-slate-850/80 border border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                    <span class="text-slate-500 dark:text-slate-400">Sisa Waktu Hold:</span>
+                    <span class="font-mono font-bold text-amber-600 dark:text-amber-400">{{ formatCountdown(b.expiresAt) }}</span>
                   </div>
                 </div>
               </div>
 
-              <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+              <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
                 <button 
                   @click="handleCancelBooking(b.id)"
-                  class="px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 text-xs font-semibold transition cursor-pointer"
+                  class="px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-rose-100 dark:hover:bg-rose-950/60 text-slate-600 dark:text-slate-300 hover:text-rose-700 dark:hover:text-rose-300 text-xs font-semibold transition cursor-pointer active:scale-95"
                 >
                   Batalkan Booking
                 </button>
                 <button 
                   @click="openCollectBookingModal(b)"
-                  class="px-4 py-1.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-sm flex items-center gap-1.5 cursor-pointer"
+                  class="px-4 py-1.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-95"
                 >
                   <CheckCircle class="w-4 h-4" />
                   Serahkan Buku ke Anggota
@@ -573,10 +571,10 @@
 
         <!-- Tab 3: Kelola Anggota & Member Perpustakaan -->
         <div v-if="activeTab === 'members'" class="space-y-4">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200/80">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 dark:bg-slate-900/80 p-4 sm:p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
             <div>
-              <h3 class="font-bold text-base text-slate-900">Manajemen Anggota & Kartu Digital</h3>
-              <p class="text-xs text-slate-500">Kelola direktori anggota publik, hak akses, suspend manual, dan cetak kartu QR.</p>
+              <h3 class="font-bold text-base text-slate-900 dark:text-white">Manajemen Anggota & Kartu Digital</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Kelola direktori anggota publik, hak akses, suspend manual, dan cetak kartu QR.</p>
             </div>
             <div class="flex items-center gap-2">
               <button 
@@ -597,12 +595,12 @@
                 :key="filter"
                 @click="memberFilter = filter"
                 class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer"
-                :class="memberFilter === filter ? 'bg-slate-900 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200/60'"
+                :class="memberFilter === filter ? 'bg-blue-600 text-white shadow-xs' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700/60'"
               >
                 {{ filter === 'all' ? 'Semua Anggota' : filter === 'guru' ? '👨‍🏫 Guru' : filter === 'siswa' ? '🎒 Siswa' : filter === 'active' ? 'Aktif' : filter === 'suspended' ? 'Disuspend' : 'Admin' }}
               </button>
             </div>
-            <div class="text-xs text-slate-500 font-mono">
+            <div class="text-xs text-slate-500 dark:text-slate-400 font-mono">
               Menampilkan {{ filteredMembers.length }} dari {{ displayedTotalMembers }} Akun
             </div>
           </div>
@@ -612,58 +610,58 @@
             <div 
               v-for="m in filteredMembers" 
               :key="m.id"
-              class="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3"
+              class="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-100 dark:border-slate-800 shadow-sm space-y-3"
             >
               <div class="flex items-start justify-between gap-2">
                 <div class="flex items-center gap-3 min-w-0">
-                  <img :src="m.avatar" class="w-11 h-11 rounded-2xl object-cover border border-slate-200 shrink-0" alt="Avatar" />
+                  <img :src="m.avatar" class="w-11 h-11 rounded-2xl object-cover border border-slate-200 dark:border-slate-700/60 shrink-0" alt="Avatar" />
                   <div class="min-w-0">
-                    <h4 class="font-bold text-slate-900 text-sm truncate flex flex-wrap items-center gap-1.5">
+                    <h4 class="font-bold text-slate-900 dark:text-white text-sm truncate flex flex-wrap items-center gap-1.5">
                       <span>{{ m.name }}</span>
                       <span v-if="isSuperAdminAccount(m)" class="px-1.5 py-0.2 bg-blue-600 text-white text-[9px] font-bold rounded-full">SUPER ADMIN</span>
                       <span 
-                        class="px-2 py-0.2 rounded-full text-[9px] font-bold"
-                        :class="m.memberType === 'guru' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' : 'bg-blue-100 text-blue-800 border border-blue-200'"
+                        class="px-2 py-0.2 rounded-full text-[9px] font-bold border"
+                        :class="m.memberType === 'guru' ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60' : 'bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800/60'"
                       >
                         {{ m.memberType === 'guru' ? '👨‍🏫 Guru' : '🎒 Siswa' }}
                       </span>
-                      <span v-if="m.role === 'admin'" class="px-1.5 py-0.2 bg-blue-100 text-blue-700 text-[9px] font-bold rounded-full">ADMIN</span>
+                      <span v-if="m.role === 'admin'" class="px-1.5 py-0.2 bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 text-[9px] font-bold rounded-full">ADMIN</span>
                     </h4>
-                    <div class="text-[11px] text-slate-500 truncate">{{ m.email }} • {{ m.phone }}</div>
-                    <div class="text-[10px] font-mono text-blue-600 font-bold mt-0.5">{{ m.cardNumber }}</div>
+                    <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">{{ m.email }} • {{ m.phone }}</div>
+                    <div class="text-[10px] font-mono text-blue-600 dark:text-blue-400 font-bold mt-0.5">{{ m.cardNumber }}</div>
                   </div>
                 </div>
                 <span 
-                  class="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0"
-                  :class="m.isSuspended ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'"
+                  class="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 border"
+                  :class="m.isSuspended ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60' : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60'"
                 >
                   {{ m.isSuspended ? 'Disuspend' : 'Aktif' }}
                 </span>
               </div>
 
               <!-- Suspend Reason if suspended -->
-              <div v-if="m.isSuspended" class="p-2.5 rounded-xl bg-rose-50 border border-rose-100 text-[11px] text-rose-700">
+              <div v-if="m.isSuspended" class="p-2.5 rounded-xl bg-rose-50/80 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-[11px] text-rose-700 dark:text-rose-300">
                 <strong>Alasan:</strong> {{ m.suspendReason || 'Penangguhan sanksi peminjaman' }}
-                <div v-if="m.suspendedUntil" class="text-[10px] text-rose-600 mt-0.5 font-mono">
+                <div v-if="m.suspendedUntil" class="text-[10px] text-rose-600 dark:text-rose-400 mt-0.5 font-mono">
                   Berlaku hingga: {{ new Date(m.suspendedUntil).toLocaleDateString('id-ID') }}
                 </div>
               </div>
 
               <!-- Member Stats & Actions -->
-              <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                <div class="text-[11px] text-slate-500">
-                  Total Pinjam: <strong class="text-slate-800">{{ m.totalBorrowed || 0 }}x</strong>
+              <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                <div class="text-[11px] text-slate-500 dark:text-slate-400">
+                  Total Pinjam: <strong class="text-slate-800 dark:text-slate-200">{{ m.totalBorrowed || 0 }}x</strong>
                 </div>
                 <div class="flex items-center gap-1.5">
                   <button 
                     @click="openEditMemberModal(m)"
-                    class="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition"
+                    class="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition"
                   >
                     Edit
                   </button>
                   <button 
                     @click="openAdminResetMemberPassword(m)"
-                    class="px-2.5 py-1 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold transition flex items-center gap-1"
+                    class="px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-800/50 text-xs font-semibold transition flex items-center gap-1"
                     title="Reset Sandi Anggota"
                   >
                     <KeyRound class="w-3 h-3" />
@@ -672,21 +670,21 @@
                   <button 
                     v-if="m.isSuspended"
                     @click="handleUnsuspend(m.id)"
-                    class="px-2.5 py-1 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-xs font-semibold transition"
+                    class="px-2.5 py-1 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition"
                   >
                     Buka Suspend
                   </button>
                   <button 
                     v-else-if="m.role !== 'admin'"
                     @click="openSuspendMemberModal(m)"
-                    class="px-2.5 py-1 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold transition cursor-pointer"
+                    class="px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 border border-rose-200/50 dark:border-rose-800/50 text-xs font-semibold transition cursor-pointer"
                   >
                     Suspend
                   </button>
                   <button 
                     v-if="m.role !== 'admin' && !isSuperAdminAccount(m)"
                     @click="handleDeleteMember(m.id, m.name)"
-                    class="p-1.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 transition"
+                    class="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-rose-100 dark:hover:bg-rose-950/50 text-slate-500 hover:text-rose-600 transition"
                     title="Hapus Anggota"
                   >
                     <Trash2 class="w-3.5 h-3.5" />
@@ -697,9 +695,9 @@
           </div>
 
           <!-- Desktop Table for Members -->
-          <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100">
-            <table class="w-full text-left text-xs text-slate-600">
-              <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] tracking-wider border-b border-slate-100 font-bold">
+          <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80">
+            <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+              <thead class="bg-slate-50 dark:bg-slate-850/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 font-bold">
                 <tr>
                   <th class="py-3.5 px-4">Nama & Email</th>
                   <th class="py-3.5 px-4">No. Kartu</th>
@@ -711,24 +709,24 @@
                   <th class="py-3.5 px-4 text-right">Aksi Kelola</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-100">
-                <tr v-for="m in filteredMembers" :key="m.id" class="hover:bg-slate-50/80">
+              <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+                <tr v-for="m in filteredMembers" :key="m.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
                   <td class="py-3 px-4 flex items-center gap-3">
-                    <img :src="m.avatar" class="w-9 h-9 rounded-2xl object-cover border border-slate-200 shadow-sm shrink-0" alt="Avatar" />
+                    <img :src="m.avatar" class="w-9 h-9 rounded-2xl object-cover border border-slate-200 dark:border-slate-700/60 shadow-sm shrink-0" alt="Avatar" />
                     <div>
-                      <div class="font-bold text-slate-900 flex items-center gap-1.5">
+                      <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                         {{ m.name }}
                         <span v-if="isSuperAdminAccount(m)" class="px-1.5 py-0.2 bg-blue-600 text-white text-[9px] font-bold rounded-full">SUPER ADMIN</span>
                       </div>
-                      <div class="text-[11px] text-slate-400 font-sans">{{ m.email }}</div>
+                      <div class="text-[11px] text-slate-400 dark:text-slate-400 font-sans">{{ m.email }}</div>
                     </div>
                   </td>
-                  <td class="py-3 px-4 font-mono font-bold text-blue-600">{{ m.cardNumber }}</td>
-                  <td class="py-3 px-4 font-mono text-slate-700">{{ m.phone }}</td>
+                  <td class="py-3 px-4 font-mono font-bold text-blue-600 dark:text-blue-400">{{ m.cardNumber }}</td>
+                  <td class="py-3 px-4 font-mono text-slate-700 dark:text-slate-300">{{ m.phone }}</td>
                   <td class="py-3 px-4">
                     <span 
-                      class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1 shadow-2xs"
-                      :class="m.memberType === 'guru' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' : 'bg-blue-100 text-blue-800 border border-blue-200'"
+                      class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1 shadow-2xs border"
+                      :class="m.memberType === 'guru' ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60' : 'bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800/60'"
                     >
                       <span v-if="m.memberType === 'guru'">👨‍🏫 Guru</span>
                       <span v-else>🎒 Siswa</span>
@@ -736,37 +734,37 @@
                   </td>
                   <td class="py-3 px-4">
                     <span 
-                      class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
-                      :class="m.role === 'admin' ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-700'"
+                      class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border shadow-2xs"
+                      :class="m.role === 'admin' ? 'bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/60 font-extrabold' : 'bg-slate-100 dark:bg-slate-850/90 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 font-bold'"
                     >
-                      {{ m.role }}
+                      {{ m.role === 'admin' ? 'ADMIN' : 'ANGGOTA' }}
                     </span>
                   </td>
                   <td class="py-3 px-4">
                     <span 
-                      class="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
-                      :class="m.isSuspended ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'"
+                      class="px-2.5 py-0.5 rounded-full text-[10px] font-bold border"
+                      :class="m.isSuspended ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60' : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60'"
                     >
                       {{ m.isSuspended ? 'Disuspend' : 'Aktif' }}
                     </span>
-                    <div v-if="m.isSuspended" class="text-[10px] text-rose-600 max-w-xs truncate mt-0.5" :title="m.suspendReason">
+                    <div v-if="m.isSuspended" class="text-[10px] text-rose-600 dark:text-rose-400 max-w-xs truncate mt-0.5" :title="m.suspendReason">
                       {{ m.suspendReason }}
                     </div>
                   </td>
-                  <td class="py-3 px-4 text-center font-bold text-slate-800">
+                  <td class="py-3 px-4 text-center font-bold text-slate-800 dark:text-slate-200">
                     {{ m.totalBorrowed || 0 }}x
                   </td>
                   <td class="py-3 px-4 text-right">
                     <div class="flex items-center justify-end gap-1.5">
                       <button 
                         @click="openEditMemberModal(m)"
-                        class="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition cursor-pointer"
+                        class="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs transition cursor-pointer"
                       >
                         Edit
                       </button>
                       <button 
                         @click="openAdminResetMemberPassword(m)"
-                        class="px-2.5 py-1 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-xs transition cursor-pointer flex items-center gap-1"
+                        class="px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-800/50 font-semibold text-xs transition cursor-pointer flex items-center gap-1"
                         title="Reset Sandi Anggota"
                       >
                         <KeyRound class="w-3 h-3" />
@@ -782,14 +780,14 @@
                       <button 
                         v-else-if="m.role !== 'admin'"
                         @click="openSuspendMemberModal(m)"
-                        class="px-2.5 py-1 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-xs transition cursor-pointer"
+                        class="px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200/50 dark:border-rose-800/50 font-semibold text-xs transition cursor-pointer"
                       >
                         Suspend
                       </button>
                       <button 
                         v-if="m.role !== 'admin' && !isSuperAdminAccount(m)"
                         @click="handleDeleteMember(m.id, m.name)"
-                        class="p-1.5 rounded-full bg-slate-100 hover:bg-rose-100 text-slate-500 hover:text-rose-700 transition cursor-pointer"
+                        class="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-rose-100 dark:hover:bg-rose-950/50 text-slate-500 hover:text-rose-700 transition cursor-pointer"
                         title="Hapus Anggota"
                       >
                         <Trash2 class="w-3.5 h-3.5" />
@@ -809,18 +807,18 @@
 
         <!-- Tab 3.5: Verifikasi Status Guru (Permintaan Ubah Status Keanggotaan Menjadi Guru) -->
         <div v-if="activeTab === 'teacher_requests'" class="space-y-4">
-          <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-50 dark:bg-slate-900/80 p-4 sm:p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
             <div>
-              <h3 class="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
+              <h3 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <span>Verifikasi Pengajuan Status Dewan Guru</span>
                 <span 
                   v-if="store.pendingTeacherRequestsCount > 0" 
-                  class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold"
+                  class="px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[10px] font-bold"
                 >
                   {{ store.pendingTeacherRequestsCount }} Menunggu
                 </span>
               </h3>
-              <p class="text-[11px] text-slate-500 mt-0.5">
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                 Periksa foto selfie yang dikirimkan oleh pemohon untuk memastikan kesesuaian dengan dewan pengajar SDN Pengasinan VII.
               </p>
             </div>
@@ -832,7 +830,7 @@
                 :key="st"
                 @click="teacherRequestFilter = st"
                 class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer"
-                :class="teacherRequestFilter === st ? 'bg-slate-900 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200/60'"
+                :class="teacherRequestFilter === st ? 'bg-blue-600 text-white shadow-xs' : 'bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-800'"
               >
                 {{ st === 'all' ? 'Semua' : st === 'pending' ? 'Menunggu Review' : st === 'approved' ? 'Disetujui' : 'Ditolak' }}
               </button>
@@ -840,11 +838,11 @@
           </div>
 
           <!-- Empty State -->
-          <div v-if="filteredTeacherRequests.length === 0" class="p-10 rounded-2xl bg-slate-50 border border-slate-100 text-center text-slate-400 text-xs space-y-2">
-            <div class="w-12 h-12 rounded-2xl bg-slate-200 text-slate-500 flex items-center justify-center mx-auto">
+          <div v-if="filteredTeacherRequests.length === 0" class="p-10 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 text-center text-slate-400 text-xs space-y-2">
+            <div class="w-12 h-12 rounded-2xl bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center mx-auto">
               <GraduationCap class="w-6 h-6" />
             </div>
-            <div class="font-bold text-slate-700">Belum Ada Permintaan Status Guru</div>
+            <div class="font-bold text-slate-700 dark:text-slate-200">Belum Ada Permintaan Status Guru</div>
             <p class="text-[11px]">Tidak ada permohonan yang sesuai dengan filter yang dipilih.</p>
           </div>
 
@@ -853,18 +851,18 @@
             <div 
               v-for="req in filteredTeacherRequests" 
               :key="req.id"
-              class="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3"
+              class="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-100 dark:border-slate-800 shadow-sm space-y-3"
             >
               <div class="flex items-start gap-3">
                 <!-- Selfie Preview (Clickable) -->
                 <div class="relative group cursor-pointer shrink-0" @click="openSelfiePreview(req.selfieUrl, req.memberName)">
                   <img 
                     :src="req.selfieUrl" 
-                    class="w-16 h-20 rounded-xl object-cover border border-slate-200 shadow-xs" 
+                    class="w-16 h-20 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shadow-xs" 
                     alt="Selfie" 
                     referrerpolicy="no-referrer"
                   />
-                  <div class="absolute inset-0 bg-black/30 rounded-xl flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition">
+                  <div class="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition">
                     <Eye class="w-4 h-4" />
                   </div>
                 </div>
@@ -873,52 +871,52 @@
                   <div class="flex items-center justify-between gap-1">
                     <span class="font-mono text-[10px] text-slate-400">{{ req.id }}</span>
                     <span 
-                      class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
-                      :class="req.status === 'pending' ? 'bg-amber-100 text-amber-800 animate-pulse' : req.status === 'approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'"
+                      class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase border tracking-wider"
+                      :class="req.status === 'pending' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 animate-pulse' : req.status === 'approved' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'"
                     >
                       {{ req.status === 'pending' ? 'Menunggu' : req.status === 'approved' ? 'Disetujui' : 'Ditolak' }}
                     </span>
                   </div>
-                  <h4 class="font-bold text-slate-900 text-sm mt-0.5 truncate">{{ req.memberName }}</h4>
-                  <div class="text-[11px] text-slate-500 font-mono mt-0.5">{{ req.memberCardNumber }}</div>
+                  <h4 class="font-bold text-slate-900 dark:text-white text-sm mt-0.5 truncate">{{ req.memberName }}</h4>
+                  <div class="text-[11px] text-blue-600 dark:text-blue-400 font-mono mt-0.5">{{ req.memberCardNumber }}</div>
                   <div class="text-[10px] text-slate-400 mt-1">Diajukan: {{ formatDateTime(req.requestDate) }}</div>
                 </div>
               </div>
 
               <!-- Rejection Reason Note if rejected -->
-              <div v-if="req.status === 'rejected'" class="p-2.5 rounded-xl bg-rose-50 border border-rose-100 text-[11px] text-rose-700">
+              <div v-if="req.status === 'rejected'" class="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-900/50 text-[11px] text-rose-700 dark:text-rose-300">
                 <strong>Alasan Penolakan:</strong> {{ req.rejectionReason || '-' }}
               </div>
 
               <!-- Action Buttons for Pending Requests -->
-              <div v-if="req.status === 'pending'" class="pt-2 border-t border-slate-100 grid grid-cols-2 gap-2">
+              <div v-if="req.status === 'pending'" class="pt-2 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-2">
                 <button 
                   @click="promptRejectTeacherRequest(req)"
-                  class="py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5"
+                  class="py-2 px-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/50 font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
                 >
                   <X class="w-3.5 h-3.5" />
                   <span>Tolak</span>
                 </button>
                 <button 
                   @click="promptApproveTeacherRequest(req)"
-                  class="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
+                  class="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
                 >
                   <Check class="w-3.5 h-3.5" />
                   <span>Terima (Guru)</span>
                 </button>
               </div>
 
-              <div v-else class="pt-2 border-t border-slate-100 text-[11px] text-slate-500 flex justify-between">
-                <span>Ditinjau oleh: <strong>{{ req.reviewedBy || 'Admin' }}</strong></span>
+              <div v-else class="pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex justify-between">
+                <span>Ditinjau oleh: <strong class="text-slate-800 dark:text-slate-200">{{ req.reviewedBy || 'Admin' }}</strong></span>
                 <span>{{ req.reviewedDate ? formatDateTime(req.reviewedDate) : '-' }}</span>
               </div>
             </div>
           </div>
 
           <!-- Desktop Table for Teacher Requests -->
-          <div v-if="filteredTeacherRequests.length > 0" class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100">
-            <table class="w-full text-left text-xs text-slate-600">
-              <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] tracking-wider border-b border-slate-100 font-bold">
+          <div v-if="filteredTeacherRequests.length > 0" class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80">
+            <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+              <thead class="bg-slate-50 dark:bg-slate-850/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 font-bold">
                 <tr>
                   <th class="py-3.5 px-4 text-center">Foto Selfie</th>
                   <th class="py-3.5 px-4">Nama & No. Kartu</th>
@@ -928,8 +926,8 @@
                   <th class="py-3.5 px-4 text-right">Aksi Verifikasi</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-100">
-                <tr v-for="req in filteredTeacherRequests" :key="req.id" class="hover:bg-slate-50/80">
+              <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+                <tr v-for="req in filteredTeacherRequests" :key="req.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
                   <td class="py-3 px-4 text-center">
                     <div 
                       class="relative inline-block group cursor-pointer" 
@@ -938,8 +936,8 @@
                     >
                       <img 
                         :src="req.selfieUrl" 
-                        class="w-12 h-14 rounded-xl object-cover border-2 border-slate-200 shadow-xs group-hover:scale-105 transition" 
-                        alt="Selfie"
+                        class="w-12 h-14 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shadow-xs group-hover:scale-105 transition" 
+                        alt="Selfie" 
                         referrerpolicy="no-referrer"
                       />
                       <div class="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition">
@@ -949,28 +947,28 @@
                   </td>
 
                   <td class="py-3 px-4">
-                    <div class="font-bold text-slate-900">{{ req.memberName }}</div>
-                    <div class="text-[11px] text-blue-600 font-mono font-medium">{{ req.memberCardNumber }}</div>
+                    <div class="font-bold text-slate-900 dark:text-white">{{ req.memberName }}</div>
+                    <div class="text-[11px] text-blue-600 dark:text-blue-400 font-mono font-medium">{{ req.memberCardNumber }}</div>
                     <div class="text-[10px] text-slate-400 font-mono">ID: {{ req.id }}</div>
                   </td>
 
                   <td class="py-3 px-4">
-                    <div class="text-slate-800">{{ req.memberEmail || '-' }}</div>
-                    <div class="text-[11px] text-slate-500 font-mono">{{ req.memberPhone || '-' }}</div>
+                    <div class="text-slate-800 dark:text-slate-200">{{ req.memberEmail || '-' }}</div>
+                    <div class="text-[11px] text-slate-500 dark:text-slate-400 font-mono">{{ req.memberPhone || '-' }}</div>
                   </td>
 
-                  <td class="py-3 px-4 text-slate-600 font-medium">
+                  <td class="py-3 px-4 text-slate-600 dark:text-slate-300 font-medium">
                     {{ formatDateTime(req.requestDate) }}
                   </td>
 
                   <td class="py-3 px-4 text-center">
                     <span 
-                      class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
-                      :class="req.status === 'pending' ? 'bg-amber-100 text-amber-800 border border-amber-200 animate-pulse' : req.status === 'approved' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-rose-100 text-rose-800 border border-rose-200'"
+                      class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border"
+                      :class="req.status === 'pending' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 animate-pulse' : req.status === 'approved' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'"
                     >
                       {{ req.status === 'pending' ? 'Menunggu Review' : req.status === 'approved' ? 'Disetujui' : 'Ditolak' }}
                     </span>
-                    <div v-if="req.status === 'rejected' && req.rejectionReason" class="text-[10px] text-rose-600 max-w-xs truncate mx-auto mt-0.5" :title="req.rejectionReason">
+                    <div v-if="req.status === 'rejected' && req.rejectionReason" class="text-[10px] text-rose-600 dark:text-rose-400 max-w-xs truncate mx-auto mt-0.5" :title="req.rejectionReason">
                       {{ req.rejectionReason }}
                     </div>
                   </td>
@@ -979,7 +977,7 @@
                     <div v-if="req.status === 'pending'" class="flex items-center justify-end gap-1.5">
                       <button 
                         @click="promptRejectTeacherRequest(req)"
-                        class="px-3 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs transition cursor-pointer flex items-center gap-1"
+                        class="px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/50 font-bold text-xs transition cursor-pointer flex items-center gap-1 active:scale-95"
                         title="Tolak permohonan status Guru"
                       >
                         <X class="w-3.5 h-3.5" />
@@ -988,7 +986,7 @@
 
                       <button 
                         @click="promptApproveTeacherRequest(req)"
-                        class="px-4 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer flex items-center gap-1"
+                        class="px-4 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer flex items-center gap-1 active:scale-95"
                         title="Setujui permohonan dan jadikan anggota sebagai Guru"
                       >
                         <Check class="w-3.5 h-3.5" />
@@ -997,7 +995,7 @@
                     </div>
 
                     <div v-else class="text-[11px] text-slate-400">
-                      <div>Oleh: {{ req.reviewedBy || 'Admin' }}</div>
+                      <div>Oleh: <span class="text-slate-700 dark:text-slate-300 font-semibold">{{ req.reviewedBy || 'Admin' }}</span></div>
                       <div class="text-[10px]">{{ req.reviewedDate ? formatDateTime(req.reviewedDate) : '' }}</div>
                     </div>
                   </td>
@@ -1009,18 +1007,18 @@
 
         <!-- Tab 3.6: Verifikasi Status Siswa SDN Pengasinan VII (Hak Akses e-Book) -->
         <div v-if="activeTab === 'student_verifications'" class="space-y-4">
-          <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-50 dark:bg-slate-900/80 p-4 sm:p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
             <div>
-              <h3 class="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
+              <h3 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <span>Verifikasi Siswa SDN Pengasinan VII (Hak Akses e-Book)</span>
                 <span 
                   v-if="store.pendingStudentVerificationsCount > 0" 
-                  class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold"
+                  class="px-2.5 py-0.5 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 text-[10px] font-bold"
                 >
                   {{ store.pendingStudentVerificationsCount }} Menunggu
                 </span>
               </h3>
-              <p class="text-[11px] text-slate-500 mt-0.5">
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                 Periksa NIS, NISN dan foto selfie siswa untuk memastikan perlindungan hak cipta e-Book digital perpustakaan.
               </p>
             </div>
@@ -1032,7 +1030,7 @@
                 :key="st"
                 @click="studentVerificationFilter = st"
                 class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer"
-                :class="studentVerificationFilter === st ? 'bg-slate-900 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200/60'"
+                :class="studentVerificationFilter === st ? 'bg-blue-600 text-white shadow-xs' : 'bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-800'"
               >
                 {{ st === 'all' ? 'Semua' : st === 'pending' ? 'Menunggu Review' : st === 'approved' ? 'Disetujui' : 'Ditolak' }}
               </button>
@@ -1040,11 +1038,11 @@
           </div>
 
           <!-- Empty State -->
-          <div v-if="filteredStudentVerifications.length === 0" class="p-10 rounded-2xl bg-slate-50 border border-slate-100 text-center text-slate-400 text-xs space-y-2">
-            <div class="w-12 h-12 rounded-2xl bg-slate-200 text-slate-500 flex items-center justify-center mx-auto">
+          <div v-if="filteredStudentVerifications.length === 0" class="p-10 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 text-center text-slate-400 text-xs space-y-2">
+            <div class="w-12 h-12 rounded-2xl bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center mx-auto">
               <ShieldCheck class="w-6 h-6" />
             </div>
-            <div class="font-bold text-slate-700">Belum Ada Permohonan Verifikasi Siswa</div>
+            <div class="font-bold text-slate-700 dark:text-slate-200">Belum Ada Permohonan Verifikasi Siswa</div>
             <p class="text-[11px]">Tidak ada permohonan verifikasi siswa yang sesuai dengan filter yang dipilih.</p>
           </div>
 
@@ -1053,18 +1051,18 @@
             <div 
               v-for="req in filteredStudentVerifications" 
               :key="req.id"
-              class="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3"
+              class="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-100 dark:border-slate-800 shadow-sm space-y-3"
             >
               <div class="flex items-start gap-3">
                 <!-- Selfie Preview (Clickable) -->
                 <div class="relative group cursor-pointer shrink-0" @click="openSelfiePreview(req.selfieUrl, req.memberName)">
                   <img 
                     :src="req.selfieUrl" 
-                    class="w-16 h-20 rounded-xl object-cover border border-slate-200 shadow-xs" 
+                    class="w-16 h-20 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shadow-xs" 
                     alt="Selfie" 
                     referrerpolicy="no-referrer"
                   />
-                  <div class="absolute inset-0 bg-black/30 rounded-xl flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition">
+                  <div class="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition">
                     <Eye class="w-4 h-4" />
                   </div>
                 </div>
@@ -1073,24 +1071,24 @@
                   <div class="flex items-center justify-between gap-1">
                     <span class="font-mono text-[10px] text-slate-400">{{ req.id }}</span>
                     <span 
-                      class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
-                      :class="req.status === 'pending' ? 'bg-amber-100 text-amber-800 animate-pulse' : req.status === 'approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'"
+                      class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase border tracking-wider"
+                      :class="req.status === 'pending' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 animate-pulse' : req.status === 'approved' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'"
                     >
                       {{ req.status === 'pending' ? 'Menunggu' : req.status === 'approved' ? 'Disetujui' : 'Ditolak' }}
                     </span>
                   </div>
-                  <h4 class="font-bold text-slate-900 text-sm mt-0.5 truncate">{{ req.memberName }}</h4>
-                  <div class="text-[11px] text-blue-600 font-mono font-medium">{{ req.memberCardNumber }}</div>
+                  <h4 class="font-bold text-slate-900 dark:text-white text-sm mt-0.5 truncate">{{ req.memberName }}</h4>
+                  <div class="text-[11px] text-blue-600 dark:text-blue-400 font-mono font-medium">{{ req.memberCardNumber }}</div>
                   
                   <!-- NIS & NISN Info -->
-                  <div class="mt-1.5 p-2 rounded-xl bg-slate-50 border border-slate-200/80 text-[11px] space-y-0.5">
+                  <div class="mt-1.5 p-2 rounded-xl bg-slate-50/80 dark:bg-slate-850/80 border border-slate-100 dark:border-slate-800 text-[11px] space-y-0.5">
                     <div class="flex justify-between">
-                      <span class="text-slate-500">NIS:</span>
-                      <strong class="font-mono text-slate-800">{{ req.nis }}</strong>
+                      <span class="text-slate-500 dark:text-slate-400">NIS:</span>
+                      <strong class="font-mono text-slate-800 dark:text-slate-200">{{ req.nis }}</strong>
                     </div>
                     <div class="flex justify-between">
-                      <span class="text-slate-500">NISN:</span>
-                      <strong class="font-mono text-slate-800">{{ req.nisn }}</strong>
+                      <span class="text-slate-500 dark:text-slate-400">NISN:</span>
+                      <strong class="font-mono text-slate-800 dark:text-slate-200">{{ req.nisn }}</strong>
                     </div>
                   </div>
 
@@ -1099,39 +1097,39 @@
               </div>
 
               <!-- Rejection Reason Note if rejected -->
-              <div v-if="req.status === 'rejected'" class="p-2.5 rounded-xl bg-rose-50 border border-rose-100 text-[11px] text-rose-700">
+              <div v-if="req.status === 'rejected'" class="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-900/50 text-[11px] text-rose-700 dark:text-rose-300">
                 <strong>Alasan Penolakan:</strong> {{ req.rejectionReason || '-' }}
               </div>
 
               <!-- Action Buttons for Pending Requests -->
-              <div v-if="req.status === 'pending'" class="pt-2 border-t border-slate-100 grid grid-cols-2 gap-2">
+              <div v-if="req.status === 'pending'" class="pt-2 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-2">
                 <button 
                   @click="promptRejectStudentRequest(req)"
-                  class="py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5"
+                  class="py-2 px-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/50 font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
                 >
                   <X class="w-3.5 h-3.5" />
                   <span>Tolak</span>
                 </button>
                 <button 
                   @click="promptApproveStudentRequest(req)"
-                  class="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
+                  class="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
                 >
                   <Check class="w-3.5 h-3.5" />
                   <span>Setujui Siswa</span>
                 </button>
               </div>
 
-              <div v-else class="pt-2 border-t border-slate-100 text-[11px] text-slate-500 flex justify-between">
-                <span>Ditinjau oleh: <strong>{{ req.reviewedBy || 'Admin' }}</strong></span>
+              <div v-else class="pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex justify-between">
+                <span>Ditinjau oleh: <strong class="text-slate-800 dark:text-slate-200">{{ req.reviewedBy || 'Admin' }}</strong></span>
                 <span>{{ req.reviewedDate ? formatDateTime(req.reviewedDate) : '-' }}</span>
               </div>
             </div>
           </div>
 
           <!-- Desktop Table for Student Verifications -->
-          <div v-if="filteredStudentVerifications.length > 0" class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100">
-            <table class="w-full text-left text-xs text-slate-600">
-              <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] tracking-wider border-b border-slate-100 font-bold">
+          <div v-if="filteredStudentVerifications.length > 0" class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80">
+            <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+              <thead class="bg-slate-50 dark:bg-slate-850/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 font-bold">
                 <tr>
                   <th class="py-3.5 px-4 text-center">Foto Selfie</th>
                   <th class="py-3.5 px-4">Nama & No. Kartu</th>
@@ -1142,8 +1140,8 @@
                   <th class="py-3.5 px-4 text-right">Aksi Verifikasi</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-100">
-                <tr v-for="req in filteredStudentVerifications" :key="req.id" class="hover:bg-slate-50/80">
+              <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+                <tr v-for="req in filteredStudentVerifications" :key="req.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
                   <td class="py-3 px-4 text-center">
                     <div 
                       class="relative inline-block group cursor-pointer" 
@@ -1152,7 +1150,7 @@
                     >
                       <img 
                         :src="req.selfieUrl" 
-                        class="w-12 h-14 rounded-xl object-cover border-2 border-slate-200 shadow-xs group-hover:scale-105 transition" 
+                        class="w-12 h-14 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shadow-xs group-hover:scale-105 transition" 
                         alt="Selfie" 
                         referrerpolicy="no-referrer"
                       />
@@ -1163,33 +1161,33 @@
                   </td>
 
                   <td class="py-3 px-4">
-                    <div class="font-bold text-slate-900">{{ req.memberName }}</div>
-                    <div class="text-[11px] text-blue-600 font-mono font-medium">{{ req.memberCardNumber }}</div>
+                    <div class="font-bold text-slate-900 dark:text-white">{{ req.memberName }}</div>
+                    <div class="text-[11px] text-blue-600 dark:text-blue-400 font-mono font-medium">{{ req.memberCardNumber }}</div>
                     <div class="text-[10px] text-slate-400 font-mono">ID: {{ req.id }}</div>
                   </td>
 
                   <td class="py-3 px-4">
-                    <div class="font-mono text-slate-900">NIS: <strong>{{ req.nis }}</strong></div>
-                    <div class="font-mono text-slate-600 text-[11px]">NISN: <strong>{{ req.nisn }}</strong></div>
+                    <div class="font-mono text-slate-900 dark:text-slate-100">NIS: <strong class="font-bold">{{ req.nis }}</strong></div>
+                    <div class="font-mono text-slate-600 dark:text-slate-400 text-[11px]">NISN: <strong>{{ req.nisn }}</strong></div>
                   </td>
 
                   <td class="py-3 px-4">
-                    <div class="text-slate-800">{{ req.memberEmail || '-' }}</div>
-                    <div class="text-[11px] text-slate-500 font-mono">{{ req.memberPhone || '-' }}</div>
+                    <div class="text-slate-800 dark:text-slate-200">{{ req.memberEmail || '-' }}</div>
+                    <div class="text-[11px] text-slate-500 dark:text-slate-400 font-mono">{{ req.memberPhone || '-' }}</div>
                   </td>
 
-                  <td class="py-3 px-4 text-slate-600 font-medium">
+                  <td class="py-3 px-4 text-slate-600 dark:text-slate-300 font-medium">
                     {{ formatDateTime(req.requestDate) }}
                   </td>
 
                   <td class="py-3 px-4 text-center">
                     <span 
-                      class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
-                      :class="req.status === 'pending' ? 'bg-amber-100 text-amber-800 border border-amber-200 animate-pulse' : req.status === 'approved' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-rose-100 text-rose-800 border border-rose-200'"
+                      class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border"
+                      :class="req.status === 'pending' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 animate-pulse' : req.status === 'approved' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'"
                     >
                       {{ req.status === 'pending' ? 'Menunggu Review' : req.status === 'approved' ? 'Disetujui' : 'Ditolak' }}
                     </span>
-                    <div v-if="req.status === 'rejected' && req.rejectionReason" class="text-[10px] text-rose-600 max-w-xs truncate mx-auto mt-0.5" :title="req.rejectionReason">
+                    <div v-if="req.status === 'rejected' && req.rejectionReason" class="text-[10px] text-rose-600 dark:text-rose-400 max-w-xs truncate mx-auto mt-0.5" :title="req.rejectionReason">
                       {{ req.rejectionReason }}
                     </div>
                   </td>
@@ -1198,7 +1196,7 @@
                     <div v-if="req.status === 'pending'" class="flex items-center justify-end gap-1.5">
                       <button 
                         @click="promptRejectStudentRequest(req)"
-                        class="px-3 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs transition cursor-pointer flex items-center gap-1"
+                        class="px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/50 font-bold text-xs transition cursor-pointer flex items-center gap-1 active:scale-95"
                         title="Tolak permohonan verifikasi siswa"
                       >
                         <X class="w-3.5 h-3.5" />
@@ -1207,7 +1205,7 @@
 
                       <button 
                         @click="promptApproveStudentRequest(req)"
-                        class="px-4 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer flex items-center gap-1"
+                        class="px-4 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer flex items-center gap-1 active:scale-95"
                         title="Setujui verifikasi siswa untuk akses e-Book"
                       >
                         <Check class="w-3.5 h-3.5" />
@@ -1216,7 +1214,7 @@
                     </div>
 
                     <div v-else class="text-[11px] text-slate-400">
-                      <div>Oleh: {{ req.reviewedBy || 'Admin' }}</div>
+                      <div>Oleh: <span class="text-slate-700 dark:text-slate-300 font-semibold">{{ req.reviewedBy || 'Admin' }}</span></div>
                       <div class="text-[10px]">{{ req.reviewedDate ? formatDateTime(req.reviewedDate) : '' }}</div>
                     </div>
                   </td>
@@ -1230,32 +1228,32 @@
         <div v-if="activeTab === 'suspends'" class="space-y-6">
           
           <!-- Custom Suspend Configuration Card (Admin Rules) -->
-          <div class="p-6 rounded-3xl bg-slate-50 border border-slate-200/80 shadow-sm space-y-4">
-            <div class="flex items-center justify-between">
+          <div class="p-4 sm:p-6 rounded-3xl bg-slate-50 dark:bg-slate-900/80 border border-slate-100 dark:border-slate-800 shadow-sm space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div class="flex items-center gap-2.5">
-                <div class="p-2 rounded-xl bg-blue-100 text-blue-700">
+                <div class="p-2 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300">
                   <Sliders class="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 class="font-bold text-base text-slate-900">Kustomisasi Aturan Sanksi Suspend</h3>
-                  <p class="text-xs text-slate-500">Atur durasi sanksi penangguhan (1 s/d 30 hari) kartu anggota saat terlambat.</p>
+                  <h3 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white">Kustomisasi Aturan Sanksi Suspend</h3>
+                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Atur durasi sanksi penangguhan (1 s/d 30 hari) kartu anggota saat terlambat.</p>
                 </div>
               </div>
               <button 
                 @click="saveSuspendConfig"
-                class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full text-xs shadow-sm transition cursor-pointer"
+                class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full text-xs shadow-sm transition cursor-pointer self-start sm:self-auto active:scale-95"
               >
                 Simpan Perubahan Aturan
               </button>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 pt-2">
               
               <!-- Slider 1-30 Hari -->
-              <div class="space-y-2 bg-white p-4 rounded-2xl border border-slate-200">
+              <div class="space-y-2 bg-white dark:bg-slate-850/80 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
                 <div class="flex justify-between text-xs">
-                  <span class="font-semibold text-slate-700">Durasi Suspend Default</span>
-                  <strong class="text-blue-600 font-mono text-sm">{{ suspendForm.defaultSuspendDays }} Hari</strong>
+                  <span class="font-semibold text-slate-700 dark:text-slate-200">Durasi Suspend Default</span>
+                  <strong class="text-blue-600 dark:text-blue-400 font-mono text-sm">{{ suspendForm.defaultSuspendDays }} Hari</strong>
                 </div>
                 <input 
                   v-model.number="suspendForm.defaultSuspendDays" 
@@ -1264,19 +1262,19 @@
                   max="30" 
                   class="w-full accent-blue-600 cursor-pointer" 
                 />
-                <div class="flex justify-between text-[10px] text-slate-400 font-mono">
+                <div class="flex justify-between text-[10px] text-slate-400 dark:text-slate-500 font-mono">
                   <span>1 Hari</span>
                   <span>15 Hari</span>
                   <span>30 Hari</span>
                 </div>
-                <p class="text-[11px] text-slate-500">Anggota yang terlambat akan dikenakan suspend selama {{ suspendForm.defaultSuspendDays }} hari.</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">Anggota yang terlambat akan dikenakan suspend selama {{ suspendForm.defaultSuspendDays }} hari.</p>
               </div>
 
               <!-- Auto-Suspend Toggle -->
-              <div class="space-y-2 bg-white p-4 rounded-2xl border border-slate-200 flex flex-col justify-between">
+              <div class="space-y-2 bg-white dark:bg-slate-850/80 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
                 <div>
-                  <label class="block font-semibold text-slate-700 text-xs">Terapkan Auto-Suspend</label>
-                  <p class="text-[11px] text-slate-500 mt-1">Otomatis suspend akun saat terlambat mengembalikan buku fisik (Peminjam e-Book otomatis dikecualikan & e-Book dikembalikan sistem).</p>
+                  <label class="block font-semibold text-slate-700 dark:text-slate-200 text-xs">Terapkan Auto-Suspend</label>
+                  <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Otomatis suspend akun saat terlambat mengembalikan buku fisik (Peminjam e-Book otomatis dikecualikan & e-Book dikembalikan sistem).</p>
                 </div>
                 <label class="inline-flex items-center gap-2 cursor-pointer pt-2">
                   <input 
@@ -1284,7 +1282,7 @@
                     type="checkbox" 
                     class="w-4 h-4 text-blue-600 rounded" 
                   />
-                  <span class="text-xs font-semibold text-slate-800">Aktifkan Sanksi Otomatis</span>
+                  <span class="text-xs font-semibold text-slate-800 dark:text-slate-200">Aktifkan Sanksi Otomatis</span>
                 </label>
               </div>
 
@@ -1294,13 +1292,13 @@
           <!-- Suspended Members Management Table -->
           <div class="space-y-3">
             <div class="flex items-center justify-between">
-              <h4 class="font-bold text-sm text-slate-900">Daftar Anggota yang Sedang Disuspend</h4>
-              <span class="text-xs text-rose-600 font-bold">{{ store.suspendedMembers.length }} Anggota Terkena Sanksi</span>
+              <h4 class="font-bold text-sm text-slate-900 dark:text-white">Daftar Anggota yang Sedang Disuspend</h4>
+              <span class="text-xs text-rose-600 dark:text-rose-400 font-bold">{{ store.suspendedMembers.length }} Anggota Terkena Sanksi</span>
             </div>
 
-            <div class="overflow-x-auto rounded-2xl border border-slate-100">
-              <table class="w-full text-left text-xs text-slate-600">
-                <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] tracking-wider border-b border-slate-100 font-bold">
+            <div class="overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80">
+              <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+                <thead class="bg-slate-50 dark:bg-slate-850/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 font-bold">
                   <tr>
                     <th class="py-3.5 px-4">Nama Anggota</th>
                     <th class="py-3.5 px-4">No. Kartu Member</th>
@@ -1309,31 +1307,31 @@
                     <th class="py-3.5 px-4 text-right">Tindakan Admin</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
-                  <tr v-for="m in store.suspendedMembers" :key="m.id" class="hover:bg-slate-50/80">
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+                  <tr v-for="m in store.suspendedMembers" :key="m.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
                     <td class="py-3 px-4 flex items-center gap-2.5">
-                      <img :src="m.avatar" class="w-8 h-8 rounded-full object-cover border border-rose-300" alt="Avatar" />
+                      <img :src="m.avatar" class="w-8 h-8 rounded-full object-cover border border-rose-300 dark:border-rose-900" alt="Avatar" />
                       <div>
-                        <span class="font-bold text-slate-900">{{ m.name }}</span>
-                        <div class="text-[10px] text-slate-400">{{ m.email }}</div>
+                        <span class="font-bold text-slate-900 dark:text-white">{{ m.name }}</span>
+                        <div class="text-[10px] text-slate-400 dark:text-slate-500">{{ m.email }}</div>
                       </div>
                     </td>
-                    <td class="py-3 px-4 font-mono font-semibold text-slate-800">{{ m.cardNumber }}</td>
-                    <td class="py-3 px-4 text-rose-600 font-medium max-w-xs">{{ m.suspendReason }}</td>
-                    <td class="py-3 px-4 font-semibold text-slate-800">
+                    <td class="py-3 px-4 font-mono font-semibold text-slate-800 dark:text-slate-200">{{ m.cardNumber }}</td>
+                    <td class="py-3 px-4 text-rose-600 dark:text-rose-400 font-medium max-w-xs">{{ m.suspendReason }}</td>
+                    <td class="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">
                       {{ new Date(m.suspendedUntil || '').toLocaleDateString('id-ID') }}
                     </td>
                     <td class="py-3 px-4 text-right">
                       <button 
                         @click="handleUnsuspend(m.id)"
-                        class="px-3 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
+                        class="px-3 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer active:scale-95 shadow-xs"
                       >
                         Cabut Suspend (Aktifkan)
                       </button>
                     </td>
                   </tr>
                   <tr v-if="store.suspendedMembers.length === 0">
-                    <td colspan="5" class="py-6 text-center text-slate-400 italic">
+                    <td colspan="5" class="py-6 text-center text-slate-400 dark:text-slate-500 italic">
                       Tidak ada anggota yang sedang dalam masa penangguhan (suspend).
                     </td>
                   </tr>
@@ -1348,14 +1346,14 @@
         <div v-if="activeTab === 'notifications'" class="space-y-6">
           
           <!-- Top Action Bar -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-5 rounded-2xl border border-slate-200/80">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 dark:bg-slate-900/80 p-4 sm:p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
             <div>
-              <h3 class="font-bold text-base text-slate-900">Log & Pengiriman Notifikasi Keterlambatan</h3>
-              <p class="text-xs text-slate-500">Pengingat otomatis dan pengiriman surat peringatan resmi melalui Email.</p>
+              <h3 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white">Log & Pengiriman Notifikasi Keterlambatan</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Pengingat otomatis dan pengiriman surat peringatan resmi melalui Email.</p>
             </div>
             <button 
               @click="openNotifyModal(null)"
-              class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full text-xs shadow-sm transition flex items-center gap-1.5 cursor-pointer"
+              class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full text-xs shadow-sm transition flex items-center gap-1.5 cursor-pointer shrink-0 active:scale-95"
             >
               <Send class="w-3.5 h-3.5" />
               Kirim Email Manual
@@ -1363,10 +1361,10 @@
           </div>
 
           <!-- Overdue borrowers waiting for notification -->
-          <div v-if="store.overdueLoans.length > 0" class="p-4 rounded-2xl bg-rose-50 border border-rose-100 space-y-3">
-            <div class="flex items-center justify-between text-xs text-rose-800 font-bold">
+          <div v-if="store.overdueLoans.length > 0" class="p-4 rounded-2xl bg-rose-50/80 dark:bg-rose-950/30 border border-rose-200/80 dark:border-rose-900/40 space-y-3">
+            <div class="flex items-center justify-between text-xs text-rose-800 dark:text-rose-300 font-bold">
               <span class="flex items-center gap-1.5">
-                <AlertTriangle class="w-4 h-4 text-rose-600" />
+                <AlertTriangle class="w-4 h-4 text-rose-600 dark:text-rose-400" />
                 {{ store.overdueLoans.length }} Anggota Menunggu Pengingat Keterlambatan
               </span>
             </div>
@@ -1374,15 +1372,15 @@
               <div 
                 v-for="l in store.overdueLoans" 
                 :key="l.id"
-                class="p-3 bg-white rounded-xl border border-rose-200 flex items-center justify-between text-xs"
+                class="p-3 bg-white dark:bg-slate-900/90 rounded-xl border border-rose-200/80 dark:border-rose-900/40 flex items-center justify-between text-xs shadow-xs"
               >
                 <div>
-                  <div class="font-bold text-slate-900">{{ l.memberName }}</div>
-                  <div class="text-[10px] text-slate-500">Buku: "{{ l.bookTitle }}" (Telat {{ l.daysOverdue }}h)</div>
+                  <div class="font-bold text-slate-900 dark:text-white">{{ l.memberName }}</div>
+                  <div class="text-[10px] text-slate-500 dark:text-slate-400">Buku: "{{ l.bookTitle }}" (Telat {{ l.daysOverdue }}h)</div>
                 </div>
                 <button 
                   @click="openNotifyModal(l)"
-                  class="px-3 py-1 rounded-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-[10px] shadow-sm cursor-pointer"
+                  class="px-3 py-1 rounded-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-[10px] shadow-sm cursor-pointer active:scale-95"
                 >
                   Kirim Email
                 </button>
@@ -1395,35 +1393,35 @@
             <div 
               v-for="n in store.notifications" 
               :key="n.id"
-              class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-2"
+              class="p-3.5 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-100 dark:border-slate-800 shadow-sm text-xs space-y-2"
             >
               <div class="flex items-center justify-between">
-                <span class="font-bold text-slate-900">{{ n.memberName }}</span>
+                <span class="font-bold text-slate-900 dark:text-white">{{ n.memberName }}</span>
                 <div class="flex items-center gap-1.5">
                   <span 
                     v-if="n.triggerReason === 'ebook_expired'"
-                    class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-200"
+                    class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
                   >
                     📱 e-Book Kedaluwarsa
                   </span>
                   <span 
-                    class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-700" 
+                    class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30" 
                   >
                     {{ n.type }}
                   </span>
                 </div>
               </div>
-              <p class="text-slate-600 leading-relaxed">{{ n.message }}</p>
-              <div class="flex items-center justify-between text-[10px] text-slate-400 font-mono pt-1 border-t border-slate-200/60">
+              <p class="text-slate-600 dark:text-slate-300 leading-relaxed">{{ n.message }}</p>
+              <div class="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 font-mono pt-1 border-t border-slate-100 dark:border-slate-800">
                 <span>{{ new Date(n.sentAt).toLocaleString('id-ID') }}</span>
-                <span class="text-emerald-700 font-bold font-sans">Terkirim</span>
+                <span class="text-emerald-600 dark:text-emerald-400 font-bold font-sans">Terkirim</span>
               </div>
             </div>
           </div>
 
-          <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100">
-            <table class="w-full text-left text-xs text-slate-600">
-              <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] tracking-wider border-b border-slate-100 font-bold">
+          <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80">
+            <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+              <thead class="bg-slate-50 dark:bg-slate-850/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 font-bold">
                 <tr>
                   <th class="py-3.5 px-4">Waktu</th>
                   <th class="py-3.5 px-4">Penerima</th>
@@ -1432,35 +1430,35 @@
                   <th class="py-3.5 px-4">Status</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-100">
-                <tr v-for="n in store.notifications" :key="n.id" class="hover:bg-slate-50/80">
-                  <td class="py-3 px-4 font-mono text-[10px] text-slate-500">
+              <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+                <tr v-for="n in store.notifications" :key="n.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
+                  <td class="py-3 px-4 font-mono text-[10px] text-slate-500 dark:text-slate-400">
                     {{ new Date(n.sentAt).toLocaleString('id-ID') }}
                   </td>
                   <td class="py-3 px-4">
-                    <div class="font-bold text-slate-900">{{ n.memberName }}</div>
-                    <div class="text-[10px] text-slate-500 font-mono">{{ n.recipient }}</div>
+                    <div class="font-bold text-slate-900 dark:text-white">{{ n.memberName }}</div>
+                    <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">{{ n.recipient }}</div>
                   </td>
                   <td class="py-3 px-4">
                     <div class="flex items-center gap-1.5 flex-wrap">
                       <span 
-                        class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-700" 
+                        class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30" 
                       >
                         {{ n.type }}
                       </span>
                       <span 
                         v-if="n.triggerReason === 'ebook_expired'" 
-                        class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-200 whitespace-nowrap"
+                        class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 whitespace-nowrap"
                       >
                         📱 e-Book Kedaluwarsa
                       </span>
                     </div>
                   </td>
-                  <td class="py-3 px-4 max-w-sm truncate text-slate-700" :title="n.message">
+                  <td class="py-3 px-4 max-w-sm truncate text-slate-700 dark:text-slate-300" :title="n.message">
                     {{ n.message }}
                   </td>
                   <td class="py-3 px-4">
-                    <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px]">
+                    <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold text-[10px]">
                       {{ n.status }}
                     </span>
                   </td>
@@ -1473,15 +1471,15 @@
 
         <!-- Tab 5: Master Data Buku -->
         <div v-if="activeTab === 'books'" class="space-y-4">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200/80">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 dark:bg-slate-900/80 p-4 sm:p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
             <div>
-              <h3 class="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
+              <h3 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <span>Katalog Master Buku & Penempatan Rak</span>
-                <span class="text-[11px] font-bold text-blue-700 bg-blue-100/70 px-2.5 py-0.5 rounded-full">
+                <span class="text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-500/15 border border-blue-500/30 px-2.5 py-0.5 rounded-full">
                   {{ filteredBooks.length }} Judul Buku
                 </span>
               </h3>
-              <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5">Kelola judul buku, stok eksemplar, penempatan rak fisik, dan unggah e-Book digital.</p>
+              <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">Kelola judul buku, stok eksemplar, penempatan rak fisik, dan unggah e-Book digital.</p>
             </div>
             <button 
               @click="openAddBookModal"
@@ -1493,14 +1491,14 @@
           </div>
 
           <!-- Empty State -->
-          <div v-if="filteredBooks.length === 0" class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs space-y-2">
-            <BookOpen class="w-8 h-8 text-slate-300 mx-auto" />
-            <p class="font-bold text-slate-700 text-sm">Tidak Ada Buku Ditemukan</p>
+          <div v-if="filteredBooks.length === 0" class="p-8 text-center bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-800 text-slate-400 text-xs space-y-2">
+            <BookOpen class="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto" />
+            <p class="font-bold text-slate-700 dark:text-slate-200 text-sm">Tidak Ada Buku Ditemukan</p>
             <p class="text-[11px]" v-if="bookSearch">Tidak ada buku yang cocok dengan kata kunci pencarian "{{ bookSearch }}".</p>
             <button 
               v-if="bookSearch"
               @click="bookSearch = ''"
-              class="mt-2 px-3.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-full text-xs transition cursor-pointer"
+              class="mt-2 px-3.5 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-full text-xs transition cursor-pointer"
             >
               Reset Pencarian
             </button>
@@ -1512,10 +1510,10 @@
               <div 
                 v-for="b in paginatedBooks" 
                 :key="b.id"
-                class="p-4 rounded-2xl bg-slate-50/60 border border-slate-200 space-y-3"
+                class="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-100 dark:border-slate-800 shadow-sm space-y-3"
               >
                 <div class="flex gap-3">
-                  <img :src="b.cover" class="w-14 h-20 object-cover rounded-xl shadow-sm shrink-0" alt="Cover" />
+                  <img :src="b.cover" class="w-14 h-20 object-cover rounded-xl shadow-xs border border-slate-200/80 dark:border-slate-800 shrink-0" alt="Cover" />
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center justify-between gap-1">
                       <span 
@@ -1524,30 +1522,30 @@
                       >
                         {{ b.category }}
                       </span>
-                      <span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-mono text-[10px] font-bold shrink-0">
+                      <span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 font-mono text-[10px] font-bold shrink-0">
                         {{ b.shelfCode }}
                       </span>
                     </div>
-                    <h4 class="font-bold text-slate-900 text-sm mt-1 truncate">{{ b.title }}</h4>
-                    <div class="text-[11px] text-slate-500 truncate">{{ b.author }} ({{ b.year }})</div>
-                    <div class="text-xs font-semibold text-slate-700 mt-1">
-                      Stok: <span class="text-emerald-600 font-bold">{{ b.availableCopies }}</span> / {{ b.totalCopies }} Buku
+                    <h4 class="font-bold text-slate-900 dark:text-white text-sm mt-1 truncate">{{ b.title }}</h4>
+                    <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">{{ b.author }} ({{ b.year }})</div>
+                    <div class="text-xs font-semibold text-slate-700 dark:text-slate-300 mt-1">
+                      Stok: <span class="text-emerald-600 dark:text-emerald-400 font-bold">{{ b.availableCopies }}</span> / {{ b.totalCopies }} Buku
                     </div>
                   </div>
                 </div>
 
-                <div class="pt-2 border-t border-slate-200 flex items-center justify-between">
+                <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                   <span class="font-mono text-[10px] text-slate-400"></span>
                   <div class="flex items-center gap-1.5">
                     <button 
                       @click="openEditBookModal(b)"
-                      class="px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-700 text-xs font-semibold transition active:scale-95 cursor-pointer"
+                      class="px-3 py-1 rounded-full bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition active:scale-95 cursor-pointer"
                     >
                       Edit
                     </button>
                     <button 
                       @click="handleDeleteBook(b.id)"
-                      class="px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold transition active:scale-95 cursor-pointer"
+                      class="px-3 py-1 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-900/50 text-rose-700 dark:text-rose-300 text-xs font-semibold transition active:scale-95 cursor-pointer"
                     >
                       Hapus
                     </button>
@@ -1557,9 +1555,9 @@
             </div>
 
             <!-- Desktop Table for Master Books -->
-            <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100">
-              <table class="w-full text-left text-xs text-slate-600">
-                <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] tracking-wider border-b border-slate-100 font-bold">
+            <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80">
+              <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+                <thead class="bg-slate-50 dark:bg-slate-850/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 font-bold">
                   <tr>
                     <th class="py-3.5 px-4">Cover & Judul</th>
                     <th class="py-3.5 px-4">Kategori</th>
@@ -1568,13 +1566,13 @@
                     <th class="py-3.5 px-4 text-right">Aksi</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
-                  <tr v-for="b in paginatedBooks" :key="b.id" class="hover:bg-slate-50/80">
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+                  <tr v-for="b in paginatedBooks" :key="b.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
                     <td class="py-3 px-4 flex items-center gap-3">
-                      <img :src="b.cover" class="w-10 h-14 object-cover rounded-lg shadow-sm" alt="Cover" />
+                      <img :src="b.cover" class="w-10 h-14 object-cover rounded-lg shadow-xs border border-slate-200/80 dark:border-slate-800" alt="Cover" />
                       <div>
-                        <div class="font-bold text-slate-900">{{ b.title }}</div>
-                        <div class="text-[10px] text-slate-400">{{ b.author }} • {{ b.publisher }} ({{ b.year }})</div>
+                        <div class="font-bold text-slate-900 dark:text-white">{{ b.title }}</div>
+                        <div class="text-[10px] text-slate-400 dark:text-slate-500">{{ b.author }} • {{ b.publisher }} ({{ b.year }})</div>
                       </div>
                     </td>
                     <td class="py-3 px-4">
@@ -1589,24 +1587,24 @@
                       </span>
                     </td>
                     <td class="py-3 px-4">
-                      <span class="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-mono text-[11px] font-bold">
+                      <span class="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 font-mono text-[11px] font-bold">
                         {{ b.shelfCode }}
                       </span>
                     </td>
-                    <td class="py-3 px-4 font-semibold text-slate-700">
-                      <span class="text-emerald-600 font-bold">{{ b.availableCopies }}</span> / {{ b.totalCopies }} Buku
+                    <td class="py-3 px-4 font-semibold text-slate-700 dark:text-slate-300">
+                      <span class="text-emerald-600 dark:text-emerald-400 font-bold">{{ b.availableCopies }}</span> / {{ b.totalCopies }} Buku
                     </td>
                     <td class="py-3 px-4 text-right space-x-1">
                       <button 
                         @click="openEditBookModal(b)"
-                        class="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs transition cursor-pointer"
+                        class="p-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs transition cursor-pointer"
                         title="Edit Buku"
                       >
                         <Pencil class="w-3.5 h-3.5" />
                       </button>
                       <button 
                         @click="handleDeleteBook(b.id)"
-                        class="p-2 rounded-full bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 text-xs transition cursor-pointer"
+                        class="p-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-slate-600 dark:text-slate-300 hover:text-rose-700 dark:hover:text-rose-300 text-xs transition cursor-pointer"
                         title="Hapus Buku"
                       >
                         <Trash2 class="w-3.5 h-3.5" />
@@ -1618,18 +1616,18 @@
             </div>
 
             <!-- Pagination Controls for Master Data Buku -->
-            <div class="p-3 sm:p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-              <div class="flex items-center gap-3 text-slate-500 text-[11px] sm:text-xs">
+            <div class="p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/80 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+              <div class="flex items-center gap-3 text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs">
                 <span>
-                  Menampilkan <strong class="text-slate-800">{{ ((bookCurrentPage - 1) * bookItemsPerPage) + 1 }}</strong> - 
-                  <strong class="text-slate-800">{{ Math.min(bookCurrentPage * bookItemsPerPage, filteredBooks.length) }}</strong> 
-                  dari <strong class="text-slate-800">{{ filteredBooks.length }}</strong> buku
+                  Menampilkan <strong class="text-slate-800 dark:text-slate-200">{{ ((bookCurrentPage - 1) * bookItemsPerPage) + 1 }}</strong> - 
+                  <strong class="text-slate-800 dark:text-slate-200">{{ Math.min(bookCurrentPage * bookItemsPerPage, filteredBooks.length) }}</strong> 
+                  dari <strong class="text-slate-800 dark:text-slate-200">{{ filteredBooks.length }}</strong> buku
                 </span>
-                <div class="flex items-center gap-1 pl-2 border-l border-slate-200">
+                <div class="flex items-center gap-1 pl-2 border-l border-slate-200 dark:border-slate-700">
                   <span class="text-slate-400">Baris:</span>
                   <select 
                     v-model="bookItemsPerPage"
-                    class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-700 font-medium focus:outline-none focus:border-blue-500"
+                    class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-700 dark:text-slate-200 font-medium focus:outline-none focus:border-blue-500"
                   >
                     <option :value="10">10</option>
                     <option :value="25">25</option>
@@ -1643,7 +1641,7 @@
                 <button 
                   @click="bookCurrentPage = 1"
                   :disabled="bookCurrentPage === 1"
-                  class="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                  class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
                   title="Halaman Pertama"
                 >
                   <ChevronsLeft class="w-4 h-4" />
@@ -1651,20 +1649,20 @@
                 <button 
                   @click="bookCurrentPage--"
                   :disabled="bookCurrentPage === 1"
-                  class="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                  class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
                   title="Halaman Sebelumnya"
                 >
                   <ChevronLeft class="w-4 h-4" />
                 </button>
 
-                <span class="px-2.5 py-1 font-bold text-slate-700 text-xs">
+                <span class="px-2.5 py-1 font-bold text-slate-700 dark:text-slate-300 text-xs">
                   Hal {{ bookCurrentPage }} / {{ bookTotalPages }}
                 </span>
 
                 <button 
                   @click="bookCurrentPage++"
                   :disabled="bookCurrentPage >= bookTotalPages"
-                  class="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                  class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
                   title="Halaman Selanjutnya"
                 >
                   <ChevronRight class="w-4 h-4" />
@@ -1672,7 +1670,7 @@
                 <button 
                   @click="bookCurrentPage = bookTotalPages"
                   :disabled="bookCurrentPage >= bookTotalPages"
-                  class="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                  class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
                   title="Halaman Terakhir"
                 >
                   <ChevronsRight class="w-4 h-4" />
@@ -1684,19 +1682,19 @@
 
         <!-- Tab 6: Pengelolaan Kategori Buku -->
         <div v-if="activeTab === 'categories'" class="space-y-6">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200/80">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 dark:bg-slate-900/80 p-4 sm:p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
             <div>
-              <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <span>Pengelolaan Taksonomi & Kategori Buku</span>
-                <span class="text-[11px] font-bold text-indigo-700 bg-indigo-100/70 px-2.5 py-0.5 rounded-full">
+                <span class="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-500/15 border border-indigo-500/30 px-2.5 py-0.5 rounded-full">
                   {{ filteredCategories.length }} Kategori
                 </span>
               </h3>
-              <p class="text-xs text-slate-500 mt-0.5">Tambah, ubah nama, deskripsi, serta palet warna kategori untuk pengelompokan buku.</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Tambah, ubah nama, deskripsi, serta palet warna kategori untuk pengelompokan buku.</p>
             </div>
             <button 
               @click="openAddCategoryModal"
-              class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full text-xs shadow-sm transition flex items-center gap-1.5 cursor-pointer shrink-0"
+              class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full text-xs shadow-sm transition flex items-center gap-1.5 cursor-pointer shrink-0 active:scale-95"
             >
               <Plus class="w-4 h-4" />
               Tambah Kategori Baru
@@ -1704,9 +1702,9 @@
           </div>
 
           <!-- Empty State -->
-          <div v-if="filteredCategories.length === 0" class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs">
-            <Tag class="w-8 h-8 text-slate-300 mx-auto mb-2" />
-            <p class="font-bold text-slate-700">Tidak Ada Kategori Ditemukan</p>
+          <div v-if="filteredCategories.length === 0" class="p-8 text-center bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-800 text-slate-400 dark:text-slate-500 text-xs">
+            <Tag class="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+            <p class="font-bold text-slate-700 dark:text-slate-200">Tidak Ada Kategori Ditemukan</p>
             <p class="text-[11px]" v-if="categorySearch">Tidak ada kategori yang cocok dengan kata kunci "{{ categorySearch }}".</p>
           </div>
 
@@ -1715,18 +1713,18 @@
             <div 
               v-for="cat in filteredCategories" 
               :key="cat.id"
-              class="bg-white p-5 rounded-2xl border border-slate-100 hover:border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+              class="bg-white dark:bg-slate-900/80 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
             >
               <div>
                 <div class="flex items-center justify-between gap-2">
                   <div class="flex items-center gap-2.5">
                     <div 
-                      class="w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold shadow-sm shrink-0"
+                      class="w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold shadow-xs shrink-0"
                       :style="{ backgroundColor: cat.color || '#3b82f6' }"
                     >
                       <Tag class="w-4 h-4" />
                     </div>
-                    <h4 class="font-bold text-sm text-slate-900 line-clamp-1">{{ cat.name }}</h4>
+                    <h4 class="font-bold text-sm text-slate-900 dark:text-white line-clamp-1">{{ cat.name }}</h4>
                   </div>
 
                   <span 
@@ -1737,24 +1735,24 @@
                   </span>
                 </div>
 
-                <p class="text-xs text-slate-500 mt-3 line-clamp-2 leading-relaxed">
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-3 line-clamp-2 leading-relaxed">
                   {{ cat.description || 'Belum ada deskripsi untuk kategori ini.' }}
                 </p>
               </div>
 
-              <div class="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between">
-                <span class="text-[10px] font-mono text-slate-400 font-bold uppercase">{{ cat.id }}</span>
+              <div class="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <span class="text-[10px] font-mono text-slate-400 dark:text-slate-500 font-bold uppercase">{{ cat.id }}</span>
                 <div class="flex items-center gap-1">
                   <button 
                     @click="openEditCategoryModal(cat)"
-                    class="p-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
+                    class="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
                     title="Edit Kategori"
                   >
                     <Pencil class="w-3.5 h-3.5" />
                   </button>
                   <button 
                     @click="handleDeleteCategory(cat.id, cat.name)"
-                    class="p-1.5 rounded-full bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 transition cursor-pointer"
+                    class="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-slate-600 dark:text-slate-300 hover:text-rose-700 dark:hover:text-rose-300 transition cursor-pointer"
                     title="Hapus Kategori"
                   >
                     <Trash2 class="w-3.5 h-3.5" />
@@ -1767,18 +1765,18 @@
 
         <!-- Tab 7: Manajemen & Urutan Rak (Drag & Drop Sorting) -->
         <div v-if="activeTab === 'shelves'" class="space-y-6">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200/80">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 dark:bg-slate-900/80 p-4 sm:p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
             <div>
-              <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 flex-wrap">
+              <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
                 <span>Manajemen &amp; Urutan Posisi Rak</span>
-                <span class="text-[11px] font-bold text-blue-700 bg-blue-100/70 px-2.5 py-0.5 rounded-full">
+                <span class="text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-500/15 border border-blue-500/30 px-2.5 py-0.5 rounded-full">
                   {{ store.shelves.length }} Rak
                 </span>
-                <span v-if="hasShelvesCustomOrder" class="text-[10px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full">
+                <span v-if="hasShelvesCustomOrder" class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full">
                   Urutan Kustom Tersimpan
                 </span>
               </h3>
-              <p class="text-xs text-slate-500 mt-0.5">
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Tarik (drag &amp; drop) kartu rak untuk menyusun urutannya, atau klik panah geser. Pengguna umum hanya dapat melihat urutan ini.
               </p>
             </div>
@@ -1787,10 +1785,10 @@
                 v-if="hasShelvesCustomOrder"
                 @click="handleResetShelvesOrderAdmin"
                 :disabled="isReorderingAdminShelves"
-                class="px-3.5 py-2 rounded-full bg-white hover:bg-slate-200 text-slate-700 font-bold text-xs transition flex items-center gap-1.5 border border-slate-200 shadow-2xs cursor-pointer active:scale-95"
+                class="px-3.5 py-2 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs transition flex items-center gap-1.5 border border-slate-200/80 dark:border-slate-700 shadow-2xs cursor-pointer active:scale-95"
                 title="Kembalikan urutan rak ke susunan standar"
               >
-                <RotateCcw class="w-3.5 h-3.5 text-slate-500" />
+                <RotateCcw class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                 <span>Reset Urutan</span>
               </button>
               <button 
@@ -1802,10 +1800,10 @@
               </button>
               <router-link
                 to="/shelves"
-                class="px-3.5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-full text-xs transition flex items-center gap-1.5 cursor-pointer shrink-0"
+                class="px-3.5 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-full text-xs transition flex items-center gap-1.5 cursor-pointer shrink-0"
                 title="Buka halaman penuh tata letak rak perpustakaan"
               >
-                <Layers class="w-3.5 h-3.5 text-slate-600" />
+                <Layers class="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
                 <span>Lihat Tata Letak Lengkap</span>
               </router-link>
             </div>
@@ -1818,11 +1816,11 @@
               :key="floor"
               @click="adminSelectedFloor = floor"
               class="px-3.5 py-1.5 rounded-full text-xs font-bold transition cursor-pointer flex items-center gap-1.5 active:scale-95"
-              :class="adminSelectedFloor === floor ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+              :class="adminSelectedFloor === floor ? 'bg-slate-900 dark:bg-blue-600 text-white shadow-xs' : 'bg-white dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-800'"
             >
               <Building2 class="w-3.5 h-3.5" />
               <span>{{ floor === 0 ? 'Semua Lantai' : `Lantai ${floor}` }}</span>
-              <span class="text-[10px] px-1.5 py-0.2 rounded-full font-bold" :class="adminSelectedFloor === floor ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-600'">
+              <span class="text-[10px] px-1.5 py-0.2 rounded-full font-bold" :class="adminSelectedFloor === floor ? 'bg-blue-500 dark:bg-blue-500/50 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'">
                 {{ floor === 0 ? store.shelves.length : store.shelves.filter(s => s.floor === floor).length }}
               </span>
             </button>
@@ -1840,7 +1838,7 @@
               @dragleave="handleAdminDragLeave(shelf)"
               @drop.prevent="handleAdminDrop(shelf)"
               @dragend="handleAdminDragEnd"
-              class="bg-white p-5 rounded-2xl border border-slate-100 hover:border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between cursor-grab active:cursor-grabbing relative group"
+              class="bg-white dark:bg-slate-900/80 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 shadow-sm hover:shadow-md transition-all flex flex-col justify-between cursor-grab active:cursor-grabbing relative group"
               :class="[
                 adminDraggedShelfId === shelf.id ? 'opacity-40 scale-95 border-dashed border-blue-400 bg-blue-50/30' : '',
                 adminDragOverShelfId === shelf.id && adminDraggedShelfId !== shelf.id ? 'ring-2 ring-blue-500 scale-[1.02] shadow-lg border-blue-500 bg-blue-50/20' : ''
@@ -1848,8 +1846,8 @@
             >
               <div>
                 <!-- Top position bar & quick move buttons -->
-                <div class="mb-3 pb-2 border-b border-slate-100 flex items-center justify-between text-xs select-none">
-                  <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 text-slate-600 font-mono text-[11px] font-bold border border-slate-200/80">
+                <div class="mb-3 pb-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs select-none">
+                  <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-mono text-[11px] font-bold border border-slate-200/80 dark:border-slate-700">
                     <GripVertical class="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition-colors" />
                     <span>Urutan #{{ index + 1 }}</span>
                   </div>
@@ -1858,7 +1856,7 @@
                       type="button"
                       @click="moveAdminShelfStep(shelf.id, 'prev')"
                       :disabled="index === 0 || isReorderingAdminShelves"
-                      class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 flex items-center justify-center transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                      class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-slate-600 dark:text-slate-300 hover:text-blue-700 dark:hover:text-blue-300 flex items-center justify-center transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                       title="Geser ke posisi sebelumnya"
                     >
                       <ChevronLeft class="w-3.5 h-3.5" />
@@ -1867,7 +1865,7 @@
                       type="button"
                       @click="moveAdminShelfStep(shelf.id, 'next')"
                       :disabled="index === adminDisplayedShelves.length - 1 || isReorderingAdminShelves"
-                      class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 flex items-center justify-center transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                      class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-slate-600 dark:text-slate-300 hover:text-blue-700 dark:hover:text-blue-300 flex items-center justify-center transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                       title="Geser ke posisi berikutnya"
                     >
                       <ChevronRight class="w-3.5 h-3.5" />
@@ -1884,25 +1882,25 @@
                       {{ shelf.code }}
                     </div>
                     <div>
-                      <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                      <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
                         Lantai {{ shelf.floor }} • {{ shelf.zone }}
                       </span>
-                      <h4 class="font-bold text-sm text-slate-900 line-clamp-1 mt-0.5">{{ shelf.name }}</h4>
+                      <h4 class="font-bold text-sm text-slate-900 dark:text-white line-clamp-1 mt-0.5">{{ shelf.name }}</h4>
                     </div>
                   </div>
                 </div>
 
-                <p class="text-xs text-slate-500 mt-2.5 line-clamp-2 leading-relaxed">
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-2.5 line-clamp-2 leading-relaxed">
                   {{ shelf.description || `Koleksi kategori ${shelf.category}.` }}
                 </p>
 
                 <!-- Capacity Info -->
-                <div class="mt-3.5 p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs space-y-1.5">
-                  <div class="flex justify-between text-slate-600 text-[11px]">
+                <div class="mt-3.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-850/80 border border-slate-100 dark:border-slate-800 text-xs space-y-1.5">
+                  <div class="flex justify-between text-slate-600 dark:text-slate-300 text-[11px]">
                     <span>Kapasitas:</span>
-                    <span class="font-bold text-slate-800">{{ getShelfBooksCount(shelf.id) }} / {{ shelf.capacity }} Buku</span>
+                    <span class="font-bold text-slate-800 dark:text-slate-200">{{ getShelfBooksCount(shelf.id) }} / {{ shelf.capacity }} Buku</span>
                   </div>
-                  <div class="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                  <div class="h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                     <div 
                       class="h-full rounded-full transition-all duration-300"
                       :style="{ 
@@ -1914,19 +1912,19 @@
                 </div>
               </div>
 
-              <div class="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between" @click.stop>
-                <span class="text-[10px] font-mono text-slate-400 font-bold uppercase">{{ shelf.shelfRow || 'Baris A1' }}</span>
+              <div class="pt-3 mt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between" @click.stop>
+                <span class="text-[10px] font-mono text-slate-400 dark:text-slate-500 font-bold uppercase">{{ shelf.shelfRow || 'Baris A1' }}</span>
                 <div class="flex items-center gap-1">
                   <button 
                     @click="openEditShelfModalAdmin(shelf)"
-                    class="p-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
+                    class="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
                     title="Edit Rak"
                   >
                     <Pencil class="w-3.5 h-3.5" />
                   </button>
                   <button 
                     @click="handleDeleteShelfAdmin(shelf.id, shelf.name)"
-                    class="p-1.5 rounded-full bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 transition cursor-pointer"
+                    class="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-slate-600 dark:text-slate-300 hover:text-rose-700 dark:hover:text-rose-300 transition cursor-pointer"
                     title="Hapus Rak"
                   >
                     <Trash2 class="w-3.5 h-3.5" />
@@ -2050,18 +2048,18 @@
             </div>
           </div>
 
-          <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100 mt-4 shrink-0">
+          <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800 mt-4 shrink-0">
             <button 
               type="button"
               @click="isResetMemberPasswordOpen = false"
-              class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 hover:bg-slate-200/60 transition cursor-pointer"
+              class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
             >
               Batal
             </button>
             <button 
               type="submit"
               :disabled="isResettingPassword"
-              class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+              class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-slate-900/25 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
             >
               <Check class="w-4 h-4" />
               <span>{{ isResettingPassword ? 'Menyimpan...' : 'Perbarui Kata Sandi' }}</span>
@@ -2093,18 +2091,18 @@
             <X class="w-5 h-5" />
           </button>
         </div>
-        <div class="p-4 sm:p-6 flex flex-col items-center justify-center bg-slate-100 flex-1 overflow-y-auto">
+        <div class="p-4 sm:p-6 flex flex-col items-center justify-center bg-slate-900/90 flex-1 overflow-y-auto">
           <img 
             :src="previewSelfieUrl" 
-            class="max-h-[65vh] w-auto max-w-full rounded-2xl shadow-lg border border-slate-300 object-contain" 
-            alt="Foto Selfie Guru"
+            class="max-h-[65vh] w-auto max-w-full rounded-2xl shadow-lg border border-slate-700/80 object-contain" 
+            alt="Foto Selfie Guru" 
             referrerpolicy="no-referrer"
           />
         </div>
-        <div class="px-4 sm:px-6 py-3 sm:py-4 bg-white border-t border-slate-100 flex justify-end shrink-0 sticky bottom-0 z-20">
+        <div class="px-4 sm:px-6 py-3 sm:py-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-end shrink-0 sticky bottom-0 z-20">
           <button 
             @click="previewSelfieUrl = null"
-            class="w-full sm:w-auto px-5 py-2.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition cursor-pointer"
+            class="w-full sm:w-auto px-5 py-2.5 rounded-full bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white text-xs font-bold transition cursor-pointer"
           >
             Tutup Pratinjau
           </button>
@@ -2113,8 +2111,8 @@
     </div>
 
     <!-- Modal Penolakan Permintaan Status Guru -->
-    <div v-if="isRejectTeacherModalOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200">
-      <div class="bg-white w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-md sm:rounded-3xl rounded-none border-0 sm:border sm:border-slate-200 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+    <div v-if="isRejectTeacherModalOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-xs overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200">
+      <div class="bg-white dark:bg-slate-900 w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-md sm:rounded-3xl rounded-none border-0 sm:border sm:border-slate-100 dark:sm:border-slate-800 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         <div class="px-4 sm:px-6 py-4 bg-rose-600 text-white flex items-center justify-between shrink-0 sticky top-0 z-20">
           <div class="flex items-center gap-2.5">
             <div class="p-1.5 rounded-xl bg-rose-700/50 text-white shrink-0">
@@ -2137,29 +2135,29 @@
 
         <form @submit.prevent="confirmRejectTeacherRequest" class="p-4 sm:p-6 space-y-4 flex-1 flex flex-col justify-between overflow-y-auto">
           <div class="space-y-1.5">
-            <label class="block text-xs font-bold text-slate-700">Alasan Penolakan</label>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-200">Alasan Penolakan</label>
             <textarea 
               v-model="rejectReasonInput"
               rows="4"
               placeholder="Contoh: Foto selfie kurang jelas/buram, atau data belum sesuai dengan daftar dewan guru SDN Pengasinan VII."
-              class="w-full px-3.5 py-2.5 rounded-2xl border border-slate-300 text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
+              class="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
               required
             ></textarea>
-            <p class="text-[11px] text-slate-400">Alasan ini akan ditampilkan kepada anggota di portal mereka.</p>
+            <p class="text-[11px] text-slate-400 dark:text-slate-500">Alasan ini akan ditampilkan kepada anggota di portal mereka.</p>
           </div>
 
-          <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100 shrink-0">
+          <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800 shrink-0">
             <button 
-              type="button"
+              type="button" 
               @click="closeRejectTeacherModal"
-              class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 hover:bg-slate-200/60 transition cursor-pointer"
+              class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
             >
               Batal
             </button>
             <button 
-              type="submit"
+              type="submit" 
               :disabled="isProcessingReject"
-              class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-rose-200 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+              class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-slate-900/25 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
             >
               <Check class="w-4 h-4" />
               <span>{{ isProcessingReject ? 'Memproses...' : 'Konfirmasi Tolak' }}</span>
@@ -2170,8 +2168,8 @@
     </div>
 
     <!-- Modal Persetujuan Permintaan Status Guru -->
-    <div v-if="isApproveTeacherModalOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200">
-      <div class="bg-white w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-lg sm:rounded-3xl rounded-none border-0 sm:border sm:border-slate-200 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+    <div v-if="isApproveTeacherModalOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-xs overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200">
+      <div class="bg-white dark:bg-slate-900 w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-lg sm:rounded-3xl rounded-none border-0 sm:border sm:border-slate-100 dark:sm:border-slate-800 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         <!-- Sticky Header -->
         <div class="px-4 sm:px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-700 text-white flex items-center justify-between shrink-0 sticky top-0 z-20">
           <div class="flex items-center gap-3">
@@ -2195,7 +2193,7 @@
 
         <div class="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto flex-1">
           <!-- Member Detail & Selfie Card -->
-          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center gap-4">
+          <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-850/80 border border-slate-100 dark:border-slate-800 flex items-center gap-4">
             <div 
               class="relative group cursor-pointer shrink-0"
               @click="openSelfiePreview(selectedRequestForApprove?.selfieUrl, selectedRequestForApprove?.memberName)"
@@ -2203,7 +2201,7 @@
             >
               <img 
                 :src="selectedRequestForApprove?.selfieUrl" 
-                class="w-16 h-20 rounded-xl object-cover border-2 border-emerald-500 shadow-sm"
+                class="w-16 h-20 rounded-xl object-cover border-2 border-emerald-500 shadow-xs"
                 alt="Selfie Pemohon"
                 referrerpolicy="no-referrer"
               />
@@ -2214,61 +2212,61 @@
 
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2">
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 uppercase">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 uppercase">
                   Pemohon Guru
                 </span>
                 <span class="text-[10px] text-slate-400 font-mono">
                   ID: {{ selectedRequestForApprove?.id }}
                 </span>
               </div>
-              <h4 class="text-sm font-bold text-slate-900 mt-1 truncate">
+              <h4 class="text-sm font-bold text-slate-900 dark:text-white mt-1 truncate">
                 {{ selectedRequestForApprove?.memberName }}
               </h4>
-              <div class="text-xs font-mono font-bold text-blue-600 mt-0.5">
+              <div class="text-xs font-mono font-bold text-blue-600 dark:text-blue-400 mt-0.5">
                 {{ selectedRequestForApprove?.memberCardNumber }}
               </div>
-              <div class="text-[11px] text-slate-500 mt-0.5 truncate">
+              <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
                 {{ selectedRequestForApprove?.memberEmail || '-' }} • {{ selectedRequestForApprove?.memberPhone || '-' }}
               </div>
             </div>
           </div>
 
           <!-- Hak Istimewa Status Guru -->
-          <div class="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200/80 space-y-2.5">
-            <div class="flex items-center gap-2 text-indigo-950 font-bold text-xs">
-              <CheckCircle2 class="w-4 h-4 text-indigo-600 shrink-0" />
+          <div class="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-900/40 space-y-2.5">
+            <div class="flex items-center gap-2 text-indigo-950 dark:text-indigo-200 font-bold text-xs">
+              <CheckCircle2 class="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
               <span>Hak Istimewa yang Akan Diaktifkan untuk Guru:</span>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-              <div class="p-2.5 rounded-xl bg-white border border-indigo-100 text-slate-700 text-center">
-                <div class="text-[10px] text-indigo-700 font-semibold uppercase">Kuota Pinjam</div>
-                <div class="font-bold text-slate-900 text-sm mt-0.5">6 Buku</div>
+              <div class="p-2.5 rounded-xl bg-white dark:bg-slate-900/90 border border-indigo-100 dark:border-indigo-900/40 text-slate-700 dark:text-slate-300 text-center">
+                <div class="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold uppercase">Kuota Pinjam</div>
+                <div class="font-bold text-slate-900 dark:text-white text-sm mt-0.5">6 Buku</div>
                 <div class="text-[10px] text-slate-400">Siswa maks 3 buku</div>
               </div>
-              <div class="p-2.5 rounded-xl bg-white border border-indigo-100 text-slate-700 text-center">
-                <div class="text-[10px] text-indigo-700 font-semibold uppercase">Durasi Pinjam</div>
-                <div class="font-bold text-slate-900 text-sm mt-0.5">14 Hari</div>
+              <div class="p-2.5 rounded-xl bg-white dark:bg-slate-900/90 border border-indigo-100 dark:border-indigo-900/40 text-slate-700 dark:text-slate-300 text-center">
+                <div class="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold uppercase">Durasi Pinjam</div>
+                <div class="font-bold text-slate-900 dark:text-white text-sm mt-0.5">14 Hari</div>
                 <div class="text-[10px] text-slate-400">Siswa maks 7 hari</div>
               </div>
-              <div class="p-2.5 rounded-xl bg-white border border-indigo-100 text-slate-700 text-center">
-                <div class="text-[10px] text-emerald-700 font-semibold uppercase">Auto-Suspend</div>
-                <div class="font-bold text-emerald-700 text-sm mt-0.5">Bebas Sanksi</div>
+              <div class="p-2.5 rounded-xl bg-white dark:bg-slate-900/90 border border-indigo-100 dark:border-indigo-900/40 text-slate-700 dark:text-slate-300 text-center">
+                <div class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold uppercase">Auto-Suspend</div>
+                <div class="font-bold text-emerald-600 dark:text-emerald-400 text-sm mt-0.5">Bebas Sanksi</div>
                 <div class="text-[10px] text-slate-400">Proteksi akun guru</div>
               </div>
             </div>
           </div>
 
-          <p class="text-xs text-slate-500 leading-relaxed">
-            Apakah Anda yakin ingin menyetujui permohonan ini? Tipe keanggotaan <strong class="text-slate-900">{{ selectedRequestForApprove?.memberName }}</strong> akan resmi diubah menjadi <strong>Guru SDN Pengasinan VII</strong>.
+          <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+            Apakah Anda yakin ingin menyetujui permohonan ini? Tipe keanggotaan <strong class="text-slate-900 dark:text-white">{{ selectedRequestForApprove?.memberName }}</strong> akan resmi diubah menjadi <strong class="text-slate-900 dark:text-white">Guru SDN Pengasinan VII</strong>.
           </p>
         </div>
 
         <!-- Sticky Footer Actions -->
-        <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-white/95 backdrop-blur-md border-t border-slate-100 flex items-center justify-end gap-3 shrink-0 sticky bottom-0 z-20">
+        <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3 shrink-0 sticky bottom-0 z-20">
           <button 
             type="button" 
             @click="closeApproveTeacherModal"
-            class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 hover:bg-slate-200/60 transition cursor-pointer"
+            class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
           >
             Batal
           </button>
@@ -2276,7 +2274,7 @@
             type="button" 
             @click="confirmApproveTeacherRequest"
             :disabled="isProcessingApprove"
-            class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-200 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+            class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-slate-900/25 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
           >
             <Check class="w-4 h-4" />
             <span>{{ isProcessingApprove ? 'Menyetujui...' : 'Ya, Setujui Jadi Guru' }}</span>
@@ -2287,7 +2285,7 @@
 
     <!-- Modal Penolakan Permohonan Verifikasi Siswa (e-Book) -->
     <div v-if="isRejectStudentModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
-      <div class="bg-white w-full max-w-md rounded-3xl border border-slate-200 shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 max-h-[90vh]">
+      <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 max-h-[90vh]">
         <!-- Header -->
         <div class="px-6 py-4 bg-rose-600 text-white flex items-center justify-between shrink-0">
           <div class="flex items-center gap-2.5">
@@ -2309,21 +2307,21 @@
 
         <form @submit.prevent="confirmRejectStudentRequest" class="p-4 sm:p-6 space-y-4 flex-1 flex flex-col justify-between overflow-y-auto">
           <div class="space-y-3">
-            <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center gap-3">
+            <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 flex items-center gap-3">
               <img 
                 :src="selectedStudentReqForReject?.selfieUrl" 
-                class="w-12 h-14 rounded-xl object-cover border border-slate-200" 
+                class="w-12 h-14 rounded-xl object-cover border border-slate-200 dark:border-slate-700" 
                 alt="Selfie"
               />
               <div class="min-w-0">
-                <div class="font-bold text-sm text-slate-900 truncate">{{ selectedStudentReqForReject?.memberName }}</div>
-                <div class="text-xs text-blue-600 font-mono">{{ selectedStudentReqForReject?.memberCardNumber }}</div>
-                <div class="text-[11px] text-slate-500 font-mono">NIS: {{ selectedStudentReqForReject?.nis }} • NISN: {{ selectedStudentReqForReject?.nisn }}</div>
+                <div class="font-bold text-sm text-slate-900 dark:text-white truncate">{{ selectedStudentReqForReject?.memberName }}</div>
+                <div class="text-xs text-blue-600 dark:text-blue-400 font-mono">{{ selectedStudentReqForReject?.memberCardNumber }}</div>
+                <div class="text-[11px] text-slate-500 dark:text-slate-400 font-mono">NIS: {{ selectedStudentReqForReject?.nis }} • NISN: {{ selectedStudentReqForReject?.nisn }}</div>
               </div>
             </div>
 
             <div class="space-y-1.5">
-              <label class="block text-xs font-bold text-slate-700">Alasan Penolakan *</label>
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Alasan Penolakan *</label>
               
               <!-- Quick reason chips -->
               <div class="flex flex-wrap gap-1 mb-1.5">
@@ -2337,7 +2335,7 @@
                   ]"
                   :key="preset"
                   @click="rejectStudentReasonInput = preset"
-                  class="text-[10px] px-2.5 py-1 rounded-full bg-slate-100 hover:bg-rose-50 hover:text-rose-700 text-slate-600 border border-slate-200 transition cursor-pointer"
+                  class="text-[10px] px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-700 dark:hover:text-rose-300 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
                 >
                   {{ preset }}
                 </button>
@@ -2347,25 +2345,25 @@
                 v-model="rejectStudentReasonInput"
                 rows="3"
                 placeholder="Tuliskan alasan penolakan..."
-                class="w-full px-3.5 py-2.5 rounded-2xl border border-slate-300 text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
+                class="w-full px-3.5 py-2.5 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 required
               ></textarea>
-              <p class="text-[11px] text-slate-400">Alasan ini akan ditampilkan kepada siswa di portal anggota mereka agar dapat diperbaiki.</p>
+              <p class="text-[11px] text-slate-400 dark:text-slate-500">Alasan ini akan ditampilkan kepada siswa di portal anggota mereka agar dapat diperbaiki.</p>
             </div>
           </div>
 
-          <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100 shrink-0">
+          <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800 shrink-0">
             <button 
               type="button"
               @click="closeRejectStudentModal"
-              class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 hover:bg-slate-200/60 transition cursor-pointer"
+              class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
             >
               Batal
             </button>
             <button 
               type="submit"
               :disabled="isProcessingRejectStudent"
-              class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-rose-200 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+              class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-slate-900/25 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
             >
               <Check class="w-4 h-4" />
               <span>{{ isProcessingRejectStudent ? 'Memproses...' : 'Konfirmasi Tolak' }}</span>
@@ -2377,7 +2375,7 @@
 
     <!-- Modal Persetujuan Permohonan Verifikasi Siswa (e-Book) -->
     <div v-if="isApproveStudentModalOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200">
-      <div class="bg-white w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-lg sm:rounded-3xl rounded-none border-0 sm:border sm:border-slate-200 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+      <div class="bg-white dark:bg-slate-900 w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-lg sm:rounded-3xl rounded-none border-0 sm:border sm:border-slate-100 dark:sm:border-slate-800 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         <!-- Sticky Header -->
         <div class="px-4 sm:px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white flex items-center justify-between shrink-0 sticky top-0 z-20">
           <div class="flex items-center gap-3">
@@ -2401,7 +2399,7 @@
 
         <div class="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto flex-1">
           <!-- Student Detail & Selfie Card -->
-          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center gap-4">
+          <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 flex items-center gap-4">
             <div 
               class="relative group cursor-pointer shrink-0"
               @click="openSelfiePreview(selectedStudentReqForApprove?.selfieUrl, selectedStudentReqForApprove?.memberName)"
@@ -2420,61 +2418,61 @@
 
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2">
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 uppercase">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 uppercase">
                   Siswa
                 </span>
-                <span class="text-[10px] text-slate-400 font-mono">
+                <span class="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
                   ID: {{ selectedStudentReqForApprove?.id }}
                 </span>
               </div>
-              <h4 class="text-sm font-bold text-slate-900 mt-1 truncate">
+              <h4 class="text-sm font-bold text-slate-900 dark:text-white mt-1 truncate">
                 {{ selectedStudentReqForApprove?.memberName }}
               </h4>
-              <div class="text-xs font-mono font-bold text-blue-600 mt-0.5">
+              <div class="text-xs font-mono font-bold text-blue-600 dark:text-blue-400 mt-0.5">
                 {{ selectedStudentReqForApprove?.memberCardNumber }}
               </div>
-              <div class="text-[11px] text-slate-500 mt-0.5 truncate">
+              <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
                 {{ selectedStudentReqForApprove?.memberEmail || '-' }} • {{ selectedStudentReqForApprove?.memberPhone || '-' }}
               </div>
             </div>
           </div>
 
           <!-- Identitas NIS & NISN -->
-          <div class="p-4 rounded-2xl bg-blue-50/70 border border-blue-200/80 space-y-2.5">
-            <div class="flex items-center gap-2 text-blue-950 font-bold text-xs">
-              <CheckCircle2 class="w-4 h-4 text-blue-600 shrink-0" />
+          <div class="p-4 rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/40 space-y-2.5">
+            <div class="flex items-center gap-2 text-blue-950 dark:text-blue-200 font-bold text-xs">
+              <CheckCircle2 class="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
               <span>Data Identitas Resmi Siswa Terdaftar:</span>
             </div>
             <div class="grid grid-cols-2 gap-2 text-xs">
-              <div class="p-3 rounded-xl bg-white border border-blue-100 text-slate-700">
-                <div class="text-[10px] text-blue-700 font-bold uppercase tracking-wider">Nomor Induk Sekolah (NIS)</div>
-                <div class="font-mono font-extrabold text-slate-900 text-base mt-0.5">{{ selectedStudentReqForApprove?.nis }}</div>
+              <div class="p-3 rounded-xl bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-900/50 text-slate-700 dark:text-slate-300">
+                <div class="text-[10px] text-blue-700 dark:text-blue-400 font-bold uppercase tracking-wider">Nomor Induk Sekolah (NIS)</div>
+                <div class="font-mono font-extrabold text-slate-900 dark:text-white text-base mt-0.5">{{ selectedStudentReqForApprove?.nis }}</div>
               </div>
-              <div class="p-3 rounded-xl bg-white border border-blue-100 text-slate-700">
-                <div class="text-[10px] text-blue-700 font-bold uppercase tracking-wider">NISN Siswa Nasional</div>
-                <div class="font-mono font-extrabold text-slate-900 text-base mt-0.5">{{ selectedStudentReqForApprove?.nisn }}</div>
+              <div class="p-3 rounded-xl bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-900/50 text-slate-700 dark:text-slate-300">
+                <div class="text-[10px] text-blue-700 dark:text-blue-400 font-bold uppercase tracking-wider">NISN Siswa Nasional</div>
+                <div class="font-mono font-extrabold text-slate-900 dark:text-white text-base mt-0.5">{{ selectedStudentReqForApprove?.nisn }}</div>
               </div>
             </div>
           </div>
 
           <!-- Hak Akses e-Book Notice -->
-          <div class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 space-y-1.5 text-xs text-emerald-950">
-            <div class="font-bold flex items-center gap-1.5 text-emerald-800">
-              <ShieldCheck class="w-4 h-4 text-emerald-600 shrink-0" />
+          <div class="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-900/40 space-y-1.5 text-xs text-emerald-950 dark:text-emerald-200">
+            <div class="font-bold flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300">
+              <ShieldCheck class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>Perlindungan Hak Cipta & Hak Akses Digital:</span>
             </div>
-            <p class="text-[11px] text-emerald-900 leading-relaxed">
+            <p class="text-[11px] text-emerald-900 dark:text-emerald-300/90 leading-relaxed">
               Dengan menyetujui, akun ini diverifikasi sah sebagai siswa SDN Pengasinan VII dan akan langsung diizinkan meminjam dan membaca seluruh koleksi <strong>e-Book digital</strong> perpustakaan.
             </p>
           </div>
         </div>
 
         <!-- Sticky Footer Actions -->
-        <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-white/95 backdrop-blur-md border-t border-slate-100 flex items-center justify-end gap-3 shrink-0 sticky bottom-0 z-20">
+        <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3 shrink-0 sticky bottom-0 z-20">
           <button 
             type="button" 
             @click="closeApproveStudentModal"
-            class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 hover:bg-slate-200/60 transition cursor-pointer"
+            class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
           >
             Batal
           </button>
@@ -2482,7 +2480,7 @@
             type="button" 
             @click="confirmApproveStudentRequest"
             :disabled="isProcessingApproveStudent"
-            class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+            class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-slate-900/25 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
           >
             <Check class="w-4 h-4" />
             <span>{{ isProcessingApproveStudent ? 'Menyetujui...' : 'Ya, Setujui Akses Siswa' }}</span>
@@ -2565,7 +2563,7 @@
             <button 
               type="submit"
               :disabled="isProcessingSuspend"
-              class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-rose-200 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+              class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-slate-900/25 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
             >
               <UserX class="w-4 h-4" />
               <span>{{ isProcessingSuspend ? 'Memproses...' : 'Terapkan Suspend' }}</span>
@@ -2577,12 +2575,12 @@
 
     <!-- Modal Universal Konfirmasi Aksi Admin -->
     <div v-if="confirmDialog.isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
-      <div class="bg-white w-full max-w-sm sm:max-w-md rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 relative">
+      <div class="bg-white dark:bg-slate-900 w-full max-w-sm sm:max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 relative">
         <button 
           @click="closeConfirmDialog"
           type="button"
           aria-label="Tutup dialog konfirmasi"
-          class="absolute top-4 right-4 p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+          class="absolute top-4 right-4 p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
         >
           <X class="w-5 h-5" />
         </button>
@@ -2590,7 +2588,7 @@
           <!-- Icon -->
           <div 
             class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto shadow-xs"
-            :class="confirmDialog.type === 'danger' ? 'bg-rose-100 text-rose-600' : confirmDialog.type === 'warning' ? 'bg-amber-100 text-amber-600' : confirmDialog.type === 'success' ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600'"
+            :class="confirmDialog.type === 'danger' ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50' : confirmDialog.type === 'warning' ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50' : confirmDialog.type === 'success' ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50' : 'bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900/50'"
           >
             <Trash2 v-if="confirmDialog.type === 'danger'" class="w-7 h-7" />
             <AlertTriangle v-else-if="confirmDialog.type === 'warning'" class="w-7 h-7" />
@@ -2599,26 +2597,26 @@
           </div>
 
           <div class="space-y-1.5">
-            <h3 class="text-base font-bold text-slate-900">{{ confirmDialog.title }}</h3>
-            <p class="text-xs text-slate-600 leading-relaxed">{{ confirmDialog.message }}</p>
-            <p v-if="confirmDialog.subMessage" class="text-[11px] text-slate-400">{{ confirmDialog.subMessage }}</p>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">{{ confirmDialog.title }}</h3>
+            <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">{{ confirmDialog.message }}</p>
+            <p v-if="confirmDialog.subMessage" class="text-[11px] text-slate-400 dark:text-slate-500">{{ confirmDialog.subMessage }}</p>
           </div>
 
           <!-- Buttons -->
           <div class="pt-2 flex items-center justify-center gap-3">
             <button 
-              type="button"
+              type="button" 
               @click="closeConfirmDialog"
-              class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold text-slate-600 hover:bg-slate-200/60 transition cursor-pointer border border-slate-200"
+              class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer border border-slate-200 dark:border-slate-700"
             >
               {{ confirmDialog.cancelText || 'Batal' }}
             </button>
             <button 
-              type="button"
+              type="button" 
               @click="executeConfirmDialog"
               :disabled="isConfirmDialogProcessing"
-              class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-white text-xs font-bold transition cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
-              :class="confirmDialog.type === 'danger' ? 'bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-200' : confirmDialog.type === 'warning' ? 'bg-amber-600 hover:bg-amber-700 shadow-md shadow-amber-200' : confirmDialog.type === 'success' ? 'bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-200' : 'bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-200'"
+              class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-white text-xs font-bold transition cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-md shadow-slate-900/25"
+              :class="confirmDialog.type === 'danger' ? 'bg-rose-600 hover:bg-rose-700' : confirmDialog.type === 'warning' ? 'bg-amber-600 hover:bg-amber-700' : confirmDialog.type === 'success' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700'"
             >
               <span>{{ isConfirmDialogProcessing ? 'Memproses...' : confirmDialog.confirmText }}</span>
             </button>

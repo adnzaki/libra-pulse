@@ -1,23 +1,23 @@
 <template>
   <div v-if="isOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-hidden sm:overflow-y-auto">
-    <div class="bg-white border-0 sm:border sm:border-slate-100 w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-2xl sm:rounded-3xl rounded-none shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+    <div class="bg-white dark:bg-slate-900 border-0 sm:border sm:border-slate-100 dark:sm:border-slate-800 w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-2xl sm:rounded-3xl rounded-none shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
       
       <!-- Sticky Header -->
-      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 backdrop-blur-md border-b border-slate-100 flex items-center justify-between shrink-0 sticky top-0 z-20">
+      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 sticky top-0 z-20">
         <div class="flex items-center gap-3">
-          <div class="w-9 sm:w-10 h-9 sm:h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+          <div class="w-9 sm:w-10 h-9 sm:h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-200 dark:border-blue-900/50">
             <BookMarked class="w-5 h-5" />
           </div>
           <div>
-            <h3 class="font-bold text-sm sm:text-base text-slate-900">{{ book ? 'Edit Data Buku' : 'Tambah Buku Baru' }}</h3>
-            <p class="text-[11px] sm:text-xs text-slate-500">Katalogisasi, Penempatan Rak & Manajemen Stok</p>
+            <h3 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white">{{ book ? 'Edit Data Buku' : 'Tambah Buku Baru' }}</h3>
+            <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">Katalogisasi, Penempatan Rak & Manajemen Stok</p>
           </div>
         </div>
         <button 
           @click="handleClose" 
           type="button"
           aria-label="Tutup modal form buku"
-          class="p-2 sm:p-2.5 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-200/70 active:scale-95 transition cursor-pointer flex items-center justify-center shrink-0"
+          class="p-2 sm:p-2.5 rounded-full text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-slate-800 active:scale-95 transition cursor-pointer flex items-center justify-center shrink-0"
         >
           <X class="w-5 h-5" />
         </button>
@@ -27,14 +27,14 @@
       <div class="p-4 sm:p-6 space-y-4 text-xs flex-1 overflow-y-auto">
         
         <!-- Cover Upload / Input Box -->
-        <div class="p-4 rounded-2xl bg-slate-50/90 border border-slate-200/80 space-y-3">
+        <div class="p-4 rounded-2xl bg-slate-50/90 dark:bg-slate-900/70 border border-slate-100 dark:border-slate-800 space-y-3">
           <div class="flex items-center justify-between">
-            <label class="block font-bold text-slate-700">Sampul Buku (Cover)</label>
-            <div class="flex items-center space-x-1 bg-slate-200/70 p-0.5 rounded-xl text-[11px]">
+            <label class="block font-bold text-slate-700 dark:text-slate-200">Sampul Buku (Cover)</label>
+            <div class="flex items-center space-x-1 bg-slate-200/60 dark:bg-slate-950/70 p-0.5 rounded-xl border border-slate-300/40 dark:border-slate-800/80 text-[11px]">
               <button 
                 type="button"
                 @click="coverSourceMode = 'upload'"
-                :class="coverSourceMode === 'upload' ? 'bg-white text-blue-600 font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900 font-medium'"
+                :class="coverSourceMode === 'upload' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 font-bold shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'"
                 class="px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer"
               >
                 <Upload class="w-3.5 h-3.5" />
@@ -43,7 +43,7 @@
               <button 
                 type="button"
                 @click="coverSourceMode = 'url'"
-                :class="coverSourceMode === 'url' ? 'bg-white text-blue-600 font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900 font-medium'"
+                :class="coverSourceMode === 'url' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 font-bold shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'"
                 class="px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer"
               >
                 <LinkIcon class="w-3.5 h-3.5" />
@@ -54,7 +54,7 @@
 
           <div class="flex flex-col sm:flex-row gap-4 items-start">
             <!-- Preview Box -->
-            <div class="w-24 h-32 rounded-xl bg-slate-200 overflow-hidden flex-shrink-0 shadow-sm border border-slate-200 relative group">
+            <div class="w-24 h-32 rounded-xl bg-slate-100/60 dark:bg-slate-950/60 overflow-hidden shrink-0 shadow-xs border border-slate-200/80 dark:border-slate-800 relative group">
               <img 
                 v-if="form.cover" 
                 :src="form.cover" 
@@ -62,7 +62,7 @@
                 class="w-full h-full object-cover"
                 @error="form.cover = ''"
               />
-              <div v-else class="w-full h-full flex flex-col items-center justify-center p-2 text-center text-slate-400">
+              <div v-else class="w-full h-full flex flex-col items-center justify-center p-2 text-center text-slate-400 dark:text-slate-500">
                 <ImageIcon class="w-6 h-6 mb-1" />
                 <span class="text-[10px]">No Cover</span>
               </div>
@@ -87,7 +87,7 @@
                   @drop.prevent="handleDrop"
                   @click="triggerFileInput"
                   :class="[
-                    isDragging ? 'border-blue-500 bg-blue-50/50' : 'border-slate-300 hover:border-blue-400 bg-white',
+                    isDragging ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30' : 'border-slate-300/70 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-500/50 bg-white dark:bg-slate-900/40',
                     isUploading ? 'opacity-60 pointer-events-none' : 'cursor-pointer'
                   ]"
                   class="border-2 border-dashed rounded-2xl p-4 text-center transition-all flex flex-col items-center justify-center gap-1.5"
@@ -99,18 +99,18 @@
                     class="hidden" 
                     @change="handleFileChange"
                   />
-                  <div v-if="isUploading" class="flex items-center gap-2 text-blue-600 py-2">
+                  <div v-if="isUploading" class="flex items-center gap-2 text-blue-600 dark:text-blue-400 py-2">
                     <Loader2 class="w-5 h-5 animate-spin" />
                     <span class="text-xs font-semibold">Mengunggah gambar cover...</span>
                   </div>
                   <template v-else>
-                    <div class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <div class="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
                       <UploadCloud class="w-4 h-4" />
                     </div>
-                    <p class="text-xs font-bold text-slate-700">
+                    <p class="text-xs font-bold text-slate-700 dark:text-slate-200">
                       Klik untuk pilih gambar atau tarik file ke sini
                     </p>
-                    <p class="text-[11px] text-slate-500">
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400">
                       PNG, JPG, WEBP hingga 5MB 
                     </p>
                   </template>
@@ -124,34 +124,34 @@
                     v-model="form.cover" 
                     type="url" 
                     placeholder="https://images.unsplash.com/... atau /covers/..." 
-                    class="flex-1 px-4 py-2 bg-white border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
+                    class="flex-1 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-blue-500 font-medium"
                   />
                   <button 
                     type="button" 
                     @click="generateRandomCover" 
-                    class="px-3 py-2 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition whitespace-nowrap cursor-pointer"
+                    class="px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition whitespace-nowrap cursor-pointer"
                   >
                     Acak Unsplash
                   </button>
                 </div>
-                <p class="text-[11px] text-slate-500">Gunakan tautan gambar resolusi tinggi (Unsplash, CDN, atau path cover lokal)</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">Gunakan tautan gambar resolusi tinggi (Unsplash, CDN, atau path cover lokal)</p>
               </div>
             </div>
           </div>
         </div>
 
         <!-- TOGGLE SWITCH E-BOOK & PDF UPLOAD AREA -->
-        <div class="p-4 rounded-2xl border transition-all" :class="form.isEbook ? 'bg-indigo-50/60 border-indigo-200' : 'bg-slate-50/90 border-slate-200/80'">
+        <div class="p-4 rounded-2xl border transition-all" :class="form.isEbook ? 'bg-indigo-50/60 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800/60' : 'bg-slate-50/90 dark:bg-slate-800/50 border-slate-200/80 dark:border-slate-800'">
           <div class="flex items-center justify-between gap-3">
             <div class="space-y-0.5">
               <div class="flex items-center gap-2">
-                <Smartphone class="w-4 h-4" :class="form.isEbook ? 'text-indigo-600' : 'text-slate-400'" />
-                <span class="font-bold text-xs sm:text-sm text-slate-900">Format Buku: e-Book Digital</span>
+                <Smartphone class="w-4 h-4" :class="form.isEbook ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'" />
+                <span class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">Format Buku: e-Book Digital</span>
                 <span v-if="form.isEbook" class="px-2 py-0.5 rounded-full bg-indigo-600 text-white text-[10px] font-extrabold tracking-wide uppercase">
                   e-Book Aktif
                 </span>
               </div>
-              <p class="text-[11px] text-slate-500">
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">
                 Aktifkan jika buku ini berupa dokumen digital (PDF atau ePub) yang dapat dibaca oleh anggota setelah booking disetujui.
               </p>
             </div>
@@ -165,26 +165,26 @@
                   :disabled="isEbookPermanent"
                   class="sr-only peer"
                 />
-                <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                <div class="w-11 h-6 bg-slate-300 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
               </label>
             </div>
           </div>
 
           <!-- Peringatan jika buku sudah tersimpan sebagai e-book -->
-          <div v-if="isEbookPermanent" class="mt-3 p-2.5 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-2 text-[11px] text-amber-800">
-            <AlertCircle class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <div v-if="isEbookPermanent" class="mt-3 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-start gap-2 text-[11px] text-amber-800 dark:text-amber-200">
+            <AlertCircle class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <p>
               <strong>Format e-Book Permanen:</strong> Buku ini sudah tersimpan sebagai e-Book dan tidak dapat diubah menjadi buku cetak fisik. Jika ingin mengganti format, silakan hapus buku ini dan buat kembali (file e-Book juga akan terhapus otomatis dari server).
             </p>
           </div>
 
           <!-- Area Upload Dokumen PDF / ePub e-Book jika Toggle ON -->
-          <div v-if="form.isEbook" class="mt-3 pt-3 border-t border-indigo-100 space-y-3">
+          <div v-if="form.isEbook" class="mt-3 pt-3 border-t border-indigo-100 dark:border-indigo-900/60 space-y-3">
             <div class="flex items-center justify-between">
-              <label class="block font-bold text-slate-800 text-xs">
+              <label class="block font-bold text-slate-800 dark:text-slate-200 text-xs">
                 Dokumen File e-Book (PDF / ePub) *
               </label>
-              <span v-if="form.ebookUrl" class="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-bold">
+              <span v-if="form.ebookUrl" class="inline-flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
                 <CheckCircle2 class="w-3.5 h-3.5" />
                 {{ (form.ebookFormat || (form.ebookFileName?.toLowerCase().endsWith('.epub') ? 'ePub' : 'PDF')).toUpperCase() }} Terunggah
               </span>
@@ -197,7 +197,7 @@
               @drop.prevent="handlePdfDrop"
               @click="triggerPdfFileInput"
               :class="[
-                isPdfDragging ? 'border-indigo-500 bg-indigo-100/50' : form.ebookUrl ? 'border-emerald-300 bg-emerald-50/40' : 'border-slate-300 hover:border-indigo-400 bg-white',
+                isPdfDragging ? 'border-indigo-500 bg-indigo-100/50 dark:bg-indigo-950/40' : form.ebookUrl ? 'border-emerald-300 dark:border-emerald-700/60 bg-emerald-50/40 dark:bg-emerald-950/30' : 'border-slate-300/80 dark:border-slate-700/80 hover:border-indigo-400 bg-white dark:bg-slate-850/60',
                 isUploadingPdf ? 'opacity-60 pointer-events-none' : 'cursor-pointer'
               ]"
               class="border-2 border-dashed rounded-2xl p-4 text-center transition-all flex flex-col items-center justify-center gap-2"
@@ -210,24 +210,24 @@
                 @change="handlePdfFileChange"
               />
 
-              <div v-if="isUploadingPdf" class="flex items-center gap-2 text-indigo-600 py-2">
+              <div v-if="isUploadingPdf" class="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 py-2">
                 <Loader2 class="w-5 h-5 animate-spin" />
                 <span class="text-xs font-semibold">Mengunggah file dokumen e-Book...</span>
               </div>
 
               <!-- State: Sudah ada file e-Book -->
               <template v-else-if="form.ebookUrl">
-                <div class="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shadow-xs">
+                <div class="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shadow-xs">
                   <FileText class="w-5 h-5" />
                 </div>
                 <div>
-                  <p class="text-xs font-bold text-slate-800">{{ form.ebookFileName || 'dokumen_ebook' }}</p>
-                  <p class="text-[11px] text-slate-500">
+                  <p class="text-xs font-bold text-slate-800 dark:text-slate-100">{{ form.ebookFileName || 'dokumen_ebook' }}</p>
+                  <p class="text-[11px] text-slate-500 dark:text-slate-400">
                     {{ formatFileSize(form.ebookFileSize) }} • Klik untuk ganti file
                   </p>
                 </div>
                 <div class="flex items-center gap-2 pt-1">
-                  <span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px]">
+                  <span class="px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold text-[10px]">
                     Format {{ (form.ebookFormat || (form.ebookFileName?.toLowerCase().endsWith('.epub') ? 'ePub' : 'PDF')).toUpperCase() }} • Siap Dibaca In-App
                   </span>
                 </div>
@@ -235,14 +235,14 @@
 
               <!-- State: Belum ada file e-Book -->
               <template v-else>
-                <div class="w-10 h-10 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center shadow-xs">
+                <div class="w-10 h-10 rounded-2xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 flex items-center justify-center shadow-xs">
                   <UploadCloud class="w-5 h-5" />
                 </div>
                 <div>
-                  <p class="text-xs font-bold text-slate-800">
+                  <p class="text-xs font-bold text-slate-800 dark:text-slate-200">
                     Pilih atau Tarik File PDF / ePub e-Book ke Sini
                   </p>
-                  <p class="text-[11px] text-slate-500">
+                  <p class="text-[11px] text-slate-500 dark:text-slate-400">
                     Mendukung format .PDF dan .ePub (hingga 100MB)
                   </p>
                 </div>
@@ -253,21 +253,21 @@
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label class="block font-bold text-slate-700 mb-1">Judul Buku *</label>
+            <label class="block font-bold text-slate-700 dark:text-slate-200 mb-1">Judul Buku *</label>
             <input 
               v-model="form.title" 
               type="text" 
               placeholder="Judul lengkap buku" 
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-blue-500 text-xs font-semibold"
+              class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-blue-500 text-xs font-semibold"
             />
           </div>
           <div>
-            <label class="block font-bold text-slate-700 mb-1">Penulis / Pengarang *</label>
+            <label class="block font-bold text-slate-700 dark:text-slate-200 mb-1">Penulis / Pengarang *</label>
             <input 
               v-model="form.author" 
               type="text" 
               placeholder="Nama penulis" 
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
+              class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-blue-500 font-medium"
             />
           </div>
         </div>
@@ -275,40 +275,40 @@
         <!-- Penerbit, Tahun Terbit, ISBN: 100% width each on mobile, 3 cols on sm+ -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
-            <label class="block font-bold text-slate-700 mb-1">Penerbit</label>
+            <label class="block font-bold text-slate-700 dark:text-slate-200 mb-1">Penerbit</label>
             <input 
               v-model="form.publisher" 
               type="text" 
               placeholder="Gramedia / Lentera" 
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
+              class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-blue-500 font-medium"
             />
           </div>
           <div>
-            <label class="block font-bold text-slate-700 mb-1">Tahun Terbit</label>
+            <label class="block font-bold text-slate-700 dark:text-slate-200 mb-1">Tahun Terbit</label>
             <input 
               v-model.number="form.year" 
               type="number" 
               placeholder="2024" 
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
+              class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-blue-500 font-medium"
             />
           </div>
           <div>
-            <label class="block font-bold text-slate-700 mb-1">ISBN / Barcode</label>
+            <label class="block font-bold text-slate-700 dark:text-slate-200 mb-1">ISBN / Barcode</label>
             <input 
               v-model="form.isbn" 
               type="text" 
               placeholder="978-602-..." 
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-mono focus:outline-none focus:border-blue-500 font-medium"
+              class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 font-mono focus:outline-none focus:border-blue-500 font-medium"
             />
           </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label class="block font-bold text-slate-700 mb-1">Kategori Buku *</label>
+            <label class="block font-bold text-slate-700 dark:text-slate-200 mb-1">Kategori Buku *</label>
             <select 
               v-model="form.category" 
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
+              class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500 font-medium"
             >
               <option v-for="c in store.categories" :key="c.id" :value="c.name">
                 {{ c.name }}
@@ -316,19 +316,19 @@
             </select>
           </div>
           <div>
-            <label class="block font-bold text-slate-700 mb-1">
+            <label class="block font-bold text-slate-700 dark:text-slate-200 mb-1">
               {{ form.isEbook ? 'Format Lokasi' : 'Penempatan Rak Perpustakaan *' }}
             </label>
             <!-- Untuk buku digital (e-Book), tidak perlu isian rak fisik, langsung label Digital -->
             <div 
               v-if="form.isEbook" 
-              class="w-full px-4 py-2.5 bg-indigo-50 border border-indigo-200 rounded-2xl flex items-center justify-between"
+              class="w-full px-4 py-2.5 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 rounded-2xl flex items-center justify-between"
             >
-              <div class="flex items-center gap-2 text-indigo-900 font-bold text-xs sm:text-sm">
+              <div class="flex items-center gap-2 text-indigo-900 dark:text-indigo-200 font-bold text-xs sm:text-sm">
                 <span class="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-pulse"></span>
                 <span>Digital</span>
               </div>
-              <span class="text-[11px] font-semibold text-indigo-700 bg-indigo-100 px-2.5 py-0.5 rounded-full">
+              <span class="text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-950/80 px-2.5 py-0.5 rounded-full border border-indigo-200/50 dark:border-indigo-800/50">
                 Koleksi e-Book Online
               </span>
             </div>
@@ -336,7 +336,7 @@
             <select 
               v-else
               v-model="form.shelfId" 
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
+              class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500 font-medium"
             >
               <option v-for="s in sortedShelves" :key="s.id" :value="s.id">
                 [{{ s.code }}] {{ s.name }} (Lantai {{ s.floor }})
@@ -347,56 +347,56 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div class="space-y-1">
-            <label class="block font-bold text-slate-700">{{ form.isEbook ? 'Kuota Akses e-Book' : 'Total Eksemplar (Stok Fisik)' }}</label>
+            <label class="block font-bold text-slate-700 dark:text-slate-200">{{ form.isEbook ? 'Kuota Akses e-Book' : 'Total Eksemplar (Stok Fisik)' }}</label>
             <input 
               v-model.number="form.totalCopies" 
               type="number" 
               min="1" 
               max="100" 
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-semibold focus:outline-none focus:border-blue-500 text-xs"
+              class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-slate-100 font-semibold focus:outline-none focus:border-blue-500 text-xs"
             />
-            <p v-if="book" class="text-[10px] text-slate-500">
+            <p v-if="book" class="text-[10px] text-slate-500 dark:text-slate-400">
               {{ form.isEbook ? 'Saat ini diakses: ' : 'Saat ini: ' }} Dipinjam {{ book.borrowedCopies || 0 }}, Dibooking {{ book.reservedCopies || 0 }}
             </p>
           </div>
           <div>
-            <label class="block font-bold text-slate-700 mb-1">Jumlah Halaman</label>
+            <label class="block font-bold text-slate-700 dark:text-slate-200 mb-1">Jumlah Halaman</label>
             <input 
               v-model.number="form.pages" 
               type="number" 
               placeholder="350" 
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
+              class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-blue-500 font-medium"
             />
           </div>
           <div>
-            <label class="block font-bold text-slate-700 mb-1">Bahasa</label>
+            <label class="block font-bold text-slate-700 dark:text-slate-200 mb-1">Bahasa</label>
             <input 
               v-model="form.language" 
               type="text" 
               placeholder="Indonesia" 
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
+              class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-blue-500 font-medium"
             />
           </div>
         </div>
 
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Sinopsis & Ringkasan</label>
+          <label class="block font-bold text-slate-700 dark:text-slate-200 mb-1">Sinopsis & Ringkasan</label>
           <textarea 
             v-model="form.synopsis" 
             rows="3" 
             placeholder="Tuliskan sinopsis singkat mengenai buku ini..." 
-            class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
+            class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-blue-500 font-medium"
           ></textarea>
         </div>
 
       </div>
 
       <!-- Sticky Footer -->
-      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 backdrop-blur-md border-t border-slate-100 flex items-center justify-end gap-3 shrink-0 sticky bottom-0 z-20">
+      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3 shrink-0 sticky bottom-0 z-20">
         <button 
           type="button" 
           @click="handleClose"
-          class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 hover:bg-slate-200/60 transition cursor-pointer"
+          class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
         >
           Batal
         </button>
@@ -404,7 +404,7 @@
           type="button"
           @click="handleSaveBook"
           :disabled="!form.title || !form.author || isSubmitting || isUploading"
-          class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+          class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-slate-900/25 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
         >
           <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin" />
           <Save v-else class="w-4 h-4" />

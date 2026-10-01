@@ -5,22 +5,22 @@
     @click.self="store.closeVersionUpdateModal()"
   >
     <div 
-      class="bg-white text-slate-900 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200 max-h-[92dvh] flex flex-col"
+      class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200 max-h-[92dvh] flex flex-col"
     >
       <!-- Modal Header -->
-      <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-3 bg-slate-50 shrink-0">
+      <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3 bg-slate-50 dark:bg-slate-900/90 shrink-0">
         <div class="flex items-center gap-3 min-w-0 flex-1">
           <div class="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold shadow-xs shrink-0">
             <HelpCircle class="w-5 h-5 text-slate-950" />
           </div>
           <div class="min-w-0 flex-1">
-            <h3 class="font-extrabold text-sm sm:text-base text-slate-900 truncate">Panduan Pembaruan Aplikasi</h3>
-            <p class="text-xs text-slate-500 truncate">Langkah jika versi aplikasi belum berubah setelah muat ulang</p>
+            <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white truncate">Panduan Pembaruan Aplikasi</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 truncate">Langkah jika versi aplikasi belum berubah setelah muat ulang</p>
           </div>
         </div>
         <button 
           @click="store.closeVersionUpdateModal()"
-          class="w-8 h-8 rounded-full bg-slate-200/70 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition cursor-pointer shrink-0"
+          class="w-8 h-8 rounded-full bg-slate-200/70 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center transition cursor-pointer shrink-0"
           aria-label="Tutup"
         >
           <X class="w-4 h-4" />
@@ -108,16 +108,16 @@
       </div>
 
       <!-- Modal Footer -->
-      <div class="px-5 py-3.5 border-t border-slate-100 bg-slate-50 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 shrink-0">
+      <div class="px-5 py-3.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 shrink-0">
         <button 
           @click="store.closeVersionUpdateModal()"
-          class="w-full sm:w-auto px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-full text-xs transition cursor-pointer text-center"
+          class="w-full sm:w-auto px-5 py-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-full text-xs transition cursor-pointer text-center"
         >
           Tutup Panduan
         </button>
         <button 
           @click="store.reloadApplication()"
-          class="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-blue-200 active:scale-95 text-center"
+          class="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-slate-900/25 active:scale-95 text-center"
         >
           <RefreshCw class="w-3.5 h-3.5" />
           <span>Muat Ulang Halaman Sekarang</span>

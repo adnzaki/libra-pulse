@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { Book, Shelf, Member, Booking, Loan, SuspendConfig, NotificationLog, LibraryStats, BookCategory, TeacherRequest, StudentVerificationRequest, UserDeviceSession, AppVersionConfig } from '../types.js';
+import type { Book, Shelf, Member, Booking, Loan, SuspendConfig, NotificationLog, LibraryStats, BookCategory, TeacherRequest, StudentVerificationRequest, UserDeviceSession, AppVersionConfig, AppTheme } from '../types.js';
 import { 
   getOfflineCachedData, 
   downloadAllForOfflineAccess, 
@@ -128,7 +128,10 @@ export const useLibraryStore = defineStore('library', {
     hasNewVersionAvailable: false,
     isChangelogModalOpen: false,
     isVersionUpdateModalOpen: false,
-    isDismissedUpdateBanner: false
+    isDismissedUpdateBanner: false,
+
+    // App Theme ('light' | 'dark' | 'elegant')
+    currentTheme: (typeof localStorage !== 'undefined' ? (localStorage.getItem('libra_app_theme') as AppTheme) || 'light' : 'light') as AppTheme
   }),
 
   getters: {
@@ -1096,6 +1099,7 @@ export const useLibraryStore = defineStore('library', {
           }
         }
 
+        this.initTheme();
         this.calculateStats();
         this.restoreUserSession();
         this.checkCurrentDeviceSessionStatus();
@@ -3718,6 +3722,42 @@ export const useLibraryStore = defineStore('library', {
       await syncAppVersionDoc(payload);
       this.showToast(`📢 Versi baru (${newVersion}) berhasil disiarkan ke seluruh pengguna via Cloud Firestore!`);
       return { success: true };
+    },
+
+    setTheme(theme: AppTheme) {
+      this.currentTheme = theme;
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('libra_app_theme', theme);
+      }
+      if (typeof document !== 'undefined') {
+        document.documentElement.setAttribute('data-theme', theme);
+        if (theme === 'dark' || theme === 'elegant') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+
+        const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+        if (metaThemeColor) {
+          if (theme === 'dark') {
+            metaThemeColor.setAttribute('content', '#0b0f19');
+          } else if (theme === 'elegant') {
+            metaThemeColor.setAttribute('content', '#070d1e');
+          } else {
+            metaThemeColor.setAttribute('content', '#0f172a');
+          }
+        }
+      }
+    },
+
+    initTheme() {
+      if (typeof localStorage !== 'undefined') {
+        const saved = localStorage.getItem('libra_app_theme') as AppTheme | null;
+        if (saved && (saved === 'light' || saved === 'dark' || saved === 'elegant')) {
+          this.currentTheme = saved;
+        }
+      }
+      this.setTheme(this.currentTheme);
     }
   }
 });

@@ -2,20 +2,20 @@
   <div class="space-y-6">
     
     <!-- If not logged in as Member, show clean login / register options -->
-    <div v-if="!store.currentUser" class="p-6 sm:p-10 rounded-3xl bg-white border border-slate-100 text-center space-y-6 max-w-lg mx-auto shadow-sm">
-      <div class="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto shadow-inner">
+    <div v-if="!store.currentUser" class="p-6 sm:p-10 rounded-3xl bg-white dark:bg-slate-900/80 border border-slate-100 dark:border-slate-800 text-center space-y-6 max-w-lg mx-auto shadow-sm">
+      <div class="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto shadow-inner">
         <UserCheck class="w-8 h-8" />
       </div>
       <div>
-        <h2 class="font-extrabold text-2xl text-slate-900 tracking-tight">Portal Anggota Perpustakaan</h2>
-        <p class="text-xs text-slate-500 mt-1">Masuk ke akun Anda untuk melihat status peminjaman aktif, riwayat denda, dan booking buku.</p>
+        <h2 class="font-extrabold text-2xl text-slate-900 dark:text-white tracking-tight">Portal Anggota Perpustakaan</h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Masuk ke akun Anda untuk melihat status peminjaman aktif, riwayat denda, dan booking buku.</p>
       </div>
 
       <div class="space-y-3 pt-1 text-xs text-left">
         <!-- Direct Login Button -->
         <router-link 
           to="/login?redirect=/member-portal"
-          class="w-full px-5 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition flex items-center justify-center gap-2.5 shadow-md shadow-blue-200 cursor-pointer active:scale-95"
+          class="w-full px-5 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition flex items-center justify-center gap-2.5 shadow-md shadow-slate-900/30 cursor-pointer active:scale-95"
         >
           <LogIn class="w-4 h-4" />
           <span>Masuk ke Akun Member</span>
@@ -82,7 +82,7 @@
       <!-- Top Member Profile Bento Card -->
       <div 
         class="p-5 sm:p-7 rounded-3xl border shadow-sm flex flex-col gap-5"
-        :class="store.currentUser.isSuspended ? 'bg-rose-50/50 border-rose-200' : 'bg-white border-slate-100'"
+        :class="store.currentUser.isSuspended ? 'bg-rose-50/50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800/60' : 'bg-white dark:bg-slate-900/80 border-slate-100 dark:border-slate-800'"
       >
         <div class="flex flex-col sm:flex-row sm:items-center gap-4">
           <!-- Avatar with fallback -->
@@ -106,12 +106,12 @@
 
           <div class="flex-1 min-w-0">
             <div class="flex flex-wrap items-center gap-2">
-              <h1 class="font-extrabold text-xl sm:text-2xl text-slate-900 tracking-tight">{{ store.currentUser.name }}</h1>
+              <h1 class="font-extrabold text-xl sm:text-2xl text-slate-900 dark:text-white tracking-tight">{{ store.currentUser.name }}</h1>
               
               <!-- Badge Tipe Anggota: Guru atau Siswa -->
               <span 
                 class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-2xs"
-                :class="store.currentUser.memberType === 'guru' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' : 'bg-blue-100 text-blue-800 border border-blue-200'"
+                :class="store.currentUser.memberType === 'guru' ? 'bg-indigo-100 dark:bg-indigo-950/80 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800' : 'bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800'"
               >
                 <span v-if="store.currentUser.memberType === 'guru'">👨‍🏫 Guru</span>
                 <span v-else>🎒 Siswa</span>
@@ -121,24 +121,24 @@
               <template v-if="store.currentUser.memberType !== 'guru'">
                 <span 
                   v-if="studentStatus === 'verified'"
-                  class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1"
+                  class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1"
                 >
-                  <CheckCircle2 class="w-3 h-3 text-emerald-600" />
+                  <CheckCircle2 class="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                   <span>Siswa Terverifikasi (e-Book Aktif)</span>
                 </span>
                 <span 
                   v-else-if="studentStatus === 'pending'"
-                  class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1 animate-pulse"
+                  class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 flex items-center gap-1 animate-pulse"
                 >
-                  <Clock class="w-3 h-3 text-amber-600" />
+                  <Clock class="w-3 h-3 text-amber-600 dark:text-amber-400" />
                   <span>Verifikasi Siswa Menunggu Admin</span>
                 </span>
                 <button 
                   v-else
                   @click="isStudentVerificationOpen = true"
-                  class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1 transition cursor-pointer active:scale-95"
+                  class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 flex items-center gap-1 transition cursor-pointer active:scale-95"
                 >
-                  <ShieldCheck class="w-3 h-3 text-amber-600" />
+                  <ShieldCheck class="w-3 h-3 text-amber-600 dark:text-amber-400" />
                   <span>Verifikasi Siswa (e-Book)</span>
                 </button>
               </template>
@@ -146,26 +146,26 @@
               <!-- Badge Status Akun -->
               <span 
                 class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
-                :class="store.currentUser.isSuspended ? 'bg-rose-100 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'"
+                :class="store.currentUser.isSuspended ? 'bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800' : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'"
               >
                 {{ store.currentUser.isSuspended ? 'AKUN DISUSPEND' : 'MEMBER AKTIF' }}
               </span>
             </div>
-            <div class="text-xs text-blue-600 font-mono font-medium mt-1">
+            <div class="text-xs text-blue-600 dark:text-blue-400 font-mono font-medium mt-1">
               No. Kartu: {{ store.currentUser.cardNumber }} • HP: {{ store.currentUser.phone || '-' }} • Email: {{ store.currentUser.email }}
             </div>
-            <div class="text-[11px] text-slate-400 mt-1">
+            <div class="text-[11px] text-slate-400 dark:text-slate-400 mt-1">
               Alamat: {{ store.currentUser.address || 'Belum diisi' }} • Bergabung sejak {{ new Date(store.currentUser.joinDate).toLocaleDateString('id-ID') }} • Total {{ store.currentUser.totalBorrowed }}x Meminjam Buku
             </div>
           </div>
         </div>
 
         <!-- Menu Action Grid (Rapi, Selaras & Proporsional di Layar Mobile & Desktop) -->
-        <div class="pt-4 border-t border-slate-100 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-2.5 w-full">
+        <div class="pt-4 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-2.5 w-full">
           <!-- 1. Buka Kartu QR -->
           <router-link 
             to="/member-card"
-            class="w-full h-11 px-2.5 sm:px-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl text-xs transition flex items-center justify-center gap-2 shadow-xs active:scale-95 cursor-pointer"
+            class="w-full h-11 px-2.5 sm:px-3 bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-bold rounded-2xl text-xs transition flex items-center justify-center gap-2 shadow-xs active:scale-95 cursor-pointer"
             title="Buka Kartu Anggota Digital & QR Scanner"
           >
             <QrCode class="w-4 h-4 text-amber-300 shrink-0" />
@@ -175,7 +175,7 @@
           <!-- 2. Ubah Profil -->
           <button 
             @click="openEditProfile('profile')"
-            class="w-full h-11 px-2.5 sm:px-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl text-xs transition flex items-center justify-center gap-2 cursor-pointer shadow-xs shadow-blue-200 active:scale-95 relative"
+            class="w-full h-11 px-2.5 sm:px-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl text-xs transition flex items-center justify-center gap-2 cursor-pointer shadow-sm shadow-black/40 active:scale-95 relative"
             title="Ubah Foto Profil, Nama, Email, HP, Alamat dan Status Keanggotaan"
           >
             <UserCog class="w-4 h-4 shrink-0" />
@@ -195,22 +195,22 @@
           <!-- 3. Ganti Password -->
           <button 
             @click="isChangePasswordOpen = true"
-            class="w-full h-11 px-2.5 sm:px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl text-xs transition flex items-center justify-center gap-2 cursor-pointer border border-slate-200/60 active:scale-95 shadow-2xs"
+            class="member-action-btn-seamless w-full h-11 px-2.5 sm:px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold rounded-2xl text-xs transition flex items-center justify-center gap-2 cursor-pointer border border-slate-200/60 dark:border-transparent active:scale-95 shadow-2xs dark:shadow-none"
             title="Ganti Kata Sandi Akun"
           >
-            <KeyRound class="w-4 h-4 text-slate-500 shrink-0" />
+            <KeyRound class="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
             <span class="truncate">Ganti Password</span>
           </button>
           
           <!-- 4. Manajemen Sesi & Perangkat -->
           <button 
             @click="isDeviceSessionsOpen = true"
-            class="w-full h-11 px-2.5 sm:px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl text-xs transition flex items-center justify-center gap-1.5 cursor-pointer border border-slate-200/60 active:scale-95 shadow-2xs"
+            class="member-action-btn-seamless w-full h-11 px-2.5 sm:px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold rounded-2xl text-xs transition flex items-center justify-center gap-1.5 cursor-pointer border border-slate-200/60 dark:border-transparent active:scale-95 shadow-2xs dark:shadow-none"
             title="Kelola sesi login perangkat & Perangkat Utama"
           >
-            <Laptop class="w-4 h-4 text-blue-600 shrink-0" />
+            <Laptop class="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
             <span class="truncate">Sesi & Perangkat</span>
-            <span v-if="store.isCurrentDeviceMain" class="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold shrink-0">
+            <span v-if="store.isCurrentDeviceMain" class="px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold shrink-0">
               👑
             </span>
           </button>
@@ -218,21 +218,21 @@
           <!-- 5. Catatan Rilis (Changelog) -->
           <button 
             @click="store.openChangelog()"
-            class="w-full h-11 px-2.5 sm:px-3 bg-blue-50/80 hover:bg-blue-100 text-blue-700 border border-blue-200/80 font-bold rounded-2xl text-xs transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs"
+            class="member-action-btn-seamless w-full h-11 px-2.5 sm:px-3 bg-blue-50/80 hover:bg-blue-100 dark:bg-slate-800/80 dark:hover:bg-slate-800 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-transparent font-bold rounded-2xl text-xs transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs dark:shadow-none"
             title="Lihat riwayat pembaruan sistem dan fitur terbaru"
           >
-            <Sparkles class="w-4 h-4 text-blue-600 shrink-0" />
+            <Sparkles class="w-4 h-4 text-blue-600 dark:text-amber-400 shrink-0" />
             <span class="truncate">Catatan Rilis</span>
-            <span class="text-[9px] font-mono px-1 py-0.5 rounded bg-blue-100/90 text-blue-700 font-bold shrink-0">v{{ store.currentAppVersion }}</span>
+            <span class="text-[9px] font-mono px-1 py-0.5 rounded bg-blue-100/90 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold shrink-0">v{{ store.currentAppVersion }}</span>
           </button>
 
           <!-- 6. Pasang Aplikasi (PWA) -->
           <button 
             @click="triggerPwaInstallModal"
-            class="w-full h-11 px-2.5 sm:px-3 bg-gradient-to-r from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 text-blue-800 border border-blue-200/80 font-bold rounded-2xl text-xs transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs"
+            class="member-action-btn-seamless w-full h-11 px-2.5 sm:px-3 bg-gradient-to-r from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 dark:from-slate-800/80 dark:to-slate-800/80 dark:hover:from-slate-800 dark:hover:to-slate-800 text-blue-800 dark:text-cyan-300 border border-blue-200/80 dark:border-transparent font-bold rounded-2xl text-xs transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs dark:shadow-none"
             title="Pasang aplikasi Libra ke layar utama ponsel / komputer"
           >
-            <Smartphone class="w-4 h-4 text-blue-600 shrink-0" />
+            <Smartphone class="w-4 h-4 text-blue-600 dark:text-emerald-400 shrink-0" />
             <span class="truncate">Pasang Aplikasi</span>
           </button>
         </div>
@@ -282,18 +282,18 @@
       <!-- Quick Banner: Pending Teacher Request (Jika sedang proses verifikasi selfie) -->
       <div 
         v-if="store.myPendingTeacherRequest" 
-        class="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-900"
+        class="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-900 dark:text-amber-200"
       >
         <div class="flex items-center gap-2.5">
-          <Clock class="w-5 h-5 text-amber-600 shrink-0 animate-pulse" />
+          <Clock class="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 animate-pulse" />
           <div>
             <strong class="font-bold">Pengajuan Status Guru Anda Sedang Diverifikasi Admin:</strong>
-            <p class="text-[11px] text-amber-700 mt-0.5">Foto selfie dan data identitas Anda sedang ditinjau oleh pengelola perpustakaan.</p>
+            <p class="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5">Foto selfie dan data identitas Anda sedang ditinjau oleh pengelola perpustakaan.</p>
           </div>
         </div>
         <button 
           @click="openEditProfile('upgrade')"
-          class="px-3.5 py-1.5 bg-white hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-full font-bold text-[11px] transition shrink-0 cursor-pointer"
+          class="px-3.5 py-1.5 bg-white dark:bg-slate-800 hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 rounded-full font-bold text-[11px] transition shrink-0 cursor-pointer shadow-xs"
         >
           Lihat Status Pengajuan
         </button>
@@ -302,7 +302,7 @@
       <!-- Notifikasi Langsung: Permohonan Perubahan Status Ditolak Admin (Tampil langsung tanpa harus buka ubah profil) -->
       <div 
         v-else-if="myRejectedTeacherRequest" 
-        class="p-4 sm:p-5 rounded-2xl bg-rose-50 border-2 border-rose-300 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 text-xs text-rose-950 animate-in fade-in duration-200"
+        class="p-4 sm:p-5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border-2 border-rose-300 dark:border-rose-800/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 text-xs text-rose-950 dark:text-rose-100 animate-in fade-in duration-200"
       >
         <div class="flex items-start gap-3 min-w-0">
           <div class="w-10 h-10 rounded-2xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-xs">
@@ -310,15 +310,15 @@
           </div>
           <div class="min-w-0">
             <div class="flex flex-wrap items-center gap-2">
-              <strong class="font-extrabold text-sm text-rose-900">Pemberitahuan: Permohonan Perubahan Status Guru Ditolak Admin</strong>
-              <span class="px-2 py-0.5 rounded-full bg-rose-200 text-rose-800 text-[10px] font-bold uppercase tracking-wider">
+              <strong class="font-extrabold text-sm text-rose-900 dark:text-rose-200">Pemberitahuan: Permohonan Perubahan Status Guru Ditolak Admin</strong>
+              <span class="px-2 py-0.5 rounded-full bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 text-[10px] font-bold uppercase tracking-wider">
                 Verifikasi Ditolak
               </span>
             </div>
-            <p class="text-xs text-rose-800 mt-1">
-              Alasan Penolakan: <strong class="font-semibold text-rose-950">{{ myRejectedTeacherRequest.rejectionReason || 'Foto selfie atau data identitas belum memenuhi syarat verifikasi Guru.' }}</strong>
+            <p class="text-xs text-rose-800 dark:text-rose-300 mt-1">
+              Alasan Penolakan: <strong class="font-semibold text-rose-950 dark:text-white">{{ myRejectedTeacherRequest.rejectionReason || 'Foto selfie atau data identitas belum memenuhi syarat verifikasi Guru.' }}</strong>
             </p>
-            <div class="text-[11px] text-rose-600 mt-1 flex flex-wrap items-center gap-x-2">
+            <div class="text-[11px] text-rose-600 dark:text-rose-400 mt-1 flex flex-wrap items-center gap-x-2">
               <span>Ditinjau oleh: <strong>{{ myRejectedTeacherRequest.reviewedBy || 'Admin' }}</strong></span>
               <span>•</span>
               <span>Waktu: {{ formatDateTime(myRejectedTeacherRequest.reviewedDate) }}</span>
@@ -328,7 +328,7 @@
 
         <button 
           @click="openEditProfile('upgrade')"
-          class="w-full sm:w-auto px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs transition shadow-md shadow-rose-200 cursor-pointer flex items-center justify-center gap-2 shrink-0 active:scale-95"
+          class="w-full sm:w-auto px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs transition shadow-md shadow-slate-900/30 cursor-pointer flex items-center justify-center gap-2 shrink-0 active:scale-95"
         >
           <Camera class="w-4 h-4" />
           <span>Ajukan Ulang / Ambil Selfie Baru</span>
@@ -338,13 +338,13 @@
       <!-- Quick Banner: Status Guru Berhasil Disetujui -->
       <div 
         v-else-if="store.currentUser.memberType === 'guru' && store.myLatestTeacherRequest?.status === 'approved'"
-        class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-emerald-900"
+        class="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-emerald-900 dark:text-emerald-200"
       >
         <div class="flex items-center gap-2.5">
-          <CheckCircle2 class="w-5 h-5 text-emerald-600 shrink-0" />
+          <CheckCircle2 class="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
           <div>
             <strong class="font-bold">Status Keanggotaan Terverifikasi: Dewan Guru SDN Pengasinan VII</strong>
-            <p class="text-[11px] text-emerald-700 mt-0.5">Permohonan Anda telah disetujui. Akun Anda memiliki hak akses peminjaman khusus Guru.</p>
+            <p class="text-[11px] text-emerald-700 dark:text-emerald-300 mt-0.5">Permohonan Anda telah disetujui. Akun Anda memiliki hak akses peminjaman khusus Guru.</p>
           </div>
         </div>
       </div>
@@ -352,31 +352,31 @@
       <!-- Bento Card: Hak Istimewa & Benefit Status Dewan Guru -->
       <div 
         v-if="isGuru" 
-        class="p-6 rounded-3xl bg-gradient-to-br from-indigo-50/80 via-white to-blue-50/40 border border-indigo-200/80 shadow-sm space-y-4 animate-in fade-in duration-200"
+        class="p-6 rounded-3xl bg-gradient-to-br from-indigo-50/80 via-white to-blue-50/40 dark:from-indigo-950/40 dark:via-slate-900/90 dark:to-slate-900/80 border border-indigo-200/80 dark:border-indigo-800/60 shadow-sm space-y-4 animate-in fade-in duration-200"
       >
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold shadow-md shadow-indigo-200 shrink-0">
+            <div class="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold shadow-md shadow-slate-900/30 shrink-0">
               <Award class="w-5 h-5" />
             </div>
             <div>
               <div class="flex items-center gap-2">
-                <h3 class="font-extrabold text-base text-slate-900">Fasilitas Khusus Akun Dewan Guru</h3>
-                <span class="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-bold uppercase tracking-wider">
+                <h3 class="font-extrabold text-base text-slate-900 dark:text-white">Fasilitas Khusus Akun Dewan Guru</h3>
+                <span class="px-2.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/80 text-indigo-800 dark:text-indigo-300 text-[10px] font-bold uppercase tracking-wider">
                   Hak Istimewa Aktif
                 </span>
               </div>
-              <p class="text-xs text-slate-500 mt-0.5">
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Keistimewaan khusus pendidik untuk mendukung pengajaran dan literasi di SDN Pengasinan VII.
               </p>
             </div>
           </div>
 
           <!-- Quota Indicator Pill -->
-          <div class="px-4 py-2 rounded-2xl bg-white border border-indigo-100 shadow-xs flex items-center gap-2.5 self-start sm:self-auto shrink-0">
+          <div class="px-4 py-2 rounded-2xl bg-white dark:bg-slate-900/90 border border-indigo-100 dark:border-indigo-900/50 shadow-xs flex items-center gap-2.5 self-start sm:self-auto shrink-0">
             <div class="text-right">
-              <div class="text-[10px] text-slate-400 font-bold uppercase">Penggunaan Kuota</div>
-              <div class="text-xs font-mono font-extrabold" :class="isQuotaFull ? 'text-amber-600' : 'text-indigo-600'">
+              <div class="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase">Penggunaan Kuota</div>
+              <div class="text-xs font-mono font-extrabold" :class="isQuotaFull ? 'text-amber-600 dark:text-amber-400' : 'text-indigo-600 dark:text-indigo-400'">
                 {{ currentUsedQuota }} / {{ maxQuota }} Buku
               </div>
             </div>
@@ -386,32 +386,32 @@
 
         <!-- 3 Pillars of Teacher Privileges -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-xs">
-          <div class="p-3.5 rounded-2xl bg-white border border-indigo-100 shadow-xs space-y-1">
-            <div class="flex items-center gap-2 text-indigo-700 font-bold">
-              <BookOpen class="w-4 h-4 text-indigo-600 shrink-0" />
+          <div class="p-3.5 rounded-2xl bg-white dark:bg-slate-900/80 border border-indigo-100 dark:border-indigo-900/50 shadow-xs space-y-1">
+            <div class="flex items-center gap-2 text-indigo-700 dark:text-indigo-400 font-bold">
+              <BookOpen class="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
               <span>Batas Pinjam 6 Buku</span>
             </div>
-            <p class="text-[11px] text-slate-600 leading-relaxed">
+            <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
               Dapat meminjam dan me-reserve hingga 6 buku sekaligus (Siswa maks. 3 buku).
             </p>
           </div>
 
-          <div class="p-3.5 rounded-2xl bg-white border border-indigo-100 shadow-xs space-y-1">
-            <div class="flex items-center gap-2 text-indigo-700 font-bold">
-              <Clock class="w-4 h-4 text-indigo-600 shrink-0" />
+          <div class="p-3.5 rounded-2xl bg-white dark:bg-slate-900/80 border border-indigo-100 dark:border-indigo-900/50 shadow-xs space-y-1">
+            <div class="flex items-center gap-2 text-indigo-700 dark:text-indigo-400 font-bold">
+              <Clock class="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
               <span>Durasi Pinjam 14 Hari</span>
             </div>
-            <p class="text-[11px] text-slate-600 leading-relaxed">
+            <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
               Masa sirkulasi peminjaman diperpanjang hingga 14 hari kalender (Siswa maks. 7 hari).
             </p>
           </div>
 
-          <div class="p-3.5 rounded-2xl bg-white border border-indigo-100 shadow-xs space-y-1">
-            <div class="flex items-center gap-2 text-emerald-700 font-bold">
-              <ShieldCheck class="w-4 h-4 text-emerald-600 shrink-0" />
+          <div class="p-3.5 rounded-2xl bg-white dark:bg-slate-900/80 border border-indigo-100 dark:border-indigo-900/50 shadow-xs space-y-1">
+            <div class="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-bold">
+              <ShieldCheck class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>Bebas Auto-Suspend</span>
             </div>
-            <p class="text-[11px] text-slate-600 leading-relaxed">
+            <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
               Akun guru diproteksi bebas penangguhan otomatis (auto-suspend) jika ada keterlambatan pengembalian.
             </p>
           </div>
@@ -421,21 +421,21 @@
       <!-- Quick Info Bar for Siswa -->
       <div 
         v-else 
-        class="p-4 rounded-3xl bg-blue-50/60 border border-blue-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs"
+        class="p-4 rounded-3xl bg-blue-50/60 dark:bg-slate-800/80 border border-blue-100 dark:border-slate-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs"
       >
         <div class="flex items-center gap-2.5">
-          <BookOpen class="w-4 h-4 text-blue-600 shrink-0" />
-          <span class="text-slate-700">
-            Status Akun: <strong class="font-bold text-slate-900">Siswa</strong> • Batas Peminjaman: <strong class="text-blue-700 font-bold">3 Buku</strong> • Durasi: <strong class="text-slate-900 font-bold">7 Hari</strong>.
+          <BookOpen class="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+          <span class="text-slate-700 dark:text-slate-300">
+            Status Akun: <strong class="font-bold text-slate-900 dark:text-white">Siswa</strong> • Batas Peminjaman: <strong class="text-blue-700 dark:text-blue-400 font-bold">3 Buku</strong> • Durasi: <strong class="text-slate-900 dark:text-white font-bold">7 Hari</strong>.
           </span>
         </div>
         <div class="flex items-center gap-3">
-          <span class="text-[11px] font-mono font-bold text-slate-600">
+          <span class="text-[11px] font-mono font-bold text-slate-600 dark:text-slate-400">
             Terpakai: {{ currentUsedQuota }} / 3 Buku
           </span>
           <button 
             @click="openEditProfile('upgrade')"
-            class="text-[11px] font-bold text-blue-600 hover:text-blue-700 underline cursor-pointer"
+            class="text-[11px] font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline cursor-pointer"
           >
             Guru Pengajar? Ajukan Upgrade →
           </button>
@@ -447,12 +447,12 @@
         v-if="!isGuru"
         class="p-5 sm:p-6 rounded-3xl border shadow-sm transition animate-in fade-in space-y-4"
         :class="studentStatus === 'verified' 
-          ? 'bg-gradient-to-br from-emerald-50/70 via-white to-blue-50/30 border-emerald-200/80' 
+          ? 'bg-gradient-to-br from-emerald-50/70 via-white to-blue-50/30 border-emerald-200/80 dark:from-emerald-950/40 dark:via-slate-900/90 dark:to-slate-900/80 dark:border-emerald-800/60' 
           : studentStatus === 'pending'
-            ? 'bg-gradient-to-br from-amber-50/80 via-white to-orange-50/30 border-amber-200/80'
+            ? 'bg-gradient-to-br from-amber-50/80 via-white to-orange-50/30 border-amber-200/80 dark:from-amber-950/40 dark:via-slate-900/90 dark:to-slate-900/80 dark:border-amber-800/60'
             : studentStatus === 'rejected'
-              ? 'bg-gradient-to-br from-rose-50/80 via-white to-orange-50/30 border-rose-200/80'
-              : 'bg-gradient-to-br from-blue-50/80 via-white to-indigo-50/40 border-blue-200/80'"
+              ? 'bg-gradient-to-br from-rose-50/80 via-white to-orange-50/30 border-rose-200/80 dark:from-rose-950/40 dark:via-slate-900/90 dark:to-slate-900/80 dark:border-rose-800/60'
+              : 'bg-gradient-to-br from-blue-50/80 via-white to-indigo-50/40 border-blue-200/80 dark:from-blue-950/40 dark:via-slate-900/90 dark:to-slate-900/80 dark:border-blue-800/60'"
       >
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div class="flex items-center gap-3">
@@ -473,23 +473,23 @@
             </div>
             <div>
               <div class="flex items-center gap-2">
-                <h3 class="font-extrabold text-sm sm:text-base text-slate-900">
+                <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">
                   Verifikasi Siswa SDN Pengasinan VII (Akses e-Book)
                 </h3>
                 <span 
                   class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
                   :class="studentStatus === 'verified'
-                    ? 'bg-emerald-100 text-emerald-800'
+                    ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300'
                     : studentStatus === 'pending'
-                      ? 'bg-amber-100 text-amber-800 animate-pulse'
+                      ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 animate-pulse'
                       : studentStatus === 'rejected'
-                        ? 'bg-rose-100 text-rose-800'
-                        : 'bg-blue-100 text-blue-800'"
+                        ? 'bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300'
+                        : 'bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300'"
                 >
                   {{ studentStatus === 'verified' ? 'Terverifikasi' : studentStatus === 'pending' ? 'Menunggu Review Admin' : studentStatus === 'rejected' ? 'Perlu Diajukan Ulang' : 'Wajib Verifikasi e-Book' }}
                 </span>
               </div>
-              <p class="text-xs text-slate-500 mt-0.5">
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Perlindungan hak cipta digital penerbit buku perpustakaan.
               </p>
             </div>
@@ -499,14 +499,14 @@
           <button 
             type="button"
             @click="isStudentVerificationOpen = true"
-            class="px-4 py-2 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer flex items-center gap-2 shrink-0 active:scale-95"
+            class="px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-2 shrink-0 active:scale-95 shadow-md shadow-black/40"
             :class="studentStatus === 'verified'
-              ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200'
+              ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
               : studentStatus === 'pending'
-                ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-200'
+                ? 'bg-amber-600 hover:bg-amber-700 text-white'
                 : studentStatus === 'rejected'
-                  ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-200'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200'"
+                  ? 'bg-rose-600 hover:bg-rose-700 text-white'
+                  : 'bg-blue-600 hover:bg-blue-700 text-white'"
           >
             <ShieldCheck class="w-3.5 h-3.5" />
             <span>{{ studentStatus === 'verified' ? 'Lihat Detail Verifikasi' : studentStatus === 'pending' ? 'Status Pengajuan' : studentStatus === 'rejected' ? 'Ajukan Ulang Selfie' : 'Mulai Verifikasi Siswa →' }}</span>
@@ -514,21 +514,21 @@
         </div>
 
         <!-- Description & Details -->
-        <div v-if="studentStatus === 'verified'" class="p-3.5 rounded-2xl bg-white border border-emerald-100 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div v-if="studentStatus === 'verified'" class="p-3.5 rounded-2xl bg-white dark:bg-slate-900/90 border border-emerald-100 dark:border-emerald-900/50 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
           <div class="space-y-0.5">
-            <span class="text-emerald-900 font-bold">Identitas Siswa Terverifikasi:</span>
-            <div class="text-[11px] text-slate-500 flex flex-wrap items-center gap-x-3">
-              <span>NIS: <strong class="font-mono text-slate-800">{{ store.currentUser?.nis || myStudentVerification?.nis }}</strong></span>
+            <span class="text-emerald-900 dark:text-emerald-300 font-bold">Identitas Siswa Terverifikasi:</span>
+            <div class="text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-3">
+              <span>NIS: <strong class="font-mono text-slate-800 dark:text-slate-200">{{ store.currentUser?.nis || myStudentVerification?.nis }}</strong></span>
               <span>•</span>
-              <span>NISN: <strong class="font-mono text-slate-800">{{ store.currentUser?.nisn || myStudentVerification?.nisn }}</strong></span>
+              <span>NISN: <strong class="font-mono text-slate-800 dark:text-slate-200">{{ store.currentUser?.nisn || myStudentVerification?.nisn }}</strong></span>
             </div>
           </div>
-          <span class="text-[11px] px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">
+          <span class="text-[11px] px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800/60">
             Akses Seluruh Koleksi e-Book Digital Aktif
           </span>
         </div>
 
-        <div v-else-if="studentStatus === 'pending'" class="p-3.5 rounded-2xl bg-white border border-amber-100 shadow-xs text-xs text-amber-900 space-y-1">
+        <div v-else-if="studentStatus === 'pending'" class="p-3.5 rounded-2xl bg-white dark:bg-slate-900/90 border border-amber-100 dark:border-amber-900/50 shadow-xs text-xs text-amber-900 dark:text-amber-200 space-y-1">
           <div class="flex items-center gap-2 font-bold">
             <Clock class="w-4 h-4 text-amber-600 shrink-0" />
             <span>Permohonan Sedang Diproses Oleh Admin</span>
@@ -538,37 +538,37 @@
           </p>
         </div>
 
-        <div v-else-if="studentStatus === 'rejected'" class="p-3.5 rounded-2xl bg-white border border-rose-100 shadow-xs text-xs text-rose-900 space-y-1">
-          <div class="font-bold flex items-center gap-1.5 text-rose-800">
-            <AlertCircle class="w-4 h-4 text-rose-600 shrink-0" />
+        <div v-else-if="studentStatus === 'rejected'" class="p-3.5 rounded-2xl bg-white dark:bg-slate-900/90 border border-rose-100 dark:border-rose-900/50 shadow-xs text-xs text-rose-900 dark:text-rose-200 space-y-1">
+          <div class="font-bold flex items-center gap-1.5 text-rose-800 dark:text-rose-300">
+            <AlertCircle class="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
             <span>Alasan Penolakan: {{ store.currentUser?.studentRejectReason || myStudentVerification?.rejectionReason || 'Data NIS/NISN atau selfie belum sesuai.' }}</span>
           </div>
-          <p class="text-[11px] text-slate-600">
+          <p class="text-[11px] text-slate-600 dark:text-slate-300">
             Silakan klik tombol <strong>"Ajukan Ulang Selfie"</strong> untuk memperbaiki nomor induk atau mengambil foto selfie ulang.
           </p>
         </div>
 
-        <div v-else class="p-3.5 rounded-2xl bg-white border border-blue-100 shadow-xs text-xs text-slate-700 space-y-1.5">
-          <p class="text-[11px] text-slate-600 leading-relaxed">
+        <div v-else class="p-3.5 rounded-2xl bg-white dark:bg-slate-900/90 border border-blue-100 dark:border-blue-900/50 shadow-xs text-xs text-slate-700 dark:text-slate-200 space-y-1.5">
+          <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
             Buku fisik perpustakaan dapat langsung dipinjam tanpa verifikasi. Namun untuk <strong>e-Book digital</strong>, Anda diwajibkan melakukan verifikasi NIS, NISN dan selfie 1x untuk menjamin bahwa peminjam adalah siswa resmi SDN Pengasinan VII.
           </p>
         </div>
       </div>
 
       <!-- Suspend Warning Notice & Countdown -->
-      <div v-if="store.currentUser.isSuspended" class="p-5 rounded-3xl bg-rose-50 border border-rose-200 text-xs text-rose-800 space-y-2">
-        <div class="flex items-center gap-2 font-bold text-sm text-rose-900">
-          <AlertTriangle class="w-5 h-5 text-rose-600" />
+      <div v-if="store.currentUser.isSuspended" class="p-5 rounded-3xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800/70 text-xs text-rose-800 dark:text-rose-200 space-y-2">
+        <div class="flex items-center gap-2 font-bold text-sm text-rose-900 dark:text-rose-100">
+          <AlertTriangle class="w-5 h-5 text-rose-600 dark:text-rose-400" />
           Status Akun: Penangguhan (Suspended)
         </div>
-        <p class="leading-relaxed text-rose-700">
+        <p class="leading-relaxed text-rose-700 dark:text-rose-300">
           {{ store.currentUser.suspendReason || 'Akun Anda disuspend karena keterlambatan pengembalian buku.' }}
         </p>
         <div class="flex flex-wrap items-center gap-3 text-xs font-semibold pt-1">
-          <span class="px-3 py-1 rounded-full bg-rose-100 border border-rose-300 text-rose-900 font-bold">
+          <span class="px-3 py-1 rounded-full bg-rose-100 dark:bg-rose-900/60 border border-rose-300 dark:border-rose-700 text-rose-900 dark:text-rose-100 font-bold">
             Sanksi berakhir: {{ new Date(store.currentUser.suspendedUntil || '').toLocaleDateString('id-ID') }}
           </span>
-          <span class="text-rose-600">
+          <span class="text-rose-600 dark:text-rose-400">
             Selama masa suspend, Anda tidak dapat melakukan booking atau peminjaman buku baru.
           </span>
         </div>
@@ -579,38 +579,38 @@
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <Clock class="w-4 h-4 text-amber-500" />
-            <h3 class="font-extrabold text-lg text-slate-900">Booking Aktif (Penahanan 24 Jam)</h3>
+            <h3 class="font-extrabold text-lg text-slate-900 dark:text-white">Booking Aktif (Penahanan 24 Jam)</h3>
           </div>
-          <span class="text-xs text-slate-400 font-medium">{{ activeHoldBookings.length }} booking menunggu pengambilan</span>
+          <span class="text-xs text-slate-400 dark:text-slate-400 font-medium">{{ activeHoldBookings.length }} booking menunggu pengambilan</span>
         </div>
 
         <div v-if="activeHoldBookings.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div 
             v-for="b in activeHoldBookings" 
             :key="b.id"
-            class="p-5 rounded-3xl bg-white border border-amber-200 shadow-sm space-y-4 relative overflow-hidden"
+            class="p-5 rounded-3xl bg-white dark:bg-slate-900/80 border border-amber-200 dark:border-amber-800/60 shadow-sm space-y-4 relative overflow-hidden"
           >
             <div class="flex gap-3.5">
               <img :src="b.bookCover" class="w-16 h-22 object-cover rounded-2xl shadow-sm shrink-0" alt="Cover" />
               <div class="flex-1 min-w-0">
                 <div class="flex items-center justify-between">
-                  <span class="text-[10px] font-mono font-bold text-amber-700 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200">
+                  <span class="text-[10px] font-mono font-bold text-amber-700 dark:text-amber-300 px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60">
                     {{ b.id }}
                   </span>
-                  <span class="text-[10px] px-2.5 py-0.5 rounded-full font-bold" :class="b.isEbook ? 'bg-indigo-50 text-indigo-700' : 'bg-blue-50 text-blue-700'">
+                  <span class="text-[10px] px-2.5 py-0.5 rounded-full font-bold" :class="b.isEbook ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300' : 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300'">
                     {{ b.isEbook ? 'Format e-Book' : `Lokasi: ${b.shelfCode}` }}
                   </span>
                 </div>
-                <h4 class="font-bold text-slate-900 text-sm mt-1.5 line-clamp-1">{{ b.bookTitle }}</h4>
-                <p class="text-xs text-slate-400 mt-0.5">Dipesan: {{ new Date(b.createdAt).toLocaleTimeString('id-ID') }}</p>
+                <h4 class="font-bold text-slate-900 dark:text-white text-sm mt-1.5 line-clamp-1">{{ b.bookTitle }}</h4>
+                <p class="text-xs text-slate-400 dark:text-slate-400 mt-0.5">Dipesan: {{ new Date(b.createdAt).toLocaleTimeString('id-ID') }}</p>
                 
                 <!-- Live Countdown Clock -->
-                <div class="mt-2.5 p-2.5 rounded-2xl bg-amber-50/60 border border-amber-100 flex items-center justify-between text-xs">
-                  <span class="text-slate-600 flex items-center gap-1.5 font-medium">
-                    <Timer class="w-3.5 h-3.5 text-amber-600" />
+                <div class="mt-2.5 p-2.5 rounded-2xl bg-amber-50/60 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/40 flex items-center justify-between text-xs">
+                  <span class="text-slate-600 dark:text-slate-300 flex items-center gap-1.5 font-medium">
+                    <Timer class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                     {{ b.isEbook ? 'Menunggu Penyerahan:' : 'Sisa Waktu Ambil:' }}
                   </span>
-                  <span class="font-mono font-extrabold text-amber-700">
+                  <span class="font-mono font-extrabold text-amber-700 dark:text-amber-300">
                     {{ formatCountdown(b.expiresAt) }}
                   </span>
                 </div>
@@ -618,13 +618,13 @@
             </div>
 
             <!-- Notes & Cancel action -->
-            <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-              <span class="text-slate-400 text-[11px] truncate max-w-xs">
+            <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+              <span class="text-slate-400 dark:text-slate-400 text-[11px] truncate max-w-xs">
                 {{ b.isEbook ? 'e-Book akan aktif di portal setelah admin menyetujui peminjaman.' : 'Tunjukkan kartu member saat mengambil di loket perpustakaan.' }}
               </span>
               <button 
                 @click="cancelMyBooking(b.id)"
-                class="text-rose-600 hover:text-rose-700 font-bold text-xs transition cursor-pointer"
+                class="text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 font-bold text-xs transition cursor-pointer"
               >
                 Batalkan Booking
               </button>
@@ -632,10 +632,10 @@
           </div>
         </div>
 
-        <div v-else class="p-8 rounded-3xl bg-white border border-slate-100 text-center text-xs text-slate-400 space-y-2 shadow-sm">
-          <BookmarkCheck class="w-8 h-8 text-slate-300 mx-auto" />
-          <p class="text-slate-600 font-medium">Tidak ada booking buku yang sedang ditahan untuk Anda.</p>
-          <router-link to="/" class="inline-block text-blue-600 font-bold hover:underline">
+        <div v-else class="p-8 rounded-3xl bg-white dark:bg-slate-900/80 border border-slate-100 dark:border-slate-800 text-center text-xs text-slate-400 space-y-2 shadow-sm">
+          <BookmarkCheck class="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto" />
+          <p class="text-slate-600 dark:text-slate-300 font-medium">Tidak ada booking buku yang sedang ditahan untuk Anda.</p>
+          <router-link to="/" class="inline-block text-blue-600 dark:text-blue-400 font-bold hover:underline">
             Jelajahi Katalog Buku & Booking Sekarang →
           </router-link>
         </div>
@@ -645,10 +645,10 @@
       <div class="space-y-4">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <BookMarked class="w-4 h-4 text-emerald-600" />
-            <h3 class="font-extrabold text-lg text-slate-900">Peminjaman Buku yang Sedang Berjalan</h3>
+            <BookMarked class="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <h3 class="font-extrabold text-lg text-slate-900 dark:text-white">Peminjaman Buku yang Sedang Berjalan</h3>
           </div>
-          <span class="text-xs text-slate-400 font-medium">{{ store.myActiveLoans.length }} buku aktif</span>
+          <span class="text-xs text-slate-400 dark:text-slate-400 font-medium">{{ store.myActiveLoans.length }} buku aktif</span>
         </div>
 
         <div v-if="store.myActiveLoans.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -656,41 +656,41 @@
             v-for="l in store.myActiveLoans" 
             :key="l.id"
             class="p-5 rounded-3xl border shadow-sm flex flex-col justify-between"
-            :class="l.status === 'overdue' ? 'bg-rose-50/50 border-rose-200' : 'bg-white border-slate-100'"
+            :class="l.status === 'overdue' ? 'bg-rose-50/50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800/60' : 'bg-white dark:bg-slate-900/80 border-slate-100 dark:border-slate-800'"
           >
             <div>
               <div class="flex gap-3">
                 <img :src="l.bookCover" class="w-14 h-20 object-cover rounded-2xl shadow-sm shrink-0" alt="Cover" />
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center justify-between">
-                    <span class="text-[10px] font-mono text-slate-400 font-medium">{{ l.id }}</span>
+                    <span class="text-[10px] font-mono text-slate-400 dark:text-slate-400 font-medium">{{ l.id }}</span>
                     <span 
                       class="text-[10px] px-2.5 py-0.5 rounded-full font-bold"
-                      :class="l.status === 'overdue' ? 'bg-rose-600 text-white' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'"
+                      :class="l.status === 'overdue' ? 'bg-rose-600 text-white' : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'"
                     >
                       {{ l.status === 'overdue' ? `⚠️ Telat ${l.daysOverdue} Hari` : 'Tepat Waktu' }}
                     </span>
                   </div>
                   <div class="flex items-center gap-1.5 mt-1">
-                    <span v-if="l.isEbook" class="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-bold text-[9px] border border-indigo-100 flex items-center gap-1 shrink-0">
+                    <span v-if="l.isEbook" class="px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold text-[9px] border border-indigo-100 dark:border-indigo-900/60 flex items-center gap-1 shrink-0">
                       <Smartphone class="w-2.5 h-2.5" />
                       e-Book
                     </span>
-                    <h4 class="font-bold text-slate-900 text-xs line-clamp-1 leading-snug">{{ l.bookTitle }}</h4>
+                    <h4 class="font-bold text-slate-900 dark:text-white text-xs line-clamp-1 leading-snug">{{ l.bookTitle }}</h4>
                   </div>
-                  <div class="text-[11px] text-slate-500 mt-1.5 space-y-0.5">
+                  <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 space-y-0.5">
                     <div>Dipinjam: {{ new Date(l.borrowDate).toLocaleDateString('id-ID') }}</div>
-                    <div>Jatuh Tempo: <strong :class="l.status === 'overdue' ? 'text-rose-600' : 'text-slate-800'">{{ new Date(l.dueDate).toLocaleDateString('id-ID') }}</strong></div>
+                    <div>Jatuh Tempo: <strong :class="l.status === 'overdue' ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-200'">{{ new Date(l.dueDate).toLocaleDateString('id-ID') }}</strong></div>
                   </div>
                 </div>
               </div>
 
               <!-- E-Book Action / Expiry State -->
-              <div v-if="l.isEbook" class="mt-3 pt-2.5 border-t border-slate-100">
+              <div v-if="l.isEbook" class="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800">
                 <div v-if="l.status !== 'overdue'" class="flex items-center gap-2">
                   <button 
                     @click="openEbookReader(l)"
-                    class="flex-1 py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-indigo-100 active:scale-95 transition"
+                    class="flex-1 py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-slate-900/30 active:scale-95 transition"
                     title="Buka dokumen e-Book di reader internal"
                   >
                     <BookOpen class="w-4 h-4 shrink-0" />
@@ -698,31 +698,31 @@
                   </button>
                   <button 
                     @click="promptReturnEbook(l)"
-                    class="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-200 hover:border-rose-200 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition shrink-0"
+                    class="py-2.5 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/50 text-slate-700 dark:text-slate-200 hover:text-rose-700 dark:hover:text-rose-300 border border-slate-200 dark:border-slate-700 hover:border-rose-200 dark:hover:border-rose-800 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition shrink-0"
                     title="Kembalikan e-Book sekarang secara mandiri untuk membebaskan kuota pinjam"
                   >
-                    <RotateCcw class="w-3.5 h-3.5 text-slate-500 hover:text-rose-600 shrink-0" />
+                    <RotateCcw class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 shrink-0" />
                     <span>Kembalikan</span>
                   </button>
                 </div>
                 <div 
                   v-else 
-                  class="p-2.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-500 text-[11px] font-semibold flex items-center justify-center gap-1.5 text-center"
+                  class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-[11px] font-semibold flex items-center justify-center gap-1.5 text-center"
                 >
                   <Lock class="w-3.5 h-3.5 text-slate-400 shrink-0" />
                   <span>Masa Akses Berakhir (Booking Ulang untuk Membaca)</span>
                 </div>
               </div>
 
-              <div v-else-if="l.status === 'overdue'" class="mt-3.5 p-3 rounded-2xl bg-rose-100/70 text-xs text-rose-900 flex justify-between items-center font-medium">
+              <div v-else-if="l.status === 'overdue'" class="mt-3.5 p-3 rounded-2xl bg-rose-100/70 dark:bg-rose-950/60 text-xs text-rose-900 dark:text-rose-200 flex justify-between items-center font-medium">
                 <span>Status Peminjaman:</span>
-                <strong class="text-rose-700 font-extrabold">Segera Kembalikan ke Loket</strong>
+                <strong class="text-rose-700 dark:text-rose-300 font-extrabold">Segera Kembalikan ke Loket</strong>
               </div>
             </div>
           </div>
         </div>
 
-        <div v-else class="p-8 rounded-3xl bg-white border border-slate-100 text-center text-xs text-slate-400 shadow-sm">
+        <div v-else class="p-8 rounded-3xl bg-white dark:bg-slate-900/80 border border-slate-100 dark:border-slate-800 text-center text-xs text-slate-400 shadow-sm">
           Anda tidak memiliki buku yang sedang dipinjam saat ini.
         </div>
       </div>
@@ -752,16 +752,16 @@
 
     <!-- Modal Konfirmasi Pembatalan Booking -->
     <div v-if="bookingToCancel" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
-      <div class="bg-white w-full max-w-sm rounded-3xl border border-slate-200 shadow-2xl p-6 text-center space-y-4 animate-in zoom-in-95 duration-200">
-        <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto shadow-xs">
+      <div class="bg-white dark:bg-slate-900 text-slate-900 dark:text-white w-full max-w-sm rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 text-center space-y-4 animate-in zoom-in-95 duration-200">
+        <div class="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto shadow-xs">
           <AlertTriangle class="w-7 h-7" />
         </div>
         <div class="space-y-1.5">
-          <h3 class="text-base font-bold text-slate-900">Batalkan Booking Buku</h3>
-          <p class="text-xs text-slate-600 leading-relaxed">
+          <h3 class="text-base font-bold text-slate-900 dark:text-white">Batalkan Booking Buku</h3>
+          <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
             Apakah Anda yakin ingin membatalkan reservasi booking buku ini?
           </p>
-          <p class="text-[11px] text-slate-400">
+          <p class="text-[11px] text-slate-400 dark:text-slate-400">
             Buku akan segera dikembalikan ke rak perpustakaan untuk anggota lain.
           </p>
         </div>
@@ -769,7 +769,7 @@
           <button 
             type="button" 
             @click="bookingToCancel = null"
-            class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full border border-slate-200 font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer text-xs"
+            class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full border border-slate-200 dark:border-slate-700 font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer text-xs"
           >
             Kembali
           </button>
@@ -777,7 +777,7 @@
             type="button" 
             @click="confirmCancelMyBooking"
             :disabled="isCancellingBooking"
-            class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition shadow-md shadow-amber-200 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+            class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition shadow-md shadow-slate-900/30 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
           >
             <span>{{ isCancellingBooking ? 'Membatalkan...' : 'Ya, Batalkan' }}</span>
           </button>
@@ -787,21 +787,21 @@
 
     <!-- Modal Konfirmasi Pengembalian Mandiri e-Book -->
     <div v-if="loanToReturn" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
-      <div class="bg-white w-full max-w-sm rounded-3xl border border-slate-200 shadow-2xl p-6 text-center space-y-4 animate-in zoom-in-95 duration-200">
-        <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center mx-auto shadow-xs">
+      <div class="bg-white dark:bg-slate-900 text-slate-900 dark:text-white w-full max-w-sm rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 text-center space-y-4 animate-in zoom-in-95 duration-200">
+        <div class="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/60 flex items-center justify-center mx-auto shadow-xs">
           <BookMarked class="w-7 h-7" />
         </div>
         <div class="space-y-2">
-          <h3 class="text-base font-bold text-slate-900">Kembalikan e-Book Mandiri?</h3>
-          <p class="text-xs text-slate-600 leading-relaxed">
+          <h3 class="text-base font-bold text-slate-900 dark:text-white">Kembalikan e-Book Mandiri?</h3>
+          <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
             Apakah Anda sudah selesai membaca dan ingin mengembalikan e-Book <strong>"{{ loanToReturn.bookTitle }}"</strong> sekarang?
           </p>
-          <div class="p-3 rounded-2xl bg-emerald-50 border border-emerald-100 text-left text-xs text-emerald-900 space-y-1">
-            <div class="font-bold flex items-center gap-1.5 text-emerald-800">
-              <CheckCircle2 class="w-4 h-4 text-emerald-600 shrink-0" />
+          <div class="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-900/50 text-left text-xs text-emerald-900 dark:text-emerald-200 space-y-1">
+            <div class="font-bold flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300">
+              <CheckCircle2 class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>Bebaskan Kuota Peminjaman</span>
             </div>
-            <p class="text-[11px] text-emerald-700/90 leading-snug">
+            <p class="text-[11px] text-emerald-700/90 dark:text-emerald-300/90 leading-snug">
               Setelah dikembalikan, 1 slot kuota peminjaman Anda akan langsung bebas sehingga Anda dapat langsung meminjam atau membaca buku lainnya.
             </p>
           </div>
@@ -810,7 +810,7 @@
           <button 
             type="button" 
             @click="loanToReturn = null"
-            class="flex-1 px-4 py-2.5 rounded-full border border-slate-200 font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer text-xs"
+            class="flex-1 px-4 py-2.5 rounded-full border border-slate-200 dark:border-slate-700 font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer text-xs"
           >
             Batal
           </button>
@@ -818,7 +818,7 @@
             type="button" 
             @click="confirmReturnEbook"
             :disabled="isReturningEbook"
-            class="flex-1 px-4 py-2.5 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition shadow-md shadow-indigo-200 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+            class="flex-1 px-4 py-2.5 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition shadow-md shadow-slate-900/30 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
           >
             <RotateCcw v-if="!isReturningEbook" class="w-3.5 h-3.5" />
             <Loader2 v-else class="w-3.5 h-3.5 animate-spin" />

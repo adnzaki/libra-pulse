@@ -4,19 +4,19 @@
     class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200"
   >
     <div 
-      class="bg-white border-0 sm:border sm:border-slate-100 w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-lg sm:rounded-3xl rounded-none shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+      class="bg-white dark:bg-slate-900 border-0 sm:border sm:border-slate-100 dark:sm:border-slate-800 w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-lg sm:rounded-3xl rounded-none shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
     >
       <!-- Sticky Header -->
-      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 backdrop-blur-md border-b border-slate-100 flex items-center justify-between shrink-0 sticky top-0 z-20">
+      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 sticky top-0 z-20">
         <div class="flex items-center gap-2.5">
-          <div class="w-9 h-9 rounded-2xl flex items-center justify-center font-bold shrink-0" :class="booking?.isEbook ? 'bg-indigo-100 text-indigo-600' : 'bg-blue-100 text-blue-600'">
+          <div class="w-9 h-9 rounded-2xl flex items-center justify-center font-bold shrink-0 border" :class="booking?.isEbook ? 'bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800/60' : 'bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800/60'">
             <CheckCircle class="w-5 h-5" />
           </div>
           <div>
-            <h3 class="font-bold text-slate-900 text-sm sm:text-base">
+            <h3 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base">
               {{ booking?.isEbook ? 'Persetujuan Akses e-Book Online' : 'Penyerahan Buku Booking' }}
             </h3>
-            <p class="text-[11px] sm:text-xs text-slate-500">
+            <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">
               {{ booking?.isEbook ? 'Konfirmasi penyerahan akses online & durasi baca' : 'Konfirmasi serah-terima buku & durasi pinjam' }}
             </p>
           </div>
@@ -177,11 +177,12 @@
       </div>
 
       <!-- Sticky Footer -->
-      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 backdrop-blur-md border-t border-slate-100 flex items-center justify-end gap-3 shrink-0 sticky bottom-0 z-20">
+      <!-- Sticky Footer -->
+      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3 shrink-0 sticky bottom-0 z-20">
         <button 
           type="button" 
           @click="closeModal"
-          class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 hover:bg-slate-200/60 transition cursor-pointer"
+          class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
         >
           Batal
         </button>
@@ -189,8 +190,8 @@
           type="button" 
           @click="handleConfirmCollection"
           :disabled="isSubmitting || isMemberBlocked || loanDays < 1 || loanDays > maxLoanDays"
-          class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold text-white shadow-md transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
-          :class="booking?.isEbook ? 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'"
+          class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold text-white shadow-md shadow-slate-900/25 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+          :class="booking?.isEbook ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-blue-600 hover:bg-blue-700'"
         >
           <CheckCircle class="w-4 h-4" />
           {{ isSubmitting ? 'Memproses...' : (booking?.isEbook ? 'Setujui & Buka Akses e-Book' : 'Konfirmasi & Serahkan Buku') }}

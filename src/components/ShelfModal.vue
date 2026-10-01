@@ -131,11 +131,11 @@
       </div>
 
       <!-- Sticky Footer -->
-      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 backdrop-blur-md border-t border-slate-100 flex items-center justify-end gap-3 shrink-0 sticky bottom-0 z-20">
+      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3 shrink-0 sticky bottom-0 z-20">
         <button 
           type="button" 
           @click="$emit('close')"
-          class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 hover:bg-slate-200/60 transition cursor-pointer"
+          class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
         >
           Batal
         </button>
@@ -143,7 +143,7 @@
           type="button"
           @click="handleSaveShelf"
           :disabled="!form.code || !form.name || isSubmitting"
-          class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+          class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-slate-900/25 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
         >
           <Save class="w-4 h-4" />
           {{ isSubmitting ? 'Menyimpan...' : 'Simpan Rak' }}

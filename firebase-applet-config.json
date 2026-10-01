@@ -1,12 +1,12 @@
 {
   "projectId": "libra-5dbb6",
-  "appId": "1:807517203699:web:0edeb2e798abd8073e1b86",
+  "appId": "1:807517203699:web:778c71496cf6caa23e1b86",
   "apiKey": "AIzaSyCgP0PE_oicLhonIOYVNqnvWIZQ4PjbmfQ",
   "authDomain": "libra-5dbb6.firebaseapp.com",
   "firestoreDatabaseId": "(default)",
   "storageBucket": "libra-5dbb6.firebasestorage.app",
   "messagingSenderId": "807517203699",
-  "measurementId": "G-0LZJV976DE",
+  "measurementId": "",
   "oAuthClientId": "",
   "recaptchaSiteKey": ""
 }

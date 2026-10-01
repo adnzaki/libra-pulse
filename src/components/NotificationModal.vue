@@ -1,23 +1,23 @@
 <template>
-  <div v-if="isOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200">
-    <div class="bg-white border-0 sm:border sm:border-slate-100 w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-xl sm:rounded-3xl rounded-none shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+  <div v-if="isOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-xs overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200">
+    <div class="bg-white dark:bg-slate-900 border-0 sm:border sm:border-slate-100 dark:sm:border-slate-800 w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-xl sm:rounded-3xl rounded-none shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
       
       <!-- Sticky Header -->
-      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 backdrop-blur-md border-b border-slate-100 flex items-center justify-between shrink-0 sticky top-0 z-20">
+      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 sticky top-0 z-20">
         <div class="flex items-center gap-3">
-          <div class="w-9 sm:w-10 h-9 sm:h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 shadow-xs">
+          <div class="w-9 sm:w-10 h-9 sm:h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 shadow-xs">
             <Mail class="w-5 h-5" />
           </div>
           <div>
-            <h3 class="font-bold text-sm sm:text-base text-slate-900">Kirim Peringatan Keterlambatan</h3>
-            <p class="text-[11px] sm:text-xs text-slate-500">Kirim Surat Peringatan Resmi via Email ke Anggota</p>
+            <h3 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white">Kirim Peringatan Keterlambatan</h3>
+            <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">Kirim Surat Peringatan Resmi via Email ke Anggota</p>
           </div>
         </div>
         <button 
           @click="$emit('close')" 
           type="button"
           aria-label="Tutup modal notifikasi"
-          class="p-2 sm:p-2.5 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-200/70 active:scale-95 transition cursor-pointer flex items-center justify-center shrink-0"
+          class="p-2 sm:p-2.5 rounded-full text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-slate-800 active:scale-95 transition cursor-pointer flex items-center justify-center shrink-0"
         >
           <X class="w-5 h-5" />
         </button>
@@ -28,11 +28,11 @@
         
         <!-- Target Selection -->
         <div>
-          <label class="block font-bold text-slate-700 mb-1.5">Pilih Anggota Terlambat</label>
+          <label class="block font-bold text-slate-700 dark:text-slate-200 mb-1.5">Pilih Anggota Terlambat</label>
           <select 
             v-model="selectedLoanId" 
             @change="autoPopulateTemplate"
-            class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 text-xs focus:outline-none focus:border-blue-500 font-medium"
+            class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-2xl text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:border-blue-500 font-medium"
           >
             <option value="">-- Pilih dari Peminjaman Overdue --</option>
             <option v-for="l in store.overdueLoans" :key="l.id" :value="l.id">
@@ -44,21 +44,21 @@
         <!-- Recipient & Subject -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label class="block font-bold text-slate-700 mb-1">Email Penerima</label>
+            <label class="block font-bold text-slate-700 dark:text-slate-200 mb-1">Email Penerima</label>
             <input 
               v-model="recipient" 
               type="email" 
               placeholder="budi@example.com" 
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
+              class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-2xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500 font-medium"
             />
           </div>
           <div>
-            <label class="block font-bold text-slate-700 mb-1">Subjek Email</label>
+            <label class="block font-bold text-slate-700 dark:text-slate-200 mb-1">Subjek Email</label>
             <input 
               v-model="subject" 
               type="text" 
               placeholder="Peringatan Keterlambatan Buku..." 
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
+              class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-2xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500 font-medium"
             />
           </div>
         </div>
@@ -66,11 +66,11 @@
         <!-- Message Body -->
         <div>
           <div class="flex items-center justify-between mb-1.5">
-            <label class="font-bold text-slate-700">Isi Pesan Email Peringatan</label>
+            <label class="font-bold text-slate-700 dark:text-slate-200">Isi Pesan Email Peringatan</label>
             <button 
               type="button" 
               @click="applyTemplate" 
-              class="text-[10px] text-blue-600 font-bold hover:underline cursor-pointer"
+              class="text-[10px] text-blue-600 dark:text-blue-400 font-bold hover:underline cursor-pointer"
             >
               Reset ke Template Standar
             </button>
@@ -78,21 +78,21 @@
           <textarea 
             v-model="message" 
             rows="5" 
-            class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-800 focus:outline-none focus:border-blue-500 text-xs font-medium leading-relaxed"
+            class="w-full p-3.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-2xl text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-500 text-xs font-medium leading-relaxed"
           ></textarea>
         </div>
 
         <!-- Live Preview -->
-        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-          <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-2 flex items-center justify-between">
+        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-800">
+          <div class="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 tracking-wider mb-2 flex items-center justify-between">
             <span class="flex items-center gap-1.5">
-              <Sparkles class="w-3.5 h-3.5 text-blue-600" />
+              <Sparkles class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
               Preview Tampilan Email Anggota
             </span>
-            <span class="text-slate-400 normal-case font-normal text-[10px]">Kepada: {{ recipient || '-' }}</span>
+            <span class="text-slate-400 dark:text-slate-400 normal-case font-normal text-[10px]">Kepada: {{ recipient || '-' }}</span>
           </div>
-          <div class="p-3.5 rounded-xl bg-white text-slate-800 text-[11px] border border-slate-200 whitespace-pre-wrap font-sans shadow-sm leading-relaxed">
-            <div class="pb-2 mb-2 border-b border-slate-100 font-bold text-slate-900 text-xs">
+          <div class="p-3.5 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-[11px] border border-slate-200 dark:border-slate-800 whitespace-pre-wrap font-sans shadow-sm leading-relaxed">
+            <div class="pb-2 mb-2 border-b border-slate-100 dark:border-slate-800 font-bold text-slate-900 dark:text-white text-xs">
               {{ subject || '(Tanpa Subjek)' }}
             </div>
 {{ message || '(Pesan kosong)' }}
@@ -100,16 +100,16 @@
         </div>
 
         <!-- Quick Actions: WhatsApp & Direct Email -->
-        <div class="space-y-2 p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-xs">
+        <div class="space-y-2 p-3.5 bg-slate-50 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-800 rounded-2xl text-xs">
           <div class="flex items-center justify-between">
-            <span class="font-bold text-slate-700 flex items-center gap-1.5 text-[11px]">
-              <Share2 class="w-3.5 h-3.5 text-blue-600" />
+            <span class="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5 text-[11px]">
+              <Share2 class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
               Alternatif Saluran Pengingat Langsung:
             </span>
             <button 
               type="button" 
               @click="copyMessage" 
-              class="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+              class="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
             >
               <Check v-if="copied" class="w-3.5 h-3.5 text-emerald-600" />
               <Copy v-else class="w-3.5 h-3.5" />
@@ -135,9 +135,9 @@
               :href="gmailWebUrl" 
               target="_blank" 
               rel="noopener noreferrer"
-              class="w-full sm:w-auto px-3 py-2 bg-white hover:bg-slate-100 text-slate-700 font-bold rounded-xl border border-slate-200 transition shadow-xs flex items-center justify-center gap-1.5 text-[11px]"
+              class="w-full sm:w-auto px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl border border-slate-200 dark:border-slate-700 transition shadow-xs flex items-center justify-center gap-1.5 text-[11px]"
             >
-              <ExternalLink class="w-3.5 h-3.5 text-slate-500 shrink-0" />
+              <ExternalLink class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
               <span>Buka di Gmail Web</span>
             </a>
           </div>
@@ -146,15 +146,15 @@
       </div>
 
       <!-- Sticky Footer -->
-      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 backdrop-blur-md border-t border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0 sticky bottom-0 z-20">
-        <div class="text-[11px] text-slate-400 text-center sm:text-left">
-          Status: <span class="font-bold text-slate-600">Email Server Otomatis</span>
+      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0 sticky bottom-0 z-20">
+        <div class="text-[11px] text-slate-400 dark:text-slate-400 text-center sm:text-left">
+          Status: <span class="font-bold text-slate-600 dark:text-slate-300">Email Server Otomatis</span>
         </div>
         <div class="flex items-center gap-2">
           <button 
             type="button" 
             @click="$emit('close')"
-            class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 hover:bg-slate-200/60 transition cursor-pointer"
+            class="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
           >
             Tutup
           </button>
@@ -162,7 +162,7 @@
             type="button" 
             @click="handleSendNotification"
             :disabled="!recipient || !message || isSending"
-            class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+            class="flex-1 sm:flex-initial px-5 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-slate-900/25 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
           >
             <Send class="w-4 h-4" />
             {{ isSending ? 'Mengirim...' : 'Kirim Email via Server' }}
