@@ -33,37 +33,8 @@ export const CHANGELOG_LIST: ChangelogItem[] = [
     category: 'feature',
     badge: 'Kustomisasi Tema',
     iconName: 'Palette'
-  },
-  {
-    id: 'seamless-ui-shadow-optimization',
-    title: 'Penyempurnaan Navigasi Bebas Batas (Seamless UI)',
-    description: 'Peniadaan box-shadow dan garis tepi yang kaku pada tombol Manajemen Sesi, Pasang Aplikasi (PWA), dan Catatan Rilis pada tema Dark maupun Elegant. Seluruh elemen menu kini membaur secara elegan dan serasi dengan latar belakang tanpa garis batas yang mengganggu estetika.',
-    targetAudience: 'all',
-    targetAudienceLabel: 'Semua Pengguna',
-    category: 'improvement',
-    badge: 'Tampilan & UX',
-    iconName: 'Layout'
-  },
-  {
-    id: 'auto-delete-expired-booking',
-    title: 'Pembersihan Otomatis Reservasi Kadaluarsa (Auto-Delete Expired Booking)',
-    description: 'Sistem secara otomatis membersihkan antrean reservasi buku yang telah melewati batas toleransi pengambilan (24 jam) dan langsung memulihkan kuota buku ke rak perpustakaan secara real-time.',
-    targetAudience: 'all',
-    targetAudienceLabel: 'Semua Pengguna',
-    category: 'improvement',
-    badge: 'Otomatisasi Sistem',
-    iconName: 'Clock'
-  },
-  {
-    id: 'shelf-ordering-admin',
-    title: 'Pengaturan Urutan & Posisi Rak Buku (Khusus Admin)',
-    description: 'Administrator kini dapat mengatur ulang urutan dan posisi penataan rak buku secara fleksibel untuk mengoptimalkan navigasi katalog dan denah rak buku fisik perpustakaan.',
-    targetAudience: 'admin',
-    targetAudienceLabel: 'Khusus Admin',
-    category: 'feature',
-    badge: 'Fitur Baru',
-    iconName: 'Layers'
   }
+
 ];
 
 /**
