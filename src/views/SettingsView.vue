@@ -367,7 +367,7 @@
             <input 
               v-model="newVersionInput" 
               type="text" 
-              placeholder="Misal: 1.0.0-beta.5"
+              placeholder="Misal: 1.0.0-beta.6"
               class="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 font-mono focus:outline-hidden focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -727,7 +727,7 @@ watch(() => store.isSuperAdmin, (isSuper) => {
 });
 
 // Version Management & OTA Broadcast
-const newVersionInput = ref('1.0.0-beta.5');
+const newVersionInput = ref('1.0.0-beta.6');
 const newVersionMessage = ref('Pembaruan sistem Libra telah tersedia. Silakan muat ulang halaman.');
 const isBroadcastingVersion = ref(false);
 
@@ -745,7 +745,7 @@ const resetToCurrentVersion = async () => {
   isBroadcastingVersion.value = true;
   try {
     await store.broadcastNewAppVersion(store.currentAppVersion, `Aplikasi berjalan pada versi resmi v${store.currentAppVersion}.`);
-    newVersionInput.value = '1.0.0-beta.5';
+    newVersionInput.value = '1.0.0-beta.6';
   } finally {
     isBroadcastingVersion.value = false;
   }

@@ -1,23 +1,53 @@
 import type { ChangelogItem, AppVersionConfig } from '../types.js';
 
-export const CURRENT_APP_VERSION = '1.0.0-beta.4';
-export const APP_RELEASE_DATE = '27 September 2026';
-export const APP_RELEASE_CODENAME = 'Libra Aurora Beta 4';
+export const CURRENT_APP_VERSION = '1.0.0-beta.5';
+export const APP_RELEASE_DATE = '1 Oktober 2026';
+export const APP_RELEASE_CODENAME = 'Libra Aurora Beta 5';
 
 export const DEFAULT_APP_VERSION_CONFIG: AppVersionConfig = {
   version: CURRENT_APP_VERSION,
   releaseDate: APP_RELEASE_DATE,
   forceReload: false,
-  minSupportedVersion: '1.0.0-beta.4',
-  updateMessage: 'Pembaruan sistem Libra versi 1.0.0-beta.4 telah dirilis dengan peningkatan fitur manajemen booking (auto delete expired booking), penyelarasan tampilan antarmuka mobile yang lebih rapi, dan fitur urutan rak khusus admin.',
-  changelogSummary: 'Peningkatan manajemen booking dengan auto-delete expired booking, penyelarasan tampilan antarmuka mobile yang lebih rapi, dan penambahan fitur urutan rak khusus admin.'
+  minSupportedVersion: '1.0.0-beta.5',
+  updateMessage: 'Pembaruan sistem Libra versi 1.0.0-beta.5 telah dirilis dengan fitur pengembalian e-Book secara mandiri oleh pengguna, dukungan tema antarmuka multimode (Light, Dark, dan Elegant), serta penyempurnaan desain navigasi bebas batas (seamless UI).',
+  changelogSummary: 'Fitur baru pengembalian e-Book mandiri untuk siswa dan guru, dukungan tema Light, Dark & Elegant, serta penyempurnaan tampilan antarmuka seamless tanpa garis batas.'
 };
 
 export const CHANGELOG_LIST: ChangelogItem[] = [
   {
+    id: 'self-service-ebook-return',
+    title: 'Pengembalian e-Book Mandiri oleh Pengguna',
+    description: 'Anggota perpustakaan (Siswa & Guru) kini dapat mengembalikan e-Book pinjaman secara mandiri kapan saja langsung melalui Portal Pinjaman Saya atau reader dokumen internal. Kuota peminjaman aktif pengguna akan langsung bebas kembali seketika tanpa perlu menunggu masa kedaluwarsa habis atau meminta bantuan admin.',
+    targetAudience: 'member',
+    targetAudienceLabel: 'Khusus Siswa & Guru',
+    category: 'feature',
+    badge: 'Fitur Baru',
+    iconName: 'RotateCcw'
+  },
+  {
+    id: 'multimode-theme-support',
+    title: 'Dukungan Tema Antarmuka Multimode: Light, Dark, dan Elegant',
+    description: 'Menghadirkan pemilih tema visual 3-mode yang fleksibel di menu akun dan navigasi: Tema Light (Terang) dengan kontras tinggi untuk kenyamanan baca di siang hari, Tema Dark (Gelap) hemat daya yang ramah mata untuk pencahayaan minim, serta Tema Elegant bernuansa semi-gelap dengan efek kaca akrilik transparan (acrylic glassmorphism & mica blur) ala Windows 11 Fluent Design.',
+    targetAudience: 'all',
+    targetAudienceLabel: 'Semua Pengguna',
+    category: 'feature',
+    badge: 'Kustomisasi Tema',
+    iconName: 'Palette'
+  },
+  {
+    id: 'seamless-ui-shadow-optimization',
+    title: 'Penyempurnaan Navigasi Bebas Batas (Seamless UI)',
+    description: 'Peniadaan box-shadow dan garis tepi yang kaku pada tombol Manajemen Sesi, Pasang Aplikasi (PWA), dan Catatan Rilis pada tema Dark maupun Elegant. Seluruh elemen menu kini membaur secara elegan dan serasi dengan latar belakang tanpa garis batas yang mengganggu estetika.',
+    targetAudience: 'all',
+    targetAudienceLabel: 'Semua Pengguna',
+    category: 'improvement',
+    badge: 'Tampilan & UX',
+    iconName: 'Layout'
+  },
+  {
     id: 'auto-delete-expired-booking',
-    title: 'Peningkatan Fitur Manajemen Booking (Auto-Delete Expired Booking)',
-    description: 'Sistem kini otomatis membersihkan data booking yang telah kadaluarsa (melewati batas waktu 24 jam) secara real-time dan langsung mengembalikan stok buku ke rak perpustakaan baik di sisi member maupun admin.',
+    title: 'Pembersihan Otomatis Reservasi Kadaluarsa (Auto-Delete Expired Booking)',
+    description: 'Sistem secara otomatis membersihkan antrean reservasi buku yang telah melewati batas toleransi pengambilan (24 jam) dan langsung memulihkan kuota buku ke rak perpustakaan secara real-time.',
     targetAudience: 'all',
     targetAudienceLabel: 'Semua Pengguna',
     category: 'improvement',
@@ -25,19 +55,9 @@ export const CHANGELOG_LIST: ChangelogItem[] = [
     iconName: 'Clock'
   },
   {
-    id: 'mobile-ui-enhancement',
-    title: 'Peningkatan Kualitas Tampilan Antarmuka Versi Mobile',
-    description: 'Penyelarasan tata letak menu dan tombol pada layar mobile ke dalam susunan grid 2-kolom yang rapi, seragam, dan proporsional tanpa ada menu yang panjang-pendek tidak seimbang.',
-    targetAudience: 'all',
-    targetAudienceLabel: 'Semua Pengguna',
-    category: 'improvement',
-    badge: 'Tampilan & UX',
-    iconName: 'Smartphone'
-  },
-  {
     id: 'shelf-ordering-admin',
-    title: 'Fitur Urutan & Tata Letak Rak (Khusus Admin)',
-    description: 'Menambahkan fitur bagi Administrator untuk mengatur ulang urutan dan posisi penataan rak buku secara fleksibel melalui metode drag-and-drop maupun tombol cepat di halaman tata letak rak.',
+    title: 'Pengaturan Urutan & Posisi Rak Buku (Khusus Admin)',
+    description: 'Administrator kini dapat mengatur ulang urutan dan posisi penataan rak buku secara fleksibel untuk mengoptimalkan navigasi katalog dan denah rak buku fisik perpustakaan.',
     targetAudience: 'admin',
     targetAudienceLabel: 'Khusus Admin',
     category: 'feature',

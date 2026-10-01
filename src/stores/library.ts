@@ -440,12 +440,22 @@ export const useLibraryStore = defineStore('library', {
         });
         subscribeToFirestoreDoc<AppVersionConfig>('config', 'app_version', (versionData) => {
           if (versionData && versionData.version) {
-            this.appVersionConfig = { ...DEFAULT_APP_VERSION_CONFIG, ...versionData };
-            this.remoteAppVersion = versionData.version;
-            const isNewer = isNewerVersion(versionData.version, this.currentAppVersion);
-            this.hasNewVersionAvailable = isNewer;
-            if (isNewer) {
-              this.isDismissedUpdateBanner = false;
+            const isRemoteNewer = isNewerVersion(versionData.version, this.currentAppVersion);
+            const isLocalNewer = isNewerVersion(this.currentAppVersion, versionData.version);
+
+            if (isLocalNewer) {
+              // Versi aplikasi yang sedang berjalan lebih baru dari dokumen Firestore -> sinkronkan ke Firestore
+              syncAppVersionDoc(DEFAULT_APP_VERSION_CONFIG).catch(() => {});
+              this.appVersionConfig = { ...DEFAULT_APP_VERSION_CONFIG };
+              this.remoteAppVersion = CURRENT_APP_VERSION;
+              this.hasNewVersionAvailable = false;
+            } else {
+              this.appVersionConfig = { ...DEFAULT_APP_VERSION_CONFIG, ...versionData };
+              this.remoteAppVersion = versionData.version;
+              this.hasNewVersionAvailable = isRemoteNewer;
+              if (isRemoteNewer) {
+                this.isDismissedUpdateBanner = false;
+              }
             }
           } else {
             // Inisialisasi awal dokumen versi di Firestore jika belum ada
