@@ -727,6 +727,93 @@
         </div>
       </div>
 
+      <!-- Section 3: Riwayat Peminjaman Selesai (Buku Fisik & e-Book) -->
+      <div class="space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div class="flex items-center gap-2">
+            <History class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <h3 class="font-extrabold text-lg text-slate-900 dark:text-white">Riwayat Peminjaman Saya</h3>
+          </div>
+          <div class="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              @click="myHistoryFilter = 'all'"
+              class="px-3 py-1 rounded-full text-[11px] font-bold transition cursor-pointer"
+              :class="myHistoryFilter === 'all' ? 'bg-blue-600 text-white shadow-xs' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'"
+            >
+              Semua ({{ store.myReturnedLoans.length }})
+            </button>
+            <button
+              type="button"
+              @click="myHistoryFilter = 'physical'"
+              class="px-3 py-1 rounded-full text-[11px] font-bold transition cursor-pointer"
+              :class="myHistoryFilter === 'physical' ? 'bg-blue-600 text-white shadow-xs' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'"
+            >
+              📘 Buku Fisik ({{ myReturnedPhysicalCount }})
+            </button>
+            <button
+              type="button"
+              @click="myHistoryFilter = 'ebook'"
+              class="px-3 py-1 rounded-full text-[11px] font-bold transition cursor-pointer"
+              :class="myHistoryFilter === 'ebook' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'"
+            >
+              📱 e-Book ({{ myReturnedEbookCount }})
+            </button>
+          </div>
+        </div>
+
+        <div v-if="filteredMyReturnedLoans.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div 
+            v-for="l in filteredMyReturnedLoans" 
+            :key="l.id"
+            class="p-5 rounded-3xl bg-white dark:bg-slate-900/80 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-between gap-3"
+          >
+            <div class="flex gap-3">
+              <img 
+                v-if="l.bookCover" 
+                :src="l.bookCover" 
+                class="w-14 h-20 object-cover rounded-2xl shadow-sm shrink-0 opacity-90" 
+                alt="Cover" 
+              />
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-1.5">
+                  <span class="text-[10px] font-mono text-slate-400 dark:text-slate-400 font-medium">{{ l.id }}</span>
+                  <span class="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                    ✓ Dikembalikan
+                  </span>
+                </div>
+                <div class="flex items-center gap-1.5 mt-1">
+                  <span v-if="l.isEbook" class="px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold text-[9px] border border-indigo-100 dark:border-indigo-900/60 flex items-center gap-1 shrink-0">
+                    <Smartphone class="w-2.5 h-2.5" />
+                    e-Book
+                  </span>
+                  <span v-else class="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold text-[9px] border border-blue-100 dark:border-blue-900/60 shrink-0">
+                    📘 Fisik
+                  </span>
+                  <h4 class="font-bold text-slate-900 dark:text-white text-xs line-clamp-1 leading-snug">{{ l.bookTitle }}</h4>
+                </div>
+                <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 space-y-0.5">
+                  <div>Dipinjam: {{ new Date(l.borrowDate).toLocaleDateString('id-ID') }}</div>
+                  <div>Dikembalikan: <strong class="text-emerald-600 dark:text-emerald-400">{{ l.returnDate ? new Date(l.returnDate).toLocaleDateString('id-ID') : '-' }}</strong></div>
+                </div>
+              </div>
+            </div>
+            <div class="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px]">
+              <span class="text-slate-400 dark:text-slate-500">
+                {{ l.isEbook ? 'Koleksi Digital e-Book' : `Lokasi Rak: ${l.shelfCode}` }}
+              </span>
+              <router-link to="/" class="text-blue-600 dark:text-blue-400 font-bold hover:underline">
+                Pinjam Lagi →
+              </router-link>
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="p-8 rounded-3xl bg-white dark:bg-slate-900/80 border border-slate-100 dark:border-slate-800 text-center text-xs text-slate-400 shadow-sm">
+          Belum ada riwayat peminjaman buku fisik maupun e-Book yang telah selesai.
+        </div>
+      </div>
+
     </div>
 
     <!-- Modal Ganti Kata Sandi -->
@@ -858,7 +945,7 @@ import {
   UserCheck, QrCode, AlertTriangle, Clock, 
   Timer, BookmarkCheck, BookMarked, LogIn, KeyRound, UserCog,
   AlertCircle, CheckCircle2, Camera, Award, ShieldCheck, BookOpen, Sparkles, Laptop,
-  Smartphone, Lock, X, GraduationCap, RotateCcw, Loader2
+  Smartphone, Lock, X, GraduationCap, RotateCcw, Loader2, History
 } from 'lucide-vue-next';
 
 const store = useLibraryStore();
@@ -866,6 +953,15 @@ const now = ref(Date.now());
 const avatarLoadError = ref(false);
 watch(() => store.currentUser?.avatar, () => {
   avatarLoadError.value = false;
+});
+
+const myHistoryFilter = ref<'all' | 'physical' | 'ebook'>('all');
+const myReturnedPhysicalCount = computed(() => store.myReturnedLoans.filter(l => !l.isEbook).length);
+const myReturnedEbookCount = computed(() => store.myReturnedLoans.filter(l => l.isEbook).length);
+const filteredMyReturnedLoans = computed(() => {
+  if (myHistoryFilter.value === 'physical') return store.myReturnedLoans.filter(l => !l.isEbook);
+  if (myHistoryFilter.value === 'ebook') return store.myReturnedLoans.filter(l => l.isEbook);
+  return store.myReturnedLoans;
 });
 
 const isChangePasswordOpen = ref(false);
@@ -967,22 +1063,40 @@ const formatDateTime = (ts?: number | string) => {
 
 // Banner Notifikasi e-Book Kedaluwarsa yang Dikembalikan Otomatis
 const dismissedExpiredEbookNotifs = ref<string[]>([]);
+const dismissedExpiredEbookTimestamp = ref<number>(0);
 try {
   dismissedExpiredEbookNotifs.value = JSON.parse(localStorage.getItem('dismissed_expired_ebook_notifs') || '[]');
+  dismissedExpiredEbookTimestamp.value = Number(localStorage.getItem('dismissed_expired_ebook_ts') || 0);
 } catch {}
+
+const parseLocalDateMidnight = (dateStr?: string): number => {
+  if (!dateStr) return 0;
+  const parts = dateStr.slice(0, 10).split('-');
+  if (parts.length === 3) {
+    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])).getTime();
+  }
+  return new Date(dateStr).setHours(0, 0, 0, 0);
+};
 
 const expiredEbookInfo = computed(() => {
   if (!store.currentUser) return null;
   const memId = store.currentUser.id;
   const cardNum = store.currentUser.cardNumber;
   const email = store.currentUser.email?.toLowerCase().trim();
+  const dismissedSet = new Set(dismissedExpiredEbookNotifs.value);
+  const lastDismissTs = dismissedExpiredEbookTimestamp.value;
+  const lastDismissDayMidnight = lastDismissTs > 0 ? new Date(lastDismissTs).setHours(0, 0, 0, 0) : 0;
 
   // 1. Prioritaskan dari log notifikasi resmi perpustakaan yang belum di-dismiss
-  const notif = store.notifications.find(n => 
-    n.triggerReason === 'ebook_expired' &&
-    !dismissedExpiredEbookNotifs.value.includes(n.id) &&
-    (n.memberId === memId || (email && n.recipient && n.recipient.toLowerCase().trim() === email))
-  );
+  const notif = store.notifications.find(n => {
+    if (n.triggerReason !== 'ebook_expired') return false;
+    if (dismissedSet.has(n.id)) return false;
+    if (lastDismissTs > 0 && n.sentAt) {
+      const sentTime = new Date(n.sentAt).getTime();
+      if (!isNaN(sentTime) && sentTime <= lastDismissTs) return false;
+    }
+    return n.memberId === memId || (email && n.recipient && n.recipient.toLowerCase().trim() === email);
+  });
 
   if (notif) {
     return {
@@ -993,21 +1107,33 @@ const expiredEbookInfo = computed(() => {
     };
   }
 
-  // 2. Fallback realtime dari pinjaman e-book yang sudah berstatus returned karena lewat tempo (dalam 7 hari terakhir)
+  // 2. Fallback realtime dari pinjaman e-book yang sudah berstatus returned karena lewat tempo
   const todayMidnight = new Date().setHours(0, 0, 0, 0);
   const returnedExpiredLoans = store.loans.filter(l => {
     if (l.memberId !== memId && l.memberCardNumber !== cardNum) return false;
     const isEbook = l.isEbook === true || store.books.find(b => b.id === l.bookId)?.isEbook === true;
     if (!isEbook || l.status !== 'returned' || !l.dueDate) return false;
-    const dueTime = new Date(l.dueDate).getTime();
-    if (todayMidnight <= dueTime) return false;
-    return !dismissedExpiredEbookNotifs.value.includes(`loan_${l.id}`);
+
+    const dueMidnight = parseLocalDateMidnight(l.dueDate);
+    if (todayMidnight <= dueMidnight) return false;
+
+    // Jika dikembalikan secara mandiri sebelum atau tepat saat tanggal jatuh tempo, bukan pengembalian otomatis karena kedaluwarsa
+    if (l.returnDate) {
+      const returnMidnight = parseLocalDateMidnight(l.returnDate);
+      if (returnMidnight > 0 && returnMidnight <= dueMidnight) return false;
+      // Jika sudah pernah klik X pada atau setelah tanggal pengembalian buku ini, jangan munculkan lagi
+      if (lastDismissDayMidnight > 0 && returnMidnight <= lastDismissDayMidnight) return false;
+    } else if (lastDismissDayMidnight > 0 && dueMidnight <= lastDismissDayMidnight) {
+      return false;
+    }
+
+    return !dismissedSet.has(`loan_${l.id}`);
   });
 
   if (returnedExpiredLoans.length === 0) return null;
 
   const notifKey = `auto_returned_loans_${returnedExpiredLoans.map(l => l.id).join('_')}`;
-  if (dismissedExpiredEbookNotifs.value.includes(notifKey)) return null;
+  if (dismissedSet.has(notifKey)) return null;
 
   if (returnedExpiredLoans.length === 1) {
     const l = returnedExpiredLoans[0];
@@ -1028,13 +1154,50 @@ const expiredEbookInfo = computed(() => {
   };
 });
 
-const dismissExpiredEbookInfo = (id: string) => {
-  if (!dismissedExpiredEbookNotifs.value.includes(id)) {
-    dismissedExpiredEbookNotifs.value.push(id);
-    try {
-      localStorage.setItem('dismissed_expired_ebook_notifs', JSON.stringify(dismissedExpiredEbookNotifs.value));
-    } catch {}
+const dismissExpiredEbookInfo = (id?: string) => {
+  const updatedSet = new Set<string>(dismissedExpiredEbookNotifs.value);
+  if (id) updatedSet.add(id);
+
+  if (store.currentUser) {
+    const memId = store.currentUser.id;
+    const cardNum = store.currentUser.cardNumber;
+    const email = store.currentUser.email?.toLowerCase().trim();
+
+    // Tandai seluruh log notifikasi ebook_expired milik pengguna ini sebagai sudah ditutup
+    for (const n of store.notifications) {
+      if (
+        n.triggerReason === 'ebook_expired' &&
+        (n.memberId === memId || (email && n.recipient && n.recipient.toLowerCase().trim() === email))
+      ) {
+        updatedSet.add(n.id);
+      }
+    }
+
+    // Tandai seluruh pinjaman e-Book milik pengguna ini yang sudah berstatus returned sebagai sudah ditutup
+    const returnedIds: string[] = [];
+    for (const l of store.loans) {
+      if (l.memberId === memId || l.memberCardNumber === cardNum) {
+        const isEbook = l.isEbook === true || store.books.find(b => b.id === l.bookId)?.isEbook === true;
+        if (isEbook && l.status === 'returned') {
+          updatedSet.add(`loan_${l.id}`);
+          returnedIds.push(l.id);
+        }
+      }
+    }
+
+    if (returnedIds.length > 0) {
+      updatedSet.add(`auto_returned_loans_${returnedIds.join('_')}`);
+    }
   }
+
+  const nowTs = Date.now();
+  dismissedExpiredEbookNotifs.value = Array.from(updatedSet);
+  dismissedExpiredEbookTimestamp.value = nowTs;
+
+  try {
+    localStorage.setItem('dismissed_expired_ebook_notifs', JSON.stringify(dismissedExpiredEbookNotifs.value));
+    localStorage.setItem('dismissed_expired_ebook_ts', String(nowTs));
+  } catch {}
 };
 
 onMounted(() => {
@@ -1124,8 +1287,12 @@ const confirmReturnEbook = async () => {
   if (!loanToReturn.value) return;
   isReturningEbook.value = true;
   try {
-    await store.returnEbookSelf(loanToReturn.value.id);
-    if (selectedLoanForReading.value?.id === loanToReturn.value.id) {
+    const returningId = loanToReturn.value.id;
+    await store.returnEbookSelf(returningId);
+    if (!dismissedExpiredEbookNotifs.value.includes(`loan_${returningId}`)) {
+      dismissedExpiredEbookNotifs.value.push(`loan_${returningId}`);
+    }
+    if (selectedLoanForReading.value?.id === returningId) {
       isEbookReaderOpen.value = false;
     }
     loanToReturn.value = null;

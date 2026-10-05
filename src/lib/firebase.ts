@@ -324,6 +324,11 @@ export async function syncLoanDoc(loan: any) {
   await withTimeout(setDoc(doc(db, 'loans', loan.id), clean, { merge: true }), 7000);
 }
 
+export async function removeLoanDoc(loanId: string) {
+  if (!loanId) return;
+  await withTimeout(deleteDoc(doc(db, 'loans', loanId)), 7000);
+}
+
 export async function syncBookingDoc(booking: any) {
   if (!booking?.id) return;
   const clean = sanitizeForFirestore(booking);

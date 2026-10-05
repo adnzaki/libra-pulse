@@ -158,6 +158,37 @@ export const useLibraryStore = defineStore('library', {
       );
     },
     activeLoans: (state) => state.loans.filter(l => l.status === 'active' || l.status === 'overdue'),
+    returnedLoans: (state) => {
+      const list = state.loans.filter(l => l.status === 'returned');
+      return list.map(loan => {
+        let isEbook = loan.isEbook;
+        let ebookUrl = loan.ebookUrl;
+        let bookCover = loan.bookCover;
+        if (isEbook === undefined || !ebookUrl || !bookCover) {
+          const matchedBook = state.books.find(b => 
+            b.id === loan.bookId || 
+            b.title.trim().toLowerCase() === (loan.bookTitle || '').trim().toLowerCase()
+          );
+          if (matchedBook) {
+            if (matchedBook.isEbook) {
+              isEbook = true;
+              ebookUrl = ebookUrl || matchedBook.ebookUrl || '';
+            }
+            bookCover = bookCover || matchedBook.cover || '';
+          }
+        }
+        return {
+          ...loan,
+          isEbook: isEbook ?? false,
+          ebookUrl: ebookUrl || '',
+          bookCover: bookCover || ''
+        };
+      }).sort((a, b) => {
+        const timeA = new Date(a.returnDate || a.borrowDate).getTime() || 0;
+        const timeB = new Date(b.returnDate || b.borrowDate).getTime() || 0;
+        return timeB - timeA;
+      });
+    },
     overdueLoans: (state) => state.loans.filter(l => l.status === 'overdue'),
     suspendedMembers: (state) => state.members.filter(m => m.isSuspended),
     
@@ -182,6 +213,46 @@ export const useLibraryStore = defineStore('library', {
           isEbook: isEbook ?? false,
           ebookUrl: ebookUrl || ''
         };
+      });
+    },
+    myReturnedLoans: (state) => {
+      if (!state.currentUser) return [];
+      const currentId = state.currentUser.id;
+      const currentCard = state.currentUser.cardNumber;
+      const currentEmail = (state.currentUser.email || '').toLowerCase();
+      const list = state.loans.filter(l => 
+        l.status === 'returned' &&
+        (l.memberId === currentId || 
+         (currentCard && l.memberCardNumber === currentCard) ||
+         (currentEmail && l.memberEmail && l.memberEmail.toLowerCase() === currentEmail))
+      );
+      return list.map(loan => {
+        let ebookUrl = loan.ebookUrl;
+        let isEbook = loan.isEbook;
+        let bookCover = loan.bookCover;
+        if (!ebookUrl || isEbook === undefined || !bookCover) {
+          const matchedBook = state.books.find(b => 
+            b.id === loan.bookId || 
+            b.title.trim().toLowerCase() === (loan.bookTitle || '').trim().toLowerCase()
+          );
+          if (matchedBook) {
+            if (matchedBook.isEbook) {
+              isEbook = true;
+              ebookUrl = ebookUrl || matchedBook.ebookUrl || '';
+            }
+            bookCover = bookCover || matchedBook.cover || '';
+          }
+        }
+        return {
+          ...loan,
+          isEbook: isEbook ?? false,
+          ebookUrl: ebookUrl || '',
+          bookCover: bookCover || ''
+        };
+      }).sort((a, b) => {
+        const timeA = new Date(a.returnDate || a.borrowDate).getTime() || 0;
+        const timeB = new Date(b.returnDate || b.borrowDate).getTime() || 0;
+        return timeB - timeA;
       });
     },
     myBookings: (state) => {
@@ -400,6 +471,11 @@ export const useLibraryStore = defineStore('library', {
         });
         subscribeToFirestoreCollection<Loan>('loans', (items) => {
           if (items) {
+            for (const item of items) {
+              if (item.status === 'returned') {
+                this.processedEbookReturnIds.add(item.id);
+              }
+            }
             this.loans = items;
             this.calculateStats();
             this.persistToLocalCache();
@@ -543,6 +619,7 @@ export const useLibraryStore = defineStore('library', {
             loan.status = 'returned';
             loan.returnDate = loan.returnDate || new Date().toISOString().slice(0, 10);
             loan.daysOverdue = 0;
+            (loan as any)._needsAutoReturnSync = true;
             // Peminjam e-Book DITOLERANSI PENUH & TIDAK dimasukkan ke overdueMemberKeys
             // Menjamin peminjam e-Book TIDAK PERNAH terkena auto-suspend!
           } else {
@@ -713,8 +790,12 @@ export const useLibraryStore = defineStore('library', {
           const isExpired = todayMidnight > dueMidnight;
           if (!isExpired) return false;
 
-          // Lewati jika sudah pernah disinkronkan ke database
-          if (this.processedEbookReturnIds.has(loan.id) && loan.status === 'returned') {
+          // Lewati jika sudah pernah disinkronkan ke database atau sudah berstatus returned dari awal
+          if (this.processedEbookReturnIds.has(loan.id)) {
+            return false;
+          }
+          if (loan.status === 'returned' && !(loan as any)._needsAutoReturnSync) {
+            this.processedEbookReturnIds.add(loan.id);
             return false;
           }
 
@@ -752,6 +833,7 @@ export const useLibraryStore = defineStore('library', {
             loan.status = 'returned';
             loan.returnDate = loan.returnDate || new Date().toISOString().slice(0, 10);
             loan.daysOverdue = 0;
+            (loan as any)._needsAutoReturnSync = false;
             this.processedEbookReturnIds.add(loan.id);
             affectedBookIds.add(loan.bookId);
             syncPromises.push(syncLoanDoc(loan));
@@ -794,33 +876,42 @@ export const useLibraryStore = defineStore('library', {
             message = `Halo ${memberName}, masa akses peminjaman untuk ${memberLoans.length} e-Book berikut telah berakhir dan telah dikembalikan secara otomatis oleh sistem:\n\n${listText}\n\nSemua e-Book di atas telah dikembalikan ke sistem tanpa dikenakan sanksi denda atau suspend. Anda dapat melakukan booking kembali melalui katalog buku kapan saja jika ingin membaca ulang.`;
           }
 
-          const notifId = `NOTIF-EBK-${Date.now().toString().slice(-6)}-${Math.random().toString(36).slice(2, 5)}`;
-          const notif: NotificationLog = {
-            id: notifId,
-            memberId: memberId || 'GUEST',
-            memberName,
-            recipient,
-            type: 'email',
-            subject,
-            message,
-            sentAt: new Date().toISOString(),
-            status: 'sent',
-            triggerReason: 'ebook_expired'
-          };
+          // Cegah duplikasi notifikasi pengembalian otomatis untuk subjek & member yang sama
+          const alreadyNotified = this.notifications.some(n =>
+            n.triggerReason === 'ebook_expired' &&
+            (n.memberId === (memberId || 'GUEST') || (recipient && n.recipient?.toLowerCase().trim() === recipient.toLowerCase().trim())) &&
+            n.subject === subject
+          );
 
-          this.notifications.unshift(notif);
-          syncPromises.push(syncNotificationDoc(notif));
-
-          // Kirim email lewat API backend (jika tersedia / silent)
-          fetch('/api/send-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+          if (!alreadyNotified) {
+            const notifId = `NOTIF-EBK-${Date.now().toString().slice(-6)}-${Math.random().toString(36).slice(2, 5)}`;
+            const notif: NotificationLog = {
+              id: notifId,
+              memberId: memberId || 'GUEST',
+              memberName,
               recipient,
+              type: 'email',
               subject,
-              message
-            })
-          }).catch(() => {});
+              message,
+              sentAt: new Date().toISOString(),
+              status: 'sent',
+              triggerReason: 'ebook_expired'
+            };
+
+            this.notifications.unshift(notif);
+            syncPromises.push(syncNotificationDoc(notif));
+
+            // Kirim email lewat API backend (jika tersedia / silent)
+            fetch('/api/send-email', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                recipient,
+                subject,
+                message
+              })
+            }).catch(() => {});
+          }
         }
 
         // Update kuota buku yang terpengaruh
@@ -942,6 +1033,11 @@ export const useLibraryStore = defineStore('library', {
         this.shelves = (offline.shelves && offline.shelves.length > 0) ? sortShelves(offline.shelves) : sortShelves([...initialShelves]);
         this.members = (offline.members && offline.members.length > 0) ? offline.members : [...initialMembers];
         this.loans = offline.loans || [];
+        for (const l of this.loans) {
+          if (l.status === 'returned') {
+            this.processedEbookReturnIds.add(l.id);
+          }
+        }
         this.bookings = offline.bookings || [];
         this.notifications = offline.notifications || [];
         if (offline.config) this.suspendConfig = offline.config;
@@ -1084,6 +1180,11 @@ export const useLibraryStore = defineStore('library', {
           if (fCats && fCats.length > 0) this.categories = fCats;
           if (fMembers && fMembers.length > 0) this.members = fMembers;
           this.loans = fLoans || [];
+          for (const l of this.loans) {
+            if (l.status === 'returned') {
+              this.processedEbookReturnIds.add(l.id);
+            }
+          }
           this.bookings = fBookings || [];
           this.notifications = fNotifs || [];
           this.teacherRequests = (fTeacherReqs || []).sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
@@ -3492,6 +3593,17 @@ export const useLibraryStore = defineStore('library', {
       loan.status = 'returned';
       loan.returnDate = new Date().toISOString().slice(0, 10);
       loan.daysOverdue = 0;
+      (loan as any)._needsAutoReturnSync = false;
+      this.processedEbookReturnIds.add(loan.id);
+      try {
+        localStorage.setItem('pustaka_processed_ebook_returns', JSON.stringify([...this.processedEbookReturnIds]));
+        const dismissedRaw = localStorage.getItem('dismissed_expired_ebook_notifs');
+        const dismissedList: string[] = dismissedRaw ? JSON.parse(dismissedRaw) : [];
+        if (!dismissedList.includes(`loan_${loan.id}`)) {
+          dismissedList.push(`loan_${loan.id}`);
+          localStorage.setItem('dismissed_expired_ebook_notifs', JSON.stringify(dismissedList));
+        }
+      } catch {}
 
       const book = this.books.find(b => b.id === loan.bookId);
       if (book) {
@@ -3559,6 +3671,26 @@ export const useLibraryStore = defineStore('library', {
       return this.returnLoan(loanId, {
         customToast: `✅ e-Book "${loan.bookTitle}" berhasil dikembalikan! Kuota peminjaman Anda telah bebas kembali.`
       });
+    },
+
+    async deleteLoanHistory(loanId: string) {
+      const idx = this.loans.findIndex(l => l.id === loanId && l.status === 'returned');
+      if (idx === -1) return { success: false, error: 'Data riwayat peminjaman tidak ditemukan.' };
+
+      const removed = this.loans[idx];
+      this.loans.splice(idx, 1);
+      this.calculateStats();
+      this.persistToLocalCache();
+
+      try {
+        const { removeLoanDoc } = await import('../lib/firebase.js');
+        await removeLoanDoc(loanId);
+      } catch {
+        // Persist in local cache if offline
+      }
+
+      this.showToast(`🗑️ Riwayat peminjaman "${removed.bookTitle}" berhasil dihapus.`);
+      return { success: true };
     },
 
     async updateSuspendConfig(newConfig: Partial<SuspendConfig>) {

@@ -55,14 +55,6 @@
         </button>
 
         <button 
-          @click="openReturnModal(null)"
-          class="px-3.5 sm:px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-full shadow-md shadow-slate-900/25 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
-        >
-          <CheckCircle2 class="w-4 h-4 shrink-0" />
-          <span class="truncate">Pengembalian</span>
-        </button>
-
-        <button 
           @click="openNotifyModal(null)"
           class="px-3.5 sm:px-4 py-2.5 bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-full shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
         >
@@ -76,24 +68,6 @@
         >
           <Plus class="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
           <span class="truncate">Tambah Buku</span>
-        </button>
-
-        <button 
-          @click="handleDownloadOffline"
-          :disabled="isDownloadingOffline"
-          class="px-3.5 sm:px-4 py-2.5 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800/60 text-indigo-700 dark:text-indigo-300 font-semibold text-xs rounded-full shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 disabled:opacity-50"
-          title="Unduh seluruh data untuk diakses secara offline"
-        >
-          <Download class="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" :class="{ 'animate-bounce': isDownloadingOffline }" />
-          <span class="truncate">{{ isDownloadingOffline ? 'Mengunduh...' : 'Unduh ke Lokal' }}</span>
-        </button>
-
-        <button 
-          @click="isChangeAdminPasswordOpen = true"
-          class="px-3.5 sm:px-4 py-2.5 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white font-semibold text-xs rounded-full shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 border border-slate-800 dark:border-slate-700"
-        >
-          <KeyRound class="w-4 h-4 text-blue-400 shrink-0" />
-          <span class="truncate">Ganti Sandi Admin</span>
         </button>
 
         <button 
@@ -295,34 +269,36 @@
     <!-- MAIN INTERACTIVE BENTO CARD: Tabs & Circulation Tables -->
     <div class="bg-white dark:bg-slate-900/80 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
       
-      <!-- Bento Tab Bar (Responsive flex-wrap layout, prevents clipping and overflow) -->
-      <div class="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 dark:border-slate-800 flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3.5 bg-slate-50/60 dark:bg-slate-900/90">
+      <!-- Bento Tab Bar (Single Menu Button + Real-time Search) -->
+      <div class="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3.5 bg-slate-50/60 dark:bg-slate-900/90">
         
-        <!-- Tab Navigation (Flex-wrap with clean gap, ensuring all menu pills are visible) -->
-        <div class="flex flex-wrap items-center gap-2 flex-1 min-w-0">
+        <!-- Single Button Triggering Admin Menu Modal -->
+        <div class="flex items-center gap-2.5 flex-1 min-w-0">
           <button 
-            v-for="tab in adminTabs"
-            :key="tab.id"
-            @click="activeTab = tab.id"
-            class="px-3.5 py-2 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 active:scale-95 whitespace-nowrap"
-            :class="activeTab === tab.id 
-              ? 'bg-slate-900 dark:bg-blue-600 text-white shadow-sm' 
-              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'"
+            type="button"
+            @click="isTabMenuModalOpen = true"
+            class="w-full sm:w-auto px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center justify-between sm:justify-start gap-3 bg-slate-900 hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-700 text-white shadow-sm active:scale-95"
           >
-            <component :is="tab.icon" class="w-3.5 h-3.5" />
-            <span>{{ tab.label }}</span>
-            <span 
-              v-if="tab.badge" 
-              class="px-2 py-0.5 rounded-full text-[10px] font-bold"
-              :class="activeTab === tab.id ? 'bg-blue-500 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200'"
-            >
-              {{ tab.badge }}
-            </span>
+            <div class="flex items-center gap-2 min-w-0">
+              <component :is="currentTabObj.icon" class="w-4 h-4 shrink-0 text-blue-300 dark:text-white" />
+              <span class="truncate">{{ currentTabObj.label }}</span>
+              <span 
+                v-if="currentTabObj.badge !== undefined && currentTabObj.badge !== null" 
+                class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-500/30 dark:bg-white/20 text-white shrink-0 font-mono"
+              >
+                {{ currentTabObj.badge }}
+              </span>
+            </div>
+            <div class="flex items-center gap-1.5 pl-2.5 border-l border-white/20 shrink-0 text-[11px] font-semibold text-slate-200 dark:text-blue-100">
+              <LayoutGrid class="w-3.5 h-3.5" />
+              <span>Pilih Menu</span>
+              <ChevronDown class="w-3.5 h-3.5" />
+            </div>
           </button>
         </div>
 
         <!-- Real-time Search Input with Tab-Specific Models -->
-        <div v-if="hasSearchForActiveTab" class="relative w-full xl:w-80 shrink-0">
+        <div v-if="hasSearchForActiveTab" class="relative w-full sm:w-80 shrink-0">
           <input 
             v-model="currentSearchInput"
             type="text" 
@@ -489,6 +465,280 @@
               </tbody>
             </table>
           </div>
+        </div>
+
+        <!-- Tab 1B: Riwayat Peminjaman (Buku Fisik & e-Book yang Telah Dikembalikan / Selesai) -->
+        <div v-if="activeTab === 'loan_history'" class="space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 dark:bg-slate-900/80 p-4 sm:p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
+            <div>
+              <h3 class="text-xs sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <History class="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                <span>Riwayat Peminjaman Selesai (Buku Fisik &amp; e-Book)</span>
+              </h3>
+              <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Arsip seluruh transaksi peminjaman buku fisik maupun dokumen e-Book yang telah berlalu atau sudah dikembalikan.
+              </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 shrink-0">
+              <span class="px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200/70 dark:border-blue-800/60 text-blue-700 dark:text-blue-300 text-xs font-bold font-mono">
+                📘 Fisik: {{ returnedPhysicalCount }}
+              </span>
+              <span class="px-3 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/70 dark:border-indigo-800/60 text-indigo-700 dark:text-indigo-300 text-xs font-bold font-mono">
+                📱 e-Book: {{ returnedEbookCount }}
+              </span>
+              <span class="px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/70 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 text-xs font-bold font-mono">
+                ✓ Total: {{ store.returnedLoans.length }} Selesai
+              </span>
+            </div>
+          </div>
+
+          <!-- Filter Jenis Koleksi & Jumlah Data -->
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-1.5 py-0.5">
+              <button 
+                type="button"
+                @click="loanHistoryFilter = 'all'"
+                class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer"
+                :class="loanHistoryFilter === 'all' ? 'bg-blue-600 text-white shadow-xs' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700/60'"
+              >
+                Semua Koleksi ({{ store.returnedLoans.length }})
+              </button>
+              <button 
+                type="button"
+                @click="loanHistoryFilter = 'physical'"
+                class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer"
+                :class="loanHistoryFilter === 'physical' ? 'bg-blue-600 text-white shadow-xs' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700/60'"
+              >
+                📘 Buku Fisik ({{ returnedPhysicalCount }})
+              </button>
+              <button 
+                type="button"
+                @click="loanHistoryFilter = 'ebook'"
+                class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer"
+                :class="loanHistoryFilter === 'ebook' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700/60'"
+              >
+                📱 Koleksi e-Book ({{ returnedEbookCount }})
+              </button>
+            </div>
+            <div class="text-xs text-slate-500 dark:text-slate-400 font-mono">
+              Menampilkan {{ paginatedLoanHistory.length }} dari {{ filteredLoanHistory.length }} Riwayat
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div v-if="filteredLoanHistory.length === 0" class="p-8 text-center bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-800 text-slate-400 text-xs space-y-1.5">
+            <History class="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-1" />
+            <p class="font-bold text-slate-700 dark:text-slate-200">Belum Ada Riwayat Peminjaman</p>
+            <p class="text-[11px]" v-if="loanHistorySearch">Tidak ditemukan riwayat peminjaman dengan kata kunci "{{ loanHistorySearch }}".</p>
+            <p class="text-[11px]" v-else>Transaksi peminjaman buku fisik maupun e-Book yang telah dikembalikan akan tercatat secara otomatis di sini.</p>
+          </div>
+
+          <template v-else>
+            <!-- Mobile Cards View -->
+            <div class="grid grid-cols-1 gap-3 md:hidden">
+              <div 
+                v-for="l in paginatedLoanHistory" 
+                :key="l.id"
+                class="p-4 rounded-2xl border bg-white dark:bg-slate-900/80 border-slate-100 dark:border-slate-800 space-y-3 transition-colors"
+              >
+                <div class="flex items-start justify-between gap-2.5">
+                  <div class="flex items-start gap-3 min-w-0">
+                    <img 
+                      v-if="l.bookCover" 
+                      :src="l.bookCover" 
+                      class="w-11 h-15 object-cover rounded-xl border border-slate-200 dark:border-slate-700 shrink-0" 
+                      alt="" 
+                    />
+                    <div class="min-w-0">
+                      <div class="flex items-center gap-1.5 flex-wrap">
+                        <span class="text-[10px] font-mono font-bold text-blue-600 dark:text-blue-400">{{ l.id }}</span>
+                        <span 
+                          v-if="l.isEbook" 
+                          class="px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200/70 dark:border-indigo-800/60 text-[9px] font-bold"
+                        >
+                          📱 e-Book
+                        </span>
+                        <span 
+                          v-else 
+                          class="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200/70 dark:border-blue-800/60 text-[9px] font-bold"
+                        >
+                          📘 Buku Fisik • Rak {{ l.shelfCode }}
+                        </span>
+                      </div>
+                      <h4 class="font-bold text-sm text-slate-900 dark:text-white leading-snug mt-1">{{ l.bookTitle }}</h4>
+                    </div>
+                  </div>
+                  <span class="px-2.5 py-1 rounded-full text-[10px] font-bold shrink-0 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
+                    ✓ Dikembalikan
+                  </span>
+                </div>
+
+                <div class="p-2.5 rounded-xl bg-slate-50/80 dark:bg-slate-850/80 border border-slate-100 dark:border-slate-800 text-xs space-y-1">
+                  <div class="flex justify-between gap-2">
+                    <span class="text-slate-500 dark:text-slate-400">Peminjam:</span>
+                    <strong class="text-slate-800 dark:text-slate-200 font-semibold text-right">{{ l.memberName }} ({{ l.memberCardNumber }})</strong>
+                  </div>
+                  <div class="flex justify-between gap-2">
+                    <span class="text-slate-500 dark:text-slate-400">Tgl Pinjam:</span>
+                    <span class="text-slate-700 dark:text-slate-300">{{ new Date(l.borrowDate).toLocaleDateString('id-ID') }}</span>
+                  </div>
+                  <div class="flex justify-between gap-2">
+                    <span class="text-slate-500 dark:text-slate-400">Jatuh Tempo:</span>
+                    <span class="text-slate-700 dark:text-slate-300">{{ new Date(l.dueDate).toLocaleDateString('id-ID') }}</span>
+                  </div>
+                  <div class="flex justify-between gap-2">
+                    <span class="text-slate-500 dark:text-slate-400">Tgl Kembali:</span>
+                    <strong class="text-emerald-600 dark:text-emerald-400">
+                      {{ l.returnDate ? new Date(l.returnDate).toLocaleDateString('id-ID') : '-' }}
+                    </strong>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-1">
+                  <span class="text-[11px] text-slate-400 dark:text-slate-500">
+                    Petugas: {{ l.handledBy || 'Sistem Otomatis' }}
+                  </span>
+                  <button 
+                    type="button"
+                    @click="handleDeleteLoanHistory(l)"
+                    class="px-3 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-300 text-[11px] font-bold transition flex items-center gap-1 cursor-pointer"
+                  >
+                    <Trash2 class="w-3.5 h-3.5" />
+                    <span>Hapus Log</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Desktop Table View -->
+            <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80">
+              <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+                <thead class="bg-slate-50 dark:bg-slate-850/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 font-bold">
+                  <tr>
+                    <th class="py-3.5 px-4">ID Transaksi</th>
+                    <th class="py-3.5 px-4">Buku &amp; Jenis Koleksi</th>
+                    <th class="py-3.5 px-4">Peminjam (Kartu Member)</th>
+                    <th class="py-3.5 px-4">Tgl Pinjam</th>
+                    <th class="py-3.5 px-4">Jatuh Tempo</th>
+                    <th class="py-3.5 px-4">Tgl Dikembalikan</th>
+                    <th class="py-3.5 px-4">Status</th>
+                    <th class="py-3.5 px-4 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+                  <tr 
+                    v-for="l in paginatedLoanHistory" 
+                    :key="l.id"
+                    class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition"
+                  >
+                    <td class="py-3 px-4 font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">{{ l.id }}</td>
+                    <td class="py-3 px-4">
+                      <div class="flex items-center gap-2.5">
+                        <img 
+                          v-if="l.bookCover" 
+                          :src="l.bookCover" 
+                          class="w-8 h-11 object-cover rounded-lg border border-slate-200 dark:border-slate-700 shrink-0" 
+                          alt="" 
+                        />
+                        <div class="min-w-0">
+                          <div class="font-bold text-slate-900 dark:text-white truncate max-w-xs">{{ l.bookTitle }}</div>
+                          <div class="flex items-center gap-1.5 mt-0.5">
+                            <span 
+                              v-if="l.isEbook" 
+                              class="px-2 py-0.2 rounded-full bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200/70 dark:border-indigo-800/60 text-[10px] font-bold"
+                            >
+                              📱 e-Book Digital
+                            </span>
+                            <span 
+                              v-else 
+                              class="px-2 py-0.2 rounded-full bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200/70 dark:border-blue-800/60 text-[10px] font-bold"
+                            >
+                              📘 Buku Fisik • Rak {{ l.shelfCode }}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="py-3 px-4">
+                      <div class="font-semibold text-slate-900 dark:text-slate-100">{{ l.memberName }}</div>
+                      <div class="text-[10px] font-mono text-slate-400 dark:text-slate-400">{{ l.memberCardNumber }}</div>
+                    </td>
+                    <td class="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                      {{ new Date(l.borrowDate).toLocaleDateString('id-ID') }}
+                    </td>
+                    <td class="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                      {{ new Date(l.dueDate).toLocaleDateString('id-ID') }}
+                    </td>
+                    <td class="py-3 px-4 whitespace-nowrap">
+                      <div class="font-bold text-emerald-600 dark:text-emerald-400">
+                        {{ l.returnDate ? new Date(l.returnDate).toLocaleDateString('id-ID') : '-' }}
+                      </div>
+                      <div class="text-[10px] text-slate-400 dark:text-slate-500">
+                        Oleh: {{ l.handledBy || 'Sistem' }}
+                      </div>
+                    </td>
+                    <td class="py-3 px-4 whitespace-nowrap">
+                      <span class="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 font-bold text-[10px] inline-flex items-center gap-1">
+                        <CheckCircle2 class="w-3 h-3" />
+                        <span>Sudah Dikembalikan</span>
+                      </span>
+                    </td>
+                    <td class="py-3 px-4 text-right whitespace-nowrap">
+                      <button 
+                        type="button"
+                        @click="handleDeleteLoanHistory(l)"
+                        class="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 transition cursor-pointer"
+                        title="Hapus log riwayat peminjaman ini"
+                      >
+                        <Trash2 class="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination Controls for Riwayat Peminjaman -->
+            <div v-if="historyTotalPages > 1" class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs">
+              <div class="text-slate-500 dark:text-slate-400">
+                Halaman <strong class="text-slate-800 dark:text-slate-200">{{ historyCurrentPage }}</strong> dari <strong class="text-slate-800 dark:text-slate-200">{{ historyTotalPages }}</strong>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <button 
+                  type="button"
+                  @click="historyCurrentPage = 1" 
+                  :disabled="historyCurrentPage === 1"
+                  class="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-40 cursor-pointer"
+                >
+                  <ChevronsLeft class="w-4 h-4" />
+                </button>
+                <button 
+                  type="button"
+                  @click="historyCurrentPage--" 
+                  :disabled="historyCurrentPage === 1"
+                  class="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-40 cursor-pointer"
+                >
+                  <ChevronLeft class="w-4 h-4" />
+                </button>
+                <button 
+                  type="button"
+                  @click="historyCurrentPage++" 
+                  :disabled="historyCurrentPage === historyTotalPages"
+                  class="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-40 cursor-pointer"
+                >
+                  <ChevronRight class="w-4 h-4" />
+                </button>
+                <button 
+                  type="button"
+                  @click="historyCurrentPage = historyTotalPages" 
+                  :disabled="historyCurrentPage === historyTotalPages"
+                  class="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-40 cursor-pointer"
+                >
+                  <ChevronsRight class="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </template>
         </div>
 
         <!-- Tab 2: Manajemen Booking 24 Jam (Auto Hold & Auto-Cancel) -->
@@ -2638,6 +2888,109 @@
       @close="isShelfModalOpenAdmin = false"
     />
 
+    <!-- Modal Pilihan Menu & Modul Admin -->
+    <div 
+      v-if="isTabMenuModalOpen" 
+      class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200"
+      @click.self="isTabMenuModalOpen = false"
+    >
+      <div class="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90dvh] flex flex-col">
+        <!-- Modal Header -->
+        <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3 bg-slate-50/70 dark:bg-slate-900/90 shrink-0">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-sm shrink-0">
+              <LayoutGrid class="w-5 h-5" />
+            </div>
+            <div class="min-w-0">
+              <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white tracking-tight truncate">
+                Pilih Menu &amp; Modul Admin
+              </h3>
+              <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">
+                Pilih modul manajemen perpustakaan yang ingin ditampilkan
+              </p>
+            </div>
+          </div>
+          <button 
+            type="button"
+            @click="isTabMenuModalOpen = false"
+            aria-label="Tutup menu modul"
+            class="w-8 h-8 rounded-full bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center transition cursor-pointer shrink-0"
+          >
+            <X class="w-4 h-4" />
+          </button>
+        </div>
+
+        <!-- Modal Body: Grid of Menu Items -->
+        <div class="p-4 sm:p-5 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+          <button
+            v-for="tab in adminTabs"
+            :key="tab.id"
+            type="button"
+            @click="activeTab = tab.id; isTabMenuModalOpen = false"
+            class="w-full text-left p-3.5 rounded-2xl border transition-all cursor-pointer flex items-start justify-between gap-3 group active:scale-[0.98]"
+            :class="activeTab === tab.id 
+              ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-slate-900/20' 
+              : 'bg-slate-50/70 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 border-slate-200/80 dark:border-slate-700/70'"
+          >
+            <div class="flex items-start gap-3 min-w-0 flex-1">
+              <div 
+                class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors mt-0.5"
+                :class="activeTab === tab.id 
+                  ? 'bg-white/20 text-white' 
+                  : 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 border border-slate-200/80 dark:border-slate-700'"
+              >
+                <component :is="tab.icon" class="w-4 h-4" />
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="font-bold text-xs sm:text-[13px] leading-snug flex items-center gap-1.5 flex-wrap">
+                  <span>{{ tab.label }}</span>
+                </div>
+                <p 
+                  class="text-[11px] mt-0.5 leading-relaxed line-clamp-2"
+                  :class="activeTab === tab.id ? 'text-blue-100' : 'text-slate-500 dark:text-slate-400'"
+                >
+                  {{ tab.description }}
+                </p>
+              </div>
+            </div>
+
+            <div class="flex flex-col items-end justify-between gap-1.5 shrink-0">
+              <span 
+                v-if="tab.badge !== undefined && tab.badge !== null" 
+                class="px-2 py-0.5 rounded-full text-[10px] font-extrabold font-mono"
+                :class="activeTab === tab.id 
+                  ? 'bg-white text-blue-700' 
+                  : (tab.badge > 0 ? 'bg-blue-100 dark:bg-blue-950/90 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60' : 'bg-slate-200/70 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300')"
+              >
+                {{ tab.badge }}
+              </span>
+              <span 
+                v-if="activeTab === tab.id" 
+                class="text-[10px] font-bold flex items-center gap-0.5 text-white/90"
+              >
+                <Check class="w-3 h-3 stroke-[3]" />
+                <span>Aktif</span>
+              </span>
+            </div>
+          </button>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/90 flex items-center justify-between gap-3 shrink-0">
+          <span class="text-[11px] text-slate-500 dark:text-slate-400">
+            Total {{ adminTabs.length }} modul manajemen tersedia
+          </span>
+          <button 
+            type="button"
+            @click="isTabMenuModalOpen = false"
+            class="px-4 py-2 rounded-full text-xs font-bold bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
+          >
+            Tutup
+          </button>
+        </div>
+      </div>
+    </div>
+
     </div>
   </div>
 </template>
@@ -2662,11 +3015,12 @@ import {
   BookMarked, Clock, AlertTriangle, UserX, Sliders, Send, 
   Plus, Pencil, Trash2, Tag, Users, UserPlus, LogIn, KeyRound, X, Eye, EyeOff, Check, RefreshCw, Database,
   GraduationCap, Laptop, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
-  Layers, GripVertical, RotateCcw, Building2
+  Layers, GripVertical, RotateCcw, Building2, ChevronDown, LayoutGrid, History
 } from 'lucide-vue-next';
 
 const store = useLibraryStore();
 const isDeviceSessionsOpen = ref(false);
+const isTabMenuModalOpen = ref(false);
 const activeTab = ref('loans');
 
 // E-Book Auto-Return Trigger
@@ -2678,6 +3032,7 @@ const triggerAutoReturnEbooks = async () => {
 
 // Model textbox pencarian independen per tab (mencegah search term bocor antar-tab)
 const circulationSearch = ref('');
+const loanHistorySearch = ref('');
 const bookingSearch = ref('');
 const memberSearch = ref('');
 const studentVerificationSearch = ref('');
@@ -2689,12 +3044,13 @@ const categorySearch = ref('');
 const loanSearch = circulationSearch;
 
 const hasSearchForActiveTab = computed(() => {
-  return ['loans', 'bookings', 'members', 'student_verifications', 'teacher_requests', 'books', 'categories'].includes(activeTab.value);
+  return ['loans', 'loan_history', 'bookings', 'members', 'student_verifications', 'teacher_requests', 'books', 'categories'].includes(activeTab.value);
 });
 
 const searchPlaceholder = computed(() => {
   switch (activeTab.value) {
     case 'loans': return 'Cari transaksi sirkulasi / peminjam / judul...';
+    case 'loan_history': return 'Cari riwayat peminjaman / nama / judul buku / ID...';
     case 'bookings': return 'Cari booking aktif / nama / judul...';
     case 'members': return 'Cari anggota / no kartu / email / no HP...';
     case 'student_verifications': return 'Cari verifikasi siswa / NIS / NISN / nama...';
@@ -2709,6 +3065,7 @@ const currentSearchInput = computed({
   get() {
     switch (activeTab.value) {
       case 'loans': return circulationSearch.value;
+      case 'loan_history': return loanHistorySearch.value;
       case 'bookings': return bookingSearch.value;
       case 'members': return memberSearch.value;
       case 'student_verifications': return studentVerificationSearch.value;
@@ -2721,6 +3078,7 @@ const currentSearchInput = computed({
   set(val: string) {
     switch (activeTab.value) {
       case 'loans': circulationSearch.value = val; break;
+      case 'loan_history': loanHistorySearch.value = val; break;
       case 'bookings': bookingSearch.value = val; break;
       case 'members': memberSearch.value = val; break;
       case 'student_verifications': studentVerificationSearch.value = val; break;
@@ -2730,6 +3088,61 @@ const currentSearchInput = computed({
     }
   }
 });
+
+// Riwayat Peminjaman (Buku Fisik & e-Book yang telah dikembalikan)
+const loanHistoryFilter = ref<'all' | 'physical' | 'ebook'>('all');
+const historyCurrentPage = ref(1);
+const historyItemsPerPage = ref(10);
+
+const returnedPhysicalCount = computed(() => store.returnedLoans.filter(l => !l.isEbook).length);
+const returnedEbookCount = computed(() => store.returnedLoans.filter(l => l.isEbook).length);
+
+const filteredLoanHistory = computed(() => {
+  let list = store.returnedLoans;
+  if (loanHistoryFilter.value === 'physical') {
+    list = list.filter(l => !l.isEbook);
+  } else if (loanHistoryFilter.value === 'ebook') {
+    list = list.filter(l => l.isEbook);
+  }
+  if (loanHistorySearch.value.trim()) {
+    const q = loanHistorySearch.value.toLowerCase().trim();
+    list = list.filter(l => 
+      l.id.toLowerCase().includes(q) ||
+      l.bookTitle.toLowerCase().includes(q) ||
+      l.memberName.toLowerCase().includes(q) ||
+      l.memberCardNumber.toLowerCase().includes(q) ||
+      (l.shelfCode && l.shelfCode.toLowerCase().includes(q)) ||
+      (l.handledBy && l.handledBy.toLowerCase().includes(q))
+    );
+  }
+  return list;
+});
+
+const historyTotalPages = computed(() => {
+  return Math.max(1, Math.ceil(filteredLoanHistory.value.length / historyItemsPerPage.value));
+});
+
+const paginatedLoanHistory = computed(() => {
+  const start = (historyCurrentPage.value - 1) * historyItemsPerPage.value;
+  return filteredLoanHistory.value.slice(start, start + historyItemsPerPage.value);
+});
+
+watch([loanHistorySearch, loanHistoryFilter, historyItemsPerPage], () => {
+  historyCurrentPage.value = 1;
+});
+
+const handleDeleteLoanHistory = (loan: Loan) => {
+  openConfirmDialog({
+    title: 'Hapus Riwayat Peminjaman',
+    message: `Apakah Anda yakin ingin menghapus catatan riwayat peminjaman "${loan.bookTitle}" oleh ${loan.memberName} (${loan.id})?`,
+    subMessage: 'Tindakan ini hanya menghapus log arsip riwayat dan tidak memengaruhi stok buku saat ini.',
+    confirmText: 'Ya, Hapus Log',
+    type: 'danger',
+    onConfirm: async () => {
+      await store.deleteLoanHistory(loan.id);
+    }
+  });
+};
 
 // Master Data Buku: Search & Pagination
 const filteredBooks = computed(() => {
@@ -3010,16 +3423,21 @@ const displayedTotalMembers = computed(() => {
 });
 
 const adminTabs = computed(() => [
-  { id: 'loans', label: 'Sirkulasi & Peminjaman Aktif', icon: BookMarked, badge: store.activeLoans.length },
-  { id: 'bookings', label: 'Booking 24h (Hold)', icon: Clock, badge: store.activeHoldBookings.length },
-  { id: 'members', label: 'Kelola Anggota', icon: Users, badge: displayedTotalMembers.value },
-  { id: 'student_verifications', label: 'Verifikasi Siswa', icon: ShieldCheck, badge: store.pendingStudentVerificationsCount },
-  { id: 'teacher_requests', label: 'Verifikasi Guru', icon: GraduationCap, badge: store.pendingTeacherRequestsCount },
-  { id: 'suspends', label: 'Sistem Suspend (1-30 Hari)', icon: Sliders, badge: store.suspendedMembers.length },
-  { id: 'notifications', label: 'Notifikasi Keterlambatan', icon: Send, badge: store.overdueLoans.length },
-  { id: 'books', label: 'Master Data Buku', icon: BookOpen, badge: store.books.length },
-  { id: 'categories', label: 'Pengelolaan Kategori', icon: Tag, badge: store.categories.length },
+  { id: 'loans', label: 'Sirkulasi & Peminjaman Aktif', description: 'Kelola transaksi peminjaman aktif, pengembalian & lewat tempo', icon: BookMarked, badge: store.activeLoans.length },
+  { id: 'loan_history', label: 'Riwayat Peminjaman', description: 'Arsip peminjaman buku fisik & e-Book yang telah dikembalikan', icon: History, badge: store.returnedLoans.length },
+  { id: 'bookings', label: 'Booking 24h (Hold)', description: 'Antrean reservasi buku dengan batas waktu pengambilan 24 jam', icon: Clock, badge: store.activeHoldBookings.length },
+  { id: 'members', label: 'Kelola Anggota', description: 'Data anggota perpustakaan, kartu QR & riwayat keanggotaan', icon: Users, badge: displayedTotalMembers.value },
+  { id: 'student_verifications', label: 'Verifikasi Siswa', description: 'Verifikasi NIS, NISN & swafoto siswa untuk akses e-Book', icon: ShieldCheck, badge: store.pendingStudentVerificationsCount },
+  { id: 'teacher_requests', label: 'Verifikasi Guru', description: 'Tinjau permohonan peningkatan status keanggotaan Guru', icon: GraduationCap, badge: store.pendingTeacherRequestsCount },
+  { id: 'suspends', label: 'Sistem Suspend (1-30 Hari)', description: 'Konfigurasi sanksi otomatis & daftar anggota disuspend', icon: Sliders, badge: store.suspendedMembers.length },
+  { id: 'notifications', label: 'Notifikasi Keterlambatan', description: 'Riwayat pengiriman pengingat & broadcast keterlambatan', icon: Send, badge: store.overdueLoans.length },
+  { id: 'books', label: 'Master Data Buku', description: 'Manajemen koleksi buku fisik, dokumen e-Book & lokasi rak', icon: BookOpen, badge: store.books.length },
+  { id: 'categories', label: 'Pengelolaan Kategori', description: 'Atur kategori koleksi buku & identitas warna label', icon: Tag, badge: store.categories.length },
 ]);
+
+const currentTabObj = computed(() => {
+  return adminTabs.value.find(t => t.id === activeTab.value) || adminTabs.value[0];
+});
 
 const getCategoryColor = (categoryName: string) => {
   const cat = store.categories.find(c => c.name === categoryName);
@@ -3639,5 +4057,6 @@ useModalBack(isRejectStudentModalOpen, () => { closeRejectStudentModal(); }, 'ad
 useModalBack(isApproveStudentModalOpen, () => { closeApproveStudentModal(); }, 'admin_approve_student');
 useModalBack(isSuspendMemberModalOpen, () => { closeSuspendMemberModal(); }, 'admin_suspend_member');
 useModalBack(computed(() => confirmDialog.value.isOpen), () => { closeConfirmDialog(); }, 'admin_confirm_dialog');
+useModalBack(isTabMenuModalOpen, () => { isTabMenuModalOpen.value = false; }, 'admin_tab_menu');
 </script>
 
