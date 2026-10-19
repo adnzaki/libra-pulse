@@ -336,7 +336,8 @@
             <select 
               v-else
               v-model="form.shelfId" 
-              class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500 font-medium"
+              class="w-full min-w-0 max-w-full truncate px-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500 font-medium"
+              style="max-width: 100%; text-overflow: ellipsis;"
             >
               <option v-for="s in sortedShelves" :key="s.id" :value="s.id">
                 [{{ s.code }}] {{ s.name }} (Lantai {{ s.floor }})

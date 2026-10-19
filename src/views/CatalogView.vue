@@ -107,7 +107,7 @@
     </section>
 
     <!-- Filters & Search Toolbar (Bento Card) -->
-    <section class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm space-y-3.5">
+    <section class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm space-y-3.5 max-w-full overflow-hidden">
       
       <!-- Filter Jenis Buku (Semua, Buku Cetak, e-Book) -->
       <div>
@@ -219,33 +219,43 @@
       </div>
 
       <!-- Secondary Filters: Shelf, Availability, and Result Info -->
-      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-slate-100">
-        <div class="flex flex-wrap items-center gap-2 flex-1">
-          <select 
-            v-model="selectedShelfId"
-            class="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-full text-slate-700 text-xs focus:outline-none focus:border-blue-500 font-medium"
-          >
-            <option value="all">Semua Lokasi Rak</option>
-            <option v-for="s in store.sortedShelves" :key="s.id" :value="s.id">
-              {{ s.code }} - Lantai {{ s.floor }} ({{ s.zone }})
-            </option>
-          </select>
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 min-w-0 max-w-full">
+        <div class="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2 flex-1 min-w-0 max-w-full">
+          <!-- Dropdown Lokasi Rak (Responsive 100% on mobile, never exceeds screen) -->
+          <div class="relative w-full sm:w-auto min-w-0 max-w-full">
+            <select 
+              v-model="selectedShelfId"
+              class="w-full sm:w-auto min-w-0 max-w-full truncate px-3.5 py-2.5 sm:py-2 bg-slate-50 hover:bg-slate-100/90 active:bg-slate-100 border border-slate-200 rounded-2xl sm:rounded-full text-slate-700 text-xs focus:outline-none focus:border-blue-500 font-medium cursor-pointer transition shadow-2xs"
+              style="max-width: 100%; text-overflow: ellipsis;"
+              title="Filter Berdasarkan Lokasi Rak Perpustakaan"
+            >
+              <option value="all">Semua Lokasi Rak</option>
+              <option v-for="s in store.sortedShelves" :key="s.id" :value="s.id">
+                {{ s.code }} • Lt. {{ s.floor }} ({{ s.zone }})
+              </option>
+            </select>
+          </div>
 
-          <select 
-            v-model="availabilityFilter"
-            class="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-full text-slate-700 text-xs focus:outline-none focus:border-blue-500 font-medium"
-          >
-            <option value="all">Semua Status Ketersediaan</option>
-            <option value="available">Hanya Buku Tersedia</option>
-          </select>
+          <!-- Dropdown Status Ketersediaan -->
+          <div class="relative w-full sm:w-auto min-w-0 max-w-full">
+            <select 
+              v-model="availabilityFilter"
+              class="w-full sm:w-auto min-w-0 max-w-full truncate px-3.5 py-2.5 sm:py-2 bg-slate-50 hover:bg-slate-100/90 active:bg-slate-100 border border-slate-200 rounded-2xl sm:rounded-full text-slate-700 text-xs focus:outline-none focus:border-blue-500 font-medium cursor-pointer transition shadow-2xs"
+              style="max-width: 100%; text-overflow: ellipsis;"
+              title="Filter Status Ketersediaan"
+            >
+              <option value="all">Semua Status Ketersediaan</option>
+              <option value="available">Hanya Buku Tersedia</option>
+            </select>
+          </div>
         </div>
 
-        <div class="flex items-center justify-between sm:justify-end gap-3 text-[11px] sm:text-xs text-slate-400">
-          <span>Menampilkan <strong class="text-slate-800">{{ filteredBooks.length }}</strong> buku (Hal {{ currentPage }}/{{ totalPages }})</span>
+        <div class="flex items-center justify-between sm:justify-end gap-3 text-[11px] sm:text-xs text-slate-400 shrink-0">
+          <span class="truncate">Menampilkan <strong class="text-slate-800">{{ filteredBooks.length }}</strong> buku (Hal {{ currentPage }}/{{ totalPages }})</span>
           <button 
             v-if="selectedCategory !== 'all' || selectedShelfId !== 'all' || availabilityFilter !== 'all' || bookTypeFilter !== 'all' || searchQuery"
             @click="resetFilters" 
-            class="text-blue-600 font-bold underline hover:text-blue-700 cursor-pointer"
+            class="text-blue-600 font-bold underline hover:text-blue-700 cursor-pointer shrink-0 whitespace-nowrap"
           >
             Reset Filter
           </button>
