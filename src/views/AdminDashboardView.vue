@@ -269,32 +269,82 @@
     <!-- MAIN INTERACTIVE BENTO CARD: Tabs & Circulation Tables -->
     <div class="bg-white dark:bg-slate-900/80 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
       
-      <!-- Bento Tab Bar (Single Menu Button + Real-time Search) -->
-      <div class="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3.5 bg-slate-50/60 dark:bg-slate-900/90">
+      <!-- Bento Tab Bar (Standalone Primary Tabs + Pilihan Menu Button + Search) -->
+      <div class="px-3 sm:px-6 py-3 sm:py-3.5 border-b border-slate-100 dark:border-slate-800 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-slate-50/60 dark:bg-slate-900/90">
         
-        <!-- Single Button Triggering Admin Menu Modal -->
-        <div class="flex items-center gap-2.5 flex-1 min-w-0">
+        <!-- Standalone Primary Tabs + Pilihan Menu Button -->
+        <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5 min-w-0">
+          
+          <!-- Standalone Tab 1: Master Data Buku, Tab 2: Sirkulasi & Peminjaman Aktif, Tab 3: Booking 24h -->
+          <button
+            v-for="tab in primaryTabs"
+            :key="tab.id"
+            type="button"
+            @click="activeTab = tab.id"
+            class="px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 active:scale-95 whitespace-nowrap select-none border"
+            :class="activeTab === tab.id
+              ? 'bg-slate-900 dark:bg-blue-600 text-white border-transparent shadow-sm'
+              : 'bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/80 border-slate-200/90 dark:border-slate-700/80'"
+          >
+            <component 
+              :is="tab.icon" 
+              class="w-4 h-4 shrink-0"
+              :class="activeTab === tab.id ? 'text-blue-300 dark:text-white' : 'text-slate-500 dark:text-slate-400'"
+            />
+            <span class="hidden sm:inline">{{ tab.label }}</span>
+            <span class="sm:hidden">{{ tab.shortLabel || tab.label }}</span>
+            <span 
+              v-if="tab.badge !== undefined && tab.badge !== null" 
+              class="px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-extrabold font-mono shrink-0"
+              :class="activeTab === tab.id
+                ? 'bg-white/20 text-white'
+                : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'"
+            >
+              {{ tab.badge }}
+            </span>
+          </button>
+
+          <!-- Pilihan Menu Trigger for Remaining Modules -->
           <button 
             type="button"
             @click="isTabMenuModalOpen = true"
-            class="w-full sm:w-auto px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center justify-between sm:justify-start gap-3 bg-slate-900 hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-700 text-white shadow-sm active:scale-95"
+            class="px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 active:scale-95 whitespace-nowrap select-none border"
+            :class="isOtherTabActive
+              ? 'bg-slate-900 dark:bg-blue-600 text-white border-transparent shadow-sm'
+              : 'bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/80 border-slate-200/90 dark:border-slate-700/80'"
+            :title="isOtherTabActive ? 'Menu Aktif: ' + activeOtherTab?.label : 'Pilih menu modul lainnya'"
           >
-            <div class="flex items-center gap-2 min-w-0">
-              <component :is="currentTabObj.icon" class="w-4 h-4 shrink-0 text-blue-300 dark:text-white" />
-              <span class="truncate">{{ currentTabObj.label }}</span>
+            <!-- When an otherTab is active, show its icon, label, and dropdown icon -->
+            <template v-if="isOtherTabActive && activeOtherTab">
+              <component :is="activeOtherTab.icon" class="w-4 h-4 shrink-0 text-blue-300 dark:text-white" />
+              <span class="max-w-[130px] sm:max-w-none truncate">{{ activeOtherTab.label }}</span>
               <span 
-                v-if="currentTabObj.badge !== undefined && currentTabObj.badge !== null" 
-                class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-500/30 dark:bg-white/20 text-white shrink-0 font-mono"
+                v-if="activeOtherTab.badge !== undefined && activeOtherTab.badge !== null" 
+                class="px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-extrabold font-mono bg-white/20 text-white shrink-0"
               >
-                {{ currentTabObj.badge }}
+                {{ activeOtherTab.badge }}
               </span>
-            </div>
-            <div class="flex items-center gap-1.5 pl-2.5 border-l border-white/20 shrink-0 text-[11px] font-semibold text-slate-200 dark:text-blue-100">
-              <LayoutGrid class="w-3.5 h-3.5" />
-              <span>Pilih Menu</span>
-              <ChevronDown class="w-3.5 h-3.5" />
-            </div>
+              <div class="flex items-center gap-1 pl-1.5 border-l border-white/25 text-[11px] font-semibold text-slate-200 dark:text-blue-100">
+                <LayoutGrid class="w-3.5 h-3.5" />
+                <ChevronDown class="w-3.5 h-3.5" />
+              </div>
+            </template>
+
+            <!-- When a primary tab is active -->
+            <template v-else>
+              <LayoutGrid class="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+              <span>Pilihan Menu</span>
+              <span 
+                v-if="otherTabsPendingCount > 0" 
+                class="px-1.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500 text-white font-mono shrink-0 animate-pulse"
+                title="Ada item tertunda"
+              >
+                {{ otherTabsPendingCount }}
+              </span>
+              <ChevronDown class="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            </template>
           </button>
+
         </div>
 
         <!-- Real-time Search Input with Tab-Specific Models -->
@@ -2903,10 +2953,10 @@
             </div>
             <div class="min-w-0">
               <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white tracking-tight truncate">
-                Pilih Menu &amp; Modul Admin
+                Pilihan Menu Modul Admin
               </h3>
               <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">
-                Pilih modul manajemen perpustakaan yang ingin ditampilkan
+                Pilih modul manajemen perpustakaan lainnya yang ingin dikelola
               </p>
             </div>
           </div>
@@ -2923,7 +2973,7 @@
         <!-- Modal Body: Grid of Menu Items -->
         <div class="p-4 sm:p-5 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
           <button
-            v-for="tab in adminTabs"
+            v-for="tab in otherTabs"
             :key="tab.id"
             type="button"
             @click="activeTab = tab.id; isTabMenuModalOpen = false"
@@ -2978,7 +3028,7 @@
         <!-- Modal Footer -->
         <div class="px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/90 flex items-center justify-between gap-3 shrink-0">
           <span class="text-[11px] text-slate-500 dark:text-slate-400">
-            Total {{ adminTabs.length }} modul manajemen tersedia
+            Total {{ otherTabs.length }} modul manajemen lainnya tersedia
           </span>
           <button 
             type="button"
@@ -3021,7 +3071,7 @@ import {
 const store = useLibraryStore();
 const isDeviceSessionsOpen = ref(false);
 const isTabMenuModalOpen = ref(false);
-const activeTab = ref('loans');
+const activeTab = ref('books');
 
 // E-Book Auto-Return Trigger
 const isProcessingEbookAutoReturn = computed(() => store.isProcessingEbookAutoReturn);
@@ -3422,21 +3472,66 @@ const displayedTotalMembers = computed(() => {
   return store.members.filter(m => !isSuperAdminAccount(m)).length;
 });
 
-const adminTabs = computed(() => [
-  { id: 'loans', label: 'Sirkulasi & Peminjaman Aktif', description: 'Kelola transaksi peminjaman aktif, pengembalian & lewat tempo', icon: BookMarked, badge: store.activeLoans.length },
+// Tab Utama Mandiri di Luar Pilihan Menu (Master Data Buku, Sirkulasi Peminjaman Aktif, Booking 24h)
+const primaryTabs = computed(() => [
+  { 
+    id: 'books', 
+    label: 'Master Data Buku', 
+    shortLabel: 'Master Buku', 
+    description: 'Manajemen koleksi buku fisik, dokumen e-Book & lokasi rak', 
+    icon: BookOpen, 
+    badge: store.books.length 
+  },
+  { 
+    id: 'loans', 
+    label: 'Sirkulasi & Peminjaman Aktif', 
+    shortLabel: 'Peminjaman Aktif', 
+    description: 'Kelola transaksi peminjaman aktif, pengembalian & lewat tempo', 
+    icon: BookMarked, 
+    badge: store.activeLoans.length 
+  },
+  { 
+    id: 'bookings', 
+    label: 'Booking 24h (Hold)', 
+    shortLabel: 'Booking 24h', 
+    description: 'Antrean reservasi buku dengan batas waktu pengambilan 24 jam', 
+    icon: Clock, 
+    badge: store.activeHoldBookings.length 
+  },
+]);
+
+// Menu Modul Lainnya yang ada di dalam modal 'Pilihan Menu'
+const otherTabs = computed(() => [
   { id: 'loan_history', label: 'Riwayat Peminjaman', description: 'Arsip peminjaman buku fisik & e-Book yang telah dikembalikan', icon: History, badge: store.returnedLoans.length },
-  { id: 'bookings', label: 'Booking 24h (Hold)', description: 'Antrean reservasi buku dengan batas waktu pengambilan 24 jam', icon: Clock, badge: store.activeHoldBookings.length },
   { id: 'members', label: 'Kelola Anggota', description: 'Data anggota perpustakaan, kartu QR & riwayat keanggotaan', icon: Users, badge: displayedTotalMembers.value },
   { id: 'student_verifications', label: 'Verifikasi Siswa', description: 'Verifikasi NIS, NISN & swafoto siswa untuk akses e-Book', icon: ShieldCheck, badge: store.pendingStudentVerificationsCount },
   { id: 'teacher_requests', label: 'Verifikasi Guru', description: 'Tinjau permohonan peningkatan status keanggotaan Guru', icon: GraduationCap, badge: store.pendingTeacherRequestsCount },
   { id: 'suspends', label: 'Sistem Suspend (1-30 Hari)', description: 'Konfigurasi sanksi otomatis & daftar anggota disuspend', icon: Sliders, badge: store.suspendedMembers.length },
   { id: 'notifications', label: 'Notifikasi Keterlambatan', description: 'Riwayat pengiriman pengingat & broadcast keterlambatan', icon: Send, badge: store.overdueLoans.length },
-  { id: 'books', label: 'Master Data Buku', description: 'Manajemen koleksi buku fisik, dokumen e-Book & lokasi rak', icon: BookOpen, badge: store.books.length },
   { id: 'categories', label: 'Pengelolaan Kategori', description: 'Atur kategori koleksi buku & identitas warna label', icon: Tag, badge: store.categories.length },
 ]);
 
+const adminTabs = computed(() => [
+  ...primaryTabs.value,
+  ...otherTabs.value,
+]);
+
+const isOtherTabActive = computed(() => {
+  return otherTabs.value.some(t => t.id === activeTab.value);
+});
+
+const activeOtherTab = computed(() => {
+  return otherTabs.value.find(t => t.id === activeTab.value);
+});
+
+const otherTabsPendingCount = computed(() => {
+  return (store.pendingStudentVerificationsCount || 0) + 
+         (store.pendingTeacherRequestsCount || 0) + 
+         (store.overdueLoans.length || 0);
+});
+
 const currentTabObj = computed(() => {
-  return adminTabs.value.find(t => t.id === activeTab.value) || adminTabs.value[0];
+  return adminTabs.value.find(t => t.id === activeTab.value) || primaryTabs.value[0];
 });
 
 const getCategoryColor = (categoryName: string) => {
