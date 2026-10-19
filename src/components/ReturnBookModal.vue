@@ -29,19 +29,13 @@
         <!-- Loan Selection if not preselected -->
         <div v-if="!selectedLoan">
           <label class="block text-xs font-bold text-slate-700 mb-1.5">Pilih Peminjaman Aktif untuk Dikembalikan</label>
-          <select 
+          <CustomSelect 
             v-model="chosenLoanId"
-            class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 text-xs focus:outline-none focus:border-blue-500 font-medium"
-          >
-            <option value="">-- Pilih Buku & Peminjam --</option>
-            <option 
-              v-for="l in store.activeLoans" 
-              :key="l.id" 
-              :value="l.id"
-            >
-              [{{ l.id }}] {{ l.bookTitle }} • {{ l.memberName }} ({{ l.status === 'overdue' ? '⚠️ TERLAMBAT' : 'Aktif' }})
-            </option>
-          </select>
+            :options="activeLoanOptions"
+            placeholder="Pilih dari daftar peminjaman aktif..."
+            searchable
+            search-placeholder="Cari judul buku atau nama peminjam..."
+          />
         </div>
 
         <!-- Selected Loan Details -->
@@ -110,6 +104,7 @@
 import { ref, computed, watch, toRef } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import type { Loan } from '../types.js';
+import CustomSelect from './CustomSelect.vue';
 import { CheckCircle2, CheckCircle, X } from 'lucide-vue-next';
 import confetti from 'canvas-confetti';
 import { useModalBack } from '../composables/useModalBack.js';
@@ -126,6 +121,16 @@ useModalBack(toRef(props, 'isOpen'), () => emit('close'), 'return_book_modal');
 const store = useLibraryStore();
 const chosenLoanId = ref('');
 const isSubmitting = ref(false);
+
+const activeLoanOptions = computed(() => [
+  { value: '', label: '-- Pilih Buku & Peminjam --' },
+  ...store.activeLoans.map(l => ({
+    value: l.id,
+    label: `${l.bookTitle} • ${l.memberName}`,
+    sublabel: `Kode Pinjam: ${l.id}`,
+    badge: l.status === 'overdue' ? 'TERLAMBAT' : 'Aktif'
+  }))
+]);
 
 watch(() => props.selectedLoan, (val) => {
   if (val) chosenLoanId.value = val.id;

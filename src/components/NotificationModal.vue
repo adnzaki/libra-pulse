@@ -29,16 +29,14 @@
         <!-- Target Selection -->
         <div>
           <label class="block font-bold text-slate-700 dark:text-slate-200 mb-1.5">Pilih Anggota Terlambat</label>
-          <select 
+          <CustomSelect 
             v-model="selectedLoanId" 
+            :options="overdueLoanOptions"
+            placeholder="Pilih dari daftar peminjaman terlambat..."
+            searchable
+            search-placeholder="Cari nama anggota atau judul buku..."
             @change="autoPopulateTemplate"
-            class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-2xl text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:border-blue-500 font-medium"
-          >
-            <option value="">-- Pilih dari Peminjaman Overdue --</option>
-            <option v-for="l in store.overdueLoans" :key="l.id" :value="l.id">
-              {{ l.memberName }} • "{{ l.bookTitle }}" (Telat {{ l.daysOverdue }} Hari)
-            </option>
-          </select>
+          />
         </div>
 
         <!-- Recipient & Subject -->
@@ -178,6 +176,7 @@
 import { ref, watch, computed, toRef } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import type { Loan } from '../types.js';
+import CustomSelect from './CustomSelect.vue';
 import { Mail, Sparkles, Send, X, ExternalLink, MessageSquare, Copy, Check, Share2 } from 'lucide-vue-next';
 import { useModalBack } from '../composables/useModalBack.js';
 
@@ -197,6 +196,16 @@ const subject = ref('');
 const message = ref('');
 const isSending = ref(false);
 const copied = ref(false);
+
+const overdueLoanOptions = computed(() => [
+  { value: '', label: '-- Pilih dari Peminjaman Overdue --' },
+  ...store.overdueLoans.map(l => ({
+    value: l.id,
+    label: `${l.memberName} • "${l.bookTitle}"`,
+    sublabel: `ID: ${l.id} • Jatuh tempo: ${new Date(l.dueDate).toLocaleDateString('id-ID')}`,
+    badge: `Telat ${l.daysOverdue} Hari`
+  }))
+]);
 
 watch(() => props.preselectedLoan, (val) => {
   if (val) {

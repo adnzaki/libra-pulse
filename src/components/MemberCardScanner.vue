@@ -161,16 +161,17 @@
               <span class="text-slate-400">dari</span>
               <span class="font-bold text-slate-700">{{ matchedMembers.length }}</span>
               <span class="text-slate-400">anggota</span>
-              <div class="flex items-center gap-1 pl-2 border-l border-slate-200">
+              <div class="flex items-center gap-1.5 pl-2 border-l border-slate-200">
                 <span class="text-[10px] text-slate-400">Per hal:</span>
-                <select 
-                  v-model="itemsPerPage"
-                  class="bg-slate-100 border border-slate-200 rounded-md px-1.5 py-0.5 text-[10px] text-slate-700 font-bold focus:outline-none focus:border-blue-500 cursor-pointer"
-                >
-                  <option :value="10">10</option>
-                  <option :value="20">20</option>
-                  <option :value="50">50</option>
-                </select>
+                <div class="w-20">
+                  <CustomSelect 
+                    v-model="itemsPerPage"
+                    :options="perPageOptions"
+                    variant="compact"
+                    size="sm"
+                    placement="top"
+                  />
+                </div>
               </div>
             </div>
 
@@ -288,6 +289,7 @@
 import { ref, computed, watch, onBeforeUnmount } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import { Html5Qrcode } from 'html5-qrcode';
+import CustomSelect from './CustomSelect.vue';
 import { 
   QrCode, Camera, Keyboard, Sparkles, Scan, 
   AlertTriangle, UserCheck, Search, X,
@@ -297,6 +299,11 @@ import {
 const emit = defineEmits(['selected']);
 
 const store = useLibraryStore();
+const perPageOptions = [
+  { value: 10, label: '10' },
+  { value: 20, label: '20' },
+  { value: 50, label: '50' }
+];
 const mode = ref<'manual' | 'camera'>('manual');
 const inputCardNumber = ref('');
 const memberSearchQuery = ref('');

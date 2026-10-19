@@ -514,14 +514,16 @@
             </div>
 
             <div class="flex items-center gap-2">
-              <span class="text-slate-400 font-medium">Ukuran:</span>
-              <select 
-                v-model="cardPrintSize" 
-                class="px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-slate-200 text-xs font-semibold focus:outline-none focus:border-blue-500"
-              >
-                <option value="cr80">Standar ID Card (8.56 × 5.4 cm)</option>
-                <option value="large">Landscape Besar (13 × 8.2 cm)</option>
-              </select>
+              <span class="text-slate-400 font-medium shrink-0">Ukuran:</span>
+              <div class="w-full sm:w-64">
+                <CustomSelect 
+                  v-model="cardPrintSize" 
+                  :options="cardSizeOptions"
+                  variant="dark"
+                  size="sm"
+                  placement="top"
+                />
+              </div>
             </div>
           </div>
 
@@ -564,6 +566,7 @@ import type { Member } from '../types.js';
 import QRCode from 'qrcode';
 import { renderMemberCardToCanvas } from '../utils/memberCardRenderer.js';
 import MemberCardScanner from '../components/MemberCardScanner.vue';
+import CustomSelect from '../components/CustomSelect.vue';
 import { 
   QrCode, BookOpen, AlertTriangle, Copy, Printer, 
   CreditCard, LogIn, UserPlus, Download, X, Moon, Sun, Loader2, Award,
@@ -572,6 +575,10 @@ import {
 import { useModalBack } from '../composables/useModalBack.js';
 
 const store = useLibraryStore();
+const cardSizeOptions = [
+  { value: 'cr80', label: 'Standar ID Card (8.56 × 5.4 cm)', badge: 'CR-80' },
+  { value: 'large', label: 'Landscape Besar (13 × 8.2 cm)', badge: 'Besar' }
+];
 const selectedMemberId = ref('');
 const adminSearchQuery = ref('');
 const isAdminSearchOpen = ref(false);

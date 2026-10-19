@@ -107,7 +107,7 @@
     </section>
 
     <!-- Filters & Search Toolbar (Bento Card) -->
-    <section class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm space-y-3.5 max-w-full overflow-hidden">
+    <section class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm space-y-3.5 max-w-full relative z-20">
       
       <!-- Filter Jenis Buku (Semua, Buku Cetak, e-Book) -->
       <div>
@@ -221,32 +221,26 @@
       <!-- Secondary Filters: Shelf, Availability, and Result Info -->
       <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 min-w-0 max-w-full">
         <div class="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2 flex-1 min-w-0 max-w-full">
-          <!-- Dropdown Lokasi Rak (Responsive 100% on mobile, never exceeds screen) -->
-          <div class="relative w-full sm:w-auto min-w-0 max-w-full">
-            <select 
+          <!-- Dropdown Lokasi Rak (Custom Select) -->
+          <div class="w-full sm:w-auto sm:min-w-[210px] max-w-full">
+            <CustomSelect 
               v-model="selectedShelfId"
-              class="w-full sm:w-auto min-w-0 max-w-full truncate px-3.5 py-2.5 sm:py-2 bg-slate-50 hover:bg-slate-100/90 active:bg-slate-100 border border-slate-200 rounded-2xl sm:rounded-full text-slate-700 text-xs focus:outline-none focus:border-blue-500 font-medium cursor-pointer transition shadow-2xs"
-              style="max-width: 100%; text-overflow: ellipsis;"
-              title="Filter Berdasarkan Lokasi Rak Perpustakaan"
-            >
-              <option value="all">Semua Lokasi Rak</option>
-              <option v-for="s in store.sortedShelves" :key="s.id" :value="s.id">
-                {{ s.code }} • Lt. {{ s.floor }} ({{ s.zone }})
-              </option>
-            </select>
+              :options="shelfOptions"
+              variant="pill"
+              placeholder="Semua Lokasi Rak"
+              searchable
+              search-placeholder="Cari kode rak, lantai, zona..."
+            />
           </div>
 
-          <!-- Dropdown Status Ketersediaan -->
-          <div class="relative w-full sm:w-auto min-w-0 max-w-full">
-            <select 
+          <!-- Dropdown Status Ketersediaan (Custom Select) -->
+          <div class="w-full sm:w-auto sm:min-w-[190px] max-w-full">
+            <CustomSelect 
               v-model="availabilityFilter"
-              class="w-full sm:w-auto min-w-0 max-w-full truncate px-3.5 py-2.5 sm:py-2 bg-slate-50 hover:bg-slate-100/90 active:bg-slate-100 border border-slate-200 rounded-2xl sm:rounded-full text-slate-700 text-xs focus:outline-none focus:border-blue-500 font-medium cursor-pointer transition shadow-2xs"
-              style="max-width: 100%; text-overflow: ellipsis;"
-              title="Filter Status Ketersediaan"
-            >
-              <option value="all">Semua Status Ketersediaan</option>
-              <option value="available">Hanya Buku Tersedia</option>
-            </select>
+              :options="availabilityOptions"
+              variant="pill"
+              placeholder="Status Ketersediaan"
+            />
           </div>
         </div>
 
@@ -264,7 +258,7 @@
     </section>
 
     <!-- Books Grid (Optimized 2-columns on mobile, 4-columns on desktop) -->
-    <section id="catalog-books-section">
+    <section id="catalog-books-section" class="relative z-0">
       <div v-if="filteredBooks.length > 0" class="space-y-4">
         <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
           <div 
@@ -380,15 +374,15 @@
             </span>
             <div class="flex items-center gap-1.5 pl-3 border-l border-slate-200">
               <span class="text-slate-400">Baris:</span>
-              <select 
-                v-model="itemsPerPage"
-                class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-700 font-bold focus:outline-none focus:border-blue-500 cursor-pointer"
-              >
-                <option :value="8">8</option>
-                <option :value="12">12</option>
-                <option :value="24">24</option>
-                <option :value="48">48</option>
-              </select>
+              <div class="w-24">
+                <CustomSelect 
+                  v-model="itemsPerPage"
+                  :options="itemsPerPageOptions"
+                  variant="compact"
+                  size="sm"
+                  placement="top"
+                />
+              </div>
             </div>
           </div>
 
@@ -607,6 +601,7 @@ import { useLibraryStore } from '../stores/library.js';
 import type { Book, Loan } from '../types.js';
 import BookingModal from '../components/BookingModal.vue';
 import BookDetailModal from '../components/BookDetailModal.vue';
+import CustomSelect from '../components/CustomSelect.vue';
 import { useModalBack } from '../composables/useModalBack.js';
 import { 
   Search, QrCode, Sparkles, CheckCircle2, Clock, 
@@ -623,6 +618,28 @@ const selectedCategory = ref('all');
 const selectedShelfId = ref('all');
 const availabilityFilter = ref('all');
 const bookTypeFilter = ref<'all' | 'physical' | 'ebook'>('all');
+
+const shelfOptions = computed(() => [
+  { value: 'all', label: 'Semua Lokasi Rak' },
+  ...store.sortedShelves.map(s => ({
+    value: s.id,
+    label: `${s.code} • Lt. ${s.floor} (${s.zone})`,
+    sublabel: s.name,
+    badge: `Lt ${s.floor}`
+  }))
+]);
+
+const availabilityOptions = [
+  { value: 'all', label: 'Semua Status Ketersediaan' },
+  { value: 'available', label: 'Hanya Buku Tersedia' }
+];
+
+const itemsPerPageOptions = [
+  { value: 8, label: '8 / hal' },
+  { value: 12, label: '12 / hal' },
+  { value: 24, label: '24 / hal' },
+  { value: 48, label: '48 / hal' }
+];
 
 // Category Selection Modal State
 const isCategoryModalOpen = ref(false);

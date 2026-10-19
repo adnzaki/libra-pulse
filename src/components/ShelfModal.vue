@@ -39,14 +39,11 @@
           </div>
           <div>
             <label class="block font-bold text-slate-700 mb-1">Lantai Gedung</label>
-            <select 
-              v-model.number="form.floor" 
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
-            >
-              <option :value="1">Lantai 1</option>
-              <option :value="2">Lantai 2</option>
-              <option :value="3">Lantai 3</option>
-            </select>
+            <CustomSelect 
+              v-model="form.floor"
+              :options="floorOptions"
+              placeholder="Pilih Lantai..."
+            />
           </div>
         </div>
 
@@ -73,14 +70,13 @@
           </div>
           <div>
             <label class="block font-bold text-slate-700 mb-1">Kategori Buku Dominan</label>
-            <select 
-              v-model="form.category" 
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 focus:outline-none focus:border-blue-500 font-medium truncate"
-            >
-              <option v-for="c in store.categories" :key="c.id" :value="c.name">
-                {{ c.name }}
-              </option>
-            </select>
+            <CustomSelect 
+              v-model="form.category"
+              :options="categoryOptions"
+              placeholder="Pilih Kategori..."
+              searchable
+              search-placeholder="Cari kategori..."
+            />
           </div>
         </div>
 
@@ -155,9 +151,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, toRef } from 'vue';
+import { ref, computed, watch, toRef } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import type { Shelf } from '../types.js';
+import CustomSelect from './CustomSelect.vue';
 import { Layers, X, Save } from 'lucide-vue-next';
 import { useModalBack } from '../composables/useModalBack.js';
 
@@ -170,6 +167,19 @@ const emit = defineEmits(['close', 'saved']);
 
 const store = useLibraryStore();
 const isSubmitting = ref(false);
+
+const floorOptions = [
+  { value: 1, label: 'Lantai 1' },
+  { value: 2, label: 'Lantai 2' },
+  { value: 3, label: 'Lantai 3' }
+];
+
+const categoryOptions = computed(() => {
+  return store.categories.map(c => ({
+    value: c.name,
+    label: c.name
+  }));
+});
 
 useModalBack(toRef(props, 'isOpen'), () => emit('close'), 'shelf_modal');
 

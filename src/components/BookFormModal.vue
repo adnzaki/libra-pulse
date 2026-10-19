@@ -306,14 +306,13 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label class="block font-bold text-slate-700 dark:text-slate-200 mb-1">Kategori Buku *</label>
-            <select 
+            <CustomSelect 
               v-model="form.category" 
-              class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500 font-medium"
-            >
-              <option v-for="c in store.categories" :key="c.id" :value="c.name">
-                {{ c.name }}
-              </option>
-            </select>
+              :options="categoryOptions"
+              placeholder="Pilih Kategori..."
+              searchable
+              search-placeholder="Cari kategori..."
+            />
           </div>
           <div>
             <label class="block font-bold text-slate-700 dark:text-slate-200 mb-1">
@@ -333,16 +332,14 @@
               </span>
             </div>
             <!-- Untuk buku cetak fisik, pilih rak perpustakaan -->
-            <select 
+            <CustomSelect 
               v-else
               v-model="form.shelfId" 
-              class="w-full min-w-0 max-w-full truncate px-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500 font-medium"
-              style="max-width: 100%; text-overflow: ellipsis;"
-            >
-              <option v-for="s in sortedShelves" :key="s.id" :value="s.id">
-                [{{ s.code }}] {{ s.name }} (Lantai {{ s.floor }})
-              </option>
-            </select>
+              :options="shelfOptions"
+              placeholder="Pilih Rak Fisik..."
+              searchable
+              search-placeholder="Cari kode rak / lantai..."
+            />
           </div>
         </div>
 
@@ -422,6 +419,7 @@ import { ref, watch, toRef, computed } from 'vue';
 import axios from 'axios';
 import { useLibraryStore } from '../stores/library.js';
 import type { Book } from '../types.js';
+import CustomSelect from './CustomSelect.vue';
 import { useModalBack } from '../composables/useModalBack.js';
 import { 
   BookMarked, 
@@ -454,6 +452,23 @@ useModalBack(toRef(props, 'isOpen'), handleClose, 'book_form_modal');
 
 const store = useLibraryStore();
 const sortedShelves = computed(() => store.sortedShelves || store.shelves);
+
+const categoryOptions = computed(() => {
+  return store.categories.map(c => ({
+    value: c.name,
+    label: c.name
+  }));
+});
+
+const shelfOptions = computed(() => {
+  return sortedShelves.value.map(s => ({
+    value: s.id,
+    label: `[${s.code}] ${s.name}`,
+    sublabel: `Lantai ${s.floor} • ${s.zone}`,
+    badge: `Lt ${s.floor}`
+  }));
+});
+
 const isSubmitting = ref(false);
 const isUploading = ref(false);
 const isDragging = ref(false);

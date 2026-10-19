@@ -1925,14 +1925,15 @@
                 </span>
                 <div class="flex items-center gap-1 pl-2 border-l border-slate-200 dark:border-slate-700">
                   <span class="text-slate-400">Baris:</span>
-                  <select 
-                    v-model="bookItemsPerPage"
-                    class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-700 dark:text-slate-200 font-medium focus:outline-none focus:border-blue-500"
-                  >
-                    <option :value="10">10</option>
-                    <option :value="25">25</option>
-                    <option :value="50">50</option>
-                  </select>
+                  <div class="w-24">
+                    <CustomSelect 
+                      v-model="bookItemsPerPage"
+                      :options="bookPaginationOptions"
+                      variant="compact"
+                      size="sm"
+                      placement="top"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -3059,6 +3060,7 @@ import ChangePasswordModal from '../components/ChangePasswordModal.vue';
 import CollectBookingModal from '../components/CollectBookingModal.vue';
 import DeviceSessionsModal from '../components/DeviceSessionsModal.vue';
 import ShelfModal from '../components/ShelfModal.vue';
+import CustomSelect from '../components/CustomSelect.vue';
 import { useModalBack } from '../composables/useModalBack.js';
 import { 
   ShieldCheck, BookPlus, CheckCircle2, BookOpen, CheckCircle, 
@@ -3072,6 +3074,12 @@ const store = useLibraryStore();
 const isDeviceSessionsOpen = ref(false);
 const isTabMenuModalOpen = ref(false);
 const activeTab = ref('books');
+
+const bookPaginationOptions = [
+  { value: 10, label: '10 / baris' },
+  { value: 25, label: '25 / baris' },
+  { value: 50, label: '50 / baris' }
+];
 
 // E-Book Auto-Return Trigger
 const isProcessingEbookAutoReturn = computed(() => store.isProcessingEbookAutoReturn);
