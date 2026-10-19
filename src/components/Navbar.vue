@@ -190,20 +190,12 @@
                 <!-- Admin Controls if Admin -->
                 <div v-if="store.isAdmin" class="p-1 space-y-1">
                   <router-link 
-                    to="/admin" 
-                    class="w-full text-left px-3.5 py-2 rounded-xl flex items-center gap-2.5 font-semibold transition"
-                    :class="store.currentTheme === 'light' ? 'text-blue-700 hover:bg-blue-50' : 'text-blue-300 hover:bg-slate-800'"
-                  >
-                    <ShieldCheck class="w-4 h-4 text-blue-500" />
-                    Admin Console Hub
-                  </router-link>
-                  <router-link 
-                    to="/shelves" 
-                    class="w-full text-left px-3.5 py-2 rounded-xl flex items-center gap-2.5 transition"
+                    to="/member-portal" 
+                    class="w-full text-left px-3.5 py-2 rounded-xl flex items-center gap-2.5 transition font-semibold"
                     :class="store.currentTheme === 'light' ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-200 hover:bg-slate-800'"
                   >
-                    <Layers class="w-4 h-4" :class="store.currentTheme === 'light' ? 'text-slate-500' : 'text-slate-400'" />
-                    Kelola Rak & Koleksi
+                    <UserCheck class="w-4 h-4 text-emerald-500" />
+                    <span>Portal Pinjaman Saya</span>
                   </router-link>
                   <router-link 
                     v-if="store.isSuperAdmin"
@@ -212,7 +204,7 @@
                     :class="store.currentTheme === 'light' ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-200 hover:bg-slate-800'"
                   >
                     <Settings class="w-4 h-4" :class="store.currentTheme === 'light' ? 'text-slate-500' : 'text-slate-400'" />
-                    Pengaturan & Database
+                    <span>Pengaturan & Database</span>
                   </router-link>
                 </div>
 
@@ -416,22 +408,7 @@
               </div>
             </div>
 
-          <!-- Mobile Hamburger Toggle (Immediate responsiveness on touch) -->
-          <button 
-            ref="mobileMenuBtnRef"
-            type="button"
-            @click.stop="toggleMobileMenu"
-            class="md:hidden w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl transition cursor-pointer select-none touch-manipulation active:scale-90 flex items-center justify-center shrink-0 border"
-            :class="store.currentTheme === 'light' 
-              ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700' 
-              : (store.currentTheme === 'elegant' 
-                ? 'bg-blue-950/40 hover:bg-blue-900/50 border-blue-400/30 text-white backdrop-blur-md shadow-xs' 
-                : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700')"
-            aria-label="Menu navigasi mobile"
-          >
-            <Menu v-if="!isMobileMenuOpen" class="w-5 h-5 pointer-events-none shrink-0" />
-            <X v-else class="w-5 h-5 pointer-events-none shrink-0" />
-          </button>
+
         </div>
 
       </div>
@@ -439,195 +416,7 @@
 
 
 
-    <!-- Backdrop for Mobile Drawer -->
-    <div 
-      v-if="isMobileMenuOpen" 
-      class="md:hidden fixed inset-0 top-16 bg-slate-950/40 backdrop-blur-xs z-30 transition-opacity"
-      @click="isMobileMenuOpen = false"
-    ></div>
 
-    <!-- Mobile Nav Drawer -->
-    <div 
-      v-if="isMobileMenuOpen" 
-      ref="mobileDrawerRef"
-      class="mobile-nav-drawer md:hidden relative z-40 px-4 pt-2 pb-4 space-y-2 border-b transition-colors shadow-xl"
-      :class="{
-        'bg-white border-slate-200 text-slate-800': store.currentTheme === 'light',
-        'bg-[#0e1422] border-slate-800 text-slate-200': store.currentTheme === 'dark',
-        'bg-[#070d1e]/95 border-blue-500/25 text-slate-200 backdrop-blur-2xl': store.currentTheme === 'elegant'
-      }"
-    >
-      <router-link 
-        to="/" 
-        @click="isMobileMenuOpen = false"
-        class="block px-3.5 py-2.5 rounded-xl text-xs transition font-semibold"
-        :class="$route.name === 'catalog' 
-          ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-500/25' 
-          : (store.currentTheme === 'light' ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-200 hover:bg-slate-800')"
-      >
-        📖 Katalog Publik
-      </router-link>
-      <router-link 
-        to="/shelves" 
-        @click="isMobileMenuOpen = false"
-        class="block px-3.5 py-2.5 rounded-xl text-xs transition font-semibold"
-        :class="$route.name === 'shelves' 
-          ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-500/25' 
-          : (store.currentTheme === 'light' ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-200 hover:bg-slate-800')"
-      >
-        🗄️ Peta Rak
-      </router-link>
-      <router-link 
-        to="/member-card" 
-        @click="isMobileMenuOpen = false"
-        class="block px-3.5 py-2.5 rounded-xl text-xs transition font-semibold"
-        :class="$route.name === 'member-card' 
-          ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-500/25' 
-          : (store.currentTheme === 'light' ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-200 hover:bg-slate-800')"
-      >
-        💳 Kartu Member QR
-      </router-link>
-      <router-link 
-        v-if="store.currentUser" 
-        to="/member-portal" 
-        @click="isMobileMenuOpen = false"
-        class="block px-3.5 py-2.5 rounded-xl text-xs transition font-semibold"
-        :class="$route.name === 'member-portal' 
-          ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-500/25' 
-          : (store.currentTheme === 'light' ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-200 hover:bg-slate-800')"
-      >
-        👤 Portal Pinjaman Saya
-      </router-link>
-      <router-link 
-        v-if="store.isAdmin"
-        to="/admin" 
-        @click="isMobileMenuOpen = false"
-        class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition font-semibold"
-        :class="$route.name === 'admin' 
-          ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-500/25' 
-          : (store.currentTheme === 'light' ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-200 hover:bg-slate-800')"
-      >
-        <span>⚡ Admin Dashboard Console</span>
-        <span v-if="store.pendingStudentVerificationsCount > 0" class="px-2 py-0.5 rounded-full bg-blue-500 text-white font-bold text-[10px] animate-pulse">
-          🎒 {{ store.pendingStudentVerificationsCount }} Siswa
-        </span>
-        <span v-else-if="store.pendingTeacherRequestsCount > 0" class="px-2 py-0.5 rounded-full bg-amber-500 text-white font-bold text-[10px] animate-pulse">
-          👨‍🏫 {{ store.pendingTeacherRequestsCount }} Guru
-        </span>
-      </router-link>
-      <button 
-        v-if="store.currentUser"
-        type="button"
-        @click="isMobileMenuOpen = false; isDeviceModalOpen = true"
-        class="seamless-menu-item w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between cursor-pointer border-0 shadow-none focus:outline-hidden"
-        :class="store.currentTheme === 'light' ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-200 hover:bg-slate-800'"
-      >
-        <span class="flex items-center gap-2">
-          <Laptop class="w-4 h-4 text-cyan-500" />
-          <span>Manajemen Sesi & Perangkat</span>
-        </span>
-        <span v-if="store.isCurrentDeviceMain" class="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 text-[10px] font-bold">
-          👑 Utama
-        </span>
-      </button>
-
-      <!-- Changelog button for mobile drawer -->
-      <button 
-        type="button"
-        @click="isMobileMenuOpen = false; store.openChangelog()"
-        class="seamless-menu-item w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between cursor-pointer border-0 shadow-none focus:outline-hidden"
-        :class="store.currentTheme === 'light' ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-200 hover:bg-slate-800'"
-      >
-        <span class="flex items-center gap-2">
-          <Sparkles class="w-4 h-4 text-amber-500" />
-          <span>Catatan Rilis</span>
-        </span>
-        <span class="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-600 dark:text-blue-300 text-[10px] font-mono font-bold">
-          v{{ store.currentAppVersion }}
-        </span>
-      </button>
-
-      <!-- PWA Install button for mobile drawer -->
-      <button 
-        type="button"
-        @click="triggerPwaInstall"
-        class="seamless-menu-item w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between cursor-pointer border-0 shadow-none focus:outline-hidden"
-        :class="store.currentTheme === 'light' ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-200 hover:bg-slate-800'"
-      >
-        <span class="flex items-center gap-2">
-          <Smartphone class="w-4 h-4 text-emerald-500" />
-          <span>Pasang Aplikasi Libra (PWA)</span>
-        </span>
-        <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 text-[10px] font-bold">
-          Homescreen
-        </span>
-      </button>
-
-      <!-- Theme Mode Selector for Mobile Drawer -->
-      <div 
-        class="px-3 py-2.5 rounded-xl border space-y-1.5 transition-colors"
-        :class="{
-          'bg-slate-100 border-slate-200': store.currentTheme === 'light',
-          'bg-slate-800/70 border-slate-700/60': store.currentTheme === 'dark',
-          'bg-slate-900/70 border-blue-500/25 backdrop-blur-md': store.currentTheme === 'elegant'
-        }"
-      >
-        <div class="flex items-center justify-between text-[11px] font-medium" :class="store.currentTheme === 'light' ? 'text-slate-700' : 'text-slate-300'">
-          <div class="flex items-center gap-1.5">
-            <Palette class="w-3.5 h-3.5 text-blue-500" />
-            <span>Warna Tema</span>
-          </div>
-          <span class="text-[10px] font-bold text-blue-500 uppercase tracking-wide">
-            {{ store.currentTheme === 'light' ? 'Terang' : (store.currentTheme === 'dark' ? 'Gelap' : 'Elegan') }}
-          </span>
-        </div>
-        <div 
-          class="grid grid-cols-3 gap-1 p-1 rounded-lg border"
-          :class="{
-            'bg-white border-slate-200': store.currentTheme === 'light',
-            'bg-slate-900 border-slate-700/60': store.currentTheme === 'dark',
-            'bg-slate-950/70 border-blue-500/20': store.currentTheme === 'elegant'
-          }"
-        >
-          <button
-            type="button"
-            @click="store.setTheme('light')"
-            class="flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-bold transition cursor-pointer"
-            :class="store.currentTheme === 'light' ? 'bg-blue-600 text-white shadow-xs' : (store.currentTheme === 'light' ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200')"
-          >
-            <Sun class="w-3.5 h-3.5" :class="store.currentTheme === 'light' ? 'text-amber-300' : 'text-slate-400'" />
-            <span>Light</span>
-          </button>
-          <button
-            type="button"
-            @click="store.setTheme('dark')"
-            class="flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-bold transition cursor-pointer"
-            :class="store.currentTheme === 'dark' ? 'bg-slate-700 text-white shadow-xs ring-1 ring-slate-500' : (store.currentTheme === 'light' ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200')"
-          >
-            <Moon class="w-3.5 h-3.5" :class="store.currentTheme === 'dark' ? 'text-blue-300' : 'text-slate-400'" />
-            <span>Dark</span>
-          </button>
-          <button
-            type="button"
-            @click="store.setTheme('elegant')"
-            class="flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-bold transition cursor-pointer"
-            :class="store.currentTheme === 'elegant' ? 'bg-gradient-to-r from-blue-700 via-indigo-600 to-cyan-600 text-white shadow-xs ring-1 ring-cyan-400/50' : (store.currentTheme === 'light' ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200')"
-          >
-            <Sparkles class="w-3.5 h-3.5" :class="store.currentTheme === 'elegant' ? 'text-cyan-200' : 'text-slate-400'" />
-            <span>Elegant</span>
-          </button>
-        </div>
-      </div>
-
-      <router-link 
-        v-if="!store.currentUser"
-        to="/login" 
-        @click="isMobileMenuOpen = false"
-        class="block px-3 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-600 text-center"
-      >
-        🔑 Masuk / Daftar Akun
-      </router-link>
-    </div>
 
     <!-- Device Sessions Modal -->
     <DeviceSessionsModal 
@@ -643,7 +432,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useLibraryStore } from '../stores/library.js';
 import { 
   BookMarked, Layers, QrCode, UserCheck, 
-  ShieldCheck, User, ChevronDown, Menu, X, LogIn, UserPlus, LogOut, Settings, Laptop, Sparkles, Smartphone,
+  ShieldCheck, User, ChevronDown, X, LogIn, UserPlus, LogOut, Settings, Laptop, Sparkles, Smartphone,
   Palette, Sun, Moon
 } from 'lucide-vue-next';
 import { logoutUser } from '../lib/firebase.js';
@@ -653,29 +442,15 @@ const store = useLibraryStore();
 const route = useRoute();
 const router = useRouter();
 const isUserMenuOpen = ref(false);
-const isMobileMenuOpen = ref(false);
 const isScrolled = ref(false);
 const isDeviceModalOpen = ref(false);
 
 const userDropdownRef = ref<HTMLElement | null>(null);
 const navHeaderRef = ref<HTMLElement | null>(null);
-const mobileMenuBtnRef = ref<HTMLElement | null>(null);
-const mobileDrawerRef = ref<HTMLElement | null>(null);
 
 const toggleUserMenu = (e?: Event) => {
   e?.stopPropagation();
   isUserMenuOpen.value = !isUserMenuOpen.value;
-  if (isUserMenuOpen.value) {
-    isMobileMenuOpen.value = false;
-  }
-};
-
-const toggleMobileMenu = (e?: Event) => {
-  e?.stopPropagation();
-  isMobileMenuOpen.value = !isMobileMenuOpen.value;
-  if (isMobileMenuOpen.value) {
-    isUserMenuOpen.value = false;
-  }
 };
 
 const handleClickOutside = (event: MouseEvent) => {
@@ -685,26 +460,16 @@ const handleClickOutside = (event: MouseEvent) => {
   if (isUserMenuOpen.value && userDropdownRef.value && !userDropdownRef.value.contains(target)) {
     isUserMenuOpen.value = false;
   }
-
-  if (isMobileMenuOpen.value) {
-    const isClickOnToggle = mobileMenuBtnRef.value && mobileMenuBtnRef.value.contains(target);
-    const isClickInsideDrawer = mobileDrawerRef.value && mobileDrawerRef.value.contains(target);
-    if (!isClickOnToggle && !isClickInsideDrawer) {
-      isMobileMenuOpen.value = false;
-    }
-  }
 };
 
 const handleKeyDown = (event: KeyboardEvent) => {
   if (event.key === 'Escape') {
     if (isUserMenuOpen.value) isUserMenuOpen.value = false;
-    if (isMobileMenuOpen.value) isMobileMenuOpen.value = false;
   }
 };
 
 const triggerPwaInstall = () => {
   isUserMenuOpen.value = false;
-  isMobileMenuOpen.value = false;
   window.dispatchEvent(new CustomEvent('open-pwa-install-modal'));
 };
 
@@ -715,7 +480,6 @@ const handleScroll = () => {
 // Tutup menu saat berpindah rute
 watch(() => route.path, () => {
   isUserMenuOpen.value = false;
-  isMobileMenuOpen.value = false;
 });
 
 onMounted(() => {
@@ -737,7 +501,6 @@ const handleLogoutClick = async () => {
   } finally {
     await store.logout();
     isUserMenuOpen.value = false;
-    isMobileMenuOpen.value = false;
     if (route.meta.requiresAdmin || route.meta.requiresSuperAdmin || route.path.startsWith('/admin') || route.path.startsWith('/settings') || route.path.startsWith('/member-portal')) {
       router.push('/login');
     }
