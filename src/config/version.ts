@@ -9,8 +9,8 @@ export const DEFAULT_APP_VERSION_CONFIG: AppVersionConfig = {
   releaseDate: APP_RELEASE_DATE,
   forceReload: false,
   minSupportedVersion: '1.0.0-rc.2',
-  updateMessage: 'Pembaruan sistem Libra versi 1.0.0-rc.2 telah dirilis dengan peningkatan tampilan menu pengelolaan data perpustakaan pada panel admin, penyempurnaan seluruh komponen drop-down, perbaikan drop-down pilihan rak pada katalog buku agar tidak melebihi layar mobile, serta pembersihan menu dan opsi yang tidak digunakan.',
-  changelogSummary: 'Peningkatan menu pengelolaan admin, penyempurnaan desain drop-down, perbaikan drop-down rak pada layar mobile, dan pembersihan opsi yang tidak digunakan.'
+  updateMessage: 'Pembaruan sistem Libra versi 1.0.0-rc.2 telah dirilis dengan peningkatan tampilan menu pengelolaan data perpustakaan pada panel admin, penyempurnaan seluruh komponen drop-down, perbaikan drop-down pilihan rak pada katalog buku agar tidak melebihi layar mobile, pembersihan menu dan opsi yang tidak digunakan, perbaikan navigasi pagination katalog publik di layar mobile dengan input lompat halaman, serta penyesuaian tata letak input tautan URL dan tombol acak Unsplash pada form buku.',
+  changelogSummary: 'Peningkatan menu admin, penyempurnaan drop-down, perbaikan drop-down rak mobile, pembersihan opsi tidak terpakai, pagination katalog mobile dengan input lompat halaman, dan penyesuaian input cover buku.'
 };
 
 export const CHANGELOG_LIST: ChangelogItem[] = [
@@ -53,6 +53,26 @@ export const CHANGELOG_LIST: ChangelogItem[] = [
     category: 'improvement',
     badge: 'Penyederhanaan',
     iconName: 'CheckCircle'
+  },
+  {
+    id: 'public-catalog-pagination-mobile-jump',
+    title: 'Perbaikan Pagination Katalog Publik di Layar Mobile dengan Input Lompat Halaman',
+    description: 'Menyederhanakan navigasi halaman katalog buku pada layar ponsel (mobile) dengan posisi pilihan jumlah baris sejajar full-width di samping teks informasi, menghapus label redundan, serta menggantikan deretan tombol angka pagination dengan satu input lompat halaman (jump-to-page) yang rapi dan responsif.',
+    targetAudience: 'all',
+    targetAudienceLabel: 'Semua Pengguna',
+    category: 'fix',
+    badge: 'Katalog Publik',
+    iconName: 'ArrowRightCircle'
+  },
+  {
+    id: 'book-form-cover-url-unsplash-responsive',
+    title: 'Penyesuaian Komponen Input URL & Tombol Acak Unsplash pada Form Data Buku',
+    description: 'Menyesuaikan komponen input tautan URL cover dan tombol Acak Unsplash pada form data buku agar tidak melebihi lebar layar ponsel, tersusun rapi secara responsif, dan mudah dioperasikan.',
+    targetAudience: 'admin',
+    targetAudienceLabel: 'Khusus Admin',
+    category: 'fix',
+    badge: 'Form Data Buku',
+    iconName: 'Image'
   }
 ];
 

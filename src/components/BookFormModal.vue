@@ -118,20 +118,21 @@
               </div>
 
               <!-- URL Mode -->
-              <div v-else class="space-y-2">
-                <div class="flex gap-2">
+              <div v-else class="space-y-2 w-full min-w-0">
+                <div class="flex flex-col sm:flex-row gap-2 w-full min-w-0">
                   <input 
                     v-model="form.cover" 
                     type="url" 
-                    placeholder="https://images.unsplash.com/... atau /covers/..." 
-                    class="flex-1 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-blue-500 font-medium"
+                    placeholder="https://... atau /covers/..." 
+                    class="w-full flex-1 min-w-0 px-3.5 py-2 text-xs sm:text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-blue-500 font-medium truncate"
                   />
                   <button 
                     type="button" 
                     @click="generateRandomCover" 
-                    class="px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition whitespace-nowrap cursor-pointer"
+                    class="w-full sm:w-auto shrink-0 px-3.5 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-[0.98]"
                   >
-                    Acak Unsplash
+                    <Sparkles class="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <span>Acak Unsplash</span>
                   </button>
                 </div>
                 <p class="text-[11px] text-slate-500 dark:text-slate-400">Gunakan tautan gambar resolusi tinggi (Unsplash, CDN, atau path cover lokal)</p>
@@ -433,7 +434,8 @@ import {
   Smartphone,
   FileText,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  Sparkles
 } from 'lucide-vue-next';
 
 const props = defineProps<{

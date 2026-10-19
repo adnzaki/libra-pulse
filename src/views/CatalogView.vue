@@ -357,74 +357,77 @@
       </div>
 
         <!-- Pagination Controls -->
-        <div class="p-4 sm:p-5 bg-white rounded-3xl border border-slate-100 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
-          <div class="flex items-center gap-3 text-slate-500 text-[11px] sm:text-xs">
-            <span>
-              Menampilkan <strong class="text-slate-900 font-bold">{{ ((currentPage - 1) * itemsPerPage) + 1 }}</strong> - 
-              <strong class="text-slate-900 font-bold">{{ Math.min(currentPage * itemsPerPage, filteredBooks.length) }}</strong> 
-              dari <strong class="text-slate-900 font-bold">{{ filteredBooks.length }}</strong> buku
-            </span>
-            <div class="flex items-center gap-1.5 pl-3 border-l border-slate-200">
-              <span class="text-slate-400">Baris:</span>
-              <div class="w-24">
-                <CustomSelect 
-                  v-model="itemsPerPage"
-                  :options="itemsPerPageOptions"
-                  variant="compact"
-                  size="sm"
-                  placement="top"
-                />
-              </div>
+        <div class="p-4 sm:p-5 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center justify-between gap-3 sm:gap-4 text-xs">
+          <!-- Top Row: Full width with Count on Left & Items Per Page on Right -->
+          <div class="flex items-center justify-between gap-2 text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs w-full">
+            <div class="min-w-0">
+              Menampilkan <strong class="text-slate-900 dark:text-white font-bold">{{ ((currentPage - 1) * itemsPerPage) + 1 }}</strong> - 
+              <strong class="text-slate-900 dark:text-white font-bold">{{ Math.min(currentPage * itemsPerPage, filteredBooks.length) }}</strong> 
+              dari <strong class="text-slate-900 dark:text-white font-bold">{{ filteredBooks.length }}</strong> buku
+            </div>
+            <div class="shrink-0 w-24">
+              <CustomSelect 
+                v-model="itemsPerPage"
+                :options="itemsPerPageOptions"
+                variant="compact"
+                size="sm"
+                placement="top"
+              />
             </div>
           </div>
 
-          <!-- Page Navigation Buttons -->
-          <div class="flex items-center gap-1">
+          <!-- Page Navigation with Jump to Page Input -->
+          <div class="flex items-center justify-center gap-1.5 w-full sm:w-auto">
             <button 
               @click="goToPage(1)"
               :disabled="currentPage === 1"
-              class="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+              class="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer shadow-xs active:scale-95"
               title="Halaman Pertama"
+              aria-label="Halaman Pertama"
             >
               <ChevronsLeft class="w-4 h-4" />
             </button>
             <button 
               @click="goToPage(currentPage - 1)"
               :disabled="currentPage === 1"
-              class="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+              class="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer shadow-xs active:scale-95"
               title="Halaman Sebelumnya"
+              aria-label="Halaman Sebelumnya"
             >
               <ChevronLeft class="w-4 h-4" />
             </button>
 
-            <!-- Numbered page pills -->
-            <div class="flex items-center gap-1 px-1">
-              <button 
-                v-for="p in displayedPages"
-                :key="p"
-                @click="goToPage(p)"
-                class="min-w-[32px] h-8 px-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center"
-                :class="p === currentPage 
-                  ? 'bg-blue-600 text-white shadow-sm shadow-blue-200' 
-                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80'"
-              >
-                {{ p }}
-              </button>
+            <!-- 1 Input Buat Lompat Halaman -->
+            <div class="flex items-center gap-1.5 px-3 py-1 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 text-xs shadow-inner mx-1">
+              <span class="text-slate-500 dark:text-slate-400 font-medium select-none">Hal</span>
+              <input 
+                type="number" 
+                :min="1" 
+                :max="totalPages" 
+                v-model="jumpPageInput" 
+                @keydown.enter="handleJumpPage" 
+                @blur="handleJumpPage"
+                class="w-11 h-7 text-center font-bold text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                aria-label="Lompat ke halaman"
+              />
+              <span class="text-slate-400 dark:text-slate-500 font-medium select-none">/ {{ totalPages }}</span>
             </div>
 
             <button 
               @click="goToPage(currentPage + 1)"
               :disabled="currentPage >= totalPages"
-              class="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+              class="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer shadow-xs active:scale-95"
               title="Halaman Selanjutnya"
+              aria-label="Halaman Selanjutnya"
             >
               <ChevronRight class="w-4 h-4" />
             </button>
             <button 
               @click="goToPage(totalPages)"
               :disabled="currentPage >= totalPages"
-              class="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+              class="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer shadow-xs active:scale-95"
               title="Halaman Terakhir"
+              aria-label="Halaman Terakhir"
             >
               <ChevronsRight class="w-4 h-4" />
             </button>
@@ -778,23 +781,25 @@ const goToPage = (page: number) => {
   }
 };
 
-const displayedPages = computed(() => {
-  const current = currentPage.value;
-  const total = totalPages.value;
-  if (total <= 5) {
-    return Array.from({ length: total }, (_, i) => i + 1);
+const jumpPageInput = ref<number | string>(1);
+
+watch(currentPage, (val) => {
+  jumpPageInput.value = val;
+}, { immediate: true });
+
+const handleJumpPage = () => {
+  let target = parseInt(String(jumpPageInput.value), 10);
+  if (isNaN(target)) {
+    jumpPageInput.value = currentPage.value;
+    return;
   }
-  let start = Math.max(1, current - 2);
-  let end = Math.min(total, start + 4);
-  if (end - start < 4) {
-    start = Math.max(1, end - 4);
+  if (target < 1) target = 1;
+  if (target > totalPages.value) target = totalPages.value;
+  jumpPageInput.value = target;
+  if (target !== currentPage.value) {
+    goToPage(target);
   }
-  const pages: number[] = [];
-  for (let i = start; i <= end; i++) {
-    pages.push(i);
-  }
-  return pages;
-});
+};
 
 const resetFilters = () => {
   searchQuery.value = '';
