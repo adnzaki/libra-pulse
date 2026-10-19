@@ -205,16 +205,6 @@
           >
             {{ cat === 'all' ? 'Semua Kategori' : cat }}
           </button>
-          
-          <button
-            type="button"
-            @click="isCategoryModalOpen = true"
-            class="px-3 py-1.5 rounded-full text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 border border-blue-200 transition cursor-pointer flex items-center gap-1"
-            title="Buka daftar kategori lengkap di modal"
-          >
-            <Tag class="w-3 h-3" />
-            <span>Pilih di Modal</span>
-          </button>
         </div>
       </div>
 
@@ -222,7 +212,7 @@
       <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 min-w-0 max-w-full">
         <div class="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2 flex-1 min-w-0 max-w-full">
           <!-- Dropdown Lokasi Rak (Custom Select) -->
-          <div class="w-full sm:w-auto sm:min-w-[210px] max-w-full">
+          <div class="w-full sm:w-auto sm:min-w-[210px] max-w-full min-w-0">
             <CustomSelect 
               v-model="selectedShelfId"
               :options="shelfOptions"
@@ -230,16 +220,18 @@
               placeholder="Semua Lokasi Rak"
               searchable
               search-placeholder="Cari kode rak, lantai, zona..."
+              menu-class="w-full max-w-full sm:max-w-md"
             />
           </div>
 
           <!-- Dropdown Status Ketersediaan (Custom Select) -->
-          <div class="w-full sm:w-auto sm:min-w-[190px] max-w-full">
+          <div class="w-full sm:w-auto sm:min-w-[190px] max-w-full min-w-0">
             <CustomSelect 
               v-model="availabilityFilter"
               :options="availabilityOptions"
               variant="pill"
               placeholder="Status Ketersediaan"
+              menu-class="w-full max-w-full sm:max-w-xs"
             />
           </div>
         </div>

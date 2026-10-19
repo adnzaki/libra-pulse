@@ -304,15 +304,15 @@
             </span>
           </button>
 
-          <!-- Pilihan Menu Trigger for Remaining Modules -->
+          <!-- Pilihan Menu Pengelolaan Data Perpustakaan Trigger -->
           <button 
             type="button"
             @click="isTabMenuModalOpen = true"
-            class="px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 active:scale-95 whitespace-nowrap select-none border"
+            class="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 active:scale-95 whitespace-nowrap select-none border shadow-2xs"
             :class="isOtherTabActive
               ? 'bg-slate-900 dark:bg-blue-600 text-white border-transparent shadow-sm'
               : 'bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/80 border-slate-200/90 dark:border-slate-700/80'"
-            :title="isOtherTabActive ? 'Menu Aktif: ' + activeOtherTab?.label : 'Pilih menu modul lainnya'"
+            :title="isOtherTabActive ? 'Modul Aktif: ' + activeOtherTab?.label : 'Buka menu modul pengelolaan data perpustakaan'"
           >
             <!-- When an otherTab is active, show its icon, label, and dropdown icon -->
             <template v-if="isOtherTabActive && activeOtherTab">
@@ -333,11 +333,11 @@
             <!-- When a primary tab is active -->
             <template v-else>
               <LayoutGrid class="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-              <span>Pilihan Menu</span>
+              <span>Menu Pengelolaan</span>
               <span 
                 v-if="otherTabsPendingCount > 0" 
                 class="px-1.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500 text-white font-mono shrink-0 animate-pulse"
-                title="Ada item tertunda"
+                title="Ada item tertunda yang membutuhkan perhatian"
               >
                 {{ otherTabsPendingCount }}
               </span>
@@ -2939,7 +2939,7 @@
       @close="isShelfModalOpenAdmin = false"
     />
 
-    <!-- Modal Pilihan Menu & Modul Admin -->
+    <!-- Modal Pilihan Menu Pengelolaan Data Perpustakaan -->
     <div 
       v-if="isTabMenuModalOpen" 
       class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200"
@@ -2947,54 +2947,106 @@
     >
       <div class="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90dvh] flex flex-col">
         <!-- Modal Header -->
-        <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3 bg-slate-50/70 dark:bg-slate-900/90 shrink-0">
-          <div class="flex items-center gap-3 min-w-0">
-            <div class="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-sm shrink-0">
-              <LayoutGrid class="w-5 h-5" />
+        <div class="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/90 shrink-0 space-y-3">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-sm shrink-0">
+                <LayoutGrid class="w-5 h-5" />
+              </div>
+              <div class="min-w-0">
+                <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white tracking-tight truncate">
+                  Menu Pengelolaan Data Perpustakaan
+                </h3>
+                <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">
+                  Pusat kendali modul, sirkulasi, data anggota, dan konfigurasi sistem perpustakaan
+                </p>
+              </div>
             </div>
-            <div class="min-w-0">
-              <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white tracking-tight truncate">
-                Pilihan Menu Modul Admin
-              </h3>
-              <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">
-                Pilih modul manajemen perpustakaan lainnya yang ingin dikelola
-              </p>
+            <button 
+              type="button"
+              @click="isTabMenuModalOpen = false"
+              aria-label="Tutup menu modul"
+              class="w-8 h-8 rounded-full bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center transition cursor-pointer shrink-0"
+            >
+              <X class="w-4 h-4" />
+            </button>
+          </div>
+
+          <!-- Search & Filter Category Chips Inside Modal -->
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
+            <div class="relative flex-1">
+              <Search class="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+              <input 
+                v-model="tabMenuSearchQuery"
+                type="text"
+                placeholder="Cari modul pengelolaan data..."
+                class="w-full pl-8.5 pr-8 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
+              <button 
+                v-if="tabMenuSearchQuery"
+                @click="tabMenuSearchQuery = ''"
+                class="absolute right-2.5 top-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div class="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+              <button
+                v-for="cat in [
+                  { id: 'all', label: 'Semua Modul' },
+                  { id: 'sirkulasi', label: 'Koleksi & Sirkulasi' },
+                  { id: 'keanggotaan', label: 'Keanggotaan' },
+                  { id: 'master', label: 'Master Data & Aturan' }
+                ]"
+                :key="cat.id"
+                type="button"
+                @click="tabMenuCategoryFilter = cat.id as any"
+                class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition whitespace-nowrap cursor-pointer active:scale-95"
+                :class="tabMenuCategoryFilter === cat.id 
+                  ? 'bg-blue-600 text-white shadow-2xs' 
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'"
+              >
+                {{ cat.label }}
+              </button>
             </div>
           </div>
-          <button 
-            type="button"
-            @click="isTabMenuModalOpen = false"
-            aria-label="Tutup menu modul"
-            class="w-8 h-8 rounded-full bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center transition cursor-pointer shrink-0"
-          >
-            <X class="w-4 h-4" />
-          </button>
         </div>
 
         <!-- Modal Body: Grid of Menu Items -->
         <div class="p-4 sm:p-5 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+          <div v-if="filteredTabMenuModules.length === 0" class="col-span-full py-8 text-center text-slate-400 text-xs italic">
+            Tidak ada modul yang cocok dengan kata kunci "{{ tabMenuSearchQuery }}".
+          </div>
+
           <button
-            v-for="tab in otherTabs"
+            v-for="tab in filteredTabMenuModules"
             :key="tab.id"
             type="button"
             @click="activeTab = tab.id; isTabMenuModalOpen = false"
             class="w-full text-left p-3.5 rounded-2xl border transition-all cursor-pointer flex items-start justify-between gap-3 group active:scale-[0.98]"
             :class="activeTab === tab.id 
-              ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-slate-900/20' 
-              : 'bg-slate-50/70 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 border-slate-200/80 dark:border-slate-700/70'"
+              ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-slate-900/20 ring-2 ring-blue-400/30' 
+              : 'bg-slate-50/70 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 border-slate-200/80 dark:border-slate-700/70 hover:border-slate-300 dark:hover:border-slate-600 shadow-2xs'"
           >
             <div class="flex items-start gap-3 min-w-0 flex-1">
               <div 
-                class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors mt-0.5"
+                class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all mt-0.5"
                 :class="activeTab === tab.id 
-                  ? 'bg-white/20 text-white' 
-                  : 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 border border-slate-200/80 dark:border-slate-700'"
+                  ? 'bg-white/20 text-white shadow-2xs' 
+                  : 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 border border-slate-200/80 dark:border-slate-700 group-hover:scale-105 group-hover:text-blue-500 shadow-2xs'"
               >
                 <component :is="tab.icon" class="w-4 h-4" />
               </div>
               <div class="min-w-0 flex-1">
                 <div class="font-bold text-xs sm:text-[13px] leading-snug flex items-center gap-1.5 flex-wrap">
                   <span>{{ tab.label }}</span>
+                  <span 
+                    v-if="(tab as any).isAlert" 
+                    class="px-1.5 py-0.2 rounded-full text-[9px] font-extrabold uppercase bg-amber-500 text-white shrink-0 animate-pulse"
+                  >
+                    Perlu Ditinjau
+                  </span>
                 </div>
                 <p 
                   class="text-[11px] mt-0.5 leading-relaxed line-clamp-2"
@@ -3010,14 +3062,14 @@
                 v-if="tab.badge !== undefined && tab.badge !== null" 
                 class="px-2 py-0.5 rounded-full text-[10px] font-extrabold font-mono"
                 :class="activeTab === tab.id 
-                  ? 'bg-white text-blue-700' 
+                  ? 'bg-white text-blue-700 font-bold' 
                   : (tab.badge > 0 ? 'bg-blue-100 dark:bg-blue-950/90 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60' : 'bg-slate-200/70 dark:bg-slate-700/70 text-slate-600 dark:text-slate-300')"
               >
                 {{ tab.badge }}
               </span>
               <span 
                 v-if="activeTab === tab.id" 
-                class="text-[10px] font-bold flex items-center gap-0.5 text-white/90"
+                class="text-[10px] font-bold flex items-center gap-0.5 text-white/95"
               >
                 <Check class="w-3 h-3 stroke-[3]" />
                 <span>Aktif</span>
@@ -3029,12 +3081,12 @@
         <!-- Modal Footer -->
         <div class="px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/90 flex items-center justify-between gap-3 shrink-0">
           <span class="text-[11px] text-slate-500 dark:text-slate-400">
-            Total {{ otherTabs.length }} modul manajemen lainnya tersedia
+            Modul aktif: <strong class="text-blue-600 dark:text-blue-400">{{ currentTabObj?.label }}</strong>
           </span>
           <button 
             type="button"
             @click="isTabMenuModalOpen = false"
-            class="px-4 py-2 rounded-full text-xs font-bold bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
+            class="px-4 py-2 rounded-full text-xs font-bold bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer active:scale-95"
           >
             Tutup
           </button>
@@ -3073,6 +3125,8 @@ import {
 const store = useLibraryStore();
 const isDeviceSessionsOpen = ref(false);
 const isTabMenuModalOpen = ref(false);
+const tabMenuSearchQuery = ref('');
+const tabMenuCategoryFilter = ref<'all' | 'sirkulasi' | 'keanggotaan' | 'master'>('all');
 const activeTab = ref('books');
 
 const bookPaginationOptions = [
@@ -3514,15 +3568,130 @@ const otherTabs = computed(() => [
   { id: 'members', label: 'Kelola Anggota', description: 'Data anggota perpustakaan, kartu QR & riwayat keanggotaan', icon: Users, badge: displayedTotalMembers.value },
   { id: 'student_verifications', label: 'Verifikasi Siswa', description: 'Verifikasi NIS, NISN & swafoto siswa untuk akses e-Book', icon: ShieldCheck, badge: store.pendingStudentVerificationsCount },
   { id: 'teacher_requests', label: 'Verifikasi Guru', description: 'Tinjau permohonan peningkatan status keanggotaan Guru', icon: GraduationCap, badge: store.pendingTeacherRequestsCount },
+  { id: 'shelves', label: 'Tata Letak & Urutan Rak', description: 'Atur susunan posisi rak buku fisik 3 lantai & penataan urutan interaktif', icon: Layers, badge: store.shelves.length },
+  { id: 'categories', label: 'Pengelolaan Kategori', description: 'Atur kategori koleksi buku & identitas warna label', icon: Tag, badge: store.categories.length },
   { id: 'suspends', label: 'Sistem Suspend (1-30 Hari)', description: 'Konfigurasi sanksi otomatis & daftar anggota disuspend', icon: Sliders, badge: store.suspendedMembers.length },
   { id: 'notifications', label: 'Notifikasi Keterlambatan', description: 'Riwayat pengiriman pengingat & broadcast keterlambatan', icon: Send, badge: store.overdueLoans.length },
-  { id: 'categories', label: 'Pengelolaan Kategori', description: 'Atur kategori koleksi buku & identitas warna label', icon: Tag, badge: store.categories.length },
 ]);
 
 const adminTabs = computed(() => [
   ...primaryTabs.value,
   ...otherTabs.value,
 ]);
+
+// All admin modules categorized for the menu modal
+const allTabMenuModules = computed(() => [
+  { 
+    id: 'books', 
+    category: 'sirkulasi',
+    label: 'Master Data Buku', 
+    description: 'Manajemen koleksi buku fisik, dokumen e-Book, dan lokasi penempatan rak', 
+    icon: BookOpen, 
+    badge: store.books.length 
+  },
+  { 
+    id: 'loans', 
+    category: 'sirkulasi',
+    label: 'Sirkulasi & Pinjaman Aktif', 
+    description: 'Kelola sirkulasi buku, pengembalian langsung, dan pantau pinjaman jatuh tempo', 
+    icon: BookMarked, 
+    badge: store.activeLoans.length 
+  },
+  { 
+    id: 'bookings', 
+    category: 'sirkulasi',
+    label: 'Booking 24 Jam (Hold)', 
+    description: 'Antrean reservasi buku dengan otomatisasi batas waktu pengambilan 24 jam', 
+    icon: Clock, 
+    badge: store.activeHoldBookings.length 
+  },
+  { 
+    id: 'loan_history', 
+    category: 'sirkulasi',
+    label: 'Riwayat Peminjaman', 
+    description: 'Arsip seluruh transaksi peminjaman fisik & e-Book yang telah selesai dikembalikan', 
+    icon: History, 
+    badge: store.returnedLoans.length 
+  },
+  { 
+    id: 'notifications', 
+    category: 'sirkulasi',
+    label: 'Notifikasi Keterlambatan', 
+    description: 'Kirim broadcast pengingat dan pantau log peringatan peminjaman lewat tempo', 
+    icon: Send, 
+    badge: store.overdueLoans.length,
+    isAlert: store.overdueLoans.length > 0
+  },
+  { 
+    id: 'members', 
+    category: 'keanggotaan',
+    label: 'Kelola Anggota', 
+    description: 'Direktori anggota perpustakaan, pembuatan akun, dan cetak kartu QR anggota', 
+    icon: Users, 
+    badge: displayedTotalMembers.value 
+  },
+  { 
+    id: 'student_verifications', 
+    category: 'keanggotaan',
+    label: 'Verifikasi Siswa', 
+    description: 'Pemeriksaan NIS, NISN, dan swafoto siswa untuk akses penuh koleksi e-Book', 
+    icon: ShieldCheck, 
+    badge: store.pendingStudentVerificationsCount,
+    isAlert: store.pendingStudentVerificationsCount > 0
+  },
+  { 
+    id: 'teacher_requests', 
+    category: 'keanggotaan',
+    label: 'Verifikasi Guru', 
+    description: 'Tinjau permohonan anggota untuk peningkatan status menjadi dewan guru', 
+    icon: GraduationCap, 
+    badge: store.pendingTeacherRequestsCount,
+    isAlert: store.pendingTeacherRequestsCount > 0
+  },
+  { 
+    id: 'shelves', 
+    category: 'master',
+    label: 'Tata Letak & Urutan Rak', 
+    description: 'Pengaturan penempatan rak buku fisik 3 lantai dan penataan urutan interaktif', 
+    icon: Layers, 
+    badge: store.shelves.length 
+  },
+  { 
+    id: 'categories', 
+    category: 'master',
+    label: 'Pengelolaan Kategori', 
+    description: 'Konfigurasi kategori buku, label warna klasifikasi, dan pengelompokan koleksi', 
+    icon: Tag, 
+    badge: store.categories.length 
+  },
+  { 
+    id: 'suspends', 
+    category: 'master',
+    label: 'Sistem Suspend (1-30 Hari)', 
+    description: 'Pengaturan sanksi penangguhan otomatis dan daftar anggota yang sedang disuspend', 
+    icon: Sliders, 
+    badge: store.suspendedMembers.length,
+    isAlert: store.suspendedMembers.length > 0
+  }
+]);
+
+const filteredTabMenuModules = computed(() => {
+  let list = allTabMenuModules.value;
+
+  if (tabMenuCategoryFilter.value !== 'all') {
+    list = list.filter(m => m.category === tabMenuCategoryFilter.value);
+  }
+
+  if (tabMenuSearchQuery.value.trim()) {
+    const q = tabMenuSearchQuery.value.toLowerCase().trim();
+    list = list.filter(m => 
+      m.label.toLowerCase().includes(q) || 
+      m.description.toLowerCase().includes(q)
+    );
+  }
+
+  return list;
+});
 
 const isOtherTabActive = computed(() => {
   return otherTabs.value.some(t => t.id === activeTab.value);

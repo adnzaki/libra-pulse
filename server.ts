@@ -507,8 +507,8 @@ app.post('/api/send-device-verification', async (req, res) => {
 
 // Wrap Multer di dalam Handler agar tidak tertelan oleh Vite Middleware
 app.post('/api/upload-cover', (req, res, next) => {
-  console.log('>>> API UPLOAD COVER DIPANGGIL <<<')
-  upload.single('cover')(req, res, (err) => {
+  console.log('>>> API UPLOAD COVER DIPANGGIL <<<');
+  (upload.single('cover') as any)(req, res, (err: any) => {
     if (err instanceof multer.MulterError) {
       return res
         .status(400)
@@ -534,8 +534,8 @@ app.post('/api/upload-cover', (req, res, next) => {
 
 // Upload Avatar Anggota & Profil (disimpan di uploads/avatar)
 app.post('/api/upload-avatar', (req, res) => {
-  console.log('>>> API UPLOAD AVATAR DIPANGGIL <<<')
-  avatarUpload.single('avatar')(req, res, (err) => {
+  console.log('>>> API UPLOAD AVATAR DIPANGGIL <<<');
+  (avatarUpload.single('avatar') as any)(req, res, (err: any) => {
     if (err instanceof multer.MulterError) {
       return res
         .status(400)
@@ -595,8 +595,8 @@ app.post('/api/upload-selfie', (req, res) => {
 
 // Upload Dokumen e-Book PDF (disimpan di uploads/ebooks)
 app.post('/api/upload-ebook', (req, res) => {
-  console.log('>>> API UPLOAD EBOOK DIPANGGIL <<<')
-  ebookUpload.single('ebook')(req, res, (err) => {
+  console.log('>>> API UPLOAD EBOOK DIPANGGIL <<<');
+  (ebookUpload.single('ebook') as any)(req, res, (err: any) => {
     if (err instanceof multer.MulterError) {
       return res.status(400).json({ success: false, error: `Multer error: ${err.message}` })
     } else if (err) {

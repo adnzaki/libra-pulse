@@ -1,47 +1,57 @@
 import type { ChangelogItem, AppVersionConfig } from '../types.js';
 
-export const CURRENT_APP_VERSION = '1.0.0-rc.1';
-export const APP_RELEASE_DATE = '5 Oktober 2026';
-export const APP_RELEASE_CODENAME = 'Libra Aurora RC 1';
+export const CURRENT_APP_VERSION = '1.0.0-rc.2';
+export const APP_RELEASE_DATE = '19 Oktober 2026';
+export const APP_RELEASE_CODENAME = 'Libra Aurora RC 2';
 
 export const DEFAULT_APP_VERSION_CONFIG: AppVersionConfig = {
   version: CURRENT_APP_VERSION,
   releaseDate: APP_RELEASE_DATE,
   forceReload: false,
-  minSupportedVersion: '1.0.0-rc.1',
-  updateMessage: 'Pembaruan sistem Libra versi 1.0.0-rc.1 telah dirilis dengan peningkatan tampilan navigasi menu modul khusus Admin, penambahan fitur Riwayat Peminjaman pada Panel Admin dan Portal Anggota, serta perbaikan penutupan notifikasi pengembalian e-Book.',
-  changelogSummary: 'Peningkatan tampilan tab menu khusus Admin, penambahan fitur Riwayat Peminjaman di Panel Admin & Portal Anggota, serta perbaikan penutupan notifikasi e-Book yang telah dikembalikan.'
+  minSupportedVersion: '1.0.0-rc.2',
+  updateMessage: 'Pembaruan sistem Libra versi 1.0.0-rc.2 telah dirilis dengan peningkatan tampilan menu pengelolaan data perpustakaan pada panel admin, penyempurnaan seluruh komponen drop-down, perbaikan drop-down pilihan rak pada katalog buku agar tidak melebihi layar mobile, serta pembersihan menu dan opsi yang tidak digunakan.',
+  changelogSummary: 'Peningkatan menu pengelolaan admin, penyempurnaan desain drop-down, perbaikan drop-down rak pada layar mobile, dan pembersihan opsi yang tidak digunakan.'
 };
 
 export const CHANGELOG_LIST: ChangelogItem[] = [
   {
-    id: 'admin-menu-tab-modal',
-    title: 'Peningkatan Tampilan & Navigasi Menu Modul Khusus Admin',
-    description: 'Menata ulang deretan tab menu pada Panel Admin menjadi satu tombol pemilih modul interaktif berbasis modal yang lebih ringkas, rapi, dan mudah dinavigasi di berbagai ukuran layar.',
+    id: 'admin-management-menu-enhancement',
+    title: 'Peningkatan Tampilan Menu Pengelolaan Data Perpustakaan pada Panel Admin',
+    description: 'Menyempurnakan antarmuka modal Menu Pengelolaan Data Perpustakaan dengan tata letak grid bento modern, kategorisasi modul terstruktur (Koleksi & Sirkulasi, Keanggotaan, Master Data), pencarian instan, dan integrasi modul penataan rak.',
     targetAudience: 'admin',
     targetAudienceLabel: 'Khusus Admin',
     category: 'improvement',
-    badge: 'Tampilan & Navigasi',
-    iconName: 'Layout'
+    badge: 'Panel Admin',
+    iconName: 'LayoutGrid'
   },
   {
-    id: 'loan-history-feature',
-    title: 'Fitur Riwayat Peminjaman untuk Panel Admin & Portal Anggota',
-    description: 'Menambahkan menu serta fitur Riwayat Peminjaman pada Panel Admin dan Portal Anggota untuk melihat daftar peminjaman yang telah berlalu, tidak aktif, atau sudah dikembalikan baik untuk koleksi buku fisik maupun e-Book.',
+    id: 'dropdown-components-redesign',
+    title: 'Peningkatan Tampilan & Interaktivitas Seluruh Komponen Drop-down',
+    description: 'Memperbarui desain visual dan kenyamanan interaksi semua komponen drop-down (CustomSelect) di seluruh sistem dengan aksen glassmorphism, rotasi panah indikator yang halus, penyorotan status aktif yang lebih tegas, serta dukungan tema yang konsisten.',
     targetAudience: 'all',
     targetAudienceLabel: 'Semua Pengguna',
-    category: 'feature',
-    badge: 'Fitur Baru',
-    iconName: 'History'
+    category: 'improvement',
+    badge: 'Antarmuka UI',
+    iconName: 'Sliders'
   },
   {
-    id: 'fix-ebook-returned-notification-dismiss',
-    title: 'Perbaikan Penutupan Pemberitahuan e-Book Telah Dikembalikan',
-    description: 'Memperbaiki kendala pada banner pemberitahuan e-Book telah dikembalikan yang sebelumnya tetap muncul kembali meskipun pengguna sudah menekan tombol tutup (X), sehingga kini langsung tertutup secara permanen.',
-    targetAudience: 'member',
-    targetAudienceLabel: 'Khusus Siswa & Guru',
+    id: 'fix-shelf-dropdown-mobile-width',
+    title: 'Perbaikan Drop-down Pilihan Lokasi Rak pada Tampilan Mobile',
+    description: 'Memperbaiki kendala menu drop-down pilihan rak pada halaman katalog buku yang sebelumnya melebihi lebar layar pada tampilan ponsel (mobile), kini tampil proporsional, rapi, dan terkunci sempurna di dalam batas layar.',
+    targetAudience: 'all',
+    targetAudienceLabel: 'Semua Pengguna',
     category: 'fix',
-    badge: 'Perbaikan Bug',
+    badge: 'Responsivitas Mobile',
+    iconName: 'Layers'
+  },
+  {
+    id: 'clean-unused-menus-and-options',
+    title: 'Pembersihan Menu & Opsi yang Tidak Digunakan',
+    description: 'Menghapus menu, opsi pemilih, serta elemen antarmuka yang tidak digunakan atau redundan di seluruh aplikasi guna menciptakan navigasi yang lebih ringkas, intuitif, dan efisien.',
+    targetAudience: 'all',
+    targetAudienceLabel: 'Semua Pengguna',
+    category: 'improvement',
+    badge: 'Penyederhanaan',
     iconName: 'CheckCircle'
   }
 ];
