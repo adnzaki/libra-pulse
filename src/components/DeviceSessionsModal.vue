@@ -1,13 +1,14 @@
 <template>
   <teleport to="body">
-    <div 
-      v-if="isOpen" 
-      class="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200"
-      @click.self="handleClose"
-    >
+    <Transition name="modal">
       <div 
-        class="bg-white text-slate-900 w-full max-w-full sm:max-w-2xl max-h-[calc(100dvh-1.25rem)] sm:max-h-[90vh] rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200/80 animate-in zoom-in-95 duration-200 my-auto"
+        v-if="isOpen" 
+        class="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-slate-950/75 backdrop-blur-xs"
+        @click.self="handleClose"
       >
+        <div 
+          class="bg-white text-slate-900 w-full max-w-full sm:max-w-2xl max-h-[calc(100dvh-1.25rem)] sm:max-h-[90vh] rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200/80 my-auto"
+        >
         <!-- Modal Header -->
         <div class="px-3.5 py-3 sm:px-6 sm:py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2.5 bg-slate-50/90 dark:bg-slate-900/90 shrink-0 w-full">
           <div class="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
@@ -461,7 +462,8 @@
           </button>
         </div>
       </div>
-    </div>
+      </div>
+    </Transition>
   </teleport>
 </template>
 

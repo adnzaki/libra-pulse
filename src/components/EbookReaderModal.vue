@@ -1,11 +1,12 @@
 <template>
-  <div 
-    v-if="isOpen" 
-    ref="readerModalRef"
-    class="fixed inset-0 z-50 flex flex-col bg-slate-950/95 backdrop-blur-md overflow-hidden select-none animate-in fade-in duration-200"
-    :class="{ 'is-fullscreen': isFullscreen }"
-    @contextmenu.prevent
-  >
+  <Transition name="modal">
+    <div 
+      v-if="isOpen" 
+      ref="readerModalRef"
+      class="fixed inset-0 z-50 flex flex-col bg-slate-950/95 backdrop-blur-md overflow-hidden select-none"
+      :class="{ 'is-fullscreen': isFullscreen }"
+      @contextmenu.prevent
+    >
     <!-- Top Navigation / Reader Toolbar -->
     <header class="h-12 sm:h-14 bg-slate-900/95 border-b border-slate-800 text-white px-3 sm:px-6 flex items-center justify-between shrink-0 z-20 shadow-md transition-all">
       <!-- Left: Book & Status Details -->
@@ -619,6 +620,7 @@
       <span>Perpustakaan Digital Resmi SDN Pengasinan VII • Dokumen hanya dapat dibaca in-app tanpa opsi unduh bebas demi kepatuhan lisensi.</span>
     </footer>
   </div>
+  </Transition>
 </template>
 
 <script setup lang="ts">

@@ -12,27 +12,31 @@
     <Navbar />
 
     <!-- Toast Notification Banner -->
-    <div 
-      v-if="store.toastMessage"
-      class="fixed bottom-20 md:bottom-6 right-4 sm:right-6 left-4 sm:left-auto z-[100] px-4 sm:px-5 py-3.5 bg-slate-900/95 text-white font-semibold rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-bottom-5 duration-300 text-xs border border-slate-800 backdrop-blur-md"
-    >
-      <div class="w-6 h-6 rounded-lg bg-blue-500 flex items-center justify-center text-white shrink-0">
-        <Bell class="w-3.5 h-3.5" />
+    <Transition name="toast">
+      <div 
+        v-if="store.toastMessage"
+        class="fixed bottom-20 md:bottom-6 right-4 sm:right-6 left-4 sm:left-auto z-[100] px-4 sm:px-5 py-3.5 bg-slate-900/95 text-white font-semibold rounded-2xl shadow-2xl flex items-center gap-3 text-xs border border-slate-800 backdrop-blur-md"
+      >
+        <div class="w-6 h-6 rounded-lg bg-blue-500 flex items-center justify-center text-white shrink-0">
+          <Bell class="w-3.5 h-3.5" />
+        </div>
+        <span class="flex-1 line-clamp-2">{{ store.toastMessage }}</span>
       </div>
-      <span class="flex-1 line-clamp-2">{{ store.toastMessage }}</span>
-    </div>
+    </Transition>
 
     <!-- Error Alert Toast -->
-    <div 
-      v-if="store.error"
-      class="fixed bottom-20 md:bottom-6 left-4 sm:left-6 right-4 sm:right-auto z-[100] px-4 sm:px-5 py-3.5 bg-rose-600/95 text-white font-semibold rounded-2xl shadow-2xl flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5 duration-300 text-xs border border-rose-500 max-w-md backdrop-blur-md"
-    >
-      <div class="flex items-center gap-2">
-        <AlertCircle class="w-4 h-4 shrink-0 text-white" />
-        <span class="line-clamp-2">{{ store.error }}</span>
+    <Transition name="toast">
+      <div 
+        v-if="store.error"
+        class="fixed bottom-20 md:bottom-6 left-4 sm:left-6 right-4 sm:right-auto z-[100] px-4 sm:px-5 py-3.5 bg-rose-600/95 text-white font-semibold rounded-2xl shadow-2xl flex items-center justify-between gap-3 text-xs border border-rose-500 max-w-md backdrop-blur-md"
+      >
+        <div class="flex items-center gap-2">
+          <AlertCircle class="w-4 h-4 shrink-0 text-white" />
+          <span class="line-clamp-2">{{ store.error }}</span>
+        </div>
+        <button @click="store.clearError" class="p-1 rounded-lg hover:bg-rose-700 text-white cursor-pointer">✕</button>
       </div>
-      <button @click="store.clearError" class="p-1 rounded-lg hover:bg-rose-700 text-white cursor-pointer">✕</button>
-    </div>
+    </Transition>
 
     <!-- Main View Content -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-24 md:pb-12">

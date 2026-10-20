@@ -1,12 +1,13 @@
 <template>
-  <div 
-    v-if="store.isChangelogModalOpen" 
-    class="fixed inset-0 z-80 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-xs animate-in fade-in duration-200"
-    @click.self="store.markChangelogSeen()"
-  >
+  <Transition name="modal">
     <div 
-      class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200 max-h-[92dvh] flex flex-col"
+      v-if="store.isChangelogModalOpen" 
+      class="fixed inset-0 z-80 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-xs"
+      @click.self="store.markChangelogSeen()"
     >
+      <div 
+        class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 max-h-[92dvh] flex flex-col"
+      >
       <!-- Modal Header -->
       <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3 bg-gradient-to-r from-blue-50/80 via-indigo-50/60 to-slate-50 dark:from-slate-900 dark:via-blue-950/40 dark:to-slate-900 shrink-0">
         <div class="flex items-center gap-3 min-w-0 flex-1">
@@ -148,6 +149,7 @@
 
     </div>
   </div>
+  </Transition>
 </template>
 
 <script setup lang="ts">

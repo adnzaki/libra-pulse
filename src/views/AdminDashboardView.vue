@@ -269,11 +269,11 @@
     <!-- MAIN INTERACTIVE BENTO CARD: Tabs & Circulation Tables -->
     <div class="bg-white dark:bg-slate-900/80 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
       
-      <!-- Bento Tab Bar (Standalone Primary Tabs + Pilihan Menu Button + Search) -->
-      <div class="px-3 sm:px-6 py-3 sm:py-3.5 border-b border-slate-100 dark:border-slate-800 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2.5 sm:gap-3 bg-slate-50/60 dark:bg-slate-900/90">
+      <!-- Bento Tab Bar & Full-Width Search Header -->
+      <div class="p-3 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-3 bg-slate-50/60 dark:bg-slate-900/90 w-full">
         
-        <!-- Standalone Primary Tabs + Pilihan Menu Button -->
-        <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5 shrink-0">
+        <!-- Standalone Primary Tabs + Menu Pengelolaan (Memenuhi Lebar Card) -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-2.5 w-full">
           
           <!-- Standalone Tab 1: Master Data Buku, Tab 2: Sirkulasi & Peminjaman Aktif, Tab 3: Booking 24h -->
           <button
@@ -281,7 +281,7 @@
             :key="tab.id"
             type="button"
             @click="activeTab = tab.id"
-            class="px-2.5 sm:px-3 lg:px-3.5 xl:px-4 py-2 sm:py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2 shrink-0 active:scale-95 whitespace-nowrap select-none border"
+            class="w-full px-2.5 sm:px-3 lg:px-4 py-2.5 sm:py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 active:scale-[0.98] select-none border min-w-0"
             :class="activeTab === tab.id
               ? 'bg-slate-900 dark:bg-blue-600 text-white border-transparent shadow-sm'
               : 'bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/80 border-slate-200/90 dark:border-slate-700/80'"
@@ -291,8 +291,8 @@
               class="w-4 h-4 shrink-0"
               :class="activeTab === tab.id ? 'text-blue-300 dark:text-white' : 'text-slate-500 dark:text-slate-400'"
             />
-            <span class="hidden 2xl:inline">{{ tab.label }}</span>
-            <span class="2xl:hidden">{{ tab.shortLabel || tab.label }}</span>
+            <span class="hidden xl:inline truncate">{{ tab.label }}</span>
+            <span class="xl:hidden truncate">{{ tab.shortLabel || tab.label }}</span>
             <span 
               v-if="tab.badge !== undefined && tab.badge !== null" 
               class="px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-extrabold font-mono shrink-0"
@@ -308,7 +308,7 @@
           <button 
             type="button"
             @click="isTabMenuModalOpen = true"
-            class="px-3 sm:px-3.5 lg:px-3.5 xl:px-4 py-2 sm:py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2 shrink-0 active:scale-95 whitespace-nowrap select-none border shadow-2xs"
+            class="w-full px-2.5 sm:px-3 lg:px-4 py-2.5 sm:py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 active:scale-[0.98] select-none border shadow-2xs min-w-0"
             :class="isOtherTabActive
               ? 'bg-slate-900 dark:bg-blue-600 text-white border-transparent shadow-sm'
               : 'bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/80 border-slate-200/90 dark:border-slate-700/80'"
@@ -317,14 +317,14 @@
             <!-- When an otherTab is active, show its icon, label, and dropdown icon -->
             <template v-if="isOtherTabActive && activeOtherTab">
               <component :is="activeOtherTab.icon" class="w-4 h-4 shrink-0 text-blue-300 dark:text-white" />
-              <span class="max-w-[120px] sm:max-w-[160px] xl:max-w-none truncate">{{ activeOtherTab.label }}</span>
+              <span class="truncate">{{ activeOtherTab.label }}</span>
               <span 
                 v-if="activeOtherTab.badge !== undefined && activeOtherTab.badge !== null" 
                 class="px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-extrabold font-mono bg-white/20 text-white shrink-0"
               >
                 {{ activeOtherTab.badge }}
               </span>
-              <div class="flex items-center gap-1 pl-1.5 border-l border-white/25 text-[11px] font-semibold text-slate-200 dark:text-blue-100">
+              <div class="flex items-center gap-0.5 sm:gap-1 pl-1 sm:pl-1.5 border-l border-white/25 text-[11px] font-semibold text-slate-200 dark:text-blue-100 shrink-0">
                 <LayoutGrid class="w-3.5 h-3.5" />
                 <ChevronDown class="w-3.5 h-3.5" />
               </div>
@@ -333,7 +333,7 @@
             <!-- When a primary tab is active -->
             <template v-else>
               <LayoutGrid class="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-              <span>Menu Pengelolaan</span>
+              <span class="truncate">Menu Pengelolaan</span>
               <span 
                 v-if="otherTabsPendingCount > 0" 
                 class="px-1.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500 text-white font-mono shrink-0 animate-pulse"
@@ -347,22 +347,22 @@
 
         </div>
 
-        <!-- Real-time Search Input with Tab-Specific Models (Reduced width to prevent cutting off tabs) -->
-        <div v-if="hasSearchForActiveTab" class="relative w-full sm:w-52 md:w-56 lg:w-56 xl:w-60 shrink-0">
+        <!-- Real-time Search Input Full Width di Semua Layar -->
+        <div v-if="hasSearchForActiveTab" class="relative w-full">
           <input 
             v-model="currentSearchInput"
             type="text" 
             :placeholder="searchPlaceholder"
-            class="w-full pl-8.5 pr-7 py-2 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-full text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500 shadow-sm font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500"
+            class="w-full pl-9 sm:pl-10 pr-9 py-2.5 sm:py-3 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-full text-xs sm:text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shadow-xs font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all"
           />
-          <Search class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
+          <Search class="w-4 h-4 text-slate-400 absolute left-3 sm:left-3.5 top-3 sm:top-3.5 pointer-events-none" />
           <button 
             v-if="currentSearchInput"
             @click="currentSearchInput = ''"
-            class="absolute right-2 top-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-0.5 rounded-full cursor-pointer transition"
+            class="absolute right-2.5 sm:right-3 top-2.5 sm:top-3 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-0.5 rounded-full cursor-pointer transition"
             title="Hapus kata kunci pencarian"
           >
-            <X class="w-3 h-3" />
+            <X class="w-3.5 h-3.5" />
           </button>
         </div>
 
@@ -2291,8 +2291,9 @@
     />
 
     <!-- Admin Direct Reset Member Password Modal -->
-    <div v-if="isResetMemberPasswordOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/60 backdrop-blur-xs overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200">
-      <div class="bg-white w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-md sm:rounded-3xl rounded-none border-0 sm:border sm:border-slate-200 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+    <Transition name="modal">
+      <div v-if="isResetMemberPasswordOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/60 backdrop-blur-xs overflow-hidden sm:overflow-y-auto">
+        <div class="bg-white w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-md sm:rounded-3xl rounded-none border-0 sm:border sm:border-slate-200 shadow-2xl flex flex-col overflow-hidden">
         <div class="px-4 sm:px-6 py-4 sm:py-5 bg-slate-900 text-white flex items-center justify-between shrink-0 sticky top-0 z-20">
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-xl bg-blue-600/30 text-blue-400 border border-blue-500/30 shrink-0">
@@ -2369,10 +2370,12 @@
         </form>
       </div>
     </div>
+    </Transition>
 
     <!-- Modal Preview Foto Selfie Guru Ukuran Penuh -->
-    <div v-if="previewSelfieUrl" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-xs overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200">
-      <div class="bg-white w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-lg sm:rounded-3xl rounded-none border-0 sm:border sm:border-slate-200 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+    <Transition name="modal">
+      <div v-if="previewSelfieUrl" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-xs overflow-hidden sm:overflow-y-auto">
+        <div class="bg-white w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-lg sm:rounded-3xl rounded-none border-0 sm:border sm:border-slate-200 shadow-2xl flex flex-col overflow-hidden">
         <div class="px-4 sm:px-6 py-4 bg-slate-900 text-white flex items-center justify-between shrink-0 sticky top-0 z-20">
           <div class="flex items-center gap-2.5">
             <div class="p-1.5 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 shrink-0">
@@ -2410,10 +2413,12 @@
         </div>
       </div>
     </div>
+    </Transition>
 
     <!-- Modal Penolakan Permintaan Status Guru -->
-    <div v-if="isRejectTeacherModalOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-xs overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200">
-      <div class="bg-white dark:bg-slate-900 w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-md sm:rounded-3xl rounded-none border-0 sm:border sm:border-slate-100 dark:sm:border-slate-800 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+    <Transition name="modal">
+      <div v-if="isRejectTeacherModalOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-xs overflow-hidden sm:overflow-y-auto">
+        <div class="bg-white dark:bg-slate-900 w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-md sm:rounded-3xl rounded-none border-0 sm:border sm:border-slate-100 dark:sm:border-slate-800 shadow-2xl flex flex-col overflow-hidden">
         <div class="px-4 sm:px-6 py-4 bg-rose-600 text-white flex items-center justify-between shrink-0 sticky top-0 z-20">
           <div class="flex items-center gap-2.5">
             <div class="p-1.5 rounded-xl bg-rose-700/50 text-white shrink-0">
@@ -2467,10 +2472,12 @@
         </form>
       </div>
     </div>
+    </Transition>
 
     <!-- Modal Persetujuan Permintaan Status Guru -->
-    <div v-if="isApproveTeacherModalOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-xs overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200">
-      <div class="bg-white dark:bg-slate-900 w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-lg sm:rounded-3xl rounded-none border-0 sm:border sm:border-slate-100 dark:sm:border-slate-800 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+    <Transition name="modal">
+      <div v-if="isApproveTeacherModalOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-xs overflow-hidden sm:overflow-y-auto">
+        <div class="bg-white dark:bg-slate-900 w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-lg sm:rounded-3xl rounded-none border-0 sm:border sm:border-slate-100 dark:sm:border-slate-800 shadow-2xl flex flex-col overflow-hidden">
         <!-- Sticky Header -->
         <div class="px-4 sm:px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-700 text-white flex items-center justify-between shrink-0 sticky top-0 z-20">
           <div class="flex items-center gap-3">
@@ -2583,10 +2590,12 @@
         </div>
       </div>
     </div>
+    </Transition>
 
     <!-- Modal Penolakan Permohonan Verifikasi Siswa (e-Book) -->
-    <div v-if="isRejectStudentModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
-      <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 max-h-[90vh]">
+    <Transition name="modal">
+      <div v-if="isRejectStudentModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         <!-- Header -->
         <div class="px-6 py-4 bg-rose-600 text-white flex items-center justify-between shrink-0">
           <div class="flex items-center gap-2.5">
@@ -2673,10 +2682,12 @@
         </form>
       </div>
     </div>
+    </Transition>
 
     <!-- Modal Persetujuan Permohonan Verifikasi Siswa (e-Book) -->
-    <div v-if="isApproveStudentModalOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200">
-      <div class="bg-white dark:bg-slate-900 w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-lg sm:rounded-3xl rounded-none border-0 sm:border sm:border-slate-100 dark:sm:border-slate-800 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+    <Transition name="modal">
+      <div v-if="isApproveStudentModalOpen" class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-hidden sm:overflow-y-auto">
+        <div class="bg-white dark:bg-slate-900 w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-lg sm:rounded-3xl rounded-none border-0 sm:border sm:border-slate-100 dark:sm:border-slate-800 shadow-2xl flex flex-col overflow-hidden">
         <!-- Sticky Header -->
         <div class="px-4 sm:px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white flex items-center justify-between shrink-0 sticky top-0 z-20">
           <div class="flex items-center gap-3">
@@ -2789,14 +2800,16 @@
         </div>
       </div>
     </div>
+    </Transition>
 
     <!-- Modal Penangguhan Sanksi Anggota (Suspend) -->
-    <div 
-      v-if="isSuspendMemberModalOpen" 
-      @click.self="closeSuspendMemberModal"
-      class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-hidden sm:overflow-y-auto animate-in fade-in duration-200"
-    >
-      <div class="bg-white w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-md sm:rounded-3xl rounded-none border-0 sm:border sm:border-slate-200 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+    <Transition name="modal">
+      <div 
+        v-if="isSuspendMemberModalOpen" 
+        @click.self="closeSuspendMemberModal"
+        class="fixed inset-0 z-50 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-hidden sm:overflow-y-auto"
+      >
+        <div class="bg-white w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-md sm:rounded-3xl rounded-none border-0 sm:border sm:border-slate-200 shadow-2xl flex flex-col overflow-hidden">
         <div class="px-4 sm:px-6 py-4 bg-rose-600 text-white flex items-center justify-between shrink-0 sticky top-0 z-20">
           <div class="flex items-center gap-2.5">
             <div class="p-1.5 rounded-xl bg-rose-700/50 text-white shrink-0">
@@ -2873,10 +2886,12 @@
         </form>
       </div>
     </div>
+    </Transition>
 
     <!-- Modal Universal Konfirmasi Aksi Admin -->
-    <div v-if="confirmDialog.isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
-      <div class="bg-white dark:bg-slate-900 w-full max-w-sm sm:max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 relative">
+    <Transition name="modal">
+      <div v-if="confirmDialog.isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-sm sm:max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden relative">
         <button 
           @click="closeConfirmDialog"
           type="button"
@@ -2925,6 +2940,7 @@
         </div>
       </div>
     </div>
+    </Transition>
 
     <!-- Modal Manajemen Sesi & Perangkat -->
     <DeviceSessionsModal 
@@ -2940,12 +2956,13 @@
     />
 
     <!-- Modal Pilihan Menu Pengelolaan Data Perpustakaan -->
-    <div 
-      v-if="isTabMenuModalOpen" 
-      class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200"
-      @click.self="isTabMenuModalOpen = false"
-    >
-      <div class="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90dvh] flex flex-col">
+    <Transition name="modal">
+      <div 
+        v-if="isTabMenuModalOpen" 
+        class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-xs"
+        @click.self="isTabMenuModalOpen = false"
+      >
+        <div class="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden max-h-[90dvh] flex flex-col">
         <!-- Modal Header -->
         <div class="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/90 shrink-0 space-y-3">
           <div class="flex items-center justify-between gap-3">
@@ -3093,6 +3110,7 @@
         </div>
       </div>
     </div>
+    </Transition>
 
     </div>
   </div>

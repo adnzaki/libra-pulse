@@ -142,16 +142,17 @@
               </button>
 
               <!-- Dropdown Options -->
-              <div 
-                v-if="isUserMenuOpen" 
-                class="account-dropdown-menu absolute right-0 mt-2 w-72 rounded-2xl shadow-2xl py-2 z-50 text-xs space-y-1 animate-in fade-in zoom-in-95 duration-150 border transition-all"
-                :class="{
-                  'bg-white text-slate-800 border-slate-200 shadow-xl': store.currentTheme === 'light',
-                  'bg-[#0e1422] text-slate-200 border-slate-800 shadow-2xl': store.currentTheme === 'dark',
-                  'bg-[#0b142c]/80 text-slate-100 border-blue-400/40 shadow-2xl backdrop-blur-2xl ring-1 ring-blue-400/25': store.currentTheme === 'elegant'
-                }"
-                @click="isUserMenuOpen = false"
-              >
+              <Transition name="dropdown">
+                <div 
+                  v-if="isUserMenuOpen" 
+                  class="account-dropdown-menu absolute right-0 mt-2 w-72 rounded-2xl shadow-2xl py-2 z-50 text-xs space-y-1 border"
+                  :class="{
+                    'bg-white text-slate-800 border-slate-200 shadow-xl': store.currentTheme === 'light',
+                    'bg-[#0e1422] text-slate-200 border-slate-800 shadow-2xl': store.currentTheme === 'dark',
+                    'bg-[#0b142c]/80 text-slate-100 border-blue-400/40 shadow-2xl backdrop-blur-2xl ring-1 ring-blue-400/25': store.currentTheme === 'elegant'
+                  }"
+                  @click="isUserMenuOpen = false"
+                >
                 <!-- If Logged In -->
                 <div 
                   v-if="store.currentUser" 
@@ -396,6 +397,7 @@
                 </div>
 
               </div>
+              </Transition>
             </div>
 
 

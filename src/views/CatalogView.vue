@@ -465,14 +465,15 @@
     />
 
     <!-- Modal Pemilihan Kategori Buku (Mobile / Desktop) -->
-    <div 
-      v-if="isCategoryModalOpen"
-      class="fixed inset-0 z-80 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200"
-      @click.self="isCategoryModalOpen = false"
-    >
+    <Transition name="modal">
       <div 
-        class="bg-white text-slate-900 w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200 max-h-[88dvh] flex flex-col"
+        v-if="isCategoryModalOpen"
+        class="fixed inset-0 z-80 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/75 backdrop-blur-xs"
+        @click.self="isCategoryModalOpen = false"
       >
+        <div 
+          class="bg-white text-slate-900 w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-slate-200 max-h-[88dvh] flex flex-col"
+        >
         <!-- Modal Header -->
         <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-3 bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-slate-50 shrink-0">
           <div class="flex items-center gap-3 min-w-0">
@@ -585,6 +586,7 @@
         </div>
       </div>
     </div>
+    </Transition>
 
   </div>
 </template>
