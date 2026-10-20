@@ -270,10 +270,10 @@
     <div class="bg-white dark:bg-slate-900/80 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
       
       <!-- Bento Tab Bar (Standalone Primary Tabs + Pilihan Menu Button + Search) -->
-      <div class="px-3 sm:px-6 py-3 sm:py-3.5 border-b border-slate-100 dark:border-slate-800 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-slate-50/60 dark:bg-slate-900/90">
+      <div class="px-3 sm:px-6 py-3 sm:py-3.5 border-b border-slate-100 dark:border-slate-800 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2.5 sm:gap-3 bg-slate-50/60 dark:bg-slate-900/90">
         
         <!-- Standalone Primary Tabs + Pilihan Menu Button -->
-        <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5 min-w-0">
+        <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5 shrink-0">
           
           <!-- Standalone Tab 1: Master Data Buku, Tab 2: Sirkulasi & Peminjaman Aktif, Tab 3: Booking 24h -->
           <button
@@ -281,7 +281,7 @@
             :key="tab.id"
             type="button"
             @click="activeTab = tab.id"
-            class="px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 active:scale-95 whitespace-nowrap select-none border"
+            class="px-2.5 sm:px-3 lg:px-3.5 xl:px-4 py-2 sm:py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2 shrink-0 active:scale-95 whitespace-nowrap select-none border"
             :class="activeTab === tab.id
               ? 'bg-slate-900 dark:bg-blue-600 text-white border-transparent shadow-sm'
               : 'bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/80 border-slate-200/90 dark:border-slate-700/80'"
@@ -291,8 +291,8 @@
               class="w-4 h-4 shrink-0"
               :class="activeTab === tab.id ? 'text-blue-300 dark:text-white' : 'text-slate-500 dark:text-slate-400'"
             />
-            <span class="hidden sm:inline">{{ tab.label }}</span>
-            <span class="sm:hidden">{{ tab.shortLabel || tab.label }}</span>
+            <span class="hidden 2xl:inline">{{ tab.label }}</span>
+            <span class="2xl:hidden">{{ tab.shortLabel || tab.label }}</span>
             <span 
               v-if="tab.badge !== undefined && tab.badge !== null" 
               class="px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-extrabold font-mono shrink-0"
@@ -308,7 +308,7 @@
           <button 
             type="button"
             @click="isTabMenuModalOpen = true"
-            class="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 active:scale-95 whitespace-nowrap select-none border shadow-2xs"
+            class="px-3 sm:px-3.5 lg:px-3.5 xl:px-4 py-2 sm:py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2 shrink-0 active:scale-95 whitespace-nowrap select-none border shadow-2xs"
             :class="isOtherTabActive
               ? 'bg-slate-900 dark:bg-blue-600 text-white border-transparent shadow-sm'
               : 'bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/80 border-slate-200/90 dark:border-slate-700/80'"
@@ -317,7 +317,7 @@
             <!-- When an otherTab is active, show its icon, label, and dropdown icon -->
             <template v-if="isOtherTabActive && activeOtherTab">
               <component :is="activeOtherTab.icon" class="w-4 h-4 shrink-0 text-blue-300 dark:text-white" />
-              <span class="max-w-[130px] sm:max-w-none truncate">{{ activeOtherTab.label }}</span>
+              <span class="max-w-[120px] sm:max-w-[160px] xl:max-w-none truncate">{{ activeOtherTab.label }}</span>
               <span 
                 v-if="activeOtherTab.badge !== undefined && activeOtherTab.badge !== null" 
                 class="px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-extrabold font-mono bg-white/20 text-white shrink-0"
@@ -347,22 +347,22 @@
 
         </div>
 
-        <!-- Real-time Search Input with Tab-Specific Models -->
-        <div v-if="hasSearchForActiveTab" class="relative w-full sm:w-80 shrink-0">
+        <!-- Real-time Search Input with Tab-Specific Models (Reduced width to prevent cutting off tabs) -->
+        <div v-if="hasSearchForActiveTab" class="relative w-full sm:w-52 md:w-56 lg:w-56 xl:w-60 shrink-0">
           <input 
             v-model="currentSearchInput"
             type="text" 
             :placeholder="searchPlaceholder"
-            class="w-full pl-9 pr-8 py-2 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-full text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500 shadow-sm font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500"
+            class="w-full pl-8.5 pr-7 py-2 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-full text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500 shadow-sm font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500"
           />
-          <Search class="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
+          <Search class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
           <button 
             v-if="currentSearchInput"
             @click="currentSearchInput = ''"
-            class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-0.5 rounded-full cursor-pointer transition"
+            class="absolute right-2 top-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-0.5 rounded-full cursor-pointer transition"
             title="Hapus kata kunci pencarian"
           >
-            <X class="w-3.5 h-3.5" />
+            <X class="w-3 h-3" />
           </button>
         </div>
 
@@ -3161,14 +3161,14 @@ const hasSearchForActiveTab = computed(() => {
 
 const searchPlaceholder = computed(() => {
   switch (activeTab.value) {
-    case 'loans': return 'Cari transaksi sirkulasi / peminjam / judul...';
-    case 'loan_history': return 'Cari riwayat peminjaman / nama / judul buku / ID...';
-    case 'bookings': return 'Cari booking aktif / nama / judul...';
-    case 'members': return 'Cari anggota / no kartu / email / no HP...';
-    case 'student_verifications': return 'Cari verifikasi siswa / NIS / NISN / nama...';
-    case 'teacher_requests': return 'Cari verifikasi guru / NIP / nama...';
-    case 'books': return 'Cari judul buku / pengarang / rak / ISBN...';
-    case 'categories': return 'Cari nama kategori buku...';
+    case 'loans': return 'Cari peminjaman / judul...';
+    case 'loan_history': return 'Cari riwayat peminjaman...';
+    case 'bookings': return 'Cari reservasi booking...';
+    case 'members': return 'Cari nama / kartu / email...';
+    case 'student_verifications': return 'Cari verifikasi siswa...';
+    case 'teacher_requests': return 'Cari verifikasi guru...';
+    case 'books': return 'Cari judul, pengarang, rak...';
+    case 'categories': return 'Cari nama kategori...';
     default: return 'Cari data...';
   }
 });
