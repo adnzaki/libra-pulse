@@ -66,7 +66,7 @@
           v-if="isOpen"
           ref="menuRef"
           :style="floatingStyles"
-          class="fixed z-[99999] overflow-hidden flex flex-col shadow-2xl border rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-slate-200/90 dark:border-slate-800/90 box-border text-slate-800 dark:text-slate-100"
+          class="fixed z-99999 overflow-hidden flex flex-col shadow-2xl border rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-slate-200/90 dark:border-slate-800/90 box-border text-slate-800 dark:text-slate-100"
           :class="[
             variant === 'dark' ? 'bg-slate-850/95 border-slate-700 text-slate-100 shadow-slate-950/60' : 'shadow-slate-900/20',
             menuClass
