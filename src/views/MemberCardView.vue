@@ -505,7 +505,7 @@
           <!-- Customization Bar: Theme & Size -->
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
             <div class="flex items-center gap-2">
-              <span class="text-slate-400 font-medium">Warna Cetak:</span>
+              <span class="text-slate-300 font-semibold">Warna Cetak:</span>
               <div class="inline-flex rounded-xl p-1 bg-slate-800 border border-slate-700">
                 <button 
                   @click="printTheme = 'dark'"
@@ -527,7 +527,7 @@
             </div>
 
             <div class="flex items-center gap-2">
-              <span class="text-slate-400 font-medium shrink-0">Ukuran:</span>
+              <span class="text-slate-300 font-semibold shrink-0">Ukuran:</span>
               <div class="w-full sm:w-64">
                 <CustomSelect 
                   v-model="cardPrintSize" 

@@ -28,11 +28,15 @@
         <component 
           v-if="selectedOption?.icon" 
           :is="selectedOption.icon" 
-          class="w-3.5 h-3.5 shrink-0 opacity-70 text-blue-600 dark:text-blue-400" 
+          class="w-3.5 h-3.5 shrink-0 opacity-70"
+          :class="variant === 'dark' ? 'text-blue-400' : 'text-blue-600 dark:text-blue-400'" 
         />
         <span 
           class="truncate block min-w-0 flex-1"
-          :class="{ 'text-slate-400 dark:text-slate-500 font-normal': !selectedOption }"
+          :class="[
+            !selectedOption ? 'text-slate-400 dark:text-slate-500 font-normal' : '',
+            variant === 'dark' && selectedOption ? '!text-slate-100 font-semibold' : ''
+          ]"
         >
           {{ selectedOption ? selectedOption.label : placeholder }}
         </span>
@@ -41,13 +45,22 @@
       <div class="flex items-center gap-1.5 shrink-0 ml-1">
         <span 
           v-if="selectedOption?.badge" 
-          class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60"
+          class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+          :class="variant === 'dark' 
+            ? 'bg-blue-600/40 !text-blue-200 border border-blue-500/40' 
+            : 'bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60'"
         >
           {{ selectedOption.badge }}
         </span>
         <ChevronDown 
-          class="w-3.5 h-3.5 transition-transform duration-200 opacity-60 shrink-0 text-slate-500 dark:text-slate-400"
-          :class="{ 'rotate-180': isOpen, 'text-blue-600 dark:text-blue-400 opacity-100': isOpen }"
+          class="w-3.5 h-3.5 transition-transform duration-200 shrink-0"
+          :class="{ 
+            'rotate-180': isOpen, 
+            '!text-blue-400 opacity-100': isOpen && variant === 'dark',
+            'text-blue-600 dark:text-blue-400 opacity-100': isOpen && variant !== 'dark',
+            '!text-slate-300 opacity-70': !isOpen && variant === 'dark',
+            'text-slate-500 dark:text-slate-400 opacity-60': !isOpen && variant !== 'dark'
+          }"
         />
       </div>
     </button>
@@ -68,7 +81,9 @@
           :style="floatingStyles"
           class="fixed z-99999 overflow-hidden flex flex-col shadow-2xl border rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-slate-200/90 dark:border-slate-800/90 box-border text-slate-800 dark:text-slate-100"
           :class="[
-            variant === 'dark' ? 'bg-slate-850/95 border-slate-700 text-slate-100 shadow-slate-950/60' : 'shadow-slate-900/20',
+            variant === 'dark' 
+              ? '!bg-slate-900 border-slate-700 !text-slate-100 shadow-2xl shadow-slate-950/80 custom-select-dark-menu' 
+              : 'bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-slate-200/90 dark:border-slate-800/90 text-slate-800 dark:text-slate-100 shadow-slate-900/20',
             menuClass
           ]"
           role="listbox"
@@ -76,7 +91,8 @@
           <!-- Search Bar (if searchable or long list) -->
           <div 
             v-if="isSearchVisible" 
-            class="p-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/90 shrink-0"
+            class="p-2 border-b shrink-0"
+            :class="variant === 'dark' ? 'border-slate-800 bg-slate-950/70' : 'border-slate-100 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/90'"
           >
             <div class="relative">
               <Search class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
@@ -85,14 +101,17 @@
                 v-model="searchQuery"
                 type="text"
                 :placeholder="searchPlaceholder"
-                class="w-full pl-8 pr-7 py-1.5 text-xs bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500 transition shadow-2xs"
+                class="w-full pl-8 pr-7 py-1.5 text-xs rounded-xl transition shadow-2xs"
+                :class="variant === 'dark'
+                  ? '!bg-slate-800 border-slate-700 !text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500'
+                  : 'bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500'"
                 @keydown.stop
               />
               <button
                 v-if="searchQuery"
                 type="button"
                 @click="searchQuery = ''"
-                class="absolute right-2 top-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs p-0.5 rounded-full"
+                class="absolute right-2 top-1.5 text-slate-400 hover:text-slate-200 text-xs p-0.5 rounded-full"
               >
                 ✕
               </button>
@@ -103,7 +122,7 @@
           <div class="overflow-y-auto overscroll-contain p-1.5 space-y-0.5 flex-1 min-w-0 max-w-full">
             <div
               v-if="filteredOptions.length === 0"
-              class="py-4 px-3 text-center text-xs text-slate-400 dark:text-slate-500 italic"
+              class="py-4 px-3 text-center text-xs text-slate-400 italic"
             >
               Tidak ada opsi yang cocok
             </div>
@@ -118,13 +137,19 @@
               :title="option.label + (option.sublabel ? ' (' + option.sublabel + ')' : '')"
               class="w-full flex items-center justify-between gap-2.5 px-3 py-2 rounded-xl text-xs transition cursor-pointer text-left font-medium min-w-0 max-w-full group select-none active:scale-[0.99]"
               :class="[
-                isSelected(option.value)
-                  ? (variant === 'dark' 
-                      ? 'bg-blue-600/20 text-blue-400 font-bold border border-blue-500/30' 
-                      : 'bg-blue-50/90 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-bold border border-blue-200/70 dark:border-blue-900/50 shadow-2xs')
-                  : highlightedIndex === index
-                    ? (variant === 'dark' ? 'bg-slate-700/80 text-white' : 'bg-slate-100/90 dark:bg-slate-800 text-slate-900 dark:text-slate-100')
-                    : (variant === 'dark' ? 'text-slate-300 hover:bg-slate-700/50' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'),
+                variant === 'dark' ? 'custom-select-dark-item' : '',
+                isSelected(option.value) ? 'is-selected' : '',
+                variant === 'dark'
+                  ? (isSelected(option.value)
+                      ? '!bg-blue-600/35 !text-blue-300 font-bold border border-blue-500/50 shadow-sm'
+                      : highlightedIndex === index
+                        ? '!bg-slate-800 !text-white'
+                        : '!text-slate-200 hover:!bg-slate-800/80')
+                  : (isSelected(option.value)
+                      ? 'bg-blue-50/90 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-bold border border-blue-200/70 dark:border-blue-900/50 shadow-2xs'
+                      : highlightedIndex === index
+                        ? 'bg-slate-100/90 dark:bg-slate-800 text-slate-900 dark:text-slate-100'
+                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'),
                 option.disabled ? 'opacity-40 cursor-not-allowed' : ''
               ]"
               role="option"
@@ -134,13 +159,22 @@
                 <component 
                   v-if="option.icon" 
                   :is="option.icon" 
-                  class="w-3.5 h-3.5 shrink-0 opacity-70" 
+                  class="w-3.5 h-3.5 shrink-0 opacity-70"
+                  :class="variant === 'dark' ? 'text-blue-400' : 'text-blue-600 dark:text-blue-400'" 
                 />
                 <div class="min-w-0 flex-1 overflow-hidden">
-                  <span class="truncate block text-xs font-semibold leading-tight">{{ option.label }}</span>
+                  <span 
+                    class="truncate block text-xs leading-tight"
+                    :class="variant === 'dark' 
+                      ? (isSelected(option.value) ? '!text-blue-200 font-bold' : '!text-slate-100 font-semibold') 
+                      : (isSelected(option.value) ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-800 dark:text-slate-100 font-semibold')"
+                  >
+                    {{ option.label }}
+                  </span>
                   <span 
                     v-if="option.sublabel" 
-                    class="text-[10px] text-slate-400 dark:text-slate-500 block truncate font-normal mt-0.5 leading-tight"
+                    class="text-[10px] block truncate font-normal mt-0.5 leading-tight"
+                    :class="variant === 'dark' ? '!text-slate-400' : 'text-slate-400 dark:text-slate-500'"
                   >
                     {{ option.sublabel }}
                   </span>
@@ -151,13 +185,20 @@
                 <span 
                   v-if="option.badge" 
                   class="px-2 py-0.5 rounded-full text-[10px] font-bold"
-                  :class="isSelected(option.value) ? 'bg-blue-600 text-white shadow-2xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60'"
+                  :class="variant === 'dark'
+                    ? (isSelected(option.value) 
+                        ? 'bg-blue-600 !text-white shadow-sm border border-blue-400/40' 
+                        : '!bg-slate-800 !text-slate-300 border border-slate-700')
+                    : (isSelected(option.value) 
+                        ? 'bg-blue-600 text-white shadow-2xs' 
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60')"
                 >
                   {{ option.badge }}
                 </span>
                 <Check 
                   v-if="isSelected(option.value)" 
-                  class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0 stroke-[2.5]" 
+                  class="w-3.5 h-3.5 shrink-0 stroke-[2.5]" 
+                  :class="variant === 'dark' ? '!text-blue-300' : 'text-blue-600 dark:text-blue-400'"
                 />
               </div>
             </button>
@@ -309,7 +350,7 @@ const buttonClasses = computed(() => {
     );
   } else if (props.variant === 'dark') {
     classes.push(
-      'rounded-xl bg-slate-800 hover:bg-slate-700/90 active:bg-slate-700 border border-slate-700 text-slate-200 shadow-2xs font-semibold'
+      'rounded-xl !bg-slate-800 hover:!bg-slate-700 active:!bg-slate-700 border border-slate-700 !text-slate-100 shadow-2xs font-semibold custom-select-dark-btn'
     );
   } else if (props.variant === 'compact') {
     classes.push(
@@ -323,7 +364,11 @@ const buttonClasses = computed(() => {
   }
 
   if (isOpen.value) {
-    classes.push('border-blue-500 dark:border-blue-500 ring-2 ring-blue-500/25 bg-white dark:bg-slate-800 shadow-sm');
+    if (props.variant === 'dark') {
+      classes.push('border-blue-500 ring-2 ring-blue-500/30 !bg-slate-800 !text-white shadow-sm');
+    } else {
+      classes.push('border-blue-500 dark:border-blue-500 ring-2 ring-blue-500/25 bg-white dark:bg-slate-800 shadow-sm');
+    }
   }
 
   return classes.join(' ');
