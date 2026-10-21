@@ -1,19 +1,41 @@
 import type { ChangelogItem, AppVersionConfig } from '../types.js';
 
-export const CURRENT_APP_VERSION = '1.0.0-rc.2';
-export const APP_RELEASE_DATE = '19 Oktober 2026';
-export const APP_RELEASE_CODENAME = 'Libra Aurora RC 2';
+export const CURRENT_APP_VERSION = '1.0.0-rc.3';
+export const APP_RELEASE_DATE = '21 Oktober 2026';
+export const APP_RELEASE_CODENAME = 'Libra Aurora RC 3';
 
 export const DEFAULT_APP_VERSION_CONFIG: AppVersionConfig = {
   version: CURRENT_APP_VERSION,
   releaseDate: APP_RELEASE_DATE,
   forceReload: false,
-  minSupportedVersion: '1.0.0-rc.2',
-  updateMessage: 'Pembaruan sistem Libra versi 1.0.0-rc.2 telah dirilis dengan peningkatan tampilan menu pengelolaan data perpustakaan pada panel admin, penyempurnaan seluruh komponen drop-down, perbaikan drop-down pilihan rak pada katalog buku agar tidak melebihi layar mobile, pembersihan menu dan opsi yang tidak digunakan, perbaikan navigasi pagination katalog publik di layar mobile dengan input lompat halaman, serta penyesuaian tata letak input tautan URL dan tombol acak Unsplash pada form buku.',
-  changelogSummary: 'Peningkatan menu admin, penyempurnaan drop-down, perbaikan drop-down rak mobile, pembersihan opsi tidak terpakai, pagination katalog mobile dengan input lompat halaman, dan penyesuaian input cover buku.'
+  minSupportedVersion: '1.0.0-rc.3',
+  updateMessage: 'Pembaruan sistem Libra versi 1.0.0-rc.3 telah dirilis dengan perbaikan proporsi foto profil kartu member agar bebas distorsi/gepeng saat dicetak (PDF & PNG), serta peningkatan kontras warna teks dan latar belakang di berbagai komponen antarmuka, khususnya pada tema terang (Light Mode).',
+  changelogSummary: 'Perbaikan proporsi foto kartu member saat dicetak/diunduh dan peningkatan kontras teks pada dropdown serta elemen tema terang.'
 };
 
 export const CHANGELOG_LIST: ChangelogItem[] = [
+  {
+    id: 'member-card-photo-aspect-ratio-fix',
+    title: 'Perbaikan Proporsi Foto Kartu Anggota Saat Dicetak & Diunduh',
+    description:
+      'Memperbaiki kendala foto profil anggota yang sebelumnya terdistorsi, melebar, atau gepeng saat kartu dicetak ke PDF maupun diunduh ke format PNG. Kini renderer kartu menerapkan kalkulasi rasio aspek presisi dengan pemotongan cerdas (smart cover crop) dan penghalusan gambar berkualitas tinggi agar foto tetap proporsional dan jernih.',
+    targetAudience: 'all',
+    targetAudienceLabel: 'Semua Pengguna',
+    category: 'fix',
+    badge: 'Kartu Anggota',
+    iconName: 'CreditCard',
+  },
+  {
+    id: 'light-mode-dropdown-contrast-enhancement',
+    title: 'Peningkatan Kontras Warna Teks & Latar Belakang Komponen',
+    description:
+      'Meningkatkan kontras warna antara teks, ikon, dan latar belakang pada beberapa komponen antarmuka—termasuk menu drop-down pilihan ukuran cetak kartu dan jendela popover saat mode terang (Light Mode) aktif—sehingga seluruh teks terbaca dengan jelas, tajam, dan memenuhi standar aksesibilitas visual.',
+    targetAudience: 'all',
+    targetAudienceLabel: 'Semua Pengguna',
+    category: 'improvement',
+    badge: 'Aksesibilitas UI',
+    iconName: 'Sun',
+  },
   {
     id: 'admin-management-menu-enhancement',
     title:
