@@ -3,6 +3,27 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <script>
+      // Suppress dev-environment HMR/WebSocket errors per environment constraints
+      window.addEventListener('unhandledrejection', function(e) {
+        if (e && e.reason && (
+          String(e.reason.message || e.reason).includes('WebSocket') ||
+          String(e.reason.stack || '').includes('@vite/client')
+        )) {
+          e.preventDefault();
+          e.stopImmediatePropagation?.();
+        }
+      });
+      window.addEventListener('error', function(e) {
+        if (e && (
+          String(e.message || '').includes('WebSocket') ||
+          String(e.filename || '').includes('@vite/client')
+        )) {
+          e.preventDefault();
+          e.stopImmediatePropagation?.();
+        }
+      }, true);
+    </script>
     <title>Libra | Sistem Manajemen Perpustakaan Digital</title>
     <meta name="description" content="PWA Manajemen Perpustakaan Modern dengan Peminjaman QR, Manajemen Rak, Notifikasi Keterlambatan, dan Booking 24 Jam." />
     <meta name="theme-color" content="#0f172a" />

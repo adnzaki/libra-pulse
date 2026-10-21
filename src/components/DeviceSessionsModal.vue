@@ -269,8 +269,10 @@
         </div>
       </div>
     </div>
+    </Transition>
 
     <!-- Sub-Modal: Konfirmasi & Input Kode Verifikasi Email (Jadikan Perangkat Utama) -->
+    <Transition name="modal">
     <div 
       v-if="isVerifyModalOpen" 
       class="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200"
@@ -383,8 +385,10 @@
         </div>
       </div>
     </div>
+    </Transition>
 
     <!-- Sub-Modal: Dialog Konfirmasi Cabut Sesi -->
+    <Transition name="modal">
     <div 
       v-if="revokeTargetSession" 
       class="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200"
@@ -423,8 +427,10 @@
         </div>
       </div>
     </div>
+    </Transition>
 
     <!-- Sub-Modal: Dialog Konfirmasi Cabut SEMUA Sesi Lain -->
+    <Transition name="modal">
     <div 
       v-if="isRevokeAllConfirmOpen" 
       class="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200"

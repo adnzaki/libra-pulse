@@ -1,5 +1,6 @@
 <template>
-  <div v-if="store.isSuperAdmin" class="space-y-6 max-w-4xl mx-auto pb-12">
+  <div class="w-full">
+    <div v-if="store.isSuperAdmin" class="space-y-6 max-w-4xl mx-auto pb-12">
     <!-- Header -->
     <div class="bg-white dark:bg-slate-900/80 rounded-3xl p-6 sm:p-8 border border-slate-100 dark:border-slate-800 shadow-sm">
       <div class="flex items-center justify-between flex-wrap gap-4">
@@ -493,6 +494,7 @@
     <router-link to="/admin" class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 transition shadow-md shadow-slate-900/30">
       Kembali ke Admin Console
     </router-link>
+  </div>
   </div>
 </template>
 
