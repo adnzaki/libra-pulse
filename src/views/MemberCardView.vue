@@ -144,18 +144,18 @@
             <div class="flex items-center justify-between gap-3 sm:gap-4 my-2 sm:my-3 relative z-10">
               <div class="flex items-center gap-2.5 sm:gap-3.5 min-w-0 flex-1">
                 <!-- Avatar with graceful initials fallback -->
-                <div class="relative w-12 h-12 sm:w-16 sm:h-16 shrink-0">
+                <div class="relative w-12 h-12 sm:w-16 sm:h-16 shrink-0 aspect-square">
                   <img 
                     v-if="activeMember.avatar && !avatarLoadError"
                     :src="activeMember.avatar" 
                     @error="avatarLoadError = true"
-                    class="w-full h-full rounded-2xl object-cover border-2 shadow-md" 
+                    class="w-full h-full rounded-2xl object-cover border-2 shadow-md aspect-square" 
                     :class="activeMember.isSuspended ? 'border-rose-400' : 'border-blue-400'"
                     alt="Foto Member" 
                   />
                   <div 
                     v-else 
-                    class="w-full h-full rounded-2xl flex items-center justify-center font-extrabold text-sm sm:text-base border-2 shadow-md uppercase tracking-wide"
+                    class="w-full h-full rounded-2xl flex items-center justify-center font-extrabold text-sm sm:text-base border-2 shadow-md uppercase tracking-wide aspect-square"
                     :class="activeMember.isSuspended 
                       ? 'bg-rose-900 border-rose-400 text-rose-100' 
                       : 'bg-gradient-to-br from-blue-600 to-indigo-700 border-blue-400 text-white'"
@@ -423,13 +423,26 @@
             <!-- Middle Row: Member Info & QR Code -->
             <div class="flex items-center justify-between gap-4 my-2 relative z-10">
               <div class="flex items-center gap-3 min-w-0">
-                <img 
-                  :src="activeMember.avatar" 
-                  crossorigin="anonymous"
-                  class="w-13 h-13 sm:w-16 sm:h-16 rounded-2xl object-cover border-2 shadow-md shrink-0" 
-                  :class="activeMember.isSuspended ? 'border-rose-400' : (printTheme === 'light' ? 'border-blue-500' : 'border-blue-400')"
-                  alt="Member Photo" 
-                />
+                <div class="relative w-14 h-14 sm:w-16 sm:h-16 shrink-0 aspect-square">
+                  <img 
+                    v-if="activeMember.avatar && !avatarLoadError"
+                    :src="activeMember.avatar" 
+                    @error="avatarLoadError = true"
+                    crossorigin="anonymous"
+                    class="w-full h-full rounded-2xl object-cover border-2 shadow-md aspect-square" 
+                    :class="activeMember.isSuspended ? 'border-rose-400' : (printTheme === 'light' ? 'border-blue-500' : 'border-blue-400')"
+                    alt="Member Photo" 
+                  />
+                  <div 
+                    v-else 
+                    class="w-full h-full rounded-2xl flex items-center justify-center font-extrabold text-sm sm:text-base border-2 shadow-md uppercase tracking-wide aspect-square"
+                    :class="activeMember.isSuspended 
+                      ? 'bg-rose-900 border-rose-400 text-rose-100' 
+                      : (printTheme === 'light' ? 'bg-blue-600 border-blue-500 text-white' : 'bg-gradient-to-br from-blue-600 to-indigo-700 border-blue-400 text-white')"
+                  >
+                    {{ getMemberInitials(activeMember.name) }}
+                  </div>
+                </div>
                 <div class="min-w-0">
                   <h3 class="font-extrabold text-base sm:text-lg truncate tracking-tight" :class="printTheme === 'light' ? 'text-slate-900' : 'text-white'">
                     {{ activeMember.name }}
@@ -799,9 +812,13 @@ const printCardDirectly = async () => {
               width: ${cardWidth};
               max-width: 100%;
               height: auto;
+              aspect-ratio: 1050 / 660;
+              object-fit: contain;
               border-radius: 4mm;
               display: block;
               margin: auto;
+              page-break-inside: avoid;
+              break-inside: avoid;
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
             }
