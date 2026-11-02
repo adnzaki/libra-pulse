@@ -31,6 +31,12 @@ service cloud.firestore {
       allow write: if true;
     }
 
+    // Deleted Books: Persistent tombstones
+    match /deleted_books/{bookId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
     // Shelves: Public read, Shelf management
     match /shelves/{shelfId} {
       allow read: if true;

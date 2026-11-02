@@ -245,6 +245,15 @@
         "notes": { "type": "string", "maxLength": 250 }
       },
       "required": ["id", "token", "createdAt", "isActive", "generatedBy", "type", "usageCount"]
+    "DeletedBook": {
+      "title": "DeletedBook",
+      "description": "Tombstone pencatat ID buku yang telah dihapus permanen agar tidak muncul kembali",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "deletedAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "deletedAt"]
     }
   },
   "firestore": {
@@ -255,6 +264,10 @@
     "/books/{bookId}": {
       "schema": "Book",
       "description": "Katalog koleksi buku fisik dan ketersediaan stok"
+    },
+    "/deleted_books/{bookId}": {
+      "schema": "DeletedBook",
+      "description": "Daftar tombstone ID buku yang sudah dihapus agar tidak muncul kembali"
     },
     "/shelves/{shelfId}": {
       "schema": "Shelf",

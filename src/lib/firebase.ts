@@ -190,10 +190,27 @@ export function withTimeout<T>(promise: Promise<T>, timeoutMs = 7000): Promise<T
 
 export async function checkAndSeedFirestore() {
   try {
+    // 1. Check if Firestore or local app has already been bootstrapped
+    try {
+      const bootstrapSnap = await withTimeout(getDoc(doc(db, 'config', 'bootstrap')), 6000);
+      if (bootstrapSnap.exists() && bootstrapSnap.data()?.isBootstrapped) {
+        console.log('Firestore is already bootstrapped. Skipping seed to prevent restoring deleted books.');
+        return false;
+      }
+    } catch {
+      // ignore
+    }
+
     const booksSnap = await withTimeout(getDocs(collection(db, 'books')), 8000);
     if (!booksSnap.empty) {
+      // Mark as bootstrapped in config so we never re-seed if books are deleted later
+      await setDoc(doc(db, 'config', 'bootstrap'), { isBootstrapped: true, bootstrappedAt: new Date().toISOString() }, { merge: true }).catch(() => {});
       return false;
     }
+
+    // Check if the user previously deleted books (tombstones)
+    const deletedIds = await getDeletedBookIds().catch(() => []);
+    const deletedSet = new Set(deletedIds);
 
     console.log('Firestore is empty. Bootstrapping default library catalog directly into Firestore...');
     const batch = writeBatch(db);
@@ -212,10 +229,14 @@ export async function checkAndSeedFirestore() {
     }
 
     for (const book of initialBooks) {
-      batch.set(doc(db, 'books', book.id), book);
+      // Do not re-insert books that were previously deleted by user
+      if (!deletedSet.has(book.id)) {
+        batch.set(doc(db, 'books', book.id), book);
+      }
     }
 
     batch.set(doc(db, 'config', 'suspend_config'), defaultSuspendConfig);
+    batch.set(doc(db, 'config', 'bootstrap'), { isBootstrapped: true, bootstrappedAt: new Date().toISOString() });
 
     await withTimeout(batch.commit(), 10000);
     console.log('Firestore bootstrap seed completed successfully!');
@@ -258,9 +279,33 @@ export async function syncBookDoc(book: any) {
   await withTimeout(setDoc(doc(db, 'books', book.id), clean, { merge: true }), 7000);
 }
 
+export async function recordDeletedBookId(bookId: string) {
+  if (!bookId) return;
+  try {
+    await withTimeout(setDoc(doc(db, 'deleted_books', bookId), {
+      id: bookId,
+      deletedAt: new Date().toISOString()
+    }), 7000);
+  } catch (e) {
+    console.warn('Failed to record deleted book tombstone in Firestore:', e);
+  }
+}
+
+export async function getDeletedBookIds(): Promise<string[]> {
+  try {
+    const snap = await withTimeout(getDocs(collection(db, 'deleted_books')), 7000);
+    return snap.docs.map(d => d.id);
+  } catch {
+    return [];
+  }
+}
+
 export async function removeBookDoc(bookId: string) {
   if (!bookId) return;
-  await withTimeout(deleteDoc(doc(db, 'books', bookId)), 7000);
+  await Promise.all([
+    withTimeout(deleteDoc(doc(db, 'books', bookId)), 7000),
+    recordDeletedBookId(bookId)
+  ]);
 }
 
 export async function syncShelfDoc(shelf: any) {

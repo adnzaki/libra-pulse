@@ -98,6 +98,17 @@ export const useLibraryStore = defineStore('library', {
     stats: null as LibraryStats | null,
     suspendConfig: defaultSuspendConfig,
     
+    // Deleted books tombstones to ensure deleted books never re-appear
+    deletedBookIds: (() => {
+      try {
+        const raw = localStorage.getItem('libra_deleted_book_ids');
+        const list = raw ? JSON.parse(raw) : [];
+        return new Set<string>(Array.isArray(list) ? list : []);
+      } catch {
+        return new Set<string>();
+      }
+    })(),
+
     // E-Book Auto-Return & Rate Limiting state
     processedEbookReturnIds: (() => {
       try {
@@ -487,11 +498,28 @@ export const useLibraryStore = defineStore('library', {
         }
 
         subscribeToFirestoreCollection<Book>('books', (items) => {
-          if (items && items.length > 0) {
-            this.books = items;
+          if (items && Array.isArray(items)) {
+            this.books = items.filter(b => !this.isBookDeleted(b.id));
             this.isUsingOfflineData = false;
             this.calculateStats();
             this.persistToLocalCache();
+          }
+        });
+
+        subscribeToFirestoreCollection<any>('deleted_books', (items) => {
+          if (items && Array.isArray(items)) {
+            let hasChanged = false;
+            for (const item of items) {
+              if (item?.id && !this.deletedBookIds.has(item.id)) {
+                this.markBookAsDeleted(item.id);
+                hasChanged = true;
+              }
+            }
+            if (hasChanged || this.books.some(b => this.isBookDeleted(b.id))) {
+              this.books = this.books.filter(b => !this.isBookDeleted(b.id));
+              this.calculateStats();
+              this.persistToLocalCache();
+            }
           }
         });
         subscribeToFirestoreCollection<Shelf>('shelves', (items) => {
@@ -1070,10 +1098,25 @@ export const useLibraryStore = defineStore('library', {
       }
     },
 
+    isBookDeleted(bookId?: string): boolean {
+      if (!bookId) return false;
+      return this.deletedBookIds.has(bookId);
+    },
+
+    markBookAsDeleted(bookId: string) {
+      if (!bookId) return;
+      this.deletedBookIds.add(bookId);
+      try {
+        localStorage.setItem('libra_deleted_book_ids', JSON.stringify(Array.from(this.deletedBookIds)));
+      } catch (e) {
+        console.warn('Failed to save deletedBookIds:', e);
+      }
+    },
+
     persistToLocalCache() {
       try {
         downloadAllForOfflineAccess({
-          books: this.books,
+          books: this.books.filter(b => !this.isBookDeleted(b.id)),
           categories: this.categories,
           shelves: this.shelves,
           members: this.members,
@@ -1089,8 +1132,10 @@ export const useLibraryStore = defineStore('library', {
 
     loadOfflineFallback() {
       const offline = getOfflineCachedData();
-      if (offline.books.length > 0 || offline.members.length > 0) {
-        this.books = offline.books;
+      const isSystemBootstrapped = localStorage.getItem('libra_system_bootstrapped') === 'true';
+
+      if (offline.books.length > 0 || offline.members.length > 0 || isSystemBootstrapped) {
+        this.books = (offline.books || []).filter(b => !this.isBookDeleted(b.id));
         this.categories = (offline.categories && offline.categories.length > 0) ? offline.categories : [...initialCategories];
         this.shelves = (offline.shelves && offline.shelves.length > 0) ? sortShelves(offline.shelves) : sortShelves([...initialShelves]);
         this.members = (offline.members && offline.members.length > 0) ? offline.members : [...initialMembers];
@@ -1104,11 +1149,12 @@ export const useLibraryStore = defineStore('library', {
         this.notifications = offline.notifications || [];
         if (offline.config) this.suspendConfig = offline.config;
       } else {
-        this.books = [...initialBooks];
+        this.books = [...initialBooks].filter(b => !this.isBookDeleted(b.id));
         this.categories = [...initialCategories];
         this.shelves = sortShelves([...initialShelves]);
         this.members = [...initialMembers];
         this.suspendConfig = { ...defaultSuspendConfig };
+        localStorage.setItem('libra_system_bootstrapped', 'true');
         this.persistToLocalCache();
       }
       this.isUsingOfflineData = true;
@@ -1210,7 +1256,7 @@ export const useLibraryStore = defineStore('library', {
           this.loadOfflineFallback();
         }
 
-        const { getFirestoreCollection, checkAndSeedFirestore, isFirestoreQuotaExhausted } = await import('../lib/firebase.js');
+        const { getFirestoreCollection, checkAndSeedFirestore, isFirestoreQuotaExhausted, getDeletedBookIds, removeBookDoc } = await import('../lib/firebase.js');
 
         if (isFirestoreQuotaExhausted()) {
           this.isQuotaExhausted = true;
@@ -1221,17 +1267,45 @@ export const useLibraryStore = defineStore('library', {
           return;
         }
 
+        // Load remote deleted book IDs (tombstones) from Firestore
+        try {
+          const remoteDeletedIds = await getDeletedBookIds();
+          for (const dId of remoteDeletedIds) {
+            this.markBookAsDeleted(dId);
+          }
+        } catch {
+          // ignore
+        }
+
+        // Active purge for dummy books that were deleted by user
+        // Dummy books in initialBooks: BKO-001 (Clean Code), BKO-002, BKO-003, BKO-004 (Atomic Habits)
+        const dummyIds = ['BKO-001', 'BKO-002', 'BKO-003', 'BKO-004'];
+        for (const dummyId of dummyIds) {
+          // If tombstoned or not in active user books, ensure it is permanently tombstoned and removed from Firestore
+          if (this.isBookDeleted(dummyId) || !this.books.some(b => b.id === dummyId)) {
+            this.markBookAsDeleted(dummyId);
+            removeBookDoc(dummyId).catch(() => {});
+          }
+        }
+
         this.setupRealtimeListeners();
 
         let fBooks = await getFirestoreCollection<Book>('books');
         
         // If Firestore is empty on initial bootstrap, populate catalog into Firestore (only if not quota exhausted)
         if (fBooks.length === 0 && !isFirestoreQuotaExhausted()) {
-          await checkAndSeedFirestore();
-          fBooks = await getFirestoreCollection<Book>('books');
+          const didSeed = await checkAndSeedFirestore();
+          if (didSeed) {
+            fBooks = await getFirestoreCollection<Book>('books');
+          }
         }
 
-        if (fBooks.length > 0) {
+        // Filter out any tombstoned/deleted books
+        fBooks = (fBooks || []).filter(b => !this.isBookDeleted(b.id));
+
+        const isSystemBootstrapped = localStorage.getItem('libra_system_bootstrapped') === 'true';
+
+        if (fBooks.length > 0 || isSystemBootstrapped) {
           const [fShelves, fCats, fMembers, fLoans, fBookings, fConfig, fNotifs, fTeacherReqs, fStudentVerifs, fDeviceSessions] = await Promise.all([
             getFirestoreCollection<Shelf>('shelves'),
             getFirestoreCollection<BookCategory>('categories'),
@@ -1246,6 +1320,7 @@ export const useLibraryStore = defineStore('library', {
           ]);
 
           this.books = fBooks;
+          localStorage.setItem('libra_system_bootstrapped', 'true');
           if (fShelves && fShelves.length > 0) this.shelves = sortShelves(fShelves);
           if (fCats && fCats.length > 0) this.categories = fCats;
           if (fMembers && fMembers.length > 0) this.members = fMembers;
@@ -1501,11 +1576,15 @@ export const useLibraryStore = defineStore('library', {
         const ebookFileName = target?.ebookFileName;
         const isEbook = target?.isEbook;
 
+        // 1. Mark as permanently deleted in local tombstones
+        this.markBookAsDeleted(bookId);
+
+        // 2. Remove immediately from in-memory state
         this.books = this.books.filter(b => b.id !== bookId);
         this.calculateStats();
         this.persistToLocalCache();
 
-        // Jika buku yang dihapus merupakan e-book, hapus juga file PDF fisik di server
+        // 3. Jika buku yang dihapus merupakan e-book, hapus juga file PDF fisik di server
         if (isEbook && ebookFileName) {
           import('axios').then(({ default: axios }) => {
             axios.post('/api/delete-ebook', { filename: ebookFileName }).catch((delErr) => {
@@ -1514,12 +1593,15 @@ export const useLibraryStore = defineStore('library', {
           }).catch(() => {});
         }
 
-        import('../lib/firebase.js').then(({ removeBookDoc }) => {
-          removeBookDoc(bookId).catch(() => {
-            queueOfflineMutation({ action: 'deleteBook', collection: 'books', docId: bookId });
-            this.pendingMutationsCount++;
-          });
-        }).catch(() => {});
+        // 4. Properly await removal from Firestore and record tombstone
+        try {
+          const { removeBookDoc } = await import('../lib/firebase.js');
+          await removeBookDoc(bookId);
+        } catch (fbErr) {
+          console.warn('Fallback delete book to offline queue:', fbErr);
+          queueOfflineMutation({ action: 'deleteBook', collection: 'books', docId: bookId });
+          this.pendingMutationsCount++;
+        }
 
         this.showToast(`Buku "${title}" berhasil dihapus.`);
         return { success: true };
