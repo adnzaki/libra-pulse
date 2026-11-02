@@ -871,7 +871,7 @@
             <div v-else-if="activeTab === 'desk_qr'" class="space-y-5 max-w-lg mx-auto text-center">
               <div class="space-y-1">
                 <h3 class="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white">
-                  QR Code Buku Tamu Meja Piket
+                  QR Code Buku Tamu
                 </h3>
                 <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
                   Tampilkan layar ini pada tablet resepsionis atau cetak standee agar pengunjung dapat langsung scan dan mengisi presensi secara mandiri.
@@ -1025,7 +1025,7 @@ const tabs = computed(() => [
   { id: 'tokens', label: 'Kelola Token', icon: KeyRound, badge: store.activeVisitToken ? store.activeVisitToken.token : 'Belum Ada' },
   { id: 'manual_guest', label: 'Input Manual Non-Member', icon: UserPlus },
   { id: 'member_checkin', label: 'Check-in Member', icon: UserCheck },
-  { id: 'desk_qr', label: 'QR Meja Resepsionis', icon: QrCode }
+  { id: 'desk_qr', label: 'QR Code', icon: QrCode }
 ]);
 
 // Filters for List Tab
