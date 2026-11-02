@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { Book, Shelf, Member, Booking, Loan, SuspendConfig, NotificationLog, LibraryStats, BookCategory, TeacherRequest, StudentVerificationRequest, UserDeviceSession, AppVersionConfig, AppTheme, LibraryVisit, VisitPurpose, VisitorType, VisitSource } from '../types.js';
+import type { Book, Shelf, Member, Booking, Loan, SuspendConfig, NotificationLog, LibraryStats, BookCategory, TeacherRequest, StudentVerificationRequest, UserDeviceSession, AppVersionConfig, AppTheme } from '../types.js';
 import { 
   getOfflineCachedData, 
   downloadAllForOfflineAccess, 
@@ -8,9 +8,25 @@ import {
   getPendingOfflineMutations,
   clearPendingOfflineMutations
 } from '../lib/offline-manager.js';
-import { initialBooks, initialCategories, initialShelves, initialMembers, defaultSuspendConfig } from '../lib/default-catalog.js';
+import { initialBooks, initialCategories, initialShelves, initialMembers, defaultSuspendConfig, isDummyBook } from '../lib/default-catalog.js';
 import { getCurrentDeviceId, detectCurrentDeviceInfo } from '../utils/deviceDetector.js';
 import { CURRENT_APP_VERSION, DEFAULT_APP_VERSION_CONFIG, isNewerVersion } from '../config/version.js';
+
+// Auto-purge any stale dummy books (e.g. Clean Code, Atomic Habits, etc.) from localStorage
+if (typeof localStorage !== 'undefined') {
+  try {
+    const raw = localStorage.getItem('libra_offline_books');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        const cleaned = parsed.filter(b => !isDummyBook(b));
+        if (cleaned.length !== parsed.length) {
+          localStorage.setItem('libra_offline_books', JSON.stringify(cleaned));
+        }
+      }
+    }
+  } catch {}
+}
 
 export const isSuperAdminMember = (m: any): boolean => {
   if (!m) return false;
@@ -79,14 +95,6 @@ export const useLibraryStore = defineStore('library', {
     teacherRequests: [] as TeacherRequest[],
     studentVerifications: [] as StudentVerificationRequest[],
     deviceSessions: [] as UserDeviceSession[],
-    visits: (() => {
-      try {
-        const raw = localStorage.getItem('libra_library_visits');
-        return raw ? JSON.parse(raw) : [];
-      } catch {
-        return [];
-      }
-    })() as LibraryVisit[],
     stats: null as LibraryStats | null,
     suspendConfig: defaultSuspendConfig,
     
@@ -397,24 +405,6 @@ export const useLibraryStore = defineStore('library', {
       if (this.currentUser.mainDeviceId) return true;
       const sessions = (this.myDeviceSessions as (UserDeviceSession & { isCurrentDevice: boolean })[]) || [];
       return sessions.some(s => s.isMainDevice);
-    },
-
-    // Library Visits Getters
-    todayVisits: (state) => {
-      const todayStr = new Date().toISOString().slice(0, 10);
-      return state.visits.filter(v => v.visitDate === todayStr);
-    },
-    todayVisitsCount: (state) => {
-      const todayStr = new Date().toISOString().slice(0, 10);
-      return state.visits.filter(v => v.visitDate === todayStr).length;
-    },
-    todayMemberVisitsCount: (state) => {
-      const todayStr = new Date().toISOString().slice(0, 10);
-      return state.visits.filter(v => v.visitDate === todayStr && v.visitorType === 'member').length;
-    },
-    todayGuestVisitsCount: (state) => {
-      const todayStr = new Date().toISOString().slice(0, 10);
-      return state.visits.filter(v => v.visitDate === todayStr && v.visitorType === 'non_member').length;
     }
   },
 
@@ -463,8 +453,8 @@ export const useLibraryStore = defineStore('library', {
         }
 
         subscribeToFirestoreCollection<Book>('books', (items) => {
-          if (items && items.length > 0) {
-            this.books = items;
+          if (items) {
+            this.books = items.filter(b => !isDummyBook(b));
             this.isUsingOfflineData = false;
             this.calculateStats();
             this.persistToLocalCache();
@@ -568,12 +558,6 @@ export const useLibraryStore = defineStore('library', {
           if (items) {
             this.deviceSessions = items;
             this.checkCurrentDeviceSessionStatus();
-          }
-        });
-        subscribeToFirestoreCollection<LibraryVisit>('visits', (items) => {
-          if (items && Array.isArray(items)) {
-            this.visits = items.sort((a, b) => new Date(b.timestamp || b.visitDate).getTime() - new Date(a.timestamp || a.visitDate).getTime());
-            this.persistVisitsToLocalCache();
           }
         });
 
@@ -1042,6 +1026,7 @@ export const useLibraryStore = defineStore('library', {
 
     persistToLocalCache() {
       try {
+        this.books = (this.books || []).filter(b => !isDummyBook(b));
         downloadAllForOfflineAccess({
           books: this.books,
           categories: this.categories,
@@ -1059,8 +1044,9 @@ export const useLibraryStore = defineStore('library', {
 
     loadOfflineFallback() {
       const offline = getOfflineCachedData();
-      if (offline.books.length > 0 || offline.members.length > 0) {
-        this.books = offline.books;
+      const validBooks = (offline.books || []).filter(b => !isDummyBook(b));
+      if (validBooks.length > 0 || offline.members.length > 0) {
+        this.books = validBooks;
         this.categories = (offline.categories && offline.categories.length > 0) ? offline.categories : [...initialCategories];
         this.shelves = (offline.shelves && offline.shelves.length > 0) ? sortShelves(offline.shelves) : sortShelves([...initialShelves]);
         this.members = (offline.members && offline.members.length > 0) ? offline.members : [...initialMembers];
@@ -1074,7 +1060,7 @@ export const useLibraryStore = defineStore('library', {
         this.notifications = offline.notifications || [];
         if (offline.config) this.suspendConfig = offline.config;
       } else {
-        this.books = [...initialBooks];
+        this.books = [];
         this.categories = [...initialCategories];
         this.shelves = sortShelves([...initialShelves]);
         this.members = [...initialMembers];
@@ -1132,9 +1118,7 @@ export const useLibraryStore = defineStore('library', {
           removeBookingDoc,
           syncConfigDoc,
           syncNotificationDoc,
-          removeNotificationDoc,
-          syncVisitDoc,
-          removeVisitDoc
+          removeNotificationDoc
         } = await import('../lib/firebase.js');
 
         for (const item of queue) {
@@ -1153,8 +1137,6 @@ export const useLibraryStore = defineStore('library', {
             case 'saveConfig': await syncConfigDoc(item.data); break;
             case 'saveNotification': await syncNotificationDoc(item.data); break;
             case 'deleteNotification': await removeNotificationDoc(item.docId); break;
-            case 'saveVisit': await syncVisitDoc(item.data); break;
-            case 'deleteVisit': await removeVisitDoc(item.docId); break;
           }
         }
         clearPendingOfflineMutations();
@@ -1190,11 +1172,12 @@ export const useLibraryStore = defineStore('library', {
         this.setupRealtimeListeners();
 
         let fBooks = await getFirestoreCollection<Book>('books');
+        fBooks = (fBooks || []).filter(b => !isDummyBook(b));
         
         // If Firestore is empty on initial bootstrap, populate catalog into Firestore (only if not quota exhausted)
         if (fBooks.length === 0 && !isFirestoreQuotaExhausted()) {
           await checkAndSeedFirestore();
-          fBooks = await getFirestoreCollection<Book>('books');
+          fBooks = (await getFirestoreCollection<Book>('books')).filter(b => !isDummyBook(b));
         }
 
         if (fBooks.length > 0) {
@@ -1211,7 +1194,7 @@ export const useLibraryStore = defineStore('library', {
             getFirestoreCollection<UserDeviceSession>('device_sessions'),
           ]);
 
-          this.books = fBooks;
+          this.books = fBooks.filter(b => !isDummyBook(b));
           if (fShelves && fShelves.length > 0) this.shelves = sortShelves(fShelves);
           if (fCats && fCats.length > 0) this.categories = fCats;
           if (fMembers && fMembers.length > 0) this.members = fMembers;
@@ -1480,12 +1463,13 @@ export const useLibraryStore = defineStore('library', {
           }).catch(() => {});
         }
 
-        import('../lib/firebase.js').then(({ removeBookDoc }) => {
-          removeBookDoc(bookId).catch(() => {
-            queueOfflineMutation({ action: 'deleteBook', collection: 'books', docId: bookId });
-            this.pendingMutationsCount++;
-          });
-        }).catch(() => {});
+        try {
+          const { removeBookDoc } = await import('../lib/firebase.js');
+          await removeBookDoc(bookId);
+        } catch {
+          queueOfflineMutation({ action: 'deleteBook', collection: 'books', docId: bookId });
+          this.pendingMutationsCount++;
+        }
 
         this.showToast(`Buku "${title}" berhasil dihapus.`);
         return { success: true };
@@ -3460,34 +3444,6 @@ export const useLibraryStore = defineStore('library', {
       this.calculateStats();
       this.persistToLocalCache();
 
-      // Otomatis catat kunjungan perpustakaan jika meminjam BUKU FISIK
-      if (!book.isEbook) {
-        const todayDateStr = borrowDate;
-        const alreadyVisited = this.visits.some(v => 
-          (v.memberId === bk.memberId || v.memberCardNumber === bk.memberCardNumber) && 
-          v.visitDate === todayDateStr &&
-          v.purpose === 'Meminjam Buku'
-        );
-        if (!alreadyVisited) {
-          const originAffiliation = member?.memberType === 'guru' 
-            ? 'Dewan Guru SDN Pengasinan VII' 
-            : (member?.memberType === 'siswa' ? 'Siswa SDN Pengasinan VII' : 'SDN Pengasinan VII');
-          this.recordVisit({
-            visitorType: 'member',
-            memberId: bk.memberId,
-            memberCardNumber: bk.memberCardNumber,
-            memberType: (member?.memberType as any) || 'siswa',
-            name: bk.memberName,
-            origin: originAffiliation,
-            purpose: 'Meminjam Buku',
-            purposeDetails: `Pengambilan Booking Buku Fisik: "${book.title}"`,
-            visitDate: todayDateStr,
-            source: 'auto_borrow',
-            handledBy: handledBy || 'Admin Sirkulasi'
-          }).catch(() => {});
-        }
-      }
-
       try {
         const { syncBookingDoc, syncLoanDoc, syncBookDoc, syncMemberDoc } = await import('../lib/firebase.js');
         await Promise.all([
@@ -3621,34 +3577,6 @@ export const useLibraryStore = defineStore('library', {
       this.loans.unshift(newLoan);
       this.calculateStats();
       this.persistToLocalCache();
-
-      // Otomatis catat kunjungan perpustakaan jika meminjam BUKU FISIK
-      if (!book.isEbook) {
-        const todayDateStr = borrowDate;
-        const alreadyVisited = this.visits.some(v => 
-          (v.memberId === member?.id || v.memberCardNumber === resolvedCardNumber) && 
-          v.visitDate === todayDateStr &&
-          v.purpose === 'Meminjam Buku'
-        );
-        if (!alreadyVisited) {
-          const originAffiliation = member?.memberType === 'guru' 
-            ? 'Dewan Guru SDN Pengasinan VII' 
-            : (member?.memberType === 'siswa' ? 'Siswa SDN Pengasinan VII' : 'SDN Pengasinan VII');
-          this.recordVisit({
-            visitorType: 'member',
-            memberId: member.id,
-            memberCardNumber: resolvedCardNumber,
-            memberType: (member.memberType as any) || 'siswa',
-            name: member.name,
-            origin: originAffiliation,
-            purpose: 'Meminjam Buku',
-            purposeDetails: `Peminjaman Buku Fisik: "${book.title}"`,
-            visitDate: todayDateStr,
-            source: 'auto_borrow',
-            handledBy: handledBy || 'Admin Sirkulasi'
-          }).catch(() => {});
-        }
-      }
 
       try {
         const { syncLoanDoc, syncBookDoc, syncMemberDoc } = await import('../lib/firebase.js');
@@ -3981,101 +3909,6 @@ export const useLibraryStore = defineStore('library', {
             metaThemeColor.setAttribute('content', '#0f172a');
           }
         }
-      }
-    },
-
-    // ------------------------------------------------------------------------
-    // Kunjungan Perpustakaan (Library Visits & Digital Guestbook)
-    // ------------------------------------------------------------------------
-    persistVisitsToLocalCache() {
-      try {
-        localStorage.setItem('libra_library_visits', JSON.stringify(this.visits));
-      } catch (e) {
-        console.warn('Gagal menyimpan cache kunjungan:', e);
-      }
-    },
-
-    async recordVisit(payload: {
-      visitorType: VisitorType;
-      name: string;
-      origin: string;
-      purpose: VisitPurpose;
-      purposeDetails?: string;
-      memberId?: string;
-      memberCardNumber?: string;
-      memberType?: 'guru' | 'siswa' | 'umum';
-      phone?: string;
-      email?: string;
-      notes?: string;
-      visitDate?: string;
-      source?: VisitSource;
-      handledBy?: string;
-    }) {
-      try {
-        const now = new Date();
-        const visitDate = payload.visitDate || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-        const timestamp = now.toISOString();
-
-        const newVisit: LibraryVisit = {
-          id: `VISIT-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`,
-          visitorType: payload.visitorType,
-          name: (payload.name || '').trim(),
-          origin: (payload.origin || '').trim() || 'Umum',
-          purpose: payload.purpose || 'Membaca Buku',
-          purposeDetails: payload.purposeDetails ? payload.purposeDetails.trim() : undefined,
-          memberId: payload.memberId,
-          memberCardNumber: payload.memberCardNumber,
-          memberType: payload.memberType,
-          phone: payload.phone ? payload.phone.trim() : undefined,
-          email: payload.email ? payload.email.trim() : undefined,
-          notes: payload.notes ? payload.notes.trim() : undefined,
-          visitDate,
-          timestamp,
-          source: payload.source || 'public_form',
-          handledBy: payload.handledBy || (this.currentUser?.name ? `Petugas (${this.currentUser.name})` : 'Sistem')
-        };
-
-        this.visits.unshift(newVisit);
-        this.persistVisitsToLocalCache();
-
-        // Optimistic sync to Firestore
-        import('../lib/firebase.js').then(({ syncVisitDoc }) => {
-          syncVisitDoc(newVisit).catch(err => {
-            console.warn('Visit sync fallback to offline queue:', err);
-            queueOfflineMutation({ action: 'saveVisit', collection: 'visits', docId: newVisit.id, data: newVisit });
-            this.pendingMutationsCount++;
-          });
-        }).catch(err => {
-          console.warn('Failed to load firebase for syncVisitDoc:', err);
-        });
-
-        return { success: true, visit: newVisit };
-      } catch (err: any) {
-        console.error('Record visit error:', err);
-        return { success: false, error: err?.message || 'Gagal mencatat kunjungan' };
-      }
-    },
-
-    async deleteVisit(visitId: string) {
-      try {
-        this.visits = this.visits.filter(v => v.id !== visitId);
-        this.persistVisitsToLocalCache();
-
-        import('../lib/firebase.js').then(({ removeVisitDoc }) => {
-          removeVisitDoc(visitId).catch(err => {
-            console.warn('Delete visit fallback to offline queue:', err);
-            queueOfflineMutation({ action: 'deleteVisit', collection: 'visits', docId: visitId });
-            this.pendingMutationsCount++;
-          });
-        }).catch(err => {
-          console.warn('Failed to load firebase for removeVisitDoc:', err);
-        });
-
-        this.showToast('Data kunjungan berhasil dihapus.');
-        return { success: true };
-      } catch (err: any) {
-        this.setError(err?.message || 'Gagal menghapus kunjungan');
-        return { success: false, error: err?.message };
       }
     },
 

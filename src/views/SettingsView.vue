@@ -1,6 +1,5 @@
 <template>
-  <div class="w-full">
-    <div v-if="store.isSuperAdmin" class="space-y-6 max-w-4xl mx-auto pb-12">
+  <div v-if="store.isSuperAdmin" class="space-y-6 max-w-4xl mx-auto pb-12">
     <!-- Header -->
     <div class="bg-white dark:bg-slate-900/80 rounded-3xl p-6 sm:p-8 border border-slate-100 dark:border-slate-800 shadow-sm">
       <div class="flex items-center justify-between flex-wrap gap-4">
@@ -368,7 +367,7 @@
             <input 
               v-model="newVersionInput" 
               type="text" 
-              placeholder="Misal: 1.0.0-rc.3"
+              placeholder="Misal: 1.0.0-rc.2"
               class="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 font-mono focus:outline-hidden focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -494,7 +493,6 @@
     <router-link to="/admin" class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 transition shadow-md shadow-slate-900/30">
       Kembali ke Admin Console
     </router-link>
-  </div>
   </div>
 </template>
 
@@ -729,7 +727,7 @@ watch(() => store.isSuperAdmin, (isSuper) => {
 });
 
 // Version Management & OTA Broadcast
-const newVersionInput = ref(store.currentAppVersion || '1.0.0-rc.3');
+const newVersionInput = ref('1.0.0-rc.2');
 const newVersionMessage = ref('Pembaruan sistem Libra telah tersedia. Silakan muat ulang halaman.');
 const isBroadcastingVersion = ref(false);
 
@@ -747,7 +745,7 @@ const resetToCurrentVersion = async () => {
   isBroadcastingVersion.value = true;
   try {
     await store.broadcastNewAppVersion(store.currentAppVersion, `Aplikasi berjalan pada versi resmi v${store.currentAppVersion}.`);
-    newVersionInput.value = store.currentAppVersion || '1.0.0-rc.3';
+    newVersionInput.value = '1.0.0-rc.2';
   } finally {
     isBroadcastingVersion.value = false;
   }

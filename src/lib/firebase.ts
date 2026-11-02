@@ -21,7 +21,7 @@ import {
   writeBatch 
 } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
-import { initialBooks, initialCategories, initialShelves, initialMembers, defaultSuspendConfig } from './default-catalog';
+import { initialBooks, initialCategories, initialShelves, initialMembers, defaultSuspendConfig, isDummyBook } from './default-catalog';
 
 // Initialize Firebase App
 const app = initializeApp(firebaseConfig);
@@ -212,7 +212,9 @@ export async function checkAndSeedFirestore() {
     }
 
     for (const book of initialBooks) {
-      batch.set(doc(db, 'books', book.id), book);
+      if (!isDummyBook(book)) {
+        batch.set(doc(db, 'books', book.id), book);
+      }
     }
 
     batch.set(doc(db, 'config', 'suspend_config'), defaultSuspendConfig);
@@ -403,17 +405,6 @@ export async function syncDeviceSessionDoc(session: any) {
 export async function removeDeviceSessionDoc(sessionId: string) {
   if (!sessionId) return;
   await withTimeout(deleteDoc(doc(db, 'device_sessions', sessionId)), 7000);
-}
-
-export async function syncVisitDoc(visit: any) {
-  if (!visit?.id) return;
-  const clean = sanitizeForFirestore(visit);
-  await withTimeout(setDoc(doc(db, 'visits', visit.id), clean, { merge: true }), 7000);
-}
-
-export async function removeVisitDoc(visitId: string) {
-  if (!visitId) return;
-  await withTimeout(deleteDoc(doc(db, 'visits', visitId)), 7000);
 }
 
 /**

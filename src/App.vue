@@ -69,9 +69,9 @@
       </div>
 
       <!-- Active View -->
-      <router-view v-slot="{ Component, route }">
+      <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
-          <component :is="Component" :key="route?.path || undefined" v-if="Component" />
+          <component :is="Component" />
         </transition>
       </router-view>
     </main>

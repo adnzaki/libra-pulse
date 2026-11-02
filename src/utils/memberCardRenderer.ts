@@ -21,65 +21,17 @@ function drawRoundedRect(
   ctx.closePath();
 }
 
-/**
- * Draws an image into a destination rectangle maintaining its aspect ratio
- * with CSS 'object-fit: cover' behavior (centered crop, no stretch/distortion).
- */
-function drawImageCover(
-  ctx: CanvasRenderingContext2D,
-  img: HTMLImageElement,
-  dx: number,
-  dy: number,
-  dWidth: number,
-  dHeight: number,
-  cropOffsetYRatio: number = 0.38
-) {
-  const iw = img.naturalWidth || img.width;
-  const ih = img.naturalHeight || img.height;
-
-  if (!iw || !ih) {
-    ctx.drawImage(img, dx, dy, dWidth, dHeight);
-    return;
-  }
-
-  const destRatio = dWidth / dHeight;
-  const srcRatio = iw / ih;
-
-  let sx = 0;
-  let sy = 0;
-  let sWidth = iw;
-  let sHeight = ih;
-
-  if (srcRatio > destRatio) {
-    // Image is wider than destination (e.g. landscape photo in square box)
-    // Scale to fit height, crop width equally on left & right
-    sWidth = ih * destRatio;
-    sx = (iw - sWidth) / 2;
-  } else {
-    // Image is taller than destination (e.g. portrait photo in square box)
-    // Scale to fit width, crop height
-    sHeight = iw / destRatio;
-    const maxScroll = ih - sHeight;
-    // For portrait avatars, cropOffsetYRatio ~0.38 keeps head and face well framed without clipping hair
-    sy = Math.max(0, Math.min(maxScroll, maxScroll * cropOffsetYRatio));
-  }
-
-  ctx.drawImage(img, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
-}
-
-function loadImageSafe(src?: string): Promise<HTMLImageElement | null> {
+function loadImageSafe(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     if (!src) {
       resolve(null);
       return;
     }
     const img = new Image();
-    if (!src.startsWith('data:') && !src.startsWith('blob:')) {
-      img.crossOrigin = 'anonymous';
-    }
+    img.crossOrigin = 'anonymous';
     const timer = setTimeout(() => {
       resolve(null);
-    }, 3500);
+    }, 2500);
 
     img.onload = () => {
       clearTimeout(timer);
@@ -182,9 +134,7 @@ export async function renderMemberCardToCanvas(
   drawRoundedRect(ctx, logoX, logoY, logoSize, logoSize, logoRadius);
   ctx.clip();
   if (logoImg) {
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-    drawImageCover(ctx, logoImg, logoX, logoY, logoSize, logoSize, 0.5);
+    ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
   } else {
     ctx.fillStyle = '#0f172a';
     ctx.fillRect(logoX, logoY, logoSize, logoSize);
@@ -267,9 +217,7 @@ export async function renderMemberCardToCanvas(
   ctx.clip();
 
   if (avatarImg) {
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-    drawImageCover(ctx, avatarImg, avatarX, avatarY, avatarSize, avatarSize, 0.38);
+    ctx.drawImage(avatarImg, avatarX, avatarY, avatarSize, avatarSize);
   } else {
     // Fallback Initial Avatar
     const grad = ctx.createLinearGradient(avatarX, avatarY, avatarX + avatarSize, avatarY + avatarSize);

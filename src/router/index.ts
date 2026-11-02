@@ -6,7 +6,6 @@ import MemberPortalView from '../views/MemberPortalView.vue';
 import AdminDashboardView from '../views/AdminDashboardView.vue';
 import LoginView from '../views/LoginView.vue';
 import SettingsView from '../views/SettingsView.vue';
-import PublicVisitView from '../views/PublicVisitView.vue';
 import { useLibraryStore } from '../stores/library.js';
 
 const routes: RouteRecordRaw[] = [
@@ -15,16 +14,6 @@ const routes: RouteRecordRaw[] = [
     name: 'catalog',
     component: CatalogView,
     meta: { title: 'Katalog Buku Publik' }
-  },
-  {
-    path: '/kunjungan',
-    name: 'public-visit',
-    component: PublicVisitView,
-    meta: { title: 'Presensi Kunjungan Perpustakaan' }
-  },
-  {
-    path: '/buku-tamu',
-    redirect: '/kunjungan'
   },
   {
     path: '/shelves',
