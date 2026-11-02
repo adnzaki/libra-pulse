@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { Book, Shelf, Member, Booking, Loan, SuspendConfig, NotificationLog, LibraryStats, BookCategory, TeacherRequest, StudentVerificationRequest, UserDeviceSession, AppVersionConfig, AppTheme } from '../types.js';
+import type { Book, Shelf, Member, Booking, Loan, SuspendConfig, NotificationLog, LibraryStats, BookCategory, TeacherRequest, StudentVerificationRequest, UserDeviceSession, AppVersionConfig, AppTheme, LibraryVisit, VisitPurpose, VisitorType, VisitSource } from '../types.js';
 import { 
   getOfflineCachedData, 
   downloadAllForOfflineAccess, 
@@ -79,6 +79,14 @@ export const useLibraryStore = defineStore('library', {
     teacherRequests: [] as TeacherRequest[],
     studentVerifications: [] as StudentVerificationRequest[],
     deviceSessions: [] as UserDeviceSession[],
+    visits: (() => {
+      try {
+        const raw = localStorage.getItem('libra_library_visits');
+        return raw ? JSON.parse(raw) : [];
+      } catch {
+        return [];
+      }
+    })() as LibraryVisit[],
     stats: null as LibraryStats | null,
     suspendConfig: defaultSuspendConfig,
     
@@ -389,6 +397,24 @@ export const useLibraryStore = defineStore('library', {
       if (this.currentUser.mainDeviceId) return true;
       const sessions = (this.myDeviceSessions as (UserDeviceSession & { isCurrentDevice: boolean })[]) || [];
       return sessions.some(s => s.isMainDevice);
+    },
+
+    // Library Visits Getters
+    todayVisits: (state) => {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      return state.visits.filter(v => v.visitDate === todayStr);
+    },
+    todayVisitsCount: (state) => {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      return state.visits.filter(v => v.visitDate === todayStr).length;
+    },
+    todayMemberVisitsCount: (state) => {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      return state.visits.filter(v => v.visitDate === todayStr && v.visitorType === 'member').length;
+    },
+    todayGuestVisitsCount: (state) => {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      return state.visits.filter(v => v.visitDate === todayStr && v.visitorType === 'non_member').length;
     }
   },
 
@@ -542,6 +568,12 @@ export const useLibraryStore = defineStore('library', {
           if (items) {
             this.deviceSessions = items;
             this.checkCurrentDeviceSessionStatus();
+          }
+        });
+        subscribeToFirestoreCollection<LibraryVisit>('visits', (items) => {
+          if (items && Array.isArray(items)) {
+            this.visits = items.sort((a, b) => new Date(b.timestamp || b.visitDate).getTime() - new Date(a.timestamp || a.visitDate).getTime());
+            this.persistVisitsToLocalCache();
           }
         });
 
@@ -1100,7 +1132,9 @@ export const useLibraryStore = defineStore('library', {
           removeBookingDoc,
           syncConfigDoc,
           syncNotificationDoc,
-          removeNotificationDoc
+          removeNotificationDoc,
+          syncVisitDoc,
+          removeVisitDoc
         } = await import('../lib/firebase.js');
 
         for (const item of queue) {
@@ -1119,6 +1153,8 @@ export const useLibraryStore = defineStore('library', {
             case 'saveConfig': await syncConfigDoc(item.data); break;
             case 'saveNotification': await syncNotificationDoc(item.data); break;
             case 'deleteNotification': await removeNotificationDoc(item.docId); break;
+            case 'saveVisit': await syncVisitDoc(item.data); break;
+            case 'deleteVisit': await removeVisitDoc(item.docId); break;
           }
         }
         clearPendingOfflineMutations();
@@ -3424,6 +3460,34 @@ export const useLibraryStore = defineStore('library', {
       this.calculateStats();
       this.persistToLocalCache();
 
+      // Otomatis catat kunjungan perpustakaan jika meminjam BUKU FISIK
+      if (!book.isEbook) {
+        const todayDateStr = borrowDate;
+        const alreadyVisited = this.visits.some(v => 
+          (v.memberId === bk.memberId || v.memberCardNumber === bk.memberCardNumber) && 
+          v.visitDate === todayDateStr &&
+          v.purpose === 'Meminjam Buku'
+        );
+        if (!alreadyVisited) {
+          const originAffiliation = member?.memberType === 'guru' 
+            ? 'Dewan Guru SDN Pengasinan VII' 
+            : (member?.memberType === 'siswa' ? 'Siswa SDN Pengasinan VII' : 'SDN Pengasinan VII');
+          this.recordVisit({
+            visitorType: 'member',
+            memberId: bk.memberId,
+            memberCardNumber: bk.memberCardNumber,
+            memberType: (member?.memberType as any) || 'siswa',
+            name: bk.memberName,
+            origin: originAffiliation,
+            purpose: 'Meminjam Buku',
+            purposeDetails: `Pengambilan Booking Buku Fisik: "${book.title}"`,
+            visitDate: todayDateStr,
+            source: 'auto_borrow',
+            handledBy: handledBy || 'Admin Sirkulasi'
+          }).catch(() => {});
+        }
+      }
+
       try {
         const { syncBookingDoc, syncLoanDoc, syncBookDoc, syncMemberDoc } = await import('../lib/firebase.js');
         await Promise.all([
@@ -3557,6 +3621,34 @@ export const useLibraryStore = defineStore('library', {
       this.loans.unshift(newLoan);
       this.calculateStats();
       this.persistToLocalCache();
+
+      // Otomatis catat kunjungan perpustakaan jika meminjam BUKU FISIK
+      if (!book.isEbook) {
+        const todayDateStr = borrowDate;
+        const alreadyVisited = this.visits.some(v => 
+          (v.memberId === member?.id || v.memberCardNumber === resolvedCardNumber) && 
+          v.visitDate === todayDateStr &&
+          v.purpose === 'Meminjam Buku'
+        );
+        if (!alreadyVisited) {
+          const originAffiliation = member?.memberType === 'guru' 
+            ? 'Dewan Guru SDN Pengasinan VII' 
+            : (member?.memberType === 'siswa' ? 'Siswa SDN Pengasinan VII' : 'SDN Pengasinan VII');
+          this.recordVisit({
+            visitorType: 'member',
+            memberId: member.id,
+            memberCardNumber: resolvedCardNumber,
+            memberType: (member.memberType as any) || 'siswa',
+            name: member.name,
+            origin: originAffiliation,
+            purpose: 'Meminjam Buku',
+            purposeDetails: `Peminjaman Buku Fisik: "${book.title}"`,
+            visitDate: todayDateStr,
+            source: 'auto_borrow',
+            handledBy: handledBy || 'Admin Sirkulasi'
+          }).catch(() => {});
+        }
+      }
 
       try {
         const { syncLoanDoc, syncBookDoc, syncMemberDoc } = await import('../lib/firebase.js');
@@ -3889,6 +3981,101 @@ export const useLibraryStore = defineStore('library', {
             metaThemeColor.setAttribute('content', '#0f172a');
           }
         }
+      }
+    },
+
+    // ------------------------------------------------------------------------
+    // Kunjungan Perpustakaan (Library Visits & Digital Guestbook)
+    // ------------------------------------------------------------------------
+    persistVisitsToLocalCache() {
+      try {
+        localStorage.setItem('libra_library_visits', JSON.stringify(this.visits));
+      } catch (e) {
+        console.warn('Gagal menyimpan cache kunjungan:', e);
+      }
+    },
+
+    async recordVisit(payload: {
+      visitorType: VisitorType;
+      name: string;
+      origin: string;
+      purpose: VisitPurpose;
+      purposeDetails?: string;
+      memberId?: string;
+      memberCardNumber?: string;
+      memberType?: 'guru' | 'siswa' | 'umum';
+      phone?: string;
+      email?: string;
+      notes?: string;
+      visitDate?: string;
+      source?: VisitSource;
+      handledBy?: string;
+    }) {
+      try {
+        const now = new Date();
+        const visitDate = payload.visitDate || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const timestamp = now.toISOString();
+
+        const newVisit: LibraryVisit = {
+          id: `VISIT-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`,
+          visitorType: payload.visitorType,
+          name: (payload.name || '').trim(),
+          origin: (payload.origin || '').trim() || 'Umum',
+          purpose: payload.purpose || 'Membaca Buku',
+          purposeDetails: payload.purposeDetails ? payload.purposeDetails.trim() : undefined,
+          memberId: payload.memberId,
+          memberCardNumber: payload.memberCardNumber,
+          memberType: payload.memberType,
+          phone: payload.phone ? payload.phone.trim() : undefined,
+          email: payload.email ? payload.email.trim() : undefined,
+          notes: payload.notes ? payload.notes.trim() : undefined,
+          visitDate,
+          timestamp,
+          source: payload.source || 'public_form',
+          handledBy: payload.handledBy || (this.currentUser?.name ? `Petugas (${this.currentUser.name})` : 'Sistem')
+        };
+
+        this.visits.unshift(newVisit);
+        this.persistVisitsToLocalCache();
+
+        // Optimistic sync to Firestore
+        import('../lib/firebase.js').then(({ syncVisitDoc }) => {
+          syncVisitDoc(newVisit).catch(err => {
+            console.warn('Visit sync fallback to offline queue:', err);
+            queueOfflineMutation({ action: 'saveVisit', collection: 'visits', docId: newVisit.id, data: newVisit });
+            this.pendingMutationsCount++;
+          });
+        }).catch(err => {
+          console.warn('Failed to load firebase for syncVisitDoc:', err);
+        });
+
+        return { success: true, visit: newVisit };
+      } catch (err: any) {
+        console.error('Record visit error:', err);
+        return { success: false, error: err?.message || 'Gagal mencatat kunjungan' };
+      }
+    },
+
+    async deleteVisit(visitId: string) {
+      try {
+        this.visits = this.visits.filter(v => v.id !== visitId);
+        this.persistVisitsToLocalCache();
+
+        import('../lib/firebase.js').then(({ removeVisitDoc }) => {
+          removeVisitDoc(visitId).catch(err => {
+            console.warn('Delete visit fallback to offline queue:', err);
+            queueOfflineMutation({ action: 'deleteVisit', collection: 'visits', docId: visitId });
+            this.pendingMutationsCount++;
+          });
+        }).catch(err => {
+          console.warn('Failed to load firebase for removeVisitDoc:', err);
+        });
+
+        this.showToast('Data kunjungan berhasil dihapus.');
+        return { success: true };
+      } catch (err: any) {
+        this.setError(err?.message || 'Gagal menghapus kunjungan');
+        return { success: false, error: err?.message };
       }
     },
 

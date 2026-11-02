@@ -405,6 +405,17 @@ export async function removeDeviceSessionDoc(sessionId: string) {
   await withTimeout(deleteDoc(doc(db, 'device_sessions', sessionId)), 7000);
 }
 
+export async function syncVisitDoc(visit: any) {
+  if (!visit?.id) return;
+  const clean = sanitizeForFirestore(visit);
+  await withTimeout(setDoc(doc(db, 'visits', visit.id), clean, { merge: true }), 7000);
+}
+
+export async function removeVisitDoc(visitId: string) {
+  if (!visitId) return;
+  await withTimeout(deleteDoc(doc(db, 'visits', visitId)), 7000);
+}
+
 /**
  * Direct Firestore Fetch Collection Helper
  */
