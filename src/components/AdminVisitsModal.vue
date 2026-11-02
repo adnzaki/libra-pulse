@@ -3,11 +3,11 @@
     <Transition name="modal">
       <div 
         v-if="isOpen" 
-        class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/75 backdrop-blur-xs"
+        class="fixed inset-0 z-50 flex items-center justify-center p-1 sm:p-4 bg-slate-950/75 backdrop-blur-xs"
         @click.self="handleClose"
       >
         <div 
-          class="bg-white dark:bg-slate-900 text-slate-900 dark:text-white w-full max-w-full sm:max-w-4xl max-h-[calc(100dvh-1rem)] sm:max-h-[92vh] rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 my-auto"
+          class="bg-white dark:bg-slate-900 text-slate-900 dark:text-white w-[95%] sm:w-full sm:max-w-4xl max-h-[calc(100dvh-1rem)] sm:max-h-[92vh] rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 my-auto mx-auto"
         >
           <!-- Modal Header -->
           <div class="px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3 bg-slate-50/90 dark:bg-slate-900/90 shrink-0">
@@ -590,7 +590,7 @@
             </div>
 
             <!-- TAB 3: INPUT MANUAL NON-MEMBER (PETUGAS INPUT TAMU) -->
-            <div v-else-if="activeTab === 'manual_guest'" class="space-y-4 max-w-xl mx-auto">
+            <div v-else-if="activeTab === 'manual_guest'" class="space-y-4 w-full sm:max-w-xl mx-auto">
               <div class="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-xs text-amber-900 dark:text-amber-200 space-y-1">
                 <div class="font-bold flex items-center gap-1.5">
                   <UserPlus class="w-4 h-4 text-amber-600 dark:text-amber-400" />
@@ -747,34 +747,35 @@
             </div>
 
             <!-- TAB 3: CHECK-IN CEPAT MEMBER (PETUGAS INPUT/SCAN MEMBER) -->
-            <div v-else-if="activeTab === 'member_checkin'" class="space-y-4 max-w-xl mx-auto">
+            <div v-else-if="activeTab === 'member_checkin'" class="space-y-4 w-full sm:max-w-xl mx-auto">
               <div class="p-3.5 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 text-xs text-blue-900 dark:text-blue-200 space-y-1">
                 <div class="font-bold flex items-center gap-1.5">
                   <QrCode class="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   <span>Check-in Cepat Anggota Perpustakaan</span>
                 </div>
                 <p class="text-[11px] text-blue-700 dark:text-blue-300">
-                  Scan QR code pada kartu anggota fisik/digital siswa & guru, atau ketik Nomor Kartu / ID Member yang disebutkan anggota.
+                  Scan QR code pada kartu anggota fisik/digital siswa & guru, atau ketik Nama / Nomor Kartu / ID Member yang disebutkan anggota.
                 </p>
               </div>
 
-              <!-- Scanner or Search Mode Toggle -->
-              <div class="flex items-center justify-center gap-2">
+              <!-- Scanner or Search Mode Toggle (Full Width on Mobile) -->
+              <div class="flex items-center justify-center gap-2 w-full">
                 <button 
                   type="button"
                   @click="adminMemberScanMode = 'manual'"
-                  class="px-4 py-1.5 rounded-full text-xs font-bold transition cursor-pointer active:scale-95"
+                  class="flex-1 py-2 px-3 rounded-full text-xs font-bold transition cursor-pointer active:scale-95 flex items-center justify-center gap-1.5"
                   :class="adminMemberScanMode === 'manual' ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'"
                 >
-                  Ketik ID / No. Kartu
+                  <Search class="w-3.5 h-3.5 shrink-0" />
+                  <span>Ketik Nama / ID Member</span>
                 </button>
                 <button 
                   type="button"
                   @click="adminMemberScanMode = 'camera'"
-                  class="px-4 py-1.5 rounded-full text-xs font-bold transition cursor-pointer active:scale-95 flex items-center gap-1.5"
+                  class="flex-1 py-2 px-3 rounded-full text-xs font-bold transition cursor-pointer active:scale-95 flex items-center justify-center gap-1.5"
                   :class="adminMemberScanMode === 'camera' ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'"
                 >
-                  <Camera class="w-3.5 h-3.5" />
+                  <Camera class="w-3.5 h-3.5 shrink-0" />
                   <span>Scan Kamera</span>
                 </button>
               </div>
@@ -783,25 +784,98 @@
                 <MemberCardScanner @scan-success="handleAdminMemberScanned" />
               </div>
 
-              <div v-else class="space-y-2">
-                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                  Nomor Kartu Anggota / ID Member
-                </label>
-                <div class="flex gap-2">
-                  <input 
-                    v-model="adminMemberSearchKey"
-                    type="text"
-                    placeholder="Contoh: LIB-001, LIB-ADMIN-001..."
-                    @keydown.enter.prevent="lookupAdminMember"
-                    class="flex-1 px-3.5 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm text-slate-800 dark:text-white uppercase tracking-wider"
-                  />
-                  <button 
-                    type="button"
-                    @click="lookupAdminMember"
-                    class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-2xl shadow-xs transition cursor-pointer active:scale-95"
-                  >
-                    Cari
-                  </button>
+              <div v-else class="space-y-3">
+                <div class="space-y-1.5">
+                  <div class="flex items-center justify-between">
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                      Nama Member / Nomor Kartu / ID
+                    </label>
+                    <span v-if="adminMatchedMember" class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                      <CheckCircle class="w-3.5 h-3.5" /> Terpilih
+                    </span>
+                  </div>
+
+                  <div class="flex gap-2 relative">
+                    <div class="relative flex-1">
+                      <Search class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input 
+                        v-model="adminMemberSearchKey"
+                        type="text"
+                        placeholder="Ketik nama siswa/guru, atau nomor kartu (LIB-001)..."
+                        @keydown.enter.prevent="lookupAdminMember"
+                        @input="onAdminSearchInput"
+                        class="w-full pl-10 pr-9 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm text-slate-800 dark:text-white placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition"
+                      />
+                      <button 
+                        v-if="adminMemberSearchKey"
+                        type="button"
+                        @click="clearAdminSearch"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-full cursor-pointer"
+                        title="Hapus pencarian"
+                      >
+                        <X class="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <button 
+                      type="button"
+                      @click="lookupAdminMember"
+                      class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-2xl shadow-xs transition cursor-pointer active:scale-95 shrink-0 flex items-center gap-1.5"
+                    >
+                      <Search class="w-3.5 h-3.5" />
+                      <span>Cari</span>
+                    </button>
+                  </div>
+                  <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                    💡 Bisa cari dengan mengetikkan nama lengkap, sebagian nama, atau nomor kartu member.
+                  </p>
+                </div>
+
+                <!-- Multiple Candidates Suggestion / Search Result List -->
+                <div 
+                  v-if="adminMemberCandidates.length > 1 && !adminMatchedMember" 
+                  class="space-y-2 p-3 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 animate-in fade-in duration-200"
+                >
+                  <div class="flex items-center justify-between text-xs px-1">
+                    <span class="font-bold text-slate-700 dark:text-slate-300">
+                      Ditemukan {{ adminMemberCandidates.length }} Anggota:
+                    </span>
+                    <span class="text-[11px] text-slate-500 dark:text-slate-400">Klik anggota untuk memilih</span>
+                  </div>
+                  <div class="max-h-60 overflow-y-auto space-y-1.5 pr-0.5">
+                    <button 
+                      v-for="cand in adminMemberCandidates"
+                      :key="cand.id"
+                      type="button"
+                      @click="selectAdminCandidate(cand)"
+                      class="w-full p-2.5 rounded-xl border text-left flex items-center justify-between gap-3 transition cursor-pointer active:scale-98 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/80 hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/40"
+                    >
+                      <div class="flex items-center gap-2.5 min-w-0">
+                        <img 
+                          :src="cand.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'" 
+                          alt="Avatar"
+                          class="w-9 h-9 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+                        />
+                        <div class="min-w-0 flex-1">
+                          <div class="flex items-center gap-1.5 flex-wrap">
+                            <span class="font-extrabold text-xs text-slate-900 dark:text-white truncate">{{ cand.name }}</span>
+                            <span 
+                              class="px-1.5 py-0.2 rounded-full text-[9px] font-bold"
+                              :class="cand.memberType === 'guru' ? 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300'"
+                            >
+                              {{ cand.memberType === 'guru' ? 'Guru' : 'Siswa' }}
+                            </span>
+                          </div>
+                          <div class="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
+                            <span>{{ cand.cardNumber }}</span>
+                            <span v-if="cand.nis">• NIS: {{ cand.nis }}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <span class="px-2.5 py-1 rounded-lg bg-blue-600 text-white text-[10px] font-bold shrink-0 shadow-xs">
+                        Pilih
+                      </span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -810,11 +884,24 @@
                 v-if="adminMatchedMember" 
                 class="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 space-y-4 animate-in slide-in-from-top-2 duration-200"
               >
+                <div class="flex items-center justify-between pb-1 border-b border-emerald-200/80 dark:border-emerald-800/80">
+                  <span class="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1">
+                    <CheckCircle class="w-3.5 h-3.5" /> Data Anggota Ditemukan
+                  </span>
+                  <button 
+                    type="button" 
+                    @click="adminMatchedMember = null; adminMemberSearchKey = ''" 
+                    class="text-[11px] font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:underline cursor-pointer"
+                  >
+                    Ganti Anggota
+                  </button>
+                </div>
+
                 <div class="flex items-center gap-3">
                   <img 
                     :src="adminMatchedMember.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'" 
                     alt="Avatar"
-                    class="w-12 h-12 rounded-xl object-cover border-2 border-white dark:border-slate-800 shadow-xs"
+                    class="w-12 h-12 rounded-xl object-cover border-2 border-white dark:border-slate-800 shadow-xs shrink-0"
                   />
                   <div class="min-w-0 flex-1">
                     <div class="flex items-center gap-2">
@@ -823,6 +910,9 @@
                       </span>
                       <span class="px-2 py-0.2 rounded-full text-[10px] font-bold bg-emerald-200/60 dark:bg-emerald-900/60 text-emerald-900 dark:text-emerald-200">
                         {{ adminMatchedMember.memberType === 'guru' ? 'Guru' : 'Siswa' }}
+                      </span>
+                      <span v-if="adminMatchedMember.nis" class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                        NIS: {{ adminMatchedMember.nis }}
                       </span>
                     </div>
                     <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white truncate">
@@ -858,12 +948,13 @@
                   class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-emerald-600/20 transition cursor-pointer active:scale-98 flex items-center justify-center gap-2"
                 >
                   <UserCheck class="w-4 h-4" />
-                  <span>Konfirmasi Check-in Member</span>
+                  <span>Konfirmasi Check-in {{ adminMatchedMember.name }}</span>
                 </button>
               </div>
 
-              <div v-if="adminMemberError" class="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs text-rose-700 dark:text-rose-300">
-                {{ adminMemberError }}
+              <div v-if="adminMemberError" class="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs text-rose-700 dark:text-rose-300 flex items-center gap-2">
+                <AlertCircle class="w-4 h-4 shrink-0" />
+                <span>{{ adminMemberError }}</span>
               </div>
             </div>
 
@@ -1003,7 +1094,8 @@ import {
   ExternalLink,
   KeyRound,
   Plus,
-  RefreshCw
+  RefreshCw,
+  AlertCircle
 } from 'lucide-vue-next';
 
 const props = defineProps<{
@@ -1069,6 +1161,7 @@ const manualForm = ref({
 // Admin Member Check-in
 const adminMemberScanMode = ref<'manual' | 'camera'>('manual');
 const adminMemberSearchKey = ref('');
+const adminMemberCandidates = ref<Member[]>([]);
 const adminMemberError = ref('');
 const adminMatchedMember = ref<Member | null>(null);
 const adminMemberPurpose = ref<VisitPurpose>('Membaca Buku');
@@ -1299,26 +1392,99 @@ const submitManualGuest = async () => {
   }
 };
 
+const searchAdminMembers = (query: string): Member[] => {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+
+  return store.members.filter(m => {
+    const nameMatch = m.name && m.name.toLowerCase().includes(q);
+    const cardMatch = m.cardNumber && m.cardNumber.toLowerCase().includes(q);
+    const idMatch = m.id && m.id.toLowerCase().includes(q);
+    const emailMatch = m.email && m.email.toLowerCase().includes(q);
+    const phoneMatch = m.phone && m.phone.toLowerCase().includes(q);
+    const nisMatch = m.nis && m.nis.toLowerCase().includes(q);
+    const nisnMatch = m.nisn && m.nisn.toLowerCase().includes(q);
+    return nameMatch || cardMatch || idMatch || emailMatch || phoneMatch || nisMatch || nisnMatch;
+  });
+};
+
 const lookupAdminMember = () => {
   adminMemberError.value = '';
-  const key = (adminMemberSearchKey.value || '').trim().toLowerCase();
-  if (!key) {
-    adminMemberError.value = 'Ketik Nomor Kartu atau ID Member.';
+  adminMemberCandidates.value = [];
+  const rawKey = (adminMemberSearchKey.value || '').trim();
+  if (!rawKey) {
+    adminMemberError.value = 'Ketik nama anggota atau nomor kartu.';
     return;
   }
 
-  const found = store.members.find(m => 
+  const key = rawKey.toLowerCase();
+
+  // 1. Check exact card number or ID match first
+  const exactCardOrId = store.members.find(m => 
     (m.cardNumber && m.cardNumber.toLowerCase() === key) ||
     (m.id && m.id.toLowerCase() === key) ||
     (m.email && m.email.toLowerCase() === key)
   );
 
-  if (found) {
-    adminMatchedMember.value = found;
+  if (exactCardOrId) {
+    adminMatchedMember.value = exactCardOrId;
+    adminMemberCandidates.value = [exactCardOrId];
+    return;
+  }
+
+  // 2. Search by name, card number, or NIS
+  const matches = searchAdminMembers(rawKey);
+
+  if (matches.length === 1) {
+    adminMatchedMember.value = matches[0];
+    adminMemberCandidates.value = matches;
+  } else if (matches.length > 1) {
+    adminMatchedMember.value = null;
+    adminMemberCandidates.value = matches;
   } else {
     adminMatchedMember.value = null;
-    adminMemberError.value = `Anggota "${adminMemberSearchKey.value}" tidak ditemukan.`;
+    adminMemberCandidates.value = [];
+    adminMemberError.value = `Anggota dengan nama atau ID "${rawKey}" tidak ditemukan. Pastikan ejaan nama atau nomor kartu sudah sesuai.`;
   }
+};
+
+const onAdminSearchInput = () => {
+  adminMemberError.value = '';
+  const q = (adminMemberSearchKey.value || '').trim();
+  if (!q) {
+    adminMemberCandidates.value = [];
+    adminMatchedMember.value = null;
+    return;
+  }
+  // If the user starts modifying the search input while a member was selected, reset selected
+  if (adminMatchedMember.value && 
+      adminMatchedMember.value.name.toLowerCase() !== q.toLowerCase() && 
+      adminMatchedMember.value.cardNumber.toLowerCase() !== q.toLowerCase()) {
+    adminMatchedMember.value = null;
+  }
+  if (q.length >= 2) {
+    const matches = searchAdminMembers(q);
+    adminMemberCandidates.value = matches;
+    if (matches.length === 1 && (matches[0].cardNumber.toLowerCase() === q.toLowerCase() || matches[0].name.toLowerCase() === q.toLowerCase())) {
+      adminMatchedMember.value = matches[0];
+    }
+  } else {
+    adminMemberCandidates.value = [];
+  }
+};
+
+const selectAdminCandidate = (member: Member) => {
+  adminMatchedMember.value = member;
+  adminMemberSearchKey.value = member.name;
+  adminMemberCandidates.value = [];
+  adminMemberError.value = '';
+};
+
+const clearAdminSearch = () => {
+  adminMemberSearchKey.value = '';
+  adminMatchedMember.value = null;
+  adminMemberCandidates.value = [];
+  adminMemberError.value = '';
 };
 
 const handleAdminMemberScanned = (scannedCode: string) => {
@@ -1350,6 +1516,7 @@ const submitAdminMemberVisit = async () => {
     if (res.success) {
       store.showToast(`Check-in member ${adminMatchedMember.value.name} berhasil!`);
       adminMatchedMember.value = null;
+      adminMemberCandidates.value = [];
       adminMemberSearchKey.value = '';
       activeTab.value = 'list';
     }

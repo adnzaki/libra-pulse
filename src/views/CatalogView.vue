@@ -60,9 +60,9 @@
           Temukan koleksi buku favorit dan amankan peminjaman instan dengan sistem <strong>Hold 24 Jam</strong> menggunakan kartu member digital.
         </p>
 
-        <!-- Big Search Bar & Fast Scan Button -->
-        <div class="pt-1 sm:pt-2 flex flex-col sm:flex-row gap-2 max-w-2xl">
-          <div class="relative flex-1">
+        <!-- Big Search Bar & Fast Action Buttons -->
+        <div class="pt-1 sm:pt-2 max-w-2xl space-y-2.5">
+          <div class="relative w-full">
             <Search class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
             <input 
               v-model="searchQuery"
@@ -79,13 +79,26 @@
             </button>
           </div>
 
-          <button 
-            @click="openDirectScan"
-            class="px-5 py-2.5 sm:py-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-200 transition flex items-center justify-center gap-2 shrink-0 cursor-pointer active:scale-95"
-          >
-            <QrCode class="w-4 h-4" />
-            Scan Kartu Member
-          </button>
+          <!-- Action Buttons: 100% Full Width on Mobile -->
+          <div class="flex flex-col sm:flex-row gap-2 w-full">
+            <router-link 
+              to="/kunjungan"
+              class="w-full sm:flex-1 py-3 px-5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-emerald-500/25 transition flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+              title="Buka Buku Tamu & Presensi Kunjungan Perpustakaan"
+            >
+              <BookOpenCheck class="w-4 h-4 shrink-0" />
+              <span>Buku Tamu Perpustakaan</span>
+            </router-link>
+
+            <button 
+              type="button"
+              @click="openDirectScan"
+              class="w-full sm:flex-1 py-3 px-5 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-blue-500/25 transition flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+            >
+              <QrCode class="w-4 h-4 shrink-0" />
+              <span>Scan Kartu Member</span>
+            </button>
+          </div>
         </div>
 
         <!-- Quick Badges Highlights -->
@@ -604,7 +617,7 @@ import {
   Search, QrCode, Sparkles, CheckCircle2, Clock, 
   Layers, MapPin, Bookmark, BookX, Smartphone, BookOpen, X,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
-  Tag, Check
+  Tag, Check, BookOpenCheck
 } from 'lucide-vue-next';
 
 const router = useRouter();

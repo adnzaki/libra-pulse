@@ -115,7 +115,24 @@
         </nav>
 
         <!-- Right Side: User Menu & Quick Actions -->
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 sm:gap-3">
+            <!-- Mobile Quick Buku Tamu Button -->
+            <router-link 
+              to="/kunjungan"
+              class="md:hidden flex items-center gap-1.5 px-3 py-1.5 min-h-[40px] rounded-xl border text-xs font-bold transition cursor-pointer select-none touch-manipulation active:scale-95"
+              :class="$route.name === 'public-visit'
+                ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                : (store.currentTheme === 'light' 
+                  ? 'bg-emerald-50 hover:bg-emerald-100/80 border-emerald-200 text-emerald-800' 
+                  : (store.currentTheme === 'elegant' 
+                    ? 'bg-emerald-950/60 hover:bg-emerald-900/70 border-emerald-400/40 text-emerald-200 backdrop-blur-md shadow-xs ring-1 ring-emerald-400/20' 
+                    : 'bg-emerald-950/50 hover:bg-emerald-900/60 border-emerald-800 text-emerald-300'))"
+              title="Buku Tamu & Kunjungan Perpustakaan"
+            >
+              <BookOpenCheck class="w-4 h-4 text-emerald-600 dark:text-emerald-400" :class="$route.name === 'public-visit' ? 'text-white' : ''" />
+              <span>Buku Tamu</span>
+            </router-link>
+
             <!-- User Auth Dropdown -->
             <div class="relative" ref="userDropdownRef">
               <button 
@@ -200,6 +217,14 @@
                     <span>Portal Pinjaman Saya</span>
                   </router-link>
                   <router-link 
+                    to="/kunjungan" 
+                    class="w-full text-left px-3.5 py-2 rounded-xl flex items-center gap-2.5 transition font-semibold"
+                    :class="store.currentTheme === 'light' ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-200 hover:bg-slate-800'"
+                  >
+                    <BookOpenCheck class="w-4 h-4 text-emerald-500" />
+                    <span>Buku Tamu Kunjungan</span>
+                  </router-link>
+                  <router-link 
                     v-if="store.isSuperAdmin"
                     to="/settings" 
                     class="w-full text-left px-3.5 py-2 rounded-xl flex items-center gap-2.5 transition"
@@ -227,6 +252,14 @@
                   >
                     <QrCode class="w-4 h-4 text-blue-500" />
                     Kartu Digital Member QR
+                  </router-link>
+                  <router-link 
+                    to="/kunjungan" 
+                    class="w-full text-left px-3.5 py-2 rounded-xl flex items-center gap-2.5 transition"
+                    :class="store.currentTheme === 'light' ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-200 hover:bg-slate-800'"
+                  >
+                    <BookOpenCheck class="w-4 h-4 text-emerald-500" />
+                    Buku Tamu Kunjungan
                   </router-link>
                 </div>
 

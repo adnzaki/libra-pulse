@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen py-6 sm:py-10 px-3 sm:px-6 max-w-3xl mx-auto">
+  <div class="min-h-screen py-4 sm:py-10 px-0 sm:px-6 w-[95%] sm:max-w-3xl mx-auto">
     <!-- Header Branding -->
     <div class="text-center space-y-2 mb-6 sm:mb-8 animate-in fade-in duration-300">
       <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-xs font-bold border border-blue-200 dark:border-blue-800 shadow-xs">
@@ -27,7 +27,7 @@
     <!-- SUCCESS SCREEN -->
     <div 
       v-if="submittedVisit" 
-      class="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-100 dark:border-slate-800 shadow-xl text-center space-y-6 animate-in zoom-in-95 duration-300"
+      class="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-8 border border-slate-100 dark:border-slate-800 shadow-xl text-center space-y-6 animate-in zoom-in-95 duration-300 w-full"
     >
       <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-inner border border-emerald-200 dark:border-emerald-800">
         <CheckCircle2 class="w-10 h-10 sm:w-12 sm:h-12" />
@@ -100,7 +100,7 @@
     </div>
 
     <!-- MAIN FORM CONTAINER -->
-    <div v-else class="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-7 border border-slate-100 dark:border-slate-800 shadow-xl space-y-6">
+    <div v-else class="bg-white dark:bg-slate-900 rounded-3xl p-3.5 sm:p-7 border border-slate-100 dark:border-slate-800 shadow-xl space-y-6 w-full">
       
       <!-- Visitor Type Tabs: Non-Member vs Member -->
       <div class="p-1 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center gap-1">
@@ -312,27 +312,28 @@
           </p>
         </div>
 
-        <!-- Member Scanner or Input Toggle -->
-        <div class="flex items-center justify-center gap-2">
+        <!-- Member Scanner or Input Toggle (Full Width 100% on Mobile) -->
+        <div class="flex items-center justify-center gap-2 w-full">
           <button 
             type="button"
             @click="memberScanMode = 'manual'"
-            class="px-4 py-2 rounded-full text-xs font-bold transition cursor-pointer active:scale-95"
+            class="flex-1 py-2.5 px-3 rounded-full text-xs font-bold transition cursor-pointer active:scale-95 flex items-center justify-center gap-1.5"
             :class="memberScanMode === 'manual' 
               ? 'bg-blue-600 text-white shadow-xs' 
               : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'"
           >
-            Ketik ID / No. Kartu
+            <Search class="w-3.5 h-3.5 shrink-0" />
+            <span>Ketik Nama / ID Member</span>
           </button>
           <button 
             type="button"
             @click="memberScanMode = 'camera'"
-            class="px-4 py-2 rounded-full text-xs font-bold transition cursor-pointer active:scale-95 flex items-center gap-1.5"
+            class="flex-1 py-2.5 px-3 rounded-full text-xs font-bold transition cursor-pointer active:scale-95 flex items-center justify-center gap-1.5"
             :class="memberScanMode === 'camera' 
               ? 'bg-blue-600 text-white shadow-xs' 
               : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'"
           >
-            <Camera class="w-3.5 h-3.5" />
+            <Camera class="w-3.5 h-3.5 shrink-0" />
             <span>Scan QR Kamera</span>
           </button>
         </div>
@@ -344,29 +345,96 @@
           />
         </div>
 
-        <!-- Manual Card Lookup Form -->
+        <!-- Manual Card Lookup Form (Search by Name or Card Number) -->
         <div v-else class="space-y-3">
           <div class="space-y-1.5">
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">
-              Nomor Kartu Anggota / ID Member
-            </label>
+            <div class="flex items-center justify-between">
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                Nama Member / Nomor Kartu (ID Member)
+              </label>
+              <span v-if="matchedMember" class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                <CheckCircle2 class="w-3.5 h-3.5" /> Data Ditemukan
+              </span>
+            </div>
             <div class="flex gap-2">
               <div class="relative flex-1">
-                <CreditCard class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input 
                   v-model="memberSearchKey"
                   type="text"
-                  placeholder="Masukkan Nomor Kartu (LIB-...) atau Email"
+                  placeholder="Ketik nama lengkap siswa/guru, atau nomor kartu (LIB-001)..."
                   @keydown.enter.prevent="lookupMember"
-                  class="w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white placeholder-slate-400 text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500 uppercase tracking-wider"
+                  @input="onMemberSearchInput"
+                  class="w-full pl-10 pr-9 py-2.5 sm:py-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white placeholder-slate-400 text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition"
                 />
+                <button 
+                  v-if="memberSearchKey"
+                  type="button"
+                  @click="clearMemberSearch"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-full cursor-pointer"
+                  title="Hapus pencarian"
+                >
+                  <X class="w-3.5 h-3.5" />
+                </button>
               </div>
               <button 
                 type="button"
                 @click="lookupMember"
-                class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-2xl shadow-sm transition cursor-pointer active:scale-95 shrink-0"
+                class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-2xl shadow-sm transition cursor-pointer active:scale-95 shrink-0 flex items-center gap-1.5"
               >
-                Cari
+                <Search class="w-3.5 h-3.5" />
+                <span>Cari</span>
+              </button>
+            </div>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">
+              💡 Tips: Anda dapat mencari dengan mengetikkan nama lengkap, sebagian nama, atau nomor kartu member.
+            </p>
+          </div>
+
+          <!-- Multiple Candidates Suggestion / Search Result List -->
+          <div 
+            v-if="memberCandidates.length > 1 && !matchedMember" 
+            class="space-y-2 p-3 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 animate-in fade-in duration-200"
+          >
+            <div class="flex items-center justify-between text-xs px-1">
+              <span class="font-bold text-slate-700 dark:text-slate-300">
+                Ditemukan {{ memberCandidates.length }} Anggota:
+              </span>
+              <span class="text-[11px] text-slate-500 dark:text-slate-400">Pilih profil Anda:</span>
+            </div>
+            <div class="max-h-60 overflow-y-auto space-y-1.5 pr-0.5">
+              <button 
+                v-for="cand in memberCandidates"
+                :key="cand.id"
+                type="button"
+                @click="selectMemberCandidate(cand)"
+                class="w-full p-2.5 rounded-xl border text-left flex items-center justify-between gap-3 transition cursor-pointer active:scale-98 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/80 hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/40"
+              >
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <img 
+                    :src="cand.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'" 
+                    alt="Avatar"
+                    class="w-9 h-9 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+                  />
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <span class="font-extrabold text-xs text-slate-900 dark:text-white truncate">{{ cand.name }}</span>
+                      <span 
+                        class="px-1.5 py-0.2 rounded-full text-[9px] font-bold"
+                        :class="cand.memberType === 'guru' ? 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300'"
+                      >
+                        {{ cand.memberType === 'guru' ? 'Guru' : 'Siswa' }}
+                      </span>
+                    </div>
+                    <div class="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
+                      <span>{{ cand.cardNumber }}</span>
+                      <span v-if="cand.nis">• NIS: {{ cand.nis }}</span>
+                    </div>
+                  </div>
+                </div>
+                <span class="px-2.5 py-1 rounded-lg bg-blue-600 text-white text-[10px] font-bold shrink-0 shadow-xs">
+                  Pilih Saya
+                </span>
               </button>
             </div>
           </div>
@@ -377,6 +445,19 @@
           v-if="matchedMember" 
           class="p-4 sm:p-5 rounded-2xl bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 space-y-4 animate-in slide-in-from-top-2 duration-200"
         >
+          <div class="flex items-center justify-between pb-1 border-b border-emerald-200/80 dark:border-emerald-800/60">
+            <span class="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1">
+              <CheckCircle2 class="w-3.5 h-3.5" /> Konfirmasi Anggota
+            </span>
+            <button 
+              type="button" 
+              @click="matchedMember = null; memberSearchKey = ''" 
+              class="text-[11px] font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:underline cursor-pointer"
+            >
+              Ganti Anggota
+            </button>
+          </div>
+
           <div class="flex items-center gap-3">
             <img 
               :src="matchedMember.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'" 
@@ -393,6 +474,9 @@
                   :class="matchedMember.memberType === 'guru' ? 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300'"
                 >
                   {{ matchedMember.memberType === 'guru' ? 'Guru' : 'Siswa' }}
+                </span>
+                <span v-if="matchedMember.nis" class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                  NIS: {{ matchedMember.nis }}
                 </span>
               </div>
               <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white truncate">
@@ -496,7 +580,9 @@ import {
   CheckCircle2, 
   UserPlus, 
   AlertCircle,
-  KeyRound
+  KeyRound,
+  Search,
+  X
 } from 'lucide-vue-next';
 
 const store = useLibraryStore();
@@ -532,6 +618,7 @@ const memberScanMode = ref<'manual' | 'camera'>('manual');
 const memberSearchKey = ref('');
 const memberSearchError = ref('');
 const matchedMember = ref<Member | null>(null);
+const memberCandidates = ref<Member[]>([]);
 const memberVisitPurpose = ref<VisitPurpose>('Membaca Buku');
 const memberPurposeDetails = ref('');
 
@@ -567,26 +654,98 @@ onMounted(() => {
   }
 });
 
+const searchMembers = (query: string): Member[] => {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  return store.members.filter(m => {
+    const nameMatch = m.name && m.name.toLowerCase().includes(q);
+    const cardMatch = m.cardNumber && m.cardNumber.toLowerCase().includes(q);
+    const idMatch = m.id && m.id.toLowerCase().includes(q);
+    const emailMatch = m.email && m.email.toLowerCase().includes(q);
+    const phoneMatch = m.phone && m.phone.toLowerCase().includes(q);
+    const nisMatch = m.nis && m.nis.toLowerCase().includes(q);
+    const nisnMatch = m.nisn && m.nisn.toLowerCase().includes(q);
+    return nameMatch || cardMatch || idMatch || emailMatch || phoneMatch || nisMatch || nisnMatch;
+  });
+};
+
 const lookupMember = () => {
   memberSearchError.value = '';
-  const key = (memberSearchKey.value || '').trim().toLowerCase();
-  if (!key) {
-    memberSearchError.value = 'Masukkan Nomor Kartu Anggota atau Email.';
+  memberCandidates.value = [];
+  const rawKey = (memberSearchKey.value || '').trim();
+  if (!rawKey) {
+    memberSearchError.value = 'Masukkan Nama Lengkap atau Nomor Kartu Anggota.';
     return;
   }
 
-  const found = store.members.find(m => 
+  const key = rawKey.toLowerCase();
+
+  // 1. Check exact card number or ID match first
+  const exactCardOrId = store.members.find(m => 
     (m.cardNumber && m.cardNumber.toLowerCase() === key) ||
     (m.id && m.id.toLowerCase() === key) ||
     (m.email && m.email.toLowerCase() === key)
   );
 
-  if (found) {
-    matchedMember.value = found;
+  if (exactCardOrId) {
+    matchedMember.value = exactCardOrId;
+    memberCandidates.value = [exactCardOrId];
+    return;
+  }
+
+  // 2. Search by name, card number, or NIS
+  const matches = searchMembers(rawKey);
+
+  if (matches.length === 1) {
+    matchedMember.value = matches[0];
+    memberCandidates.value = matches;
+  } else if (matches.length > 1) {
+    matchedMember.value = null;
+    memberCandidates.value = matches;
   } else {
     matchedMember.value = null;
-    memberSearchError.value = `Anggota dengan identitas "${memberSearchKey.value}" tidak ditemukan. Pastikan nomor kartu valid.`;
+    memberCandidates.value = [];
+    memberSearchError.value = `Anggota dengan nama atau ID "${rawKey}" tidak ditemukan. Pastikan ejaan nama atau nomor kartu sudah sesuai.`;
   }
+};
+
+const onMemberSearchInput = () => {
+  memberSearchError.value = '';
+  const q = (memberSearchKey.value || '').trim();
+  if (!q) {
+    memberCandidates.value = [];
+    matchedMember.value = null;
+    return;
+  }
+  // If the user starts modifying the search input while a member was selected, reset selected
+  if (matchedMember.value && 
+      matchedMember.value.name.toLowerCase() !== q.toLowerCase() && 
+      matchedMember.value.cardNumber.toLowerCase() !== q.toLowerCase()) {
+    matchedMember.value = null;
+  }
+  if (q.length >= 2) {
+    const matches = searchMembers(q);
+    memberCandidates.value = matches;
+    if (matches.length === 1 && (matches[0].cardNumber.toLowerCase() === q.toLowerCase() || matches[0].name.toLowerCase() === q.toLowerCase())) {
+      matchedMember.value = matches[0];
+    }
+  } else {
+    memberCandidates.value = [];
+  }
+};
+
+const selectMemberCandidate = (member: Member) => {
+  matchedMember.value = member;
+  memberSearchKey.value = member.name;
+  memberCandidates.value = [];
+  memberSearchError.value = '';
+};
+
+const clearMemberSearch = () => {
+  memberSearchKey.value = '';
+  matchedMember.value = null;
+  memberCandidates.value = [];
+  memberSearchError.value = '';
 };
 
 const handleMemberCodeScanned = (scannedCode: string) => {
@@ -667,6 +826,7 @@ const submitMemberVisit = async () => {
 
     if (res.success && res.visit) {
       submittedVisit.value = res.visit;
+      memberCandidates.value = [];
       store.showToast(`Presensi berhasil, selamat datang ${matchedMember.value.name}!`);
     }
   } finally {
@@ -689,6 +849,7 @@ const resetForm = () => {
   matchedMember.value = null;
   memberSearchKey.value = '';
   memberSearchError.value = '';
+  memberCandidates.value = [];
   memberVisitPurpose.value = 'Membaca Buku';
   memberPurposeDetails.value = '';
 };

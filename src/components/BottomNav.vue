@@ -64,6 +64,20 @@
         </span>
       </router-link>
 
+      <!-- Buku Tamu (Mobile Bottom Navigation) -->
+      <router-link 
+        to="/kunjungan" 
+        class="flex flex-col items-center justify-center flex-1 py-1.5 px-1 rounded-2xl transition-all duration-200 active:scale-90"
+        :class="$route.name === 'public-visit' 
+          ? (store.currentTheme === 'light' ? 'text-blue-600 font-bold' : (store.currentTheme === 'elegant' ? 'text-cyan-300 font-bold' : 'text-blue-400 font-bold')) 
+          : (store.currentTheme === 'light' ? 'text-slate-500 hover:text-slate-800 font-medium' : 'text-slate-400 hover:text-slate-200 font-medium')"
+      >
+        <div class="relative p-1">
+          <BookOpenCheck class="w-5 h-5 transition-transform" :class="$route.name === 'public-visit' ? 'scale-110' : ''" />
+        </div>
+        <span class="text-[10px] tracking-tight mt-0.5">Buku Tamu</span>
+      </router-link>
+
       <!-- User / Login / Admin -->
       <router-link 
         v-if="store.isAdmin"
@@ -125,7 +139,7 @@
 
 <script setup lang="ts">
 import { useLibraryStore } from '../stores/library.js';
-import { BookMarked, Layers, QrCode, UserCheck, ShieldCheck, LogIn } from 'lucide-vue-next';
+import { BookMarked, Layers, QrCode, UserCheck, ShieldCheck, LogIn, BookOpenCheck } from 'lucide-vue-next';
 
 const store = useLibraryStore();
 </script>
