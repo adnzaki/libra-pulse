@@ -1,80 +1,42 @@
 import type { ChangelogItem, AppVersionConfig } from '../types.js';
 
-export const CURRENT_APP_VERSION = '1.0.0-rc.2';
-export const APP_RELEASE_DATE = '19 Oktober 2026';
-export const APP_RELEASE_CODENAME = 'Libra Aurora RC 2';
+export const CURRENT_APP_VERSION = '1.0.0-rc.3';
+export const APP_RELEASE_DATE = '21 Oktober 2026';
+export const APP_RELEASE_CODENAME = 'Libra Aurora RC 3';
 
 export const DEFAULT_APP_VERSION_CONFIG: AppVersionConfig = {
   version: CURRENT_APP_VERSION,
   releaseDate: APP_RELEASE_DATE,
   forceReload: false,
-  minSupportedVersion: '1.0.0-rc.2',
-  updateMessage: 'Pembaruan sistem Libra versi 1.0.0-rc.2 telah dirilis dengan peningkatan tampilan menu pengelolaan data perpustakaan pada panel admin, penyempurnaan seluruh komponen drop-down, perbaikan drop-down pilihan rak pada katalog buku agar tidak melebihi layar mobile, pembersihan menu dan opsi yang tidak digunakan, perbaikan navigasi pagination katalog publik di layar mobile dengan input lompat halaman, serta penyesuaian tata letak input tautan URL dan tombol acak Unsplash pada form buku.',
-  changelogSummary: 'Peningkatan menu admin, penyempurnaan drop-down, perbaikan drop-down rak mobile, pembersihan opsi tidak terpakai, pagination katalog mobile dengan input lompat halaman, dan penyesuaian input cover buku.'
+  minSupportedVersion: '1.0.0-rc.3',
+  updateMessage: 'Pembaruan sistem Libra versi 1.0.0-rc.3 telah dirilis dengan perbaikan proporsi foto profil kartu member agar bebas distorsi/gepeng saat dicetak (PDF & PNG), serta peningkatan kontras warna teks dan latar belakang di berbagai komponen antarmuka, khususnya pada tema terang (Light Mode).',
+  changelogSummary: 'Perbaikan proporsi foto kartu member saat dicetak/diunduh dan peningkatan kontras teks pada dropdown serta elemen tema terang.'
 };
 
 export const CHANGELOG_LIST: ChangelogItem[] = [
   {
-    id: 'admin-management-menu-enhancement',
-    title: 'Peningkatan Tampilan Menu Pengelolaan Data Perpustakaan pada Panel Admin',
-    description: 'Menyempurnakan antarmuka modal Menu Pengelolaan Data Perpustakaan dengan tata letak grid bento modern, kategorisasi modul terstruktur (Koleksi & Sirkulasi, Keanggotaan, Master Data), pencarian instan, dan integrasi modul penataan rak.',
-    targetAudience: 'admin',
-    targetAudienceLabel: 'Khusus Admin',
-    category: 'improvement',
-    badge: 'Panel Admin',
-    iconName: 'LayoutGrid'
-  },
-  {
-    id: 'dropdown-components-redesign',
-    title: 'Peningkatan Tampilan & Interaktivitas Seluruh Komponen Drop-down',
-    description: 'Memperbarui desain visual dan kenyamanan interaksi semua komponen drop-down (CustomSelect) di seluruh sistem dengan aksen glassmorphism, rotasi panah indikator yang halus, penyorotan status aktif yang lebih tegas, serta dukungan tema yang konsisten.',
-    targetAudience: 'all',
-    targetAudienceLabel: 'Semua Pengguna',
-    category: 'improvement',
-    badge: 'Antarmuka UI',
-    iconName: 'Sliders'
-  },
-  {
-    id: 'fix-shelf-dropdown-mobile-width',
-    title: 'Perbaikan Drop-down Pilihan Lokasi Rak pada Tampilan Mobile',
-    description: 'Memperbaiki kendala menu drop-down pilihan rak pada halaman katalog buku yang sebelumnya melebihi lebar layar pada tampilan ponsel (mobile), kini tampil proporsional, rapi, dan terkunci sempurna di dalam batas layar.',
+    id: 'member-card-photo-aspect-ratio-fix',
+    title: 'Perbaikan Proporsi Foto Kartu Anggota Saat Dicetak & Diunduh',
+    description:
+      'Memperbaiki kendala foto profil anggota yang sebelumnya terdistorsi, melebar, atau gepeng saat kartu dicetak ke PDF maupun diunduh ke format PNG. Kini renderer kartu menerapkan kalkulasi rasio aspek presisi dengan pemotongan cerdas (smart cover crop) dan penghalusan gambar berkualitas tinggi agar foto tetap proporsional dan jernih.',
     targetAudience: 'all',
     targetAudienceLabel: 'Semua Pengguna',
     category: 'fix',
-    badge: 'Responsivitas Mobile',
-    iconName: 'Layers'
+    badge: 'Kartu Anggota',
+    iconName: 'CreditCard',
   },
   {
-    id: 'clean-unused-menus-and-options',
-    title: 'Pembersihan Menu & Opsi yang Tidak Digunakan',
-    description: 'Menghapus menu, opsi pemilih, serta elemen antarmuka yang tidak digunakan atau redundan di seluruh aplikasi guna menciptakan navigasi yang lebih ringkas, intuitif, dan efisien.',
+    id: 'light-mode-dropdown-contrast-enhancement',
+    title: 'Peningkatan Kontras Warna Teks & Latar Belakang Komponen',
+    description:
+      'Meningkatkan kontras warna antara teks, ikon, dan latar belakang pada beberapa komponen antarmuka—termasuk menu drop-down pilihan ukuran cetak kartu dan jendela popover saat mode terang (Light Mode) aktif—sehingga seluruh teks terbaca dengan jelas, tajam, dan memenuhi standar aksesibilitas visual.',
     targetAudience: 'all',
     targetAudienceLabel: 'Semua Pengguna',
     category: 'improvement',
-    badge: 'Penyederhanaan',
-    iconName: 'CheckCircle'
+    badge: 'Aksesibilitas UI',
+    iconName: 'Sun',
   },
-  {
-    id: 'public-catalog-pagination-mobile-jump',
-    title: 'Perbaikan Pagination Katalog Publik di Layar Mobile dengan Input Lompat Halaman',
-    description: 'Menyederhanakan navigasi halaman katalog buku pada layar ponsel (mobile) dengan posisi pilihan jumlah baris sejajar full-width di samping teks informasi, menghapus label redundan, serta menggantikan deretan tombol angka pagination dengan satu input lompat halaman (jump-to-page) yang rapi dan responsif.',
-    targetAudience: 'all',
-    targetAudienceLabel: 'Semua Pengguna',
-    category: 'fix',
-    badge: 'Katalog Publik',
-    iconName: 'ArrowRightCircle'
-  },
-  {
-    id: 'book-form-cover-url-unsplash-responsive',
-    title: 'Penyesuaian Komponen Input URL & Tombol Acak Unsplash pada Form Data Buku',
-    description: 'Menyesuaikan komponen input tautan URL cover dan tombol Acak Unsplash pada form data buku agar tidak melebihi lebar layar ponsel, tersusun rapi secara responsif, dan mudah dioperasikan.',
-    targetAudience: 'admin',
-    targetAudienceLabel: 'Khusus Admin',
-    category: 'fix',
-    badge: 'Form Data Buku',
-    iconName: 'Image'
-  }
-];
+]
 
 /**
  * Parses semantic version string into numbers and identifiers

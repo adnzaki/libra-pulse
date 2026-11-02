@@ -79,6 +79,12 @@ service cloud.firestore {
       allow write: if true;
     }
 
+    // Visits: Library guestbook and in-person check-in
+    match /visits/{visitId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
     // System configuration (Suspend settings, limits)
     match /config/{configId} {
       allow read: if true;

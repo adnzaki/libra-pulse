@@ -83,24 +83,122 @@ export const initialShelves: Shelf[] = [
   }
 ];
 
-export const DUMMY_BOOK_IDS = new Set(['BKO-001', 'BKO-002', 'BKO-003', 'BKO-004', 'BKO-EBK-001']);
-
-export function isDummyBook(book: any): boolean {
-  if (!book) return false;
-  const id = String(book.id || '').trim();
-  if (DUMMY_BOOK_IDS.has(id)) return true;
-  const title = String(book.title || '').toLowerCase().trim();
-  return (
-    title.includes('clean code') ||
-    title.includes('atomic habits') ||
-    title.includes('designing data-intensive') ||
-    title === 'cosmos' ||
-    title.includes('panduan membaca digital & literasi perpustakaan')
-  );
-}
-
-export const initialBooks: Book[] = [];
-
+export const initialBooks: Book[] = [
+  {
+    id: 'BKO-001',
+    isbn: '978-0132350884',
+    title: 'Clean Code: A Handbook of Agile Software Craftsmanship',
+    author: 'Robert C. Martin (Uncle Bob)',
+    publisher: 'Prentice Hall',
+    year: 2008,
+    category: 'Teknologi & Komputer',
+    shelfId: 'RAK-A1',
+    shelfCode: 'RAK-A1',
+    shelfName: 'Rak A-01: Rekayasa Perangkat Lunak & AI',
+    cover: 'https://images.unsplash.com/photo-1532012164546-f432f2e3edd7?w=600&auto=format&fit=crop&q=80',
+    synopsis: 'Panduan wajib bagi para pengembang perangkat lunak profesional untuk menulis kode yang bersih, mudah dipelihara, dan tangguh menghadapi perubahan kebutuhan sistem.',
+    totalCopies: 4,
+    availableCopies: 3,
+    borrowedCopies: 1,
+    reservedCopies: 0,
+    barcode: '9780132350884',
+    rating: 4.8,
+    pages: 464,
+    language: 'Inggris'
+  },
+  {
+    id: 'BKO-002',
+    isbn: '978-1449373320',
+    title: 'Designing Data-Intensive Applications: The Big Ideas Behind Reliable, Scalable, and Maintainable Systems',
+    author: 'Martin Kleppmann',
+    publisher: "O'Reilly Media",
+    year: 2017,
+    category: 'Teknologi & Komputer',
+    shelfId: 'RAK-A1',
+    shelfCode: 'RAK-A1',
+    shelfName: 'Rak A-01: Rekayasa Perangkat Lunak & AI',
+    cover: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80',
+    synopsis: 'Eksplorasi mendalam mengenai arsitektur sistem basis data terdistribusi modern, konsistensi data, replikasi, partisi, dan pemrosesan aliran data tingkat lanjut.',
+    totalCopies: 3,
+    availableCopies: 2,
+    borrowedCopies: 1,
+    reservedCopies: 0,
+    barcode: '9781449373320',
+    rating: 4.9,
+    pages: 616,
+    language: 'Inggris'
+  },
+  {
+    id: 'BKO-003',
+    isbn: '978-0345331359',
+    title: 'Cosmos',
+    author: 'Carl Sagan',
+    publisher: 'Ballantine Books',
+    year: 1980,
+    category: 'Sains & Matematika',
+    shelfId: 'RAK-A2',
+    shelfCode: 'RAK-A2',
+    shelfName: 'Rak A-02: Sains, Matematika & Fisika Terapan',
+    cover: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&auto=format&fit=crop&q=80',
+    synopsis: 'Perjalanan ilmiah dan puitis menelusuri lima belas miliar tahun evolusi kosmik, pembentukan galaksi, asal mula kehidupan, dan eksplorasi peradaban manusia.',
+    totalCopies: 3,
+    availableCopies: 3,
+    borrowedCopies: 0,
+    reservedCopies: 0,
+    barcode: '9780345331359',
+    rating: 4.9,
+    pages: 384,
+    language: 'Indonesia'
+  },
+  {
+    id: 'BKO-004',
+    isbn: '978-6020633176',
+    title: 'Atomic Habits: Perubahan Kecil yang Memberikan Hasil Luar Biasa',
+    author: 'James Clear',
+    publisher: 'Gramedia Pustaka Utama',
+    year: 2019,
+    category: 'Pengembangan Diri',
+    shelfId: 'RAK-B2',
+    shelfCode: 'RAK-B2',
+    shelfName: 'Rak B-02: Psikologi Praktis & Self Improvement',
+    cover: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=600&auto=format&fit=crop&q=80',
+    synopsis: 'Kerangka kerja praktis berbasis ilmu perilaku untuk membentuk kebiasaan baik, menghilangkan kebiasaan buruk, dan menguasai perubahan perilaku kecil yang menghasilkan dampak besar.',
+    totalCopies: 5,
+    availableCopies: 4,
+    borrowedCopies: 1,
+    reservedCopies: 0,
+    barcode: '9786020633176',
+    rating: 4.9,
+    pages: 352,
+    language: 'Indonesia'
+  },
+  {
+    id: 'BKO-EBK-001',
+    isbn: '978-602-001-EBK',
+    title: 'Panduan Membaca Digital & Literasi Perpustakaan',
+    author: 'Tim Literasi Digital SDN Pengasinan VII',
+    publisher: 'Pustaka Libra Digital',
+    year: 2024,
+    category: 'Teknologi & Komputer',
+    shelfId: 'RAK-A1',
+    shelfCode: 'RAK-A1',
+    shelfName: 'Rak A-01: Rekayasa Perangkat Lunak & AI',
+    cover: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80',
+    synopsis: 'Buku panduan digital resmi mengenai literasi informasi, pemanfaatan e-book di sekolah, dan etika riset akademis di era digital.',
+    totalCopies: 10,
+    availableCopies: 10,
+    borrowedCopies: 0,
+    reservedCopies: 0,
+    barcode: 'EBK-978602001',
+    rating: 4.9,
+    pages: 45,
+    language: 'Indonesia',
+    isEbook: true,
+    ebookUrl: '/uploads/ebooks/sample_panduan_perpustakaan.pdf',
+    ebookFileName: 'sample_panduan_perpustakaan.pdf',
+    ebookFileSize: 1024
+  }
+];
 
 export const initialMembers: Member[] = [
   {

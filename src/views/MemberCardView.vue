@@ -101,10 +101,10 @@
           <!-- The Physical-style Hologram Card -->
           <div 
             id="member-card-canvas"
-            class="relative w-full rounded-3xl p-4 sm:p-6 shadow-xl overflow-hidden flex flex-col justify-between border transition duration-300 min-h-[220px] sm:min-h-0 sm:aspect-[1.586/1] group"
+            class="relative w-full rounded-3xl p-4 sm:p-6 shadow-xl overflow-hidden flex flex-col justify-between border transition duration-300 min-h-220px sm:min-h-0 sm:aspect-[1.586/1] group"
             :class="activeMember.isSuspended 
-              ? 'bg-gradient-to-br from-rose-950 via-slate-900 to-rose-900 border-rose-500/40 text-rose-100 shadow-rose-950/20' 
-              : 'bg-gradient-to-br from-[#0b162c] via-[#09152e] to-[#060e20] border-slate-800 text-white shadow-slate-950/40'"
+              ? 'bg-linear-to-br from-rose-950 via-slate-900 to-rose-900 border-rose-500/40 text-rose-100 shadow-rose-950/20' 
+              : 'bg-linear-to-br from-[#0b162c] via-[#09152e] to-[#060e20] border-slate-800 text-white shadow-slate-950/40'"
           >
             <!-- Holographic Shimmer Accents -->
             <div class="absolute -right-16 -top-16 w-56 h-56 bg-blue-500/15 rounded-full blur-2xl pointer-events-none"></div>
@@ -144,21 +144,21 @@
             <div class="flex items-center justify-between gap-3 sm:gap-4 my-2 sm:my-3 relative z-10">
               <div class="flex items-center gap-2.5 sm:gap-3.5 min-w-0 flex-1">
                 <!-- Avatar with graceful initials fallback -->
-                <div class="relative w-12 h-12 sm:w-16 sm:h-16 shrink-0">
+                <div class="relative w-12 h-12 sm:w-16 sm:h-16 shrink-0 aspect-square">
                   <img 
                     v-if="activeMember.avatar && !avatarLoadError"
                     :src="activeMember.avatar" 
                     @error="avatarLoadError = true"
-                    class="w-full h-full rounded-2xl object-cover border-2 shadow-md" 
+                    class="w-full h-full rounded-2xl object-cover border-2 shadow-md aspect-square" 
                     :class="activeMember.isSuspended ? 'border-rose-400' : 'border-blue-400'"
                     alt="Foto Member" 
                   />
                   <div 
                     v-else 
-                    class="w-full h-full rounded-2xl flex items-center justify-center font-extrabold text-sm sm:text-base border-2 shadow-md uppercase tracking-wide"
+                    class="w-full h-full rounded-2xl flex items-center justify-center font-extrabold text-sm sm:text-base border-2 shadow-md uppercase tracking-wide aspect-square"
                     :class="activeMember.isSuspended 
                       ? 'bg-rose-900 border-rose-400 text-rose-100' 
-                      : 'bg-gradient-to-br from-blue-600 to-indigo-700 border-blue-400 text-white'"
+                      : 'bg-linear-to-br from-blue-600 to-indigo-700 border-blue-400 text-white'"
                   >
                     {{ getMemberInitials(activeMember.name) }}
                   </div>
@@ -223,15 +223,15 @@
             <div class="grid grid-cols-3 gap-2 text-center font-medium">
               <div class="p-2 rounded-2xl bg-white border border-indigo-100">
                 <div class="text-[10px] text-slate-500">Kuota Pinjam</div>
-                <div class="text-xs font-bold text-indigo-700">Maks 6 Buku</div>
+                <div class="text-xs font-bold text-indigo-500">Maks 6 Buku</div>
               </div>
               <div class="p-2 rounded-2xl bg-white border border-indigo-100">
                 <div class="text-[10px] text-slate-500">Durasi Pinjam</div>
-                <div class="text-xs font-bold text-indigo-700">Hingga 14 Hari</div>
+                <div class="text-xs font-bold text-indigo-500">Hingga 14 Hari</div>
               </div>
               <div class="p-2 rounded-2xl bg-white border border-indigo-100">
                 <div class="text-[10px] text-slate-500">Auto-Suspend</div>
-                <div class="text-xs font-bold text-emerald-700">Bebas Sanksi</div>
+                <div class="text-xs font-bold text-emerald-500">Bebas Sanksi</div>
               </div>
             </div>
           </div>
@@ -252,14 +252,14 @@
           <div class="grid grid-cols-2 gap-2.5 text-xs">
             <button 
               @click="copyCardNumber"
-              class="py-3 px-3 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-95 min-h-[46px]"
+              class="py-3 px-3 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-95 min-h-46px"
             >
               <Copy class="w-3.5 h-3.5 text-blue-600" />
               <span>Salin No. Kartu</span>
             </button>
             <button 
               @click="openPrintModal"
-              class="py-3 px-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-blue-500/20 active:scale-95 min-h-[46px]"
+              class="py-3 px-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-blue-500/20 active:scale-95 min-h-46px"
             >
               <Printer class="w-3.5 h-3.5" />
               <span>Cetak / Unduh Kartu</span>
@@ -341,7 +341,7 @@
     <!-- Dedicated Print & Card Showcase Modal (Matches image.png with pixel perfection!) -->
     <div 
       v-if="isPrintModalOpen && activeMember" 
-      class="fixed inset-0 z-[200] flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 overflow-hidden sm:overflow-y-auto bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200"
+      class="fixed inset-0 z-200 flex flex-col sm:items-center sm:justify-center p-0 sm:p-4 overflow-hidden sm:overflow-y-auto bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200"
       @click.self="isPrintModalOpen = false"
     >
       <div class="bg-slate-900 border-0 sm:border sm:border-slate-800 sm:rounded-3xl rounded-none w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-xl overflow-hidden shadow-2xl flex flex-col my-auto animate-in zoom-in-95 duration-200">
@@ -376,8 +376,8 @@
             :class="printTheme === 'light' 
               ? 'bg-white border-2 border-slate-200 text-slate-900 shadow-slate-950/10' 
               : (activeMember.isSuspended 
-                  ? 'bg-gradient-to-br from-rose-950 via-slate-950 to-rose-900 border-rose-500/40 text-rose-100' 
-                  : 'bg-gradient-to-br from-[#0b162c] via-[#09152e] to-[#060e20] border-slate-800 text-white shadow-slate-950/60')"
+                  ? 'bg-linear-to-br from-rose-950 via-slate-950 to-rose-900 border-rose-500/40 text-rose-100' 
+                  : 'bg-linear-to-br from-[#0b162c] via-[#09152e] to-[#060e20] border-slate-800 text-white shadow-slate-950/60')"
             :style="cardPrintSize === 'large' ? 'max-width: 540px;' : 'max-width: 460px;'"
           >
             <!-- Shimmer Background Glow (Dark theme only) -->
@@ -423,13 +423,26 @@
             <!-- Middle Row: Member Info & QR Code -->
             <div class="flex items-center justify-between gap-4 my-2 relative z-10">
               <div class="flex items-center gap-3 min-w-0">
-                <img 
-                  :src="activeMember.avatar" 
-                  crossorigin="anonymous"
-                  class="w-13 h-13 sm:w-16 sm:h-16 rounded-2xl object-cover border-2 shadow-md shrink-0" 
-                  :class="activeMember.isSuspended ? 'border-rose-400' : (printTheme === 'light' ? 'border-blue-500' : 'border-blue-400')"
-                  alt="Member Photo" 
-                />
+                <div class="relative w-14 h-14 sm:w-16 sm:h-16 shrink-0 aspect-square">
+                  <img 
+                    v-if="activeMember.avatar && !avatarLoadError"
+                    :src="activeMember.avatar" 
+                    @error="avatarLoadError = true"
+                    crossorigin="anonymous"
+                    class="w-full h-full rounded-2xl object-cover border-2 shadow-md aspect-square" 
+                    :class="activeMember.isSuspended ? 'border-rose-400' : (printTheme === 'light' ? 'border-blue-500' : 'border-blue-400')"
+                    alt="Member Photo" 
+                  />
+                  <div 
+                    v-else 
+                    class="w-full h-full rounded-2xl flex items-center justify-center font-extrabold text-sm sm:text-base border-2 shadow-md uppercase tracking-wide aspect-square"
+                    :class="activeMember.isSuspended 
+                      ? 'bg-rose-900 border-rose-400 text-rose-100' 
+                      : (printTheme === 'light' ? 'bg-blue-600 border-blue-500 text-white' : 'bg-linear-to-br from-blue-600 to-indigo-700 border-blue-400 text-white')"
+                  >
+                    {{ getMemberInitials(activeMember.name) }}
+                  </div>
+                </div>
                 <div class="min-w-0">
                   <h3 class="font-extrabold text-base sm:text-lg truncate tracking-tight" :class="printTheme === 'light' ? 'text-slate-900' : 'text-white'">
                     {{ activeMember.name }}
@@ -492,7 +505,7 @@
           <!-- Customization Bar: Theme & Size -->
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
             <div class="flex items-center gap-2">
-              <span class="text-slate-400 font-medium">Warna Cetak:</span>
+              <span class="text-slate-300 font-semibold">Warna Cetak:</span>
               <div class="inline-flex rounded-xl p-1 bg-slate-800 border border-slate-700">
                 <button 
                   @click="printTheme = 'dark'"
@@ -514,7 +527,7 @@
             </div>
 
             <div class="flex items-center gap-2">
-              <span class="text-slate-400 font-medium shrink-0">Ukuran:</span>
+              <span class="text-slate-300 font-semibold shrink-0">Ukuran:</span>
               <div class="w-full sm:w-64">
                 <CustomSelect 
                   v-model="cardPrintSize" 
@@ -799,9 +812,13 @@ const printCardDirectly = async () => {
               width: ${cardWidth};
               max-width: 100%;
               height: auto;
+              aspect-ratio: 1050 / 660;
+              object-fit: contain;
               border-radius: 4mm;
               display: block;
               margin: auto;
+              page-break-inside: avoid;
+              break-inside: avoid;
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
             }

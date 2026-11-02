@@ -934,3 +934,52 @@ html[data-theme="elegant"] [class*="shadow-rose-"] {
   opacity: 1 !important;
   transform: translateY(0) scale(1) !important;
 }
+
+/* --- 4. CUSTOM SELECT DARK VARIANT (HIGH CONTRAST & LIGHT-MODE IMMUNITY) --- */
+.custom-select-dark-btn,
+html[data-theme="light"] .custom-select-dark-btn,
+html:not([data-theme="dark"]):not([data-theme="elegant"]) .custom-select-dark-btn {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border: 1px solid #334155 !important;
+}
+
+.custom-select-dark-btn:hover,
+html[data-theme="light"] .custom-select-dark-btn:hover,
+html:not([data-theme="dark"]):not([data-theme="elegant"]) .custom-select-dark-btn:hover {
+  background-color: #334155 !important;
+  color: #ffffff !important;
+  border-color: #475569 !important;
+}
+
+.custom-select-dark-menu,
+html[data-theme="light"] .custom-select-dark-menu,
+html:not([data-theme="dark"]):not([data-theme="elegant"]) .custom-select-dark-menu {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border: 1px solid #334155 !important;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.7) !important;
+}
+
+.custom-select-dark-menu button.custom-select-dark-item,
+html[data-theme="light"] .custom-select-dark-menu button.custom-select-dark-item,
+html:not([data-theme="dark"]):not([data-theme="elegant"]) .custom-select-dark-menu button.custom-select-dark-item {
+  color: #f1f5f9 !important;
+  background-color: transparent !important;
+}
+
+.custom-select-dark-menu button.custom-select-dark-item:hover,
+html[data-theme="light"] .custom-select-dark-menu button.custom-select-dark-item:hover,
+html:not([data-theme="dark"]):not([data-theme="elegant"]) .custom-select-dark-menu button.custom-select-dark-item:hover {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
+}
+
+.custom-select-dark-menu button.custom-select-dark-item.is-selected,
+html[data-theme="light"] .custom-select-dark-menu button.custom-select-dark-item.is-selected,
+html:not([data-theme="dark"]):not([data-theme="elegant"]) .custom-select-dark-menu button.custom-select-dark-item.is-selected {
+  background-color: rgba(37, 99, 235, 0.35) !important;
+  color: #93c5fd !important;
+  border: 1px solid rgba(59, 130, 246, 0.6) !important;
+}
+

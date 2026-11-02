@@ -66,6 +66,17 @@
           </router-link>
 
           <router-link 
+            to="/kunjungan" 
+            class="px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2"
+            :class="$route.name === 'public-visit' 
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25' 
+              : (store.currentTheme === 'light' ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' : 'text-slate-300 hover:text-white hover:bg-slate-800/80')"
+          >
+            <BookOpenCheck class="w-4 h-4" />
+            Buku Tamu
+          </router-link>
+
+          <router-link 
             v-if="store.currentUser"
             to="/member-portal" 
             class="px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2 relative"
@@ -378,6 +389,19 @@
                     <UserPlus class="w-4 h-4" :class="store.currentTheme === 'light' ? 'text-slate-500' : 'text-slate-400'" />
                     <span>Daftar Anggota Baru</span>
                   </router-link>
+
+                  <!-- Buku Tamu Link -->
+                  <router-link 
+                    to="/kunjungan"
+                    @click="isUserMenuOpen = false"
+                    class="w-full text-left px-3 py-2 rounded-xl flex items-center gap-2.5 transition text-[11px] font-semibold"
+                    :class="store.currentTheme === 'light' 
+                      ? 'text-slate-700 hover:text-blue-600 hover:bg-slate-100' 
+                      : 'text-slate-200 hover:text-blue-400 hover:bg-slate-800'"
+                  >
+                    <BookOpenCheck class="w-4 h-4 text-emerald-500" />
+                    <span>Buku Tamu Kunjungan</span>
+                  </router-link>
                 </div>
 
                 <!-- Logout / Switch to Public Mode Button -->
@@ -425,7 +449,7 @@ import { useLibraryStore } from '../stores/library.js';
 import { 
   BookMarked, Layers, QrCode, UserCheck, 
   ShieldCheck, User, ChevronDown, X, LogIn, UserPlus, LogOut, Settings, Laptop, Sparkles, Smartphone,
-  Palette, Sun, Moon
+  Palette, Sun, Moon, BookOpenCheck
 } from 'lucide-vue-next';
 import { logoutUser } from '../lib/firebase.js';
 import DeviceSessionsModal from './DeviceSessionsModal.vue';

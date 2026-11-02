@@ -16,7 +16,7 @@ const CACHE_KEYS = {
 
 export interface PendingMutation {
   id: string;
-  action: 'saveBook' | 'deleteBook' | 'saveShelf' | 'deleteShelf' | 'saveCategory' | 'deleteCategory' | 'saveMember' | 'deleteMember' | 'saveLoan' | 'saveBooking' | 'deleteBooking' | 'saveConfig' | 'saveNotification' | 'deleteNotification';
+  action: 'saveBook' | 'deleteBook' | 'saveShelf' | 'deleteShelf' | 'saveCategory' | 'deleteCategory' | 'saveMember' | 'deleteMember' | 'saveLoan' | 'saveBooking' | 'deleteBooking' | 'saveConfig' | 'saveNotification' | 'deleteNotification' | 'saveVisit' | 'deleteVisit';
   collection: string;
   docId: string;
   data?: any;
@@ -41,8 +41,6 @@ export function getFromOfflineStorage<T = any>(key: string): T | null {
   }
 }
 
-import { isDummyBook } from './default-catalog.js';
-
 export function downloadAllForOfflineAccess(data: {
   books: any[];
   categories: any[];
@@ -53,8 +51,7 @@ export function downloadAllForOfflineAccess(data: {
   notifications?: any[];
   config?: any;
 }) {
-  const cleanBooks = (data.books || []).filter(b => !isDummyBook(b));
-  saveToOfflineStorage(CACHE_KEYS.BOOKS, cleanBooks);
+  saveToOfflineStorage(CACHE_KEYS.BOOKS, data.books || []);
   saveToOfflineStorage(CACHE_KEYS.CATEGORIES, data.categories || []);
   saveToOfflineStorage(CACHE_KEYS.SHELVES, data.shelves || []);
   saveToOfflineStorage(CACHE_KEYS.MEMBERS, data.members || []);
@@ -70,13 +67,8 @@ export function getOfflineLastDownloaded(): string | null {
 }
 
 export function getOfflineCachedData() {
-  const rawBooks = getFromOfflineStorage<any[]>(CACHE_KEYS.BOOKS) || [];
-  const cleanBooks = rawBooks.filter(b => !isDummyBook(b));
-  if (cleanBooks.length !== rawBooks.length) {
-    saveToOfflineStorage(CACHE_KEYS.BOOKS, cleanBooks);
-  }
   return {
-    books: cleanBooks,
+    books: getFromOfflineStorage<any[]>(CACHE_KEYS.BOOKS) || [],
     categories: getFromOfflineStorage<any[]>(CACHE_KEYS.CATEGORIES) || [],
     shelves: getFromOfflineStorage<any[]>(CACHE_KEYS.SHELVES) || [],
     members: getFromOfflineStorage<any[]>(CACHE_KEYS.MEMBERS) || [],

@@ -227,3 +227,26 @@ export interface ChangelogItem {
 
 export type AppTheme = 'light' | 'dark' | 'elegant';
 
+export type VisitPurpose = 'Membaca Buku' | 'Observasi' | 'Meminjam Buku' | 'Lainnya';
+export type VisitorType = 'member' | 'non_member';
+export type VisitSource = 'auto_borrow' | 'qr_scan' | 'public_form' | 'manual_admin';
+
+export interface LibraryVisit {
+  id: string;
+  visitorType: VisitorType;
+  memberId?: string;
+  memberCardNumber?: string;
+  memberType?: 'guru' | 'siswa' | 'umum';
+  name: string;
+  origin: string; // Asal instansi, sekolah, organisasi, atau kota/daerah personal
+  purpose: VisitPurpose;
+  purposeDetails?: string; // Keterangan jika tujuan 'Lainnya'
+  visitDate: string; // YYYY-MM-DD
+  timestamp: string; // ISO string
+  phone?: string;
+  email?: string;
+  notes?: string;
+  source: VisitSource;
+  handledBy?: string;
+}
+
