@@ -223,9 +223,28 @@
         "visitDate": { "type": "string", "maxLength": 50 },
         "timestamp": { "type": "string", "maxLength": 50 },
         "phone": { "type": "string", "maxLength": 50 },
-        "source": { "type": "string", "enum": ["auto_borrow", "qr_scan", "public_form", "manual_admin"] }
+        "source": { "type": "string", "enum": ["auto_borrow", "qr_scan", "public_form", "manual_admin"] },
+        "tokenUsed": { "type": "string", "maxLength": 50 }
       },
       "required": ["id", "visitorType", "name", "origin", "purpose", "visitDate", "timestamp", "source"]
+    },
+    "VisitToken": {
+      "title": "VisitToken",
+      "description": "Kode token verifikasi kunjungan tamu non-member yang dibuat oleh admin",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "token": { "type": "string", "maxLength": 30 },
+        "createdAt": { "type": "string", "maxLength": 50 },
+        "expiresAt": { "type": "string", "maxLength": 50 },
+        "isActive": { "type": "boolean" },
+        "generatedBy": { "type": "string", "maxLength": 150 },
+        "type": { "type": "string", "enum": ["daily", "single_use"] },
+        "usageCount": { "type": "number" },
+        "maxUsage": { "type": "number" },
+        "notes": { "type": "string", "maxLength": 250 }
+      },
+      "required": ["id", "token", "createdAt", "isActive", "generatedBy", "type", "usageCount"]
     }
   },
   "firestore": {
@@ -272,7 +291,12 @@
     "/visits/{visitId}": {
       "schema": "LibraryVisit",
       "description": "Catatan kunjungan perpustakaan fisik dan buku tamu digital"
+    },
+    "/visit_tokens/{tokenId}": {
+      "schema": "VisitToken",
+      "description": "Token verifikasi presensi buku tamu non-member"
     }
   }
 }
+
 

@@ -248,5 +248,19 @@ export interface LibraryVisit {
   notes?: string;
   source: VisitSource;
   handledBy?: string;
+  tokenUsed?: string; // Token verifikasi yang diinput oleh non-member
+}
+
+export interface VisitToken {
+  id: string;
+  token: string; // Kode token e.g. "LIB-7842" atau "849201"
+  createdAt: string;
+  expiresAt: string; // ISO date string
+  isActive: boolean;
+  generatedBy: string; // Nama admin/petugas
+  type: 'daily' | 'single_use';
+  usageCount: number;
+  maxUsage?: number; // null/undefined = unlimited
+  notes?: string;
 }
 

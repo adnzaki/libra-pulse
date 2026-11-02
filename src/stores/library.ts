@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { Book, Shelf, Member, Booking, Loan, SuspendConfig, NotificationLog, LibraryStats, BookCategory, TeacherRequest, StudentVerificationRequest, UserDeviceSession, AppVersionConfig, AppTheme, LibraryVisit, VisitPurpose, VisitorType, VisitSource } from '../types.js';
+import type { Book, Shelf, Member, Booking, Loan, SuspendConfig, NotificationLog, LibraryStats, BookCategory, TeacherRequest, StudentVerificationRequest, UserDeviceSession, AppVersionConfig, AppTheme, LibraryVisit, VisitPurpose, VisitorType, VisitSource, VisitToken } from '../types.js';
 import { 
   getOfflineCachedData, 
   downloadAllForOfflineAccess, 
@@ -87,6 +87,14 @@ export const useLibraryStore = defineStore('library', {
         return [];
       }
     })() as LibraryVisit[],
+    visitTokens: (() => {
+      try {
+        const raw = localStorage.getItem('libra_visit_tokens');
+        return raw ? JSON.parse(raw) : [];
+      } catch {
+        return [];
+      }
+    })() as VisitToken[],
     stats: null as LibraryStats | null,
     suspendConfig: defaultSuspendConfig,
     
@@ -415,6 +423,22 @@ export const useLibraryStore = defineStore('library', {
     todayGuestVisitsCount: (state) => {
       const todayStr = new Date().toISOString().slice(0, 10);
       return state.visits.filter(v => v.visitDate === todayStr && v.visitorType === 'non_member').length;
+    },
+    activeVisitToken(state): VisitToken | null {
+      const now = Date.now();
+      return state.visitTokens.find(t => 
+        t.isActive && 
+        (!t.expiresAt || new Date(t.expiresAt).getTime() > now) &&
+        (t.maxUsage === undefined || t.usageCount < t.maxUsage)
+      ) || null;
+    },
+    activeVisitTokens(state): VisitToken[] {
+      const now = Date.now();
+      return state.visitTokens.filter(t => 
+        t.isActive && 
+        (!t.expiresAt || new Date(t.expiresAt).getTime() > now) &&
+        (t.maxUsage === undefined || t.usageCount < t.maxUsage)
+      );
     }
   },
 
@@ -574,6 +598,12 @@ export const useLibraryStore = defineStore('library', {
           if (items && Array.isArray(items)) {
             this.visits = items.sort((a, b) => new Date(b.timestamp || b.visitDate).getTime() - new Date(a.timestamp || a.visitDate).getTime());
             this.persistVisitsToLocalCache();
+          }
+        });
+        subscribeToFirestoreCollection<VisitToken>('visit_tokens', (items) => {
+          if (items && Array.isArray(items)) {
+            this.visitTokens = items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            this.persistVisitTokensToLocalCache();
           }
         });
 
@@ -1134,7 +1164,9 @@ export const useLibraryStore = defineStore('library', {
           syncNotificationDoc,
           removeNotificationDoc,
           syncVisitDoc,
-          removeVisitDoc
+          removeVisitDoc,
+          syncVisitTokenDoc,
+          removeVisitTokenDoc
         } = await import('../lib/firebase.js');
 
         for (const item of queue) {
@@ -1155,6 +1187,8 @@ export const useLibraryStore = defineStore('library', {
             case 'deleteNotification': await removeNotificationDoc(item.docId); break;
             case 'saveVisit': await syncVisitDoc(item.data); break;
             case 'deleteVisit': await removeVisitDoc(item.docId); break;
+            case 'saveVisitToken': await syncVisitTokenDoc(item.data); break;
+            case 'deleteVisitToken': await removeVisitTokenDoc(item.docId); break;
           }
         }
         clearPendingOfflineMutations();
@@ -3995,6 +4029,173 @@ export const useLibraryStore = defineStore('library', {
       }
     },
 
+    persistVisitTokensToLocalCache() {
+      try {
+        localStorage.setItem('libra_visit_tokens', JSON.stringify(this.visitTokens));
+      } catch (e) {
+        console.warn('Gagal menyimpan cache visit tokens:', e);
+      }
+    },
+
+    async generateVisitToken(options?: {
+      type?: 'daily' | 'single_use';
+      customCode?: string;
+      notes?: string;
+      maxUsage?: number;
+      expiresAt?: string;
+    }) {
+      try {
+        const type = options?.type || 'daily';
+        let code = '';
+
+        if (options?.customCode && options.customCode.trim()) {
+          code = options.customCode.trim().toUpperCase().replace(/[^A-Z0-9-]/g, '');
+        } else {
+          // Format ramah: LIB-XXXX (4 digit angka)
+          const rand = Math.floor(1000 + Math.random() * 9000);
+          code = `LIB-${rand}`;
+        }
+
+        // Set default expiry for daily token (end of today)
+        let expiresAt = options?.expiresAt;
+        if (!expiresAt) {
+          const expDate = new Date();
+          if (type === 'daily') {
+            expDate.setHours(23, 59, 59, 999);
+          } else {
+            expDate.setHours(expDate.getHours() + 24);
+          }
+          expiresAt = expDate.toISOString();
+        }
+
+        // Deactive previous active daily token if generating a new daily token
+        if (type === 'daily') {
+          this.visitTokens.forEach(t => {
+            if (t.type === 'daily' && t.isActive) {
+              t.isActive = false;
+              import('../lib/firebase.js').then(({ syncVisitTokenDoc }) => {
+                syncVisitTokenDoc(t).catch(() => {});
+              });
+            }
+          });
+        }
+
+        const newToken: VisitToken = {
+          id: `TOKEN-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`,
+          token: code,
+          createdAt: new Date().toISOString(),
+          expiresAt,
+          isActive: true,
+          generatedBy: this.currentUser?.name ? `Admin (${this.currentUser.name})` : 'Admin Perpustakaan',
+          type,
+          usageCount: 0,
+          maxUsage: type === 'single_use' ? (options?.maxUsage || 1) : options?.maxUsage,
+          notes: options?.notes ? options.notes.trim() : (type === 'daily' ? 'Token Harian Pengunjung' : 'Token Sekali Pakai')
+        };
+
+        this.visitTokens.unshift(newToken);
+        this.persistVisitTokensToLocalCache();
+
+        // Optimistic sync to Firestore
+        import('../lib/firebase.js').then(({ syncVisitTokenDoc }) => {
+          syncVisitTokenDoc(newToken).catch(err => {
+            console.warn('Sync visit token fallback to offline queue:', err);
+            queueOfflineMutation({ action: 'saveVisitToken', collection: 'visit_tokens', docId: newToken.id, data: newToken });
+            this.pendingMutationsCount++;
+          });
+        });
+
+        this.showToast(`Token kunjungan baru berhasil dibuat: ${code}`);
+        return { success: true, token: newToken };
+      } catch (err: any) {
+        console.error('Error generating visit token:', err);
+        return { success: false, error: err?.message || 'Gagal membuat token' };
+      }
+    },
+
+    validateVisitToken(rawCode: string): { valid: boolean; message?: string; token?: VisitToken } {
+      if (!rawCode || !rawCode.trim()) {
+        return { valid: false, message: 'Kode token wajib diisi oleh pengunjung non-member.' };
+      }
+
+      const cleanCode = rawCode.trim().toUpperCase();
+      const now = Date.now();
+
+      const matched = this.visitTokens.find(t => t.token.toUpperCase() === cleanCode);
+      if (!matched) {
+        return { valid: false, message: 'Kode token tidak valid. Silakan minta kode token kepada petugas perpustakaan.' };
+      }
+
+      if (!matched.isActive) {
+        return { valid: false, message: 'Kode token sudah tidak aktif. Silakan hubungi petugas perpustakaan.' };
+      }
+
+      if (matched.expiresAt && new Date(matched.expiresAt).getTime() < now) {
+        return { valid: false, message: 'Kode token sudah kedaluwarsa. Silakan minta kode token terbaru dari petugas.' };
+      }
+
+      if (matched.maxUsage !== undefined && matched.usageCount >= matched.maxUsage) {
+        return { valid: false, message: 'Kode token telah mencapai batas maksimal pemakaian.' };
+      }
+
+      return { valid: true, token: matched };
+    },
+
+    async consumeVisitToken(rawCode: string): Promise<{ success: boolean; message?: string; token?: VisitToken }> {
+      const check = this.validateVisitToken(rawCode);
+      if (!check.valid || !check.token) {
+        return { success: false, message: check.message };
+      }
+
+      const tokenObj = check.token;
+      tokenObj.usageCount = (tokenObj.usageCount || 0) + 1;
+      if (tokenObj.maxUsage !== undefined && tokenObj.usageCount >= tokenObj.maxUsage) {
+        if (tokenObj.type === 'single_use') {
+          tokenObj.isActive = false;
+        }
+      }
+
+      this.persistVisitTokensToLocalCache();
+
+      import('../lib/firebase.js').then(({ syncVisitTokenDoc }) => {
+        syncVisitTokenDoc(tokenObj).catch(err => {
+          queueOfflineMutation({ action: 'saveVisitToken', collection: 'visit_tokens', docId: tokenObj.id, data: tokenObj });
+          this.pendingMutationsCount++;
+        });
+      });
+
+      return { success: true, token: tokenObj };
+    },
+
+    async revokeVisitToken(tokenId: string) {
+      const item = this.visitTokens.find(t => t.id === tokenId);
+      if (!item) return;
+
+      item.isActive = false;
+      this.persistVisitTokensToLocalCache();
+
+      import('../lib/firebase.js').then(({ syncVisitTokenDoc }) => {
+        syncVisitTokenDoc(item).catch(err => {
+          queueOfflineMutation({ action: 'saveVisitToken', collection: 'visit_tokens', docId: item.id, data: item });
+          this.pendingMutationsCount++;
+        });
+      });
+      this.showToast(`Token ${item.token} dinonaktifkan.`);
+    },
+
+    async deleteVisitToken(tokenId: string) {
+      this.visitTokens = this.visitTokens.filter(t => t.id !== tokenId);
+      this.persistVisitTokensToLocalCache();
+
+      import('../lib/firebase.js').then(({ removeVisitTokenDoc }) => {
+        removeVisitTokenDoc(tokenId).catch(err => {
+          queueOfflineMutation({ action: 'deleteVisitToken', collection: 'visit_tokens', docId: tokenId });
+          this.pendingMutationsCount++;
+        });
+      });
+      this.showToast('Token kunjungan telah dihapus.');
+    },
+
     async recordVisit(payload: {
       visitorType: VisitorType;
       name: string;
@@ -4010,6 +4211,7 @@ export const useLibraryStore = defineStore('library', {
       visitDate?: string;
       source?: VisitSource;
       handledBy?: string;
+      tokenUsed?: string;
     }) {
       try {
         const now = new Date();
@@ -4032,7 +4234,8 @@ export const useLibraryStore = defineStore('library', {
           visitDate,
           timestamp,
           source: payload.source || 'public_form',
-          handledBy: payload.handledBy || (this.currentUser?.name ? `Petugas (${this.currentUser.name})` : 'Sistem')
+          handledBy: payload.handledBy || (this.currentUser?.name ? `Petugas (${this.currentUser.name})` : 'Sistem'),
+          tokenUsed: payload.tokenUsed ? payload.tokenUsed.trim().toUpperCase() : undefined
         };
 
         this.visits.unshift(newVisit);
@@ -4067,8 +4270,6 @@ export const useLibraryStore = defineStore('library', {
             queueOfflineMutation({ action: 'deleteVisit', collection: 'visits', docId: visitId });
             this.pendingMutationsCount++;
           });
-        }).catch(err => {
-          console.warn('Failed to load firebase for removeVisitDoc:', err);
         });
 
         this.showToast('Data kunjungan berhasil dihapus.');

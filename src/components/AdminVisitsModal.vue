@@ -239,6 +239,14 @@
                         >
                           Auto Pinjam Fisik
                         </span>
+
+                        <span 
+                          v-if="visit.tokenUsed" 
+                          class="px-2 py-0.2 rounded-full text-[10px] font-mono font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                          title="Token kunjungan yang digunakan"
+                        >
+                          Token: {{ visit.tokenUsed }}
+                        </span>
                       </div>
 
                       <div class="flex flex-wrap items-center gap-y-1 gap-x-3 text-[11px] text-slate-500 dark:text-slate-400 mt-1">
@@ -298,7 +306,290 @@
               </div>
             </div>
 
-            <!-- TAB 2: INPUT MANUAL NON-MEMBER (PETUGAS INPUT TAMU) -->
+            <!-- TAB 2: KELOLA TOKEN KUNJUNGAN NON-MEMBER -->
+            <div v-else-if="activeTab === 'tokens'" class="space-y-5">
+              
+              <!-- Active Token Spotlight -->
+              <div class="p-4 sm:p-6 rounded-3xl bg-linear-to-br from-amber-500/10 via-amber-500/5 to-transparent border-2 border-amber-300 dark:border-amber-700/70 shadow-sm space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-xs shrink-0">
+                      <KeyRound class="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">
+                        Token Kunjungan Tamu Non-Member
+                      </h3>
+                      <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                        Kode token resmi yang wajib diisi oleh pengunjung non-member pada form presensi
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-2">
+                    <button 
+                      v-if="store.activeVisitToken"
+                      @click="revokeActiveToken"
+                      type="button"
+                      class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/60 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 text-xs font-bold border border-rose-200 dark:border-rose-800 transition cursor-pointer active:scale-95"
+                    >
+                      Nonaktifkan
+                    </button>
+                    <button 
+                      @click="showTokenGenModal = !showTokenGenModal"
+                      type="button"
+                      class="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-xs transition cursor-pointer active:scale-95 flex items-center gap-1.5"
+                    >
+                      <Plus class="w-3.5 h-3.5" />
+                      <span>Buat Token Baru</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Active Token Big Display -->
+                <div v-if="store.activeVisitToken" class="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-700/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div class="space-y-1">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 block">
+                      Kode Token Aktif Saat Ini
+                    </span>
+                    <div class="flex items-center gap-2.5">
+                      <span class="font-mono text-3xl sm:text-4xl font-black text-amber-600 dark:text-amber-400 tracking-widest select-all">
+                        {{ store.activeVisitToken.token }}
+                      </span>
+                      <button 
+                        @click="copyCode(store.activeVisitToken.token)"
+                        type="button"
+                        class="p-2 rounded-xl bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/50 dark:hover:bg-amber-800/60 text-amber-800 dark:text-amber-200 transition cursor-pointer active:scale-95"
+                        title="Salin Kode Token"
+                      >
+                        <Copy class="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400 pt-0.5">
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300">
+                        {{ store.activeVisitToken.type === 'daily' ? 'Token Harian Reusable' : 'Token Sekali Pakai' }}
+                      </span>
+                      <span>•</span>
+                      <span>Digunakan: <strong class="text-slate-800 dark:text-white">{{ store.activeVisitToken.usageCount || 0 }}x</strong>{{ store.activeVisitToken.maxUsage ? ` / ${store.activeVisitToken.maxUsage}` : '' }}</span>
+                      <span>•</span>
+                      <span>Kedaluwarsa: {{ formatTokenExpiry(store.activeVisitToken.expiresAt) }}</span>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <button 
+                      @click="generateQuickDailyToken"
+                      type="button"
+                      class="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-650 text-slate-800 dark:text-slate-200 text-xs font-bold transition cursor-pointer active:scale-95 flex items-center justify-center gap-1.5"
+                    >
+                      <RefreshCw class="w-3.5 h-3.5" />
+                      <span>Acak Token Baru</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- If no active token -->
+                <div v-else class="p-6 rounded-2xl bg-white dark:bg-slate-800 border border-amber-200/80 dark:border-amber-700/60 text-center space-y-3">
+                  <div class="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-600 flex items-center justify-center mx-auto">
+                    <KeyRound class="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-sm text-slate-800 dark:text-white">Belum Ada Token Kunjungan Aktif</h4>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto mt-0.5">
+                      Pengunjung non-member memerlukan token ini untuk mengisi presensi digital. Klik tombol di bawah untuk membuat token harian baru.
+                    </p>
+                  </div>
+                  <button 
+                    @click="generateQuickDailyToken"
+                    type="button"
+                    class="px-5 py-2.5 rounded-full bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-md shadow-amber-500/25 transition cursor-pointer active:scale-95 inline-flex items-center gap-2"
+                  >
+                    <KeyRound class="w-4 h-4" />
+                    <span>Buat Token Harian Sekarang</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Create Token Inline Form -->
+              <div v-if="showTokenGenModal" class="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-3">
+                <div class="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-700">
+                  <h4 class="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                    <KeyRound class="w-4 h-4 text-amber-500" />
+                    <span>Buat / Kustomisasi Token Kunjungan</span>
+                  </h4>
+                  <button @click="showTokenGenModal = false" type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <X class="w-4 h-4" />
+                  </button>
+                </div>
+
+                <form @submit.prevent="submitGenerateToken" class="space-y-3">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="space-y-1">
+                      <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Tipe Token</label>
+                      <div class="grid grid-cols-2 gap-2">
+                        <button 
+                          type="button" 
+                          @click="tokenGenForm.type = 'daily'"
+                          class="py-2 px-3 rounded-xl text-xs font-bold border transition text-center cursor-pointer"
+                          :class="tokenGenForm.type === 'daily' ? 'bg-amber-600 text-white border-amber-600' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'"
+                        >
+                          Harian Reusable
+                        </button>
+                        <button 
+                          type="button" 
+                          @click="tokenGenForm.type = 'single_use'"
+                          class="py-2 px-3 rounded-xl text-xs font-bold border transition text-center cursor-pointer"
+                          :class="tokenGenForm.type === 'single_use' ? 'bg-amber-600 text-white border-amber-600' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'"
+                        >
+                          Sekali Pakai
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="space-y-1">
+                      <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                        Kode Kustom <span class="text-[10px] text-slate-400 font-normal">(Kosongkan untuk otomatis LIB-XXXX)</span>
+                      </label>
+                      <input 
+                        v-model="tokenGenForm.customCode"
+                        type="text"
+                        placeholder="Contoh: LIB-TAMU-01"
+                        class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-white font-mono uppercase"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="space-y-1">
+                      <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Catatan / Keterangan</label>
+                      <input 
+                        v-model="tokenGenForm.notes"
+                        type="text"
+                        placeholder="Misal: Token Buku Tamu Tanggal 20 Okt"
+                        class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-white"
+                      />
+                    </div>
+
+                    <div v-if="tokenGenForm.type === 'single_use'" class="space-y-1">
+                      <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Maksimal Pemakaian (Kuota)</label>
+                      <input 
+                        v-model.number="tokenGenForm.maxUsage"
+                        type="number"
+                        min="1"
+                        max="100"
+                        class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="flex items-center justify-end gap-2 pt-1">
+                    <button 
+                      type="button" 
+                      @click="showTokenGenModal = false"
+                      class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                    >
+                      Batal
+                    </button>
+                    <button 
+                      type="submit"
+                      class="px-4 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-xs cursor-pointer active:scale-95"
+                    >
+                      Simpan & Aktifkan
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Riwayat Semua Token -->
+              <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <h4 class="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white uppercase tracking-wider">
+                    Daftar & Riwayat Token Kunjungan
+                  </h4>
+                  <span class="text-xs text-slate-400">Total: {{ store.visitTokens.length }} Token</span>
+                </div>
+
+                <div v-if="store.visitTokens.length > 0" class="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-900 shadow-xs">
+                  <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                      <thead class="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold">
+                        <tr>
+                          <th class="py-2.5 px-3.5">Kode Token</th>
+                          <th class="py-2.5 px-3">Tipe</th>
+                          <th class="py-2.5 px-3">Status</th>
+                          <th class="py-2.5 px-3">Pemakaian</th>
+                          <th class="py-2.5 px-3">Kedaluwarsa</th>
+                          <th class="py-2.5 px-3">Catatan / Pembuat</th>
+                          <th class="py-2.5 px-3 text-right">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                        <tr v-for="t in store.visitTokens" :key="t.id" class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
+                          <td class="py-2.5 px-3.5">
+                            <div class="flex items-center gap-2">
+                              <span class="font-mono font-bold text-xs sm:text-sm text-slate-900 dark:text-white">{{ t.token }}</span>
+                              <button @click="copyCode(t.token)" type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer" title="Salin">
+                                <Copy class="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                          <td class="py-2.5 px-3">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold capitalize" :class="t.type === 'daily' ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300' : 'bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300'">
+                              {{ t.type === 'daily' ? 'Harian' : 'Sekali Pakai' }}
+                            </span>
+                          </td>
+                          <td class="py-2.5 px-3">
+                            <span 
+                              class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                              :class="isTokenLive(t) ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'"
+                            >
+                              {{ isTokenLive(t) ? 'Aktif' : (!t.isActive ? 'Nonaktif' : 'Kedaluwarsa') }}
+                            </span>
+                          </td>
+                          <td class="py-2.5 px-3 font-semibold text-slate-700 dark:text-slate-300">
+                            {{ t.usageCount || 0 }}x {{ t.maxUsage ? `/ ${t.maxUsage}` : '' }}
+                          </td>
+                          <td class="py-2.5 px-3 text-slate-500 dark:text-slate-400">
+                            {{ formatTokenExpiry(t.expiresAt) }}
+                          </td>
+                          <td class="py-2.5 px-3 text-slate-500 dark:text-slate-400 max-w-xs truncate">
+                            {{ t.notes || t.generatedBy || '-' }}
+                          </td>
+                          <td class="py-2.5 px-3 text-right">
+                            <div class="flex items-center justify-end gap-1.5">
+                              <button 
+                                v-if="t.isActive"
+                                @click="store.revokeVisitToken(t.id)"
+                                type="button"
+                                class="px-2 py-1 rounded-lg text-[11px] bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold transition cursor-pointer"
+                                title="Nonaktifkan"
+                              >
+                                Nonaktifkan
+                              </button>
+                              <button 
+                                @click="deleteToken(t.id)"
+                                type="button"
+                                class="p-1 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition cursor-pointer"
+                                title="Hapus Token"
+                              >
+                                <Trash2 class="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div v-else class="text-center py-8 text-xs text-slate-400 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+                  Belum ada token kunjungan yang dibuat.
+                </div>
+              </div>
+
+            </div>
+
+            <!-- TAB 3: INPUT MANUAL NON-MEMBER (PETUGAS INPUT TAMU) -->
             <div v-else-if="activeTab === 'manual_guest'" class="space-y-4 max-w-xl mx-auto">
               <div class="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-xs text-amber-900 dark:text-amber-200 space-y-1">
                 <div class="font-bold flex items-center gap-1.5">
@@ -406,16 +697,40 @@
                   </div>
                 </div>
 
-                <div class="space-y-1">
-                  <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400">
-                    Catatan / Pesan Tambahan (Opsional)
-                  </label>
-                  <input 
-                    v-model="manualForm.notes"
-                    type="text"
-                    placeholder="Keperluan rapat, wawancara, dsb..."
-                    class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-white"
-                  />
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div class="space-y-1">
+                    <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                      Catatan / Pesan Tambahan (Opsional)
+                    </label>
+                    <input 
+                      v-model="manualForm.notes"
+                      type="text"
+                      placeholder="Keperluan rapat, wawancara, dsb..."
+                      class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-white"
+                    />
+                  </div>
+
+                  <div class="space-y-1">
+                    <div class="flex items-center justify-between">
+                      <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                        Kode Token Kunjungan
+                      </label>
+                      <button 
+                        v-if="store.activeVisitToken" 
+                        type="button" 
+                        @click="manualForm.tokenUsed = store.activeVisitToken.token"
+                        class="text-[10px] text-amber-600 dark:text-amber-400 font-bold hover:underline cursor-pointer"
+                      >
+                        Pakai Token Aktif
+                      </button>
+                    </div>
+                    <input 
+                      v-model="manualForm.tokenUsed"
+                      type="text"
+                      placeholder="Default: ADMIN-VERIFIED"
+                      class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-mono font-bold uppercase text-slate-800 dark:text-white"
+                    />
+                  </div>
                 </div>
 
                 <div class="pt-2">
@@ -582,6 +897,26 @@
                   <canvas ref="qrCanvas" class="w-48 h-48 mx-auto"></canvas>
                 </div>
 
+                <!-- Active Token Banner on Standee -->
+                <div v-if="store.activeVisitToken" class="p-3 bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 rounded-2xl flex items-center justify-between text-left">
+                  <div>
+                    <span class="text-[10px] uppercase font-bold text-amber-700 dark:text-amber-400 block tracking-wider">
+                      Kode Token Tamu Hari Ini
+                    </span>
+                    <span class="font-mono text-base font-black text-amber-900 dark:text-amber-200 tracking-wider">
+                      {{ store.activeVisitToken.token }}
+                    </span>
+                  </div>
+                  <button 
+                    @click="copyCode(store.activeVisitToken.token)" 
+                    type="button"
+                    class="px-2.5 py-1 text-xs bg-amber-200 hover:bg-amber-300 dark:bg-amber-900/80 dark:hover:bg-amber-800 text-amber-900 dark:text-white rounded-lg font-bold transition flex items-center gap-1 cursor-pointer"
+                  >
+                    <Copy class="w-3 h-3" />
+                    <span>Salin</span>
+                  </button>
+                </div>
+
                 <div class="space-y-1 text-xs">
                   <span class="font-mono text-[11px] text-slate-600 dark:text-slate-300 break-all select-all">
                     {{ publicVisitUrl }}
@@ -590,6 +925,19 @@
                     Mendukung presensi tamu umum & check-in kartu anggota
                   </p>
                 </div>
+              </div>
+
+              <!-- Option: Include Token in QR -->
+              <div v-if="store.activeVisitToken" class="flex items-center justify-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                  <input 
+                    type="checkbox" 
+                    v-model="includeTokenInQr" 
+                    @change="renderQrCode"
+                    class="rounded text-blue-600 focus:ring-blue-500" 
+                  />
+                  <span>Sertakan kode token otomatis saat QR discan</span>
+                </label>
               </div>
 
               <!-- Action buttons -->
@@ -634,7 +982,7 @@
 import { ref, computed, watch, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useLibraryStore } from '../stores/library.js';
-import type { LibraryVisit, VisitPurpose, Member } from '../types.js';
+import type { LibraryVisit, VisitPurpose, Member, VisitToken } from '../types.js';
 import MemberCardScanner from './MemberCardScanner.vue';
 import QRCode from 'qrcode';
 import { 
@@ -652,7 +1000,10 @@ import {
   Camera, 
   CheckCircle, 
   Copy, 
-  ExternalLink 
+  ExternalLink,
+  KeyRound,
+  Plus,
+  RefreshCw
 } from 'lucide-vue-next';
 
 const props = defineProps<{
@@ -666,11 +1017,12 @@ const emit = defineEmits<{
 const store = useLibraryStore();
 const router = useRouter();
 
-const activeTab = ref<'list' | 'manual_guest' | 'member_checkin' | 'desk_qr'>('list');
+const activeTab = ref<'list' | 'tokens' | 'manual_guest' | 'member_checkin' | 'desk_qr'>('list');
 const isSubmitting = ref(false);
 
 const tabs = computed(() => [
   { id: 'list', label: 'Daftar Presensi', icon: ListFilter, badge: store.todayVisitsCount },
+  { id: 'tokens', label: 'Kelola Token', icon: KeyRound, badge: store.activeVisitToken ? store.activeVisitToken.token : 'Belum Ada' },
   { id: 'manual_guest', label: 'Input Manual Non-Member', icon: UserPlus },
   { id: 'member_checkin', label: 'Check-in Member', icon: UserCheck },
   { id: 'desk_qr', label: 'QR Meja Resepsionis', icon: QrCode }
@@ -692,6 +1044,16 @@ const quickChips = [
   'Mahasiswa / Peneliti'
 ];
 
+// Token Management State
+const showTokenGenModal = ref(false);
+const tokenGenForm = ref({
+  type: 'daily' as 'daily' | 'single_use',
+  customCode: '',
+  notes: '',
+  maxUsage: 1
+});
+const includeTokenInQr = ref(true);
+
 // Manual Guest Form
 const manualForm = ref({
   name: '',
@@ -700,7 +1062,8 @@ const manualForm = ref({
   purposeDetails: '',
   phone: '',
   visitDate: new Date().toISOString().slice(0, 10),
-  notes: ''
+  notes: '',
+  tokenUsed: ''
 });
 
 // Admin Member Check-in
@@ -714,8 +1077,12 @@ const adminMemberPurpose = ref<VisitPurpose>('Membaca Buku');
 const qrCanvas = ref<HTMLCanvasElement | null>(null);
 
 const publicVisitUrl = computed(() => {
-  if (typeof window === 'undefined') return '/kunjungan';
-  return `${window.location.origin}/kunjungan`;
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const base = `${origin}/kunjungan`;
+  if (includeTokenInQr.value && store.activeVisitToken) {
+    return `${base}?token=${encodeURIComponent(store.activeVisitToken.token)}`;
+  }
+  return base;
 });
 
 const renderQrCode = async () => {
@@ -748,6 +1115,79 @@ watch(() => props.isOpen, (open) => {
   }
 });
 
+watch(() => store.activeVisitToken?.token, () => {
+  if (activeTab.value === 'desk_qr') {
+    setTimeout(renderQrCode, 100);
+  }
+});
+
+const isTokenLive = (t: VisitToken): boolean => {
+  if (!t.isActive) return false;
+  if (t.expiresAt && new Date(t.expiresAt).getTime() < Date.now()) return false;
+  if (t.maxUsage !== undefined && t.usageCount >= t.maxUsage) return false;
+  return true;
+};
+
+const formatTokenExpiry = (isoString?: string) => {
+  if (!isoString) return 'Tidak Terbatas';
+  try {
+    const d = new Date(isoString);
+    const now = new Date();
+    const isToday = d.toDateString() === now.toDateString();
+    const timeStr = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    if (isToday) {
+      return `Hari ini, ${timeStr} WIB`;
+    }
+    return `${d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}, ${timeStr} WIB`;
+  } catch {
+    return isoString;
+  }
+};
+
+const copyCode = async (code: string) => {
+  try {
+    await navigator.clipboard.writeText(code);
+    store.showToast(`✅ Kode token ${code} berhasil disalin!`);
+  } catch {
+    store.showToast(`Token: ${code}`);
+  }
+};
+
+const generateQuickDailyToken = async () => {
+  await store.generateVisitToken({ type: 'daily' });
+};
+
+const submitGenerateToken = async () => {
+  const res = await store.generateVisitToken({
+    type: tokenGenForm.value.type,
+    customCode: tokenGenForm.value.customCode,
+    notes: tokenGenForm.value.notes,
+    maxUsage: tokenGenForm.value.type === 'single_use' ? (tokenGenForm.value.maxUsage || 1) : undefined
+  });
+
+  if (res.success) {
+    showTokenGenModal.value = false;
+    tokenGenForm.value = {
+      type: 'daily',
+      customCode: '',
+      notes: '',
+      maxUsage: 1
+    };
+  }
+};
+
+const revokeActiveToken = async () => {
+  if (store.activeVisitToken) {
+    await store.revokeVisitToken(store.activeVisitToken.id);
+  }
+};
+
+const deleteToken = async (tokenId: string) => {
+  if (confirm('Hapus token kunjungan ini?')) {
+    await store.deleteVisitToken(tokenId);
+  }
+};
+
 const filteredVisits = computed(() => {
   const query = (searchQuery.value || '').trim().toLowerCase();
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -776,7 +1216,8 @@ const filteredVisits = computed(() => {
       const matchOrigin = v.origin?.toLowerCase().includes(query);
       const matchCard = v.memberCardNumber?.toLowerCase().includes(query);
       const matchId = v.id?.toLowerCase().includes(query);
-      if (!matchName && !matchOrigin && !matchCard && !matchId) return false;
+      const matchToken = v.tokenUsed?.toLowerCase().includes(query);
+      if (!matchName && !matchOrigin && !matchCard && !matchId && !matchToken) return false;
     }
 
     return true;
@@ -822,6 +1263,9 @@ const submitManualGuest = async () => {
 
   isSubmitting.value = true;
   try {
+    const tokenUsed = (manualForm.value.tokenUsed || '').trim() || 
+      (store.activeVisitToken ? store.activeVisitToken.token : 'ADMIN-VERIFIED');
+
     const res = await store.recordVisit({
       visitorType: 'non_member',
       name: manualForm.value.name,
@@ -831,7 +1275,8 @@ const submitManualGuest = async () => {
       phone: manualForm.value.phone,
       visitDate: manualForm.value.visitDate,
       notes: manualForm.value.notes,
-      source: 'manual_admin'
+      source: 'manual_admin',
+      tokenUsed
     });
 
     if (res.success) {
@@ -844,7 +1289,8 @@ const submitManualGuest = async () => {
         purposeDetails: '',
         phone: '',
         visitDate: new Date().toISOString().slice(0, 10),
-        notes: ''
+        notes: '',
+        tokenUsed: ''
       };
       activeTab.value = 'list';
     }

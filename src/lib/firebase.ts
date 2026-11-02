@@ -416,6 +416,17 @@ export async function removeVisitDoc(visitId: string) {
   await withTimeout(deleteDoc(doc(db, 'visits', visitId)), 7000);
 }
 
+export async function syncVisitTokenDoc(token: any) {
+  if (!token?.id) return;
+  const clean = sanitizeForFirestore(token);
+  await withTimeout(setDoc(doc(db, 'visit_tokens', token.id), clean, { merge: true }), 7000);
+}
+
+export async function removeVisitTokenDoc(tokenId: string) {
+  if (!tokenId) return;
+  await withTimeout(deleteDoc(doc(db, 'visit_tokens', tokenId)), 7000);
+}
+
 /**
  * Direct Firestore Fetch Collection Helper
  */

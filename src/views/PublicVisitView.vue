@@ -70,6 +70,12 @@
             <span class="text-slate-400 dark:text-slate-500 block text-[11px]">Waktu Check-in:</span>
             <span class="font-medium text-slate-800 dark:text-slate-200">{{ formattedTime(submittedVisit.timestamp) }}</span>
           </div>
+          <div v-if="submittedVisit.tokenUsed" class="col-span-2 pt-1 border-t border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
+            <span class="text-slate-400 dark:text-slate-500 text-[11px]">Kode Token Terverifikasi:</span>
+            <span class="font-mono font-bold text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-[11px]">
+              {{ submittedVisit.tokenUsed }}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -174,6 +180,39 @@
               {{ chip }}
             </button>
           </div>
+        </div>
+
+        <!-- Kode Token Kunjungan (Didapat dari Admin / Petugas) -->
+        <div class="p-3.5 sm:p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/90 dark:border-amber-800/60 space-y-2">
+          <div class="flex flex-wrap items-center justify-between gap-1">
+            <label class="block text-xs font-bold text-amber-900 dark:text-amber-200">
+              Kode Token Kunjungan <span class="text-rose-500">*</span>
+            </label>
+            <span class="text-[10px] text-amber-700 dark:text-amber-400 font-semibold">
+              Minta kode ke meja petugas perpustakaan
+            </span>
+          </div>
+
+          <div class="relative">
+            <KeyRound class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-600 dark:text-amber-400" />
+            <input 
+              v-model="guestForm.token"
+              type="text"
+              required
+              placeholder="Contoh: LIB-8492"
+              @input="tokenError = ''; guestForm.token = guestForm.token.toUpperCase()"
+              class="w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-white dark:bg-slate-800 border text-slate-800 dark:text-white placeholder-slate-400 font-mono font-bold tracking-wider text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-amber-500 uppercase transition"
+              :class="tokenError ? 'border-rose-500 ring-2 ring-rose-500/20' : 'border-amber-200 dark:border-amber-700'"
+            />
+          </div>
+
+          <p v-if="tokenError" class="text-xs text-rose-600 dark:text-rose-400 flex items-center gap-1.5 font-medium pt-0.5">
+            <AlertCircle class="w-3.5 h-3.5 shrink-0" />
+            <span>{{ tokenError }}</span>
+          </p>
+          <p v-else class="text-[11px] text-amber-800/80 dark:text-amber-300/80">
+            Pengunjung non-member wajib memasukkan kode token resmi harian dari petugas perpustakaan.
+          </p>
         </div>
 
         <!-- Tujuan Kunjungan -->
@@ -437,6 +476,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import { useLibraryStore } from '../stores/library.js';
 import type { Member, LibraryVisit, VisitPurpose } from '../types.js';
 import MemberCardScanner from '../components/MemberCardScanner.vue';
@@ -455,10 +495,12 @@ import {
   CreditCard, 
   CheckCircle2, 
   UserPlus, 
-  AlertCircle 
+  AlertCircle,
+  KeyRound
 } from 'lucide-vue-next';
 
 const store = useLibraryStore();
+const route = useRoute();
 
 const activeTab = ref<'non_member' | 'member'>('non_member');
 const isSubmitting = ref(false);
@@ -477,11 +519,13 @@ const quickOriginChips = [
 const guestForm = ref({
   name: '',
   origin: '',
+  token: '',
   purpose: 'Membaca Buku' as VisitPurpose,
   purposeDetails: '',
   phone: '',
   notes: ''
 });
+const tokenError = ref('');
 
 // Member Form
 const memberScanMode = ref<'manual' | 'camera'>('manual');
@@ -511,6 +555,11 @@ const formattedTime = (isoString?: string) => {
 };
 
 onMounted(() => {
+  // If token query is in URL, auto-fill token
+  if (route.query.token && typeof route.query.token === 'string') {
+    guestForm.value.token = route.query.token.toUpperCase().trim();
+  }
+
   // If currentUser is already logged in, automatically pre-select their member profile
   if (store.currentUser && store.currentUser.role === 'member') {
     activeTab.value = 'member';
@@ -547,10 +596,31 @@ const handleMemberCodeScanned = (scannedCode: string) => {
 };
 
 const submitNonMemberVisit = async () => {
+  tokenError.value = '';
   if (!guestForm.value.name.trim() || !guestForm.value.origin.trim()) return;
+
+  const rawToken = (guestForm.value.token || '').trim();
+  if (!rawToken) {
+    tokenError.value = 'Kode token kunjungan wajib diisi. Silakan minta kode token kepada petugas perpustakaan.';
+    return;
+  }
+
+  // Validasi token terlebih dahulu
+  const validation = store.validateVisitToken(rawToken);
+  if (!validation.valid) {
+    tokenError.value = validation.message || 'Kode token tidak valid atau sudah kedaluwarsa.';
+    return;
+  }
 
   isSubmitting.value = true;
   try {
+    // Gunakan/konsumsi token
+    const consumeRes = await store.consumeVisitToken(rawToken);
+    if (!consumeRes.success) {
+      tokenError.value = consumeRes.message || 'Gagal memproses token kunjungan.';
+      return;
+    }
+
     const res = await store.recordVisit({
       visitorType: 'non_member',
       name: guestForm.value.name,
@@ -559,7 +629,8 @@ const submitNonMemberVisit = async () => {
       purposeDetails: guestForm.value.purpose === 'Lainnya' ? guestForm.value.purposeDetails : undefined,
       phone: guestForm.value.phone,
       notes: guestForm.value.notes,
-      source: 'public_form'
+      source: 'public_form',
+      tokenUsed: rawToken
     });
 
     if (res.success && res.visit) {
@@ -608,11 +679,13 @@ const resetForm = () => {
   guestForm.value = {
     name: '',
     origin: '',
+    token: '',
     purpose: 'Membaca Buku',
     purposeDetails: '',
     phone: '',
     notes: ''
   };
+  tokenError.value = '';
   matchedMember.value = null;
   memberSearchKey.value = '';
   memberSearchError.value = '';

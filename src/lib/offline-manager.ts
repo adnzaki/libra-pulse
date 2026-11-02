@@ -16,7 +16,7 @@ const CACHE_KEYS = {
 
 export interface PendingMutation {
   id: string;
-  action: 'saveBook' | 'deleteBook' | 'saveShelf' | 'deleteShelf' | 'saveCategory' | 'deleteCategory' | 'saveMember' | 'deleteMember' | 'saveLoan' | 'saveBooking' | 'deleteBooking' | 'saveConfig' | 'saveNotification' | 'deleteNotification' | 'saveVisit' | 'deleteVisit';
+  action: 'saveBook' | 'deleteBook' | 'saveShelf' | 'deleteShelf' | 'saveCategory' | 'deleteCategory' | 'saveMember' | 'deleteMember' | 'saveLoan' | 'saveBooking' | 'deleteBooking' | 'saveConfig' | 'saveNotification' | 'deleteNotification' | 'saveVisit' | 'deleteVisit' | 'saveVisitToken' | 'deleteVisitToken';
   collection: string;
   docId: string;
   data?: any;
