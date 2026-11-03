@@ -1677,7 +1677,12 @@
           <!-- Top Action Bar -->
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 dark:bg-slate-900/80 p-4 sm:p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
             <div>
-              <h3 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white">Log & Pengiriman Notifikasi Keterlambatan</h3>
+              <h3 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2">
+                <span>Log & Pengiriman Notifikasi Keterlambatan</span>
+                <span class="text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-500/15 border border-blue-500/30 px-2.5 py-0.5 rounded-full">
+                  {{ filteredNotifications.length }} Log
+                </span>
+              </h3>
               <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Pengingat otomatis dan pengiriman surat peringatan resmi melalui Email.</p>
             </div>
             <button 
@@ -1717,83 +1722,102 @@
             </div>
           </div>
 
-          <!-- Notification History (Mobile Cards & Desktop Table) -->
-          <div class="space-y-2 md:hidden">
-            <div 
-              v-for="n in store.notifications" 
-              :key="n.id"
-              class="p-3.5 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-100 dark:border-slate-800 shadow-sm text-xs space-y-2"
-            >
-              <div class="flex items-center justify-between">
-                <span class="font-bold text-slate-900 dark:text-white">{{ n.memberName }}</span>
-                <div class="flex items-center gap-1.5">
-                  <span 
-                    v-if="n.triggerReason === 'ebook_expired'"
-                    class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
-                  >
-                    📱 e-Book Kedaluwarsa
-                  </span>
-                  <span 
-                    class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30" 
-                  >
-                    {{ n.type }}
-                  </span>
-                </div>
-              </div>
-              <p class="text-slate-600 dark:text-slate-300 leading-relaxed">{{ n.message }}</p>
-              <div class="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 font-mono pt-1 border-t border-slate-100 dark:border-slate-800">
-                <span>{{ new Date(n.sentAt).toLocaleString('id-ID') }}</span>
-                <span class="text-emerald-600 dark:text-emerald-400 font-bold font-sans">Terkirim</span>
-              </div>
-            </div>
+          <!-- Empty State -->
+          <div v-if="filteredNotifications.length === 0" class="p-8 text-center bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-800 text-slate-400 text-xs space-y-1.5">
+            <Send class="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-1" />
+            <p class="font-bold text-slate-700 dark:text-slate-200">Belum Ada Riwayat Notifikasi</p>
+            <p class="text-[11px]" v-if="notificationSearch">Tidak ditemukan notifikasi yang cocok dengan kata kunci "{{ notificationSearch }}".</p>
+            <p class="text-[11px]" v-else>Riwayat pengiriman notifikasi pengingat atau e-Book kedaluwarsa akan tercatat di sini.</p>
           </div>
 
-          <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80">
-            <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
-              <thead class="bg-slate-50 dark:bg-slate-850/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 font-bold">
-                <tr>
-                  <th class="py-3.5 px-4">Waktu</th>
-                  <th class="py-3.5 px-4">Penerima</th>
-                  <th class="py-3.5 px-4">Saluran</th>
-                  <th class="py-3.5 px-4">Pesan</th>
-                  <th class="py-3.5 px-4">Status</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
-                <tr v-for="n in store.notifications" :key="n.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
-                  <td class="py-3 px-4 font-mono text-[10px] text-slate-500 dark:text-slate-400">
-                    {{ new Date(n.sentAt).toLocaleString('id-ID') }}
-                  </td>
-                  <td class="py-3 px-4">
-                    <div class="font-bold text-slate-900 dark:text-white">{{ n.memberName }}</div>
-                    <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">{{ n.recipient }}</div>
-                  </td>
-                  <td class="py-3 px-4">
-                    <div class="flex items-center gap-1.5 flex-wrap">
-                      <span 
-                        class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30" 
-                      >
-                        {{ n.type }}
-                      </span>
-                      <span 
-                        v-if="n.triggerReason === 'ebook_expired'" 
-                        class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 whitespace-nowrap"
-                      >
-                        📱 e-Book Kedaluwarsa
-                      </span>
-                    </div>
-                  </td>
-                  <td class="py-3 px-4 max-w-sm truncate text-slate-700 dark:text-slate-300" :title="n.message">
-                    {{ n.message }}
-                  </td>
-                  <td class="py-3 px-4">
-                    <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold text-[10px]">
-                      {{ n.status }}
+          <!-- Notification History (Mobile Cards & Desktop Table) -->
+          <div v-else class="space-y-4">
+            <div class="space-y-2 md:hidden">
+              <div 
+                v-for="n in paginatedNotifications" 
+                :key="n.id"
+                class="p-3.5 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-100 dark:border-slate-800 shadow-sm text-xs space-y-2"
+              >
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-slate-900 dark:text-white">{{ n.memberName }}</span>
+                  <div class="flex items-center gap-1.5">
+                    <span 
+                      v-if="n.triggerReason === 'ebook_expired'" 
+                      class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                    >
+                      📱 e-Book Kedaluwarsa
                     </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                    <span 
+                      class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30" 
+                    >
+                      {{ n.type }}
+                    </span>
+                  </div>
+                </div>
+                <p class="text-slate-600 dark:text-slate-300 leading-relaxed">{{ n.message }}</p>
+                <div class="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 font-mono pt-1 border-t border-slate-100 dark:border-slate-800">
+                  <span>{{ new Date(n.sentAt).toLocaleString('id-ID') }}</span>
+                  <span class="text-emerald-600 dark:text-emerald-400 font-bold font-sans">Terkirim</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80">
+              <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+                <thead class="bg-slate-50 dark:bg-slate-850/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 font-bold">
+                  <tr>
+                    <th class="py-3.5 px-4">Waktu</th>
+                    <th class="py-3.5 px-4">Penerima</th>
+                    <th class="py-3.5 px-4">Saluran</th>
+                    <th class="py-3.5 px-4">Pesan</th>
+                    <th class="py-3.5 px-4">Status</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+                  <tr v-for="n in paginatedNotifications" :key="n.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
+                    <td class="py-3 px-4 font-mono text-[10px] text-slate-500 dark:text-slate-400">
+                      {{ new Date(n.sentAt).toLocaleString('id-ID') }}
+                    </td>
+                    <td class="py-3 px-4">
+                      <div class="font-bold text-slate-900 dark:text-white">{{ n.memberName }}</div>
+                      <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">{{ n.recipient }}</div>
+                    </td>
+                    <td class="py-3 px-4">
+                      <div class="flex items-center gap-1.5 flex-wrap">
+                        <span 
+                          class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30" 
+                        >
+                          {{ n.type }}
+                        </span>
+                        <span 
+                          v-if="n.triggerReason === 'ebook_expired'" 
+                          class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 whitespace-nowrap"
+                        >
+                          📱 e-Book Kedaluwarsa
+                        </span>
+                      </div>
+                    </td>
+                    <td class="py-3 px-4 max-w-sm truncate text-slate-700 dark:text-slate-300" :title="n.message">
+                      {{ n.message }}
+                    </td>
+                    <td class="py-3 px-4">
+                      <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold text-[10px]">
+                        {{ n.status }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Server-Side Pagination Controls for Notifikasi Keterlambatan -->
+            <AdminPagination 
+              v-model:currentPage="notificationCurrentPage"
+              v-model:itemsPerPage="notificationItemsPerPage"
+              :totalPages="notificationTotalPages"
+              :totalItems="filteredNotifications.length"
+              itemName="notifikasi"
+            />
           </div>
 
         </div>
@@ -3174,12 +3198,13 @@ const studentVerificationSearch = ref('');
 const teacherRequestSearch = ref('');
 const bookSearch = ref('');
 const categorySearch = ref('');
+const notificationSearch = ref('');
 
 // Backward-compat alias untuk sirkulasi
 const loanSearch = circulationSearch;
 
 const hasSearchForActiveTab = computed(() => {
-  return ['loans', 'loan_history', 'bookings', 'members', 'student_verifications', 'teacher_requests', 'books', 'categories'].includes(activeTab.value);
+  return ['loans', 'loan_history', 'bookings', 'members', 'student_verifications', 'teacher_requests', 'books', 'categories', 'notifications'].includes(activeTab.value);
 });
 
 const searchPlaceholder = computed(() => {
@@ -3192,6 +3217,7 @@ const searchPlaceholder = computed(() => {
     case 'teacher_requests': return 'Cari verifikasi guru...';
     case 'books': return 'Cari judul, pengarang, rak...';
     case 'categories': return 'Cari nama kategori...';
+    case 'notifications': return 'Cari penerima / pesan notifikasi...';
     default: return 'Cari data...';
   }
 });
@@ -3207,6 +3233,7 @@ const currentSearchInput = computed({
       case 'teacher_requests': return teacherRequestSearch.value;
       case 'books': return bookSearch.value;
       case 'categories': return categorySearch.value;
+      case 'notifications': return notificationSearch.value;
       default: return '';
     }
   },
@@ -3220,6 +3247,7 @@ const currentSearchInput = computed({
       case 'teacher_requests': teacherRequestSearch.value = val; break;
       case 'books': bookSearch.value = val; break;
       case 'categories': categorySearch.value = val; break;
+      case 'notifications': notificationSearch.value = val; break;
     }
   }
 });
@@ -3379,6 +3407,38 @@ const paginatedCategories = computed(() => {
 
 watch([categorySearch, categoryItemsPerPage], () => {
   categoryCurrentPage.value = 1;
+});
+
+// Notifikasi Keterlambatan: Search & Pagination (25 data per halaman default, gaya Master Data Buku)
+const filteredNotifications = computed(() => {
+  let list = store.notifications;
+  if (notificationSearch.value.trim()) {
+    const q = notificationSearch.value.toLowerCase().trim();
+    list = list.filter(n => 
+      (n.memberName && n.memberName.toLowerCase().includes(q)) ||
+      (n.recipient && n.recipient.toLowerCase().includes(q)) ||
+      (n.message && n.message.toLowerCase().includes(q)) ||
+      (n.type && n.type.toLowerCase().includes(q)) ||
+      (n.status && n.status.toLowerCase().includes(q))
+    );
+  }
+  return list;
+});
+
+const notificationCurrentPage = ref(1);
+const notificationItemsPerPage = ref(25);
+
+const notificationTotalPages = computed(() => {
+  return Math.max(1, Math.ceil(filteredNotifications.value.length / notificationItemsPerPage.value));
+});
+
+const paginatedNotifications = computed(() => {
+  const start = (notificationCurrentPage.value - 1) * notificationItemsPerPage.value;
+  return filteredNotifications.value.slice(start, start + notificationItemsPerPage.value);
+});
+
+watch([notificationSearch, notificationItemsPerPage], () => {
+  notificationCurrentPage.value = 1;
 });
 
 const memberFilter = ref('all');
