@@ -207,6 +207,7 @@ export interface UserDeviceSession {
 
 export interface AppVersionConfig {
   version: string;
+  buildNumber?: string;
   releaseDate: string;
   forceReload?: boolean;
   minSupportedVersion?: string;

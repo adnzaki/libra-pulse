@@ -1,46 +1,70 @@
 import type { ChangelogItem, AppVersionConfig } from '../types.js';
 
-export const CURRENT_APP_VERSION = '1.0.0-rc.3';
-export const APP_RELEASE_DATE = '21 Oktober 2026';
-export const APP_RELEASE_CODENAME = 'Libra Aurora RC 3';
+export const CURRENT_APP_VERSION = '1.0.0';
+export const APP_BUILD_NUMBER = '10001';
+export const APP_RELEASE_DATE = '3 November 2026';
+export const APP_RELEASE_CODENAME = 'Libra Stabil (Build 10001)';
 
 export const DEFAULT_APP_VERSION_CONFIG: AppVersionConfig = {
   version: CURRENT_APP_VERSION,
+  buildNumber: APP_BUILD_NUMBER,
   releaseDate: APP_RELEASE_DATE,
   forceReload: false,
-  minSupportedVersion: '1.0.0-rc.3',
-  updateMessage: 'Pembaruan sistem Libra versi 1.0.0-rc.3 telah dirilis dengan perbaikan proporsi foto profil kartu member agar bebas distorsi/gepeng saat dicetak (PDF & PNG), serta peningkatan kontras warna teks dan latar belakang di berbagai komponen antarmuka, khususnya pada tema terang (Light Mode).',
-  changelogSummary: 'Perbaikan proporsi foto kartu member saat dicetak/diunduh dan peningkatan kontras teks pada dropdown serta elemen tema terang.'
+  minSupportedVersion: '1.0.0',
+  updateMessage: 'Pembaruan aplikasi Libra v1.0.0 (Build 10001) Versi Stabil telah tersedia dengan penambahan Buku Tamu Online, pagination di seluruh modul panel admin, perbaikan bug buku terhapus, dan penyegaran tampilan notifikasi update yang lebih tenang dan elegan.',
+  changelogSummary: 'Rilis Stabil v1.0.0 Build 10001: Buku Tamu Online, Pagination Panel Admin, Perbaikan Bug Buku Terhapus, dan Pembaruan Tampilan Update Aplikasi.'
 };
 
 export const CHANGELOG_LIST: ChangelogItem[] = [
   {
-    id: 'member-card-photo-aspect-ratio-fix',
-    title: 'Perbaikan Proporsi Foto Kartu Anggota Saat Dicetak & Diunduh',
+    id: 'feature-buku-tamu-online',
+    title: 'Penambahan Fitur Buku Tamu & Presensi Kunjungan Online',
     description:
-      'Memperbaiki kendala foto profil anggota yang sebelumnya terdistorsi, melebar, atau gepeng saat kartu dicetak ke PDF maupun diunduh ke format PNG. Kini renderer kartu menerapkan kalkulasi rasio aspek presisi dengan pemotongan cerdas (smart cover crop) dan penghalusan gambar berkualitas tinggi agar foto tetap proporsional dan jernih.',
+      'Sistem presensi kunjungan perpustakaan terintegrasi untuk pengunjung umum dan check-in cepat kartu anggota digital (scan QR kamera, nomor kartu/ID, serta pencarian instan nama anggota dengan jeda server 500ms). Dilengkapi token harian perpustakaan, modal QR scan dark-mode friendly, tombol akses khusus mobile, dan rekapitulasi data kunjungan lengkap.',
     targetAudience: 'all',
     targetAudienceLabel: 'Semua Pengguna',
-    category: 'fix',
-    badge: 'Kartu Anggota',
-    iconName: 'CreditCard',
+    category: 'feature',
+    badge: 'Buku Tamu Online',
+    iconName: 'ClipboardCheck',
   },
   {
-    id: 'light-mode-dropdown-contrast-enhancement',
-    title: 'Peningkatan Kontras Warna Teks & Latar Belakang Komponen',
+    id: 'admin-panels-pagination',
+    title: 'Penambahan Pagination untuk Seluruh Modul Panel Admin',
     description:
-      'Meningkatkan kontras warna antara teks, ikon, dan latar belakang pada beberapa komponen antarmuka—termasuk menu drop-down pilihan ukuran cetak kartu dan jendela popover saat mode terang (Light Mode) aktif—sehingga seluruh teks terbaca dengan jelas, tajam, dan memenuhi standar aksesibilitas visual.',
+      'Menerapkan pagination terpadu bergaya Master Data Buku dengan default 25 data per halaman serta pemilih fleksibel baris (10, 25, 50 baris) pada seluruh modul: Sirkulasi Pinjaman Aktif, Booking 24 Jam, Riwayat Peminjaman Selesai, Kelola Anggota, Verifikasi Guru, Verifikasi Siswa, Master Data Buku, Pengelolaan Kategori, dan Notifikasi Keterlambatan.',
+    targetAudience: 'admin',
+    targetAudienceLabel: 'Khusus Admin',
+    category: 'improvement',
+    badge: 'Panel Admin',
+    iconName: 'ListOrdered',
+  },
+  {
+    id: 'fix-deleted-books-reappearing',
+    title: 'Perbaikan Bug Koleksi Buku yang Muncul Kembali Setelah Dihapus',
+    description:
+      'Menyelesaikan kendala buku-buku dummy yang sempat muncul kembali pasca dihapus. Memperkuat sistem penanda nisan (tombstone filter) permanen pada memori lokal dan Cloud Firestore, memastikan setiap buku yang dihapus tidak akan pernah dipulihkan atau dimuat ulang kembali.',
+    targetAudience: 'admin',
+    targetAudienceLabel: 'Khusus Admin',
+    category: 'fix',
+    badge: 'Katalog Buku',
+    iconName: 'ShieldAlert',
+  },
+  {
+    id: 'calm-elegant-update-banner',
+    title: 'Pembaruan Tampilan Pemberitahuan Update Aplikasi yang Tenang & Elegan',
+    description:
+      'Memperbarui desain notifikasi update aplikasi dengan perpaduan warna yang lebih tenang (calm), gradasi halus (subtle gradient), latar belakang kaca modern (soft glassmorphism), tipografi jernih, dan tata letak tombol yang lebih rapi serta nyaman dipandang.',
     targetAudience: 'all',
     targetAudienceLabel: 'Semua Pengguna',
     category: 'improvement',
-    badge: 'Aksesibilitas UI',
-    iconName: 'Sun',
+    badge: 'Antarmuka UI',
+    iconName: 'Sparkles',
   },
-]
+];
 
 /**
  * Parses semantic version string into numbers and identifiers
- * e.g. "1.0.0-rc.1" -> { major: 1, minor: 0, patch: 0, prerelease: "rc.1" }
+ * e.g. "1.0.0" -> { major: 1, minor: 0, patch: 0, prerelease: "" }
  */
 function parseSemVer(v: string) {
   const clean = v.trim().replace(/^v/i, '');

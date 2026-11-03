@@ -18,7 +18,7 @@
             <div class="flex items-center gap-2 flex-wrap">
               <h3 class="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight">Catatan Rilis (Changelog)</h3>
               <span class="px-2.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-mono font-bold shadow-xs">
-                v{{ CURRENT_APP_VERSION }}
+                v{{ CURRENT_APP_VERSION }} • Build {{ APP_BUILD_NUMBER }}
               </span>
             </div>
             <p class="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
@@ -155,7 +155,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
-import { CURRENT_APP_VERSION, APP_RELEASE_DATE, APP_RELEASE_CODENAME, CHANGELOG_LIST } from '../config/version.js';
+import { CURRENT_APP_VERSION, APP_BUILD_NUMBER, APP_RELEASE_DATE, APP_RELEASE_CODENAME, CHANGELOG_LIST } from '../config/version.js';
 import { Sparkles, X, Check, Bookmark } from 'lucide-vue-next';
 
 const store = useLibraryStore();
