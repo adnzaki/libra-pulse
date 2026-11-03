@@ -362,38 +362,55 @@
                 <input 
                   v-model="memberSearchKey"
                   type="text"
-                  placeholder="Ketik nama lengkap siswa/guru, atau nomor kartu (LIB-001)..."
+                  placeholder="Ketik minimal 3 karakter nama lengkap, atau nomor kartu (LIB-001)..."
                   @keydown.enter.prevent="lookupMember"
                   @input="onMemberSearchInput"
-                  class="w-full pl-10 pr-9 py-2.5 sm:py-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white placeholder-slate-400 text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition"
+                  class="w-full pl-10 pr-10 py-2.5 sm:py-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white placeholder-slate-400 text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition"
                 />
-                <button 
-                  v-if="memberSearchKey"
-                  type="button"
-                  @click="clearMemberSearch"
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-full cursor-pointer"
-                  title="Hapus pencarian"
-                >
-                  <X class="w-3.5 h-3.5" />
-                </button>
+                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                  <Loader2 v-if="isSearchingMember" class="w-4 h-4 text-blue-500 animate-spin" />
+                  <button 
+                    v-else-if="memberSearchKey"
+                    type="button"
+                    @click="clearMemberSearch"
+                    class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-full cursor-pointer"
+                    title="Hapus pencarian"
+                  >
+                    <X class="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
               <button 
                 type="button"
                 @click="lookupMember"
-                class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-2xl shadow-sm transition cursor-pointer active:scale-95 shrink-0 flex items-center gap-1.5"
+                :disabled="isSearchingMember"
+                class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-2xl shadow-sm transition cursor-pointer active:scale-95 shrink-0 flex items-center gap-1.5 disabled:opacity-75"
               >
-                <Search class="w-3.5 h-3.5" />
-                <span>Cari</span>
+                <Loader2 v-if="isSearchingMember" class="w-3.5 h-3.5 animate-spin" />
+                <Search v-else class="w-3.5 h-3.5" />
+                <span>{{ isSearchingMember ? 'Mencari...' : 'Cari' }}</span>
               </button>
             </div>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400">
-              💡 Tips: Anda dapat mencari dengan mengetikkan nama lengkap, sebagian nama, atau nomor kartu member.
-            </p>
+            <div class="flex flex-wrap items-center justify-between text-[11px] gap-1 pt-0.5">
+              <p v-if="memberSearchKey.trim().length > 0 && memberSearchKey.trim().length < 3" class="text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+                <span>⚠️ Ketik minimal 3 karakter untuk mencari ({{ memberSearchKey.trim().length }}/3)</span>
+              </p>
+              <p v-else-if="isSearchingMember" class="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-1">
+                <Loader2 class="w-3 h-3 animate-spin" />
+                <span>Mencari ke database server perpustakaan...</span>
+              </p>
+              <p v-else class="text-slate-500 dark:text-slate-400">
+                💡 Ketik minimal 3 karakter, sistem akan otomatis mencari ke server setelah jeda 500ms.
+              </p>
+              <span v-if="memberCandidates.length > 0 && !matchedMember" class="text-blue-600 dark:text-blue-400 font-bold ml-auto">
+                {{ memberCandidates.length }} anggota ditemukan
+              </span>
+            </div>
           </div>
 
           <!-- Multiple Candidates Suggestion / Search Result List -->
           <div 
-            v-if="memberCandidates.length > 1 && !matchedMember" 
+            v-if="memberCandidates.length >= 1 && !matchedMember" 
             class="space-y-2 p-3 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 animate-in fade-in duration-200"
           >
             <div class="flex items-center justify-between text-xs px-1">
@@ -582,7 +599,8 @@ import {
   AlertCircle,
   KeyRound,
   Search,
-  X
+  X,
+  Loader2
 } from 'lucide-vue-next';
 
 const store = useLibraryStore();
@@ -621,6 +639,8 @@ const matchedMember = ref<Member | null>(null);
 const memberCandidates = ref<Member[]>([]);
 const memberVisitPurpose = ref<VisitPurpose>('Membaca Buku');
 const memberPurposeDetails = ref('');
+const isSearchingMember = ref(false);
+let memberSearchDebounceTimer: any = null;
 
 const formattedCurrentDate = computed(() => {
   return new Intl.DateTimeFormat('id-ID', {
@@ -669,12 +689,57 @@ const searchMembers = (query: string): Member[] => {
   });
 };
 
-const lookupMember = () => {
+const performMemberSearch = async (query: string) => {
+  isSearchingMember.value = true;
+  try {
+    // Cari dan perbarui dari server Firestore jika online
+    if (!store.isOfflineMode && !store.isQuotaExhausted) {
+      try {
+        const { db } = await import('../lib/firebase.js');
+        const { collection, getDocs } = await import('firebase/firestore');
+        const snap = await getDocs(collection(db, 'members'));
+        if (!snap.empty) {
+          const serverMembers: Member[] = [];
+          snap.forEach(docSnap => serverMembers.push(docSnap.data() as Member));
+          if (serverMembers.length > 0) {
+            store.members = serverMembers;
+          }
+        }
+      } catch (err) {
+        console.warn('Server member lookup fallback to local store:', err);
+      }
+    }
+
+    const matches = searchMembers(query);
+    memberCandidates.value = matches;
+    if (matches.length === 1 && (matches[0].cardNumber.toLowerCase() === query.toLowerCase() || matches[0].name.toLowerCase() === query.toLowerCase())) {
+      matchedMember.value = matches[0];
+    } else if (matches.length === 0) {
+      matchedMember.value = null;
+      memberCandidates.value = [];
+      memberSearchError.value = `Anggota dengan nama atau ID "${query}" tidak ditemukan di server perpustakaan.`;
+    }
+  } finally {
+    isSearchingMember.value = false;
+  }
+};
+
+const lookupMember = async () => {
+  if (memberSearchDebounceTimer) {
+    clearTimeout(memberSearchDebounceTimer);
+    memberSearchDebounceTimer = null;
+  }
   memberSearchError.value = '';
   memberCandidates.value = [];
   const rawKey = (memberSearchKey.value || '').trim();
   if (!rawKey) {
     memberSearchError.value = 'Masukkan Nama Lengkap atau Nomor Kartu Anggota.';
+    return;
+  }
+
+  // Wajib minimal 3 karakter untuk mencari nama
+  if (rawKey.length < 3) {
+    memberSearchError.value = 'Ketik minimal 3 karakter untuk mencari nama member.';
     return;
   }
 
@@ -693,28 +758,22 @@ const lookupMember = () => {
     return;
   }
 
-  // 2. Search by name, card number, or NIS
-  const matches = searchMembers(rawKey);
-
-  if (matches.length === 1) {
-    matchedMember.value = matches[0];
-    memberCandidates.value = matches;
-  } else if (matches.length > 1) {
-    matchedMember.value = null;
-    memberCandidates.value = matches;
-  } else {
-    matchedMember.value = null;
-    memberCandidates.value = [];
-    memberSearchError.value = `Anggota dengan nama atau ID "${rawKey}" tidak ditemukan. Pastikan ejaan nama atau nomor kartu sudah sesuai.`;
-  }
+  // 2. Search by name, card number, or NIS on server
+  await performMemberSearch(rawKey);
 };
 
 const onMemberSearchInput = () => {
   memberSearchError.value = '';
+  if (memberSearchDebounceTimer) {
+    clearTimeout(memberSearchDebounceTimer);
+    memberSearchDebounceTimer = null;
+  }
+
   const q = (memberSearchKey.value || '').trim();
   if (!q) {
     memberCandidates.value = [];
     matchedMember.value = null;
+    isSearchingMember.value = false;
     return;
   }
   // If the user starts modifying the search input while a member was selected, reset selected
@@ -723,15 +782,19 @@ const onMemberSearchInput = () => {
       matchedMember.value.cardNumber.toLowerCase() !== q.toLowerCase()) {
     matchedMember.value = null;
   }
-  if (q.length >= 2) {
-    const matches = searchMembers(q);
-    memberCandidates.value = matches;
-    if (matches.length === 1 && (matches[0].cardNumber.toLowerCase() === q.toLowerCase() || matches[0].name.toLowerCase() === q.toLowerCase())) {
-      matchedMember.value = matches[0];
-    }
-  } else {
+
+  // Ketik dulu minimal 3 karakter sebelum mencari
+  if (q.length < 3) {
     memberCandidates.value = [];
+    isSearchingMember.value = false;
+    return;
   }
+
+  // Beri delay sekitar 500ms barulah mencari ke server
+  isSearchingMember.value = true;
+  memberSearchDebounceTimer = setTimeout(async () => {
+    await performMemberSearch(q);
+  }, 500);
 };
 
 const selectMemberCandidate = (member: Member) => {

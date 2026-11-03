@@ -801,38 +801,55 @@
                       <input 
                         v-model="adminMemberSearchKey"
                         type="text"
-                        placeholder="Ketik nama siswa/guru, atau nomor kartu (LIB-001)..."
+                        placeholder="Ketik minimal 3 karakter nama siswa/guru, atau nomor kartu (LIB-001)..."
                         @keydown.enter.prevent="lookupAdminMember"
                         @input="onAdminSearchInput"
-                        class="w-full pl-10 pr-9 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm text-slate-800 dark:text-white placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition"
+                        class="w-full pl-10 pr-10 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm text-slate-800 dark:text-white placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition"
                       />
-                      <button 
-                        v-if="adminMemberSearchKey"
-                        type="button"
-                        @click="clearAdminSearch"
-                        class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-full cursor-pointer"
-                        title="Hapus pencarian"
-                      >
-                        <X class="w-3.5 h-3.5" />
-                      </button>
+                      <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                        <Loader2 v-if="isAdminSearchingMember" class="w-4 h-4 text-blue-500 animate-spin" />
+                        <button 
+                          v-else-if="adminMemberSearchKey"
+                          type="button"
+                          @click="clearAdminSearch"
+                          class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-full cursor-pointer"
+                          title="Hapus pencarian"
+                        >
+                          <X class="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                     <button 
                       type="button"
                       @click="lookupAdminMember"
-                      class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-2xl shadow-xs transition cursor-pointer active:scale-95 shrink-0 flex items-center gap-1.5"
+                      :disabled="isAdminSearchingMember"
+                      class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-2xl shadow-xs transition cursor-pointer active:scale-95 shrink-0 flex items-center gap-1.5 disabled:opacity-75"
                     >
-                      <Search class="w-3.5 h-3.5" />
-                      <span>Cari</span>
+                      <Loader2 v-if="isAdminSearchingMember" class="w-3.5 h-3.5 animate-spin" />
+                      <Search v-else class="w-3.5 h-3.5" />
+                      <span>{{ isAdminSearchingMember ? 'Mencari...' : 'Cari' }}</span>
                     </button>
                   </div>
-                  <p class="text-[11px] text-slate-500 dark:text-slate-400">
-                    💡 Bisa cari dengan mengetikkan nama lengkap, sebagian nama, atau nomor kartu member.
-                  </p>
+                  <div class="flex flex-wrap items-center justify-between text-[11px] gap-1 pt-0.5">
+                    <p v-if="adminMemberSearchKey.trim().length > 0 && adminMemberSearchKey.trim().length < 3" class="text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+                      <span>⚠️ Ketik minimal 3 karakter untuk mencari ({{ adminMemberSearchKey.trim().length }}/3)</span>
+                    </p>
+                    <p v-else-if="isAdminSearchingMember" class="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-1">
+                      <Loader2 class="w-3 h-3 animate-spin" />
+                      <span>Mencari ke database server perpustakaan...</span>
+                    </p>
+                    <p v-else class="text-slate-500 dark:text-slate-400">
+                      💡 Ketik minimal 3 karakter, sistem otomatis mencari ke server setelah jeda 500ms.
+                    </p>
+                    <span v-if="adminMemberCandidates.length > 0 && !adminMatchedMember" class="text-blue-600 dark:text-blue-400 font-bold ml-auto">
+                      {{ adminMemberCandidates.length }} anggota ditemukan
+                    </span>
+                  </div>
                 </div>
 
                 <!-- Multiple Candidates Suggestion / Search Result List -->
                 <div 
-                  v-if="adminMemberCandidates.length > 1 && !adminMatchedMember" 
+                  v-if="adminMemberCandidates.length >= 1 && !adminMatchedMember" 
                   class="space-y-2 p-3 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 animate-in fade-in duration-200"
                 >
                   <div class="flex items-center justify-between text-xs px-1">
@@ -970,38 +987,72 @@
               </div>
 
               <!-- Printable Stand Card Preview -->
-              <div class="p-6 sm:p-8 rounded-3xl bg-linear-to-b from-blue-50 to-white dark:from-slate-800 dark:to-slate-850 border-2 border-blue-200 dark:border-blue-900 shadow-xl space-y-4 max-w-sm mx-auto">
+              <div 
+                class="qr-stand-card p-6 sm:p-8 rounded-3xl border-2 shadow-xl space-y-4 max-w-sm mx-auto transition-all duration-200"
+                :class="qrCardStyle === 'paper' 
+                  ? 'bg-white text-slate-900 border-slate-200 shadow-lg' 
+                  : 'bg-gradient-to-b from-blue-50 to-white dark:from-slate-800 dark:to-slate-900 border-blue-200 dark:border-slate-700 text-slate-900 dark:text-white'"
+              >
                 <div class="space-y-1">
-                  <div class="text-[11px] font-extrabold uppercase tracking-widest text-blue-600 dark:text-blue-400">
+                  <div 
+                    class="text-[11px] font-extrabold uppercase tracking-widest"
+                    :class="qrCardStyle === 'paper' ? 'text-blue-600' : 'text-blue-600 dark:text-blue-400'"
+                  >
                     Perpustakaan SDN Pengasinan VII
                   </div>
-                  <h4 class="font-black text-lg text-slate-900 dark:text-white">
+                  <h4 
+                    class="font-black text-lg"
+                    :class="qrCardStyle === 'paper' ? 'text-slate-900' : 'text-slate-900 dark:text-white'"
+                  >
                     Scan Buku Tamu Digital
                   </h4>
-                  <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                  <p 
+                    class="text-[11px]"
+                    :class="qrCardStyle === 'paper' ? 'text-slate-500' : 'text-slate-500 dark:text-slate-400'"
+                  >
                     Arahkan kamera smartphone Anda ke QR code berikut:
                   </p>
                 </div>
 
                 <!-- Canvas QR Container -->
-                <div class="p-4 bg-white rounded-2xl shadow-inner inline-block mx-auto border border-slate-100">
-                  <canvas ref="qrCanvas" class="w-48 h-48 mx-auto"></canvas>
+                <div 
+                  class="qr-canvas-wrapper p-3.5 sm:p-4 rounded-2xl shadow-inner inline-block mx-auto border transition-colors duration-200"
+                  :class="qrCardStyle === 'paper' 
+                    ? 'bg-white border-slate-200' 
+                    : 'bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800'"
+                >
+                  <canvas ref="qrCanvas" class="w-48 h-48 mx-auto block rounded-lg"></canvas>
                 </div>
 
                 <!-- Active Token Banner on Standee -->
-                <div v-if="store.activeVisitToken" class="p-3 bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 rounded-2xl flex items-center justify-between text-left">
+                <div 
+                  v-if="store.activeVisitToken" 
+                  class="p-3 border rounded-2xl flex items-center justify-between text-left transition-colors duration-200"
+                  :class="qrCardStyle === 'paper' 
+                    ? 'bg-amber-50 border-amber-300 text-amber-900' 
+                    : 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700/60 text-amber-900 dark:text-amber-200'"
+                >
                   <div>
-                    <span class="text-[10px] uppercase font-bold text-amber-700 dark:text-amber-400 block tracking-wider">
+                    <span 
+                      class="text-[10px] uppercase font-bold block tracking-wider"
+                      :class="qrCardStyle === 'paper' ? 'text-amber-700' : 'text-amber-700 dark:text-amber-400'"
+                    >
                       Kode Token Tamu Hari Ini
                     </span>
-                    <span class="font-mono text-base font-black text-amber-900 dark:text-amber-200 tracking-wider">
+                    <span 
+                      class="font-mono text-base font-black tracking-wider"
+                      :class="qrCardStyle === 'paper' ? 'text-amber-900' : 'text-amber-900 dark:text-amber-300'"
+                    >
                       {{ store.activeVisitToken.token }}
                     </span>
                   </div>
                   <button 
                     @click="copyCode(store.activeVisitToken.token)" 
                     type="button"
-                    class="px-2.5 py-1 text-xs bg-amber-200 hover:bg-amber-300 dark:bg-amber-900/80 dark:hover:bg-amber-800 text-amber-900 dark:text-white rounded-lg font-bold transition flex items-center gap-1 cursor-pointer"
+                    class="px-2.5 py-1 text-xs rounded-lg font-bold transition flex items-center gap-1 cursor-pointer active:scale-95"
+                    :class="qrCardStyle === 'paper' 
+                      ? 'bg-amber-200 hover:bg-amber-300 text-amber-900' 
+                      : 'bg-amber-200 hover:bg-amber-300 dark:bg-amber-900/60 dark:hover:bg-amber-800/80 text-amber-900 dark:text-amber-200'"
                   >
                     <Copy class="w-3 h-3" />
                     <span>Salin</span>
@@ -1009,26 +1060,55 @@
                 </div>
 
                 <div class="space-y-1 text-xs">
-                  <span class="font-mono text-[11px] text-slate-600 dark:text-slate-300 break-all select-all">
+                  <span 
+                    class="font-mono text-[11px] break-all select-all block font-medium"
+                    :class="qrCardStyle === 'paper' ? 'text-blue-700' : 'text-blue-700 dark:text-blue-300'"
+                  >
                     {{ publicVisitUrl }}
                   </span>
-                  <p class="text-[10px] text-slate-400">
+                  <p 
+                    class="text-[10px]"
+                    :class="qrCardStyle === 'paper' ? 'text-slate-400' : 'text-slate-400 dark:text-slate-500'"
+                  >
                     Mendukung presensi tamu umum & check-in kartu anggota
                   </p>
                 </div>
               </div>
 
-              <!-- Option: Include Token in QR -->
-              <div v-if="store.activeVisitToken" class="flex items-center justify-center gap-2 text-xs text-slate-600 dark:text-slate-400">
-                <label class="flex items-center gap-2 cursor-pointer select-none">
-                  <input 
-                    type="checkbox" 
-                    v-model="includeTokenInQr" 
-                    @change="renderQrCode"
-                    class="rounded text-blue-600 focus:ring-blue-500" 
-                  />
-                  <span>Sertakan kode token otomatis saat QR discan</span>
-                </label>
+              <!-- Appearance Mode & Token Toggle -->
+              <div class="flex flex-wrap items-center justify-center gap-3 text-xs text-slate-600 dark:text-slate-400">
+                <div class="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <span class="text-[10px] font-semibold text-slate-400 px-1.5">Tampilan:</span>
+                  <button 
+                    type="button" 
+                    @click="setQrCardStyle('auto')"
+                    class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer"
+                    :class="qrCardStyle === 'auto' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'"
+                  >
+                    Sesuai Tema
+                  </button>
+                  <button 
+                    type="button" 
+                    @click="setQrCardStyle('paper')"
+                    class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer"
+                    :class="qrCardStyle === 'paper' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'"
+                  >
+                    Kertas Putih (Cetak)
+                  </button>
+                </div>
+
+                <!-- Option: Include Token in QR -->
+                <div v-if="store.activeVisitToken" class="flex items-center gap-2">
+                  <label class="flex items-center gap-2 cursor-pointer select-none">
+                    <input 
+                      type="checkbox" 
+                      v-model="includeTokenInQr" 
+                      @change="renderQrCode"
+                      class="rounded text-blue-600 focus:ring-blue-500 cursor-pointer" 
+                    />
+                    <span>Sertakan token otomatis</span>
+                  </label>
+                </div>
               </div>
 
               <!-- Action buttons -->
@@ -1095,7 +1175,8 @@ import {
   KeyRound,
   Plus,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-vue-next';
 
 const props = defineProps<{
@@ -1165,9 +1246,24 @@ const adminMemberCandidates = ref<Member[]>([]);
 const adminMemberError = ref('');
 const adminMatchedMember = ref<Member | null>(null);
 const adminMemberPurpose = ref<VisitPurpose>('Membaca Buku');
+const isAdminSearchingMember = ref(false);
+let adminMemberSearchDebounceTimer: any = null;
 
-// QR Desk Canvas
+// QR Desk Canvas & Appearance
 const qrCanvas = ref<HTMLCanvasElement | null>(null);
+const qrCardStyle = ref<'auto' | 'paper'>('auto');
+
+const setQrCardStyle = (style: 'auto' | 'paper') => {
+  qrCardStyle.value = style;
+  setTimeout(renderQrCode, 50);
+};
+
+const isDarkTheme = computed(() => {
+  if (qrCardStyle.value === 'paper') return false;
+  return store.currentTheme === 'dark' || 
+         store.currentTheme === 'elegant' || 
+         (typeof document !== 'undefined' && document.documentElement.classList.contains('dark'));
+});
 
 const publicVisitUrl = computed(() => {
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
@@ -1182,12 +1278,13 @@ const renderQrCode = async () => {
   await nextTick();
   if (qrCanvas.value) {
     try {
+      const dark = isDarkTheme.value;
       await QRCode.toCanvas(qrCanvas.value, publicVisitUrl.value, {
         width: 192,
         margin: 1,
         color: {
-          dark: '#0f172a',
-          light: '#ffffff'
+          dark: dark ? '#f8fafc' : '#0f172a',
+          light: dark ? '#0b1120' : '#ffffff'
         }
       });
     } catch (e) {
@@ -1211,6 +1308,12 @@ watch(() => props.isOpen, (open) => {
 watch(() => store.activeVisitToken?.token, () => {
   if (activeTab.value === 'desk_qr') {
     setTimeout(renderQrCode, 100);
+  }
+});
+
+watch(() => store.currentTheme, () => {
+  if (activeTab.value === 'desk_qr') {
+    setTimeout(renderQrCode, 80);
   }
 });
 
@@ -1408,12 +1511,56 @@ const searchAdminMembers = (query: string): Member[] => {
   });
 };
 
-const lookupAdminMember = () => {
+const performAdminMemberSearch = async (query: string) => {
+  isAdminSearchingMember.value = true;
+  try {
+    if (!store.isOfflineMode && !store.isQuotaExhausted) {
+      try {
+        const { db } = await import('../lib/firebase.js');
+        const { collection, getDocs } = await import('firebase/firestore');
+        const snap = await getDocs(collection(db, 'members'));
+        if (!snap.empty) {
+          const serverMembers: Member[] = [];
+          snap.forEach(docSnap => serverMembers.push(docSnap.data() as Member));
+          if (serverMembers.length > 0) {
+            store.members = serverMembers;
+          }
+        }
+      } catch (err) {
+        console.warn('Server member lookup fallback to local store:', err);
+      }
+    }
+
+    const matches = searchAdminMembers(query);
+    adminMemberCandidates.value = matches;
+    if (matches.length === 1 && (matches[0].cardNumber.toLowerCase() === query.toLowerCase() || matches[0].name.toLowerCase() === query.toLowerCase())) {
+      adminMatchedMember.value = matches[0];
+    } else if (matches.length === 0) {
+      adminMatchedMember.value = null;
+      adminMemberCandidates.value = [];
+      adminMemberError.value = `Anggota dengan nama atau ID "${query}" tidak ditemukan di server perpustakaan.`;
+    }
+  } finally {
+    isAdminSearchingMember.value = false;
+  }
+};
+
+const lookupAdminMember = async () => {
+  if (adminMemberSearchDebounceTimer) {
+    clearTimeout(adminMemberSearchDebounceTimer);
+    adminMemberSearchDebounceTimer = null;
+  }
   adminMemberError.value = '';
   adminMemberCandidates.value = [];
   const rawKey = (adminMemberSearchKey.value || '').trim();
   if (!rawKey) {
     adminMemberError.value = 'Ketik nama anggota atau nomor kartu.';
+    return;
+  }
+
+  // Wajib minimal 3 karakter untuk mencari
+  if (rawKey.length < 3) {
+    adminMemberError.value = 'Ketik minimal 3 karakter untuk mencari nama member.';
     return;
   }
 
@@ -1432,28 +1579,22 @@ const lookupAdminMember = () => {
     return;
   }
 
-  // 2. Search by name, card number, or NIS
-  const matches = searchAdminMembers(rawKey);
-
-  if (matches.length === 1) {
-    adminMatchedMember.value = matches[0];
-    adminMemberCandidates.value = matches;
-  } else if (matches.length > 1) {
-    adminMatchedMember.value = null;
-    adminMemberCandidates.value = matches;
-  } else {
-    adminMatchedMember.value = null;
-    adminMemberCandidates.value = [];
-    adminMemberError.value = `Anggota dengan nama atau ID "${rawKey}" tidak ditemukan. Pastikan ejaan nama atau nomor kartu sudah sesuai.`;
-  }
+  // 2. Search by name, card number, or NIS on server
+  await performAdminMemberSearch(rawKey);
 };
 
 const onAdminSearchInput = () => {
   adminMemberError.value = '';
+  if (adminMemberSearchDebounceTimer) {
+    clearTimeout(adminMemberSearchDebounceTimer);
+    adminMemberSearchDebounceTimer = null;
+  }
+
   const q = (adminMemberSearchKey.value || '').trim();
   if (!q) {
     adminMemberCandidates.value = [];
     adminMatchedMember.value = null;
+    isAdminSearchingMember.value = false;
     return;
   }
   // If the user starts modifying the search input while a member was selected, reset selected
@@ -1462,15 +1603,19 @@ const onAdminSearchInput = () => {
       adminMatchedMember.value.cardNumber.toLowerCase() !== q.toLowerCase()) {
     adminMatchedMember.value = null;
   }
-  if (q.length >= 2) {
-    const matches = searchAdminMembers(q);
-    adminMemberCandidates.value = matches;
-    if (matches.length === 1 && (matches[0].cardNumber.toLowerCase() === q.toLowerCase() || matches[0].name.toLowerCase() === q.toLowerCase())) {
-      adminMatchedMember.value = matches[0];
-    }
-  } else {
+
+  // Ketik dulu minimal 3 karakter sebelum mencari
+  if (q.length < 3) {
     adminMemberCandidates.value = [];
+    isAdminSearchingMember.value = false;
+    return;
   }
+
+  // Beri delay sekitar 500ms barulah mencari ke server
+  isAdminSearchingMember.value = true;
+  adminMemberSearchDebounceTimer = setTimeout(async () => {
+    await performAdminMemberSearch(q);
+  }, 500);
 };
 
 const selectAdminCandidate = (member: Member) => {
