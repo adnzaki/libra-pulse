@@ -392,129 +392,148 @@
             </div>
           </div>
 
-          <!-- Mobile Card View (Zero horizontal scroll on phones) -->
-          <div class="grid grid-cols-1 gap-3 md:hidden">
-            <div 
-              v-for="l in filteredLoans" 
-              :key="l.id"
-              class="p-4 rounded-2xl border space-y-3 transition-colors"
-              :class="l.status === 'overdue' ? 'bg-rose-50/40 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50' : 'bg-white dark:bg-slate-900/80 border-slate-100 dark:border-slate-800'"
-            >
-              <div class="flex items-start justify-between gap-2">
-                <div>
-                  <span class="text-[10px] font-mono font-bold text-blue-600 dark:text-blue-400">{{ l.id }}</span>
-                  <h4 class="font-bold text-sm text-slate-900 dark:text-white leading-snug">{{ l.bookTitle }}</h4>
-                  <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Lokasi Rak: <strong class="font-mono text-slate-800 dark:text-slate-200">{{ l.shelfCode }}</strong></div>
-                </div>
-                <span 
-                  class="px-2.5 py-1 rounded-full text-[10px] font-bold shrink-0 border"
-                  :class="l.status === 'overdue' ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60' : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60'"
-                >
-                  {{ l.status === 'overdue' ? `⚠️ Telat ${l.daysOverdue}h` : 'Aktif' }}
-                </span>
-              </div>
+          <!-- Empty State -->
+          <div v-if="filteredLoans.length === 0" class="p-8 text-center bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-800 text-slate-400 text-xs space-y-1.5">
+            <BookMarked class="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-1" />
+            <p class="font-bold text-slate-700 dark:text-slate-200">Tidak Ada Peminjaman Aktif</p>
+            <p class="text-[11px]" v-if="circulationSearch">Tidak ditemukan peminjaman yang cocok dengan kata kunci "{{ circulationSearch }}".</p>
+            <p class="text-[11px]" v-else>Saat ini semua buku berada di rak atau seluruh transaksi telah selesai dikembalikan.</p>
+          </div>
 
-              <div class="p-2.5 rounded-xl bg-slate-50/80 dark:bg-slate-850/80 border border-slate-100 dark:border-slate-800 text-xs space-y-1">
-                <div class="flex justify-between">
-                  <span class="text-slate-500 dark:text-slate-400">Peminjam:</span>
-                  <strong class="text-slate-800 dark:text-slate-200 font-semibold">{{ l.memberName }} ({{ l.memberCardNumber }})</strong>
+          <template v-else>
+            <!-- Mobile Card View (Zero horizontal scroll on phones) -->
+            <div class="grid grid-cols-1 gap-3 md:hidden">
+              <div 
+                v-for="l in paginatedLoans" 
+                :key="l.id"
+                class="p-4 rounded-2xl border space-y-3 transition-colors"
+                :class="l.status === 'overdue' ? 'bg-rose-50/40 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50' : 'bg-white dark:bg-slate-900/80 border-slate-100 dark:border-slate-800'"
+              >
+                <div class="flex items-start justify-between gap-2">
+                  <div>
+                    <span class="text-[10px] font-mono font-bold text-blue-600 dark:text-blue-400">{{ l.id }}</span>
+                    <h4 class="font-bold text-sm text-slate-900 dark:text-white leading-snug">{{ l.bookTitle }}</h4>
+                    <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Lokasi Rak: <strong class="font-mono text-slate-800 dark:text-slate-200">{{ l.shelfCode }}</strong></div>
+                  </div>
+                  <span 
+                    class="px-2.5 py-1 rounded-full text-[10px] font-bold shrink-0 border"
+                    :class="l.status === 'overdue' ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60' : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60'"
+                  >
+                    {{ l.status === 'overdue' ? `⚠️ Telat ${l.daysOverdue}h` : 'Aktif' }}
+                  </span>
                 </div>
-                <div class="flex justify-between">
-                  <span class="text-slate-500 dark:text-slate-400">Tgl Pinjam:</span>
-                  <span class="text-slate-700 dark:text-slate-300">{{ new Date(l.borrowDate).toLocaleDateString('id-ID') }}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-slate-500 dark:text-slate-400">Jatuh Tempo:</span>
-                  <strong :class="l.status === 'overdue' ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-200'">
-                    {{ new Date(l.dueDate).toLocaleDateString('id-ID') }}
-                  </strong>
-                </div>
-              </div>
 
-              <div class="flex items-center gap-2 pt-1">
-                <button 
-                  v-if="l.status === 'overdue'"
-                  @click="openNotifyModal(l)"
-                  class="flex-1 py-2 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition cursor-pointer text-center active:scale-95 shadow-xs"
-                >
-                  Peringatan
-                </button>
-                <button 
-                  @click="openReturnModal(l)"
-                  class="flex-1 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition cursor-pointer text-center active:scale-95"
-                >
-                  Terima Kembali
-                </button>
+                <div class="p-2.5 rounded-xl bg-slate-50/80 dark:bg-slate-850/80 border border-slate-100 dark:border-slate-800 text-xs space-y-1">
+                  <div class="flex justify-between">
+                    <span class="text-slate-500 dark:text-slate-400">Peminjam:</span>
+                    <strong class="text-slate-800 dark:text-slate-200 font-semibold">{{ l.memberName }} ({{ l.memberCardNumber }})</strong>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-slate-500 dark:text-slate-400">Tgl Pinjam:</span>
+                    <span class="text-slate-700 dark:text-slate-300">{{ new Date(l.borrowDate).toLocaleDateString('id-ID') }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-slate-500 dark:text-slate-400">Jatuh Tempo:</span>
+                    <strong :class="l.status === 'overdue' ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-200'">
+                      {{ new Date(l.dueDate).toLocaleDateString('id-ID') }}
+                    </strong>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2 pt-1">
+                  <button 
+                    v-if="l.status === 'overdue'"
+                    @click="openNotifyModal(l)"
+                    class="flex-1 py-2 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition cursor-pointer text-center active:scale-95 shadow-xs"
+                  >
+                    Peringatan
+                  </button>
+                  <button 
+                    @click="openReturnModal(l)"
+                    class="flex-1 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition cursor-pointer text-center active:scale-95"
+                  >
+                    Terima Kembali
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Desktop Table View -->
-          <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80">
-            <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
-              <thead class="bg-slate-50 dark:bg-slate-850/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 font-bold">
-                <tr>
-                  <th class="py-3.5 px-4">ID Transaksi</th>
-                  <th class="py-3.5 px-4">Buku & Lokasi Rak</th>
-                  <th class="py-3.5 px-4">Peminjam (Kartu Member)</th>
-                  <th class="py-3.5 px-4">Tanggal Pinjam</th>
-                  <th class="py-3.5 px-4">Jatuh Tempo</th>
-                  <th class="py-3.5 px-4">Status</th>
-                  <th class="py-3.5 px-4 text-right">Aksi Sirkulasi</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
-                <tr 
-                  v-for="l in filteredLoans" 
-                  :key="l.id"
-                  class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition"
-                  :class="l.status === 'overdue' ? 'bg-rose-50/30 dark:bg-rose-950/20' : ''"
-                >
-                  <td class="py-3 px-4 font-mono font-bold text-blue-600 dark:text-blue-400">{{ l.id }}</td>
-                  <td class="py-3 px-4">
-                    <div class="font-bold text-slate-900 dark:text-white truncate max-w-xs">{{ l.bookTitle }}</div>
-                    <div class="text-[10px] text-slate-400 dark:text-slate-400 font-mono">{{ l.shelfCode }}</div>
-                  </td>
-                  <td class="py-3 px-4">
-                    <div class="font-semibold text-slate-900 dark:text-slate-100">{{ l.memberName }}</div>
-                    <div class="text-[10px] font-mono text-slate-400 dark:text-slate-400">{{ l.memberCardNumber }}</div>
-                  </td>
-                  <td class="py-3 px-4 text-slate-600 dark:text-slate-300">{{ new Date(l.borrowDate).toLocaleDateString('id-ID') }}</td>
-                  <td class="py-3 px-4">
-                    <span :class="l.status === 'overdue' ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300 font-medium'">
-                      {{ new Date(l.dueDate).toLocaleDateString('id-ID') }}
-                    </span>
-                  </td>
-                  <td class="py-3 px-4">
-                    <div v-if="l.status === 'overdue'" class="space-y-0.5">
-                      <span class="px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60 font-bold text-[10px] inline-flex items-center gap-1">
-                        ⚠️ Telat {{ l.daysOverdue }} Hari
+            <!-- Desktop Table View -->
+            <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80">
+              <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+                <thead class="bg-slate-50 dark:bg-slate-850/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 font-bold">
+                  <tr>
+                    <th class="py-3.5 px-4">ID Transaksi</th>
+                    <th class="py-3.5 px-4">Buku & Lokasi Rak</th>
+                    <th class="py-3.5 px-4">Peminjam (Kartu Member)</th>
+                    <th class="py-3.5 px-4">Tanggal Pinjam</th>
+                    <th class="py-3.5 px-4">Jatuh Tempo</th>
+                    <th class="py-3.5 px-4">Status</th>
+                    <th class="py-3.5 px-4 text-right">Aksi Sirkulasi</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+                  <tr 
+                    v-for="l in paginatedLoans" 
+                    :key="l.id"
+                    class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition"
+                    :class="l.status === 'overdue' ? 'bg-rose-50/30 dark:bg-rose-950/20' : ''"
+                  >
+                    <td class="py-3 px-4 font-mono font-bold text-blue-600 dark:text-blue-400">{{ l.id }}</td>
+                    <td class="py-3 px-4">
+                      <div class="font-bold text-slate-900 dark:text-white truncate max-w-xs">{{ l.bookTitle }}</div>
+                      <div class="text-[10px] text-slate-400 dark:text-slate-400 font-mono">{{ l.shelfCode }}</div>
+                    </td>
+                    <td class="py-3 px-4">
+                      <div class="font-semibold text-slate-900 dark:text-slate-100">{{ l.memberName }}</div>
+                      <div class="text-[10px] font-mono text-slate-400 dark:text-slate-400">{{ l.memberCardNumber }}</div>
+                    </td>
+                    <td class="py-3 px-4 text-slate-600 dark:text-slate-300">{{ new Date(l.borrowDate).toLocaleDateString('id-ID') }}</td>
+                    <td class="py-3 px-4">
+                      <span :class="l.status === 'overdue' ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300 font-medium'">
+                        {{ new Date(l.dueDate).toLocaleDateString('id-ID') }}
                       </span>
-                    </div>
-                    <span v-else class="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 font-bold text-[10px]">
-                      Aktif
-                    </span>
-                  </td>
-                  <td class="py-3 px-4 text-right space-x-2">
-                    <button 
-                      v-if="l.status === 'overdue'"
-                      @click="openNotifyModal(l)"
-                      class="px-3 py-1.5 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs transition cursor-pointer shadow-xs active:scale-95"
-                      title="Kirim Notifikasi Keterlambatan"
-                    >
-                      Peringatan
-                    </button>
-                    <button 
-                      @click="openReturnModal(l)"
-                      class="px-3 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition cursor-pointer active:scale-95"
-                    >
-                      Terima Pengembalian
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+                    </td>
+                    <td class="py-3 px-4">
+                      <div v-if="l.status === 'overdue'" class="space-y-0.5">
+                        <span class="px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60 font-bold text-[10px] inline-flex items-center gap-1">
+                          ⚠️ Telat {{ l.daysOverdue }} Hari
+                        </span>
+                      </div>
+                      <span v-else class="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 font-bold text-[10px]">
+                        Aktif
+                      </span>
+                    </td>
+                    <td class="py-3 px-4 text-right space-x-2">
+                      <button 
+                        v-if="l.status === 'overdue'"
+                        @click="openNotifyModal(l)"
+                        class="px-3 py-1.5 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs transition cursor-pointer shadow-xs active:scale-95"
+                        title="Kirim Notifikasi Keterlambatan"
+                      >
+                        Peringatan
+                      </button>
+                      <button 
+                        @click="openReturnModal(l)"
+                        class="px-3 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition cursor-pointer active:scale-95"
+                      >
+                        Terima Pengembalian
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Server-Side Pagination Controls for Peminjaman Aktif -->
+            <AdminPagination 
+              v-model:currentPage="loanCurrentPage"
+              v-model:itemsPerPage="loanItemsPerPage"
+              :totalPages="loanTotalPages"
+              :totalItems="filteredLoans.length"
+              itemName="peminjaman aktif"
+            />
+          </template>
         </div>
 
         <!-- Tab 1B: Riwayat Peminjaman (Buku Fisik & e-Book yang Telah Dikembalikan / Selesai) -->
@@ -748,46 +767,14 @@
               </table>
             </div>
 
-            <!-- Pagination Controls for Riwayat Peminjaman -->
-            <div v-if="historyTotalPages > 1" class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs">
-              <div class="text-slate-500 dark:text-slate-400">
-                Halaman <strong class="text-slate-800 dark:text-slate-200">{{ historyCurrentPage }}</strong> dari <strong class="text-slate-800 dark:text-slate-200">{{ historyTotalPages }}</strong>
-              </div>
-              <div class="flex items-center gap-1.5">
-                <button 
-                  type="button"
-                  @click="historyCurrentPage = 1" 
-                  :disabled="historyCurrentPage === 1"
-                  class="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-40 cursor-pointer"
-                >
-                  <ChevronsLeft class="w-4 h-4" />
-                </button>
-                <button 
-                  type="button"
-                  @click="historyCurrentPage--" 
-                  :disabled="historyCurrentPage === 1"
-                  class="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-40 cursor-pointer"
-                >
-                  <ChevronLeft class="w-4 h-4" />
-                </button>
-                <button 
-                  type="button"
-                  @click="historyCurrentPage++" 
-                  :disabled="historyCurrentPage === historyTotalPages"
-                  class="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-40 cursor-pointer"
-                >
-                  <ChevronRight class="w-4 h-4" />
-                </button>
-                <button 
-                  type="button"
-                  @click="historyCurrentPage = historyTotalPages" 
-                  :disabled="historyCurrentPage === historyTotalPages"
-                  class="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-40 cursor-pointer"
-                >
-                  <ChevronsRight class="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+            <!-- Server-Side Pagination Controls for Riwayat Peminjaman -->
+            <AdminPagination 
+              v-model:currentPage="historyCurrentPage"
+              v-model:itemsPerPage="historyItemsPerPage"
+              :totalPages="historyTotalPages"
+              :totalItems="filteredLoanHistory.length"
+              itemName="riwayat selesai"
+            />
           </template>
         </div>
 
@@ -825,47 +812,58 @@
             <p class="text-[11px]" v-if="bookingSearch">Tidak ada booking yang cocok dengan kata kunci "{{ bookingSearch }}".</p>
           </div>
 
-          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div 
-              v-for="b in filteredBookings" 
-              :key="b.id"
-              class="p-5 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-100 dark:border-slate-800 shadow-sm space-y-4"
-            >
-              <div class="flex gap-3.5">
-                <img :src="b.bookCover" class="w-16 h-22 object-cover rounded-xl shadow-sm border border-slate-100 dark:border-slate-800" alt="Cover" />
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center justify-between">
-                    <span class="text-[10px] font-mono font-bold text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/50">{{ b.id }}</span>
-                    <span class="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono border border-slate-200/60 dark:border-slate-700/60">{{ b.shelfCode }}</span>
-                  </div>
-                  <h4 class="font-bold text-slate-900 dark:text-white text-sm mt-1 truncate">{{ b.bookTitle }}</h4>
-                  <p class="text-xs text-slate-700 dark:text-slate-300 mt-0.5">Pemesan: <strong class="text-slate-900 dark:text-white font-bold">{{ b.memberName }}</strong> ({{ b.memberCardNumber }})</p>
-                  <div class="text-[11px] text-slate-500 dark:text-slate-400">HP: {{ b.memberPhone }} • {{ b.memberEmail }}</div>
-                  
-                  <!-- Countdown Timer -->
-                  <div class="mt-2 p-2 rounded-xl bg-slate-50/80 dark:bg-slate-850/80 border border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                    <span class="text-slate-500 dark:text-slate-400">Sisa Waktu Hold:</span>
-                    <span class="font-mono font-bold text-amber-600 dark:text-amber-400">{{ formatCountdown(b.expiresAt) }}</span>
+          <div v-else class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div 
+                v-for="b in paginatedBookings" 
+                :key="b.id"
+                class="p-5 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-100 dark:border-slate-800 shadow-sm space-y-4"
+              >
+                <div class="flex gap-3.5">
+                  <img :src="b.bookCover" class="w-16 h-22 object-cover rounded-xl shadow-sm border border-slate-100 dark:border-slate-800" alt="Cover" />
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[10px] font-mono font-bold text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/50">{{ b.id }}</span>
+                      <span class="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono border border-slate-200/60 dark:border-slate-700/60">{{ b.shelfCode }}</span>
+                    </div>
+                    <h4 class="font-bold text-slate-900 dark:text-white text-sm mt-1 truncate">{{ b.bookTitle }}</h4>
+                    <p class="text-xs text-slate-700 dark:text-slate-300 mt-0.5">Pemesan: <strong class="text-slate-900 dark:text-white font-bold">{{ b.memberName }}</strong> ({{ b.memberCardNumber }})</p>
+                    <div class="text-[11px] text-slate-500 dark:text-slate-400">HP: {{ b.memberPhone }} • {{ b.memberEmail }}</div>
+                    
+                    <!-- Countdown Timer -->
+                    <div class="mt-2 p-2 rounded-xl bg-slate-50/80 dark:bg-slate-850/80 border border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                      <span class="text-slate-500 dark:text-slate-400">Sisa Waktu Hold:</span>
+                      <span class="font-mono font-bold text-amber-600 dark:text-amber-400">{{ formatCountdown(b.expiresAt) }}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-                <button 
-                  @click="handleCancelBooking(b.id)"
-                  class="px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-rose-100 dark:hover:bg-rose-950/60 text-slate-600 dark:text-slate-300 hover:text-rose-700 dark:hover:text-rose-300 text-xs font-semibold transition cursor-pointer active:scale-95"
-                >
-                  Batalkan Booking
-                </button>
-                <button 
-                  @click="openCollectBookingModal(b)"
-                  class="px-4 py-1.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-95"
-                >
-                  <CheckCircle class="w-4 h-4" />
-                  Serahkan Buku ke Anggota
-                </button>
+                <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                  <button 
+                    @click="handleCancelBooking(b.id)"
+                    class="px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-rose-100 dark:hover:bg-rose-950/60 text-slate-600 dark:text-slate-300 hover:text-rose-700 dark:hover:text-rose-300 text-xs font-semibold transition cursor-pointer active:scale-95"
+                  >
+                    Batalkan Booking
+                  </button>
+                  <button 
+                    @click="openCollectBookingModal(b)"
+                    class="px-4 py-1.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-95"
+                  >
+                    <CheckCircle class="w-4 h-4" />
+                    Serahkan Buku ke Anggota
+                  </button>
+                </div>
               </div>
             </div>
+
+            <!-- Server-Side Pagination Controls for Booking -->
+            <AdminPagination 
+              v-model:currentPage="bookingCurrentPage"
+              v-model:itemsPerPage="bookingItemsPerPage"
+              :totalPages="bookingTotalPages"
+              :totalItems="filteredBookings.length"
+              itemName="booking aktif"
+            />
           </div>
         </div>
 
@@ -908,7 +906,7 @@
           <!-- Mobile Cards for Members -->
           <div class="grid grid-cols-1 gap-3 md:hidden">
             <div 
-              v-for="m in filteredMembers" 
+              v-for="m in paginatedMembers" 
               :key="m.id"
               class="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-100 dark:border-slate-800 shadow-sm space-y-3"
             >
@@ -1010,7 +1008,7 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
-                <tr v-for="m in filteredMembers" :key="m.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
+                <tr v-for="m in paginatedMembers" :key="m.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
                   <td class="py-3 px-4 flex items-center gap-3">
                     <img :src="m.avatar" class="w-9 h-9 rounded-2xl object-cover border border-slate-200 dark:border-slate-700/60 shadow-sm shrink-0" alt="Avatar" />
                     <div>
@@ -1103,6 +1101,15 @@
               </tbody>
             </table>
           </div>
+
+          <!-- Server-Side Pagination Controls for Members -->
+          <AdminPagination 
+            v-model:currentPage="memberCurrentPage"
+            v-model:itemsPerPage="memberItemsPerPage"
+            :totalPages="memberTotalPages"
+            :totalItems="filteredMembers.length"
+            itemName="anggota"
+          />
         </div>
 
         <!-- Tab 3.5: Verifikasi Status Guru (Permintaan Ubah Status Keanggotaan Menjadi Guru) -->
@@ -1147,161 +1154,172 @@
           </div>
 
           <!-- Mobile Cards for Teacher Requests -->
-          <div v-else class="grid grid-cols-1 gap-3.5 md:hidden">
-            <div 
-              v-for="req in filteredTeacherRequests" 
-              :key="req.id"
-              class="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-100 dark:border-slate-800 shadow-sm space-y-3"
-            >
-              <div class="flex items-start gap-3">
-                <!-- Selfie Preview (Clickable) -->
-                <div class="relative group cursor-pointer shrink-0" @click="openSelfiePreview(req.selfieUrl, req.memberName)">
-                  <img 
-                    :src="req.selfieUrl" 
-                    class="w-16 h-20 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shadow-xs" 
-                    alt="Selfie" 
-                    referrerpolicy="no-referrer"
-                  />
-                  <div class="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition">
-                    <Eye class="w-4 h-4" />
+          <div v-else class="space-y-4">
+            <div class="grid grid-cols-1 gap-3.5 md:hidden">
+              <div 
+                v-for="req in paginatedTeacherRequests" 
+                :key="req.id"
+                class="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-100 dark:border-slate-800 shadow-sm space-y-3"
+              >
+                <div class="flex items-start gap-3">
+                  <!-- Selfie Preview (Clickable) -->
+                  <div class="relative group cursor-pointer shrink-0" @click="openSelfiePreview(req.selfieUrl, req.memberName)">
+                    <img 
+                      :src="req.selfieUrl" 
+                      class="w-16 h-20 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shadow-xs" 
+                      alt="Selfie" 
+                      referrerpolicy="no-referrer"
+                    />
+                    <div class="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition">
+                      <Eye class="w-4 h-4" />
+                    </div>
+                  </div>
+
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-1">
+                      <span class="font-mono text-[10px] text-slate-400">{{ req.id }}</span>
+                      <span 
+                        class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase border tracking-wider"
+                        :class="req.status === 'pending' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 animate-pulse' : req.status === 'approved' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'"
+                      >
+                        {{ req.status === 'pending' ? 'Menunggu' : req.status === 'approved' ? 'Disetujui' : 'Ditolak' }}
+                      </span>
+                    </div>
+                    <h4 class="font-bold text-slate-900 dark:text-white text-sm mt-0.5 truncate">{{ req.memberName }}</h4>
+                    <div class="text-[11px] text-blue-600 dark:text-blue-400 font-mono mt-0.5">{{ req.memberCardNumber }}</div>
+                    <div class="text-[10px] text-slate-400 mt-1">Diajukan: {{ formatDateTime(req.requestDate) }}</div>
                   </div>
                 </div>
 
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center justify-between gap-1">
-                    <span class="font-mono text-[10px] text-slate-400">{{ req.id }}</span>
-                    <span 
-                      class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase border tracking-wider"
-                      :class="req.status === 'pending' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 animate-pulse' : req.status === 'approved' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'"
-                    >
-                      {{ req.status === 'pending' ? 'Menunggu' : req.status === 'approved' ? 'Disetujui' : 'Ditolak' }}
-                    </span>
-                  </div>
-                  <h4 class="font-bold text-slate-900 dark:text-white text-sm mt-0.5 truncate">{{ req.memberName }}</h4>
-                  <div class="text-[11px] text-blue-600 dark:text-blue-400 font-mono mt-0.5">{{ req.memberCardNumber }}</div>
-                  <div class="text-[10px] text-slate-400 mt-1">Diajukan: {{ formatDateTime(req.requestDate) }}</div>
+                <!-- Rejection Reason Note if rejected -->
+                <div v-if="req.status === 'rejected'" class="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-900/50 text-[11px] text-rose-700 dark:text-rose-300">
+                  <strong>Alasan Penolakan:</strong> {{ req.rejectionReason || '-' }}
                 </div>
-              </div>
 
-              <!-- Rejection Reason Note if rejected -->
-              <div v-if="req.status === 'rejected'" class="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-900/50 text-[11px] text-rose-700 dark:text-rose-300">
-                <strong>Alasan Penolakan:</strong> {{ req.rejectionReason || '-' }}
-              </div>
+                <!-- Action Buttons for Pending Requests -->
+                <div v-if="req.status === 'pending'" class="pt-2 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-2">
+                  <button 
+                    @click="promptRejectTeacherRequest(req)"
+                    class="py-2 px-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/50 font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
+                  >
+                    <X class="w-3.5 h-3.5" />
+                    <span>Tolak</span>
+                  </button>
+                  <button 
+                    @click="promptApproveTeacherRequest(req)"
+                    class="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
+                  >
+                    <Check class="w-3.5 h-3.5" />
+                    <span>Terima (Guru)</span>
+                  </button>
+                </div>
 
-              <!-- Action Buttons for Pending Requests -->
-              <div v-if="req.status === 'pending'" class="pt-2 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-2">
-                <button 
-                  @click="promptRejectTeacherRequest(req)"
-                  class="py-2 px-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/50 font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
-                >
-                  <X class="w-3.5 h-3.5" />
-                  <span>Tolak</span>
-                </button>
-                <button 
-                  @click="promptApproveTeacherRequest(req)"
-                  class="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
-                >
-                  <Check class="w-3.5 h-3.5" />
-                  <span>Terima (Guru)</span>
-                </button>
-              </div>
-
-              <div v-else class="pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex justify-between">
-                <span>Ditinjau oleh: <strong class="text-slate-800 dark:text-slate-200">{{ req.reviewedBy || 'Admin' }}</strong></span>
-                <span>{{ req.reviewedDate ? formatDateTime(req.reviewedDate) : '-' }}</span>
+                <div v-else class="pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex justify-between">
+                  <span>Ditinjau oleh: <strong class="text-slate-800 dark:text-slate-200">{{ req.reviewedBy || 'Admin' }}</strong></span>
+                  <span>{{ req.reviewedDate ? formatDateTime(req.reviewedDate) : '-' }}</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Desktop Table for Teacher Requests -->
-          <div v-if="filteredTeacherRequests.length > 0" class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80">
-            <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
-              <thead class="bg-slate-50 dark:bg-slate-850/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 font-bold">
-                <tr>
-                  <th class="py-3.5 px-4 text-center">Foto Selfie</th>
-                  <th class="py-3.5 px-4">Nama & No. Kartu</th>
-                  <th class="py-3.5 px-4">Kontak Pemohon</th>
-                  <th class="py-3.5 px-4">Waktu Pengajuan</th>
-                  <th class="py-3.5 px-4 text-center">Status</th>
-                  <th class="py-3.5 px-4 text-right">Aksi Verifikasi</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
-                <tr v-for="req in filteredTeacherRequests" :key="req.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
-                  <td class="py-3 px-4 text-center">
-                    <div 
-                      class="relative inline-block group cursor-pointer" 
-                      @click="openSelfiePreview(req.selfieUrl, req.memberName)"
-                      title="Klik untuk memperbesar foto selfie"
-                    >
-                      <img 
-                        :src="req.selfieUrl" 
-                        class="w-12 h-14 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shadow-xs group-hover:scale-105 transition" 
-                        alt="Selfie" 
-                        referrerpolicy="no-referrer"
-                      />
-                      <div class="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition">
-                        <Eye class="w-4 h-4" />
+            <!-- Desktop Table for Teacher Requests -->
+            <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80">
+              <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+                <thead class="bg-slate-50 dark:bg-slate-850/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 font-bold">
+                  <tr>
+                    <th class="py-3.5 px-4 text-center">Foto Selfie</th>
+                    <th class="py-3.5 px-4">Nama & No. Kartu</th>
+                    <th class="py-3.5 px-4">Kontak Pemohon</th>
+                    <th class="py-3.5 px-4">Waktu Pengajuan</th>
+                    <th class="py-3.5 px-4 text-center">Status</th>
+                    <th class="py-3.5 px-4 text-right">Aksi Verifikasi</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+                  <tr v-for="req in paginatedTeacherRequests" :key="req.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
+                    <td class="py-3 px-4 text-center">
+                      <div 
+                        class="relative inline-block group cursor-pointer" 
+                        @click="openSelfiePreview(req.selfieUrl, req.memberName)"
+                        title="Klik untuk memperbesar foto selfie"
+                      >
+                        <img 
+                          :src="req.selfieUrl" 
+                          class="w-12 h-14 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shadow-xs group-hover:scale-105 transition" 
+                          alt="Selfie" 
+                          referrerpolicy="no-referrer"
+                        />
+                        <div class="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition">
+                          <Eye class="w-4 h-4" />
+                        </div>
                       </div>
-                    </div>
-                  </td>
+                    </td>
 
-                  <td class="py-3 px-4">
-                    <div class="font-bold text-slate-900 dark:text-white">{{ req.memberName }}</div>
-                    <div class="text-[11px] text-blue-600 dark:text-blue-400 font-mono font-medium">{{ req.memberCardNumber }}</div>
-                    <div class="text-[10px] text-slate-400 font-mono">ID: {{ req.id }}</div>
-                  </td>
+                    <td class="py-3 px-4">
+                      <div class="font-bold text-slate-900 dark:text-white">{{ req.memberName }}</div>
+                      <div class="text-[11px] text-blue-600 dark:text-blue-400 font-mono font-medium">{{ req.memberCardNumber }}</div>
+                      <div class="text-[10px] text-slate-400 font-mono">ID: {{ req.id }}</div>
+                    </td>
 
-                  <td class="py-3 px-4">
-                    <div class="text-slate-800 dark:text-slate-200">{{ req.memberEmail || '-' }}</div>
-                    <div class="text-[11px] text-slate-500 dark:text-slate-400 font-mono">{{ req.memberPhone || '-' }}</div>
-                  </td>
+                    <td class="py-3 px-4">
+                      <div class="text-slate-800 dark:text-slate-200">{{ req.memberEmail || '-' }}</div>
+                      <div class="text-[11px] text-slate-500 dark:text-slate-400 font-mono">{{ req.memberPhone || '-' }}</div>
+                    </td>
 
-                  <td class="py-3 px-4 text-slate-600 dark:text-slate-300 font-medium">
-                    {{ formatDateTime(req.requestDate) }}
-                  </td>
+                    <td class="py-3 px-4 text-slate-600 dark:text-slate-300 font-medium">
+                      {{ formatDateTime(req.requestDate) }}
+                    </td>
 
-                  <td class="py-3 px-4 text-center">
-                    <span 
-                      class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border"
-                      :class="req.status === 'pending' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 animate-pulse' : req.status === 'approved' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'"
-                    >
-                      {{ req.status === 'pending' ? 'Menunggu Review' : req.status === 'approved' ? 'Disetujui' : 'Ditolak' }}
-                    </span>
-                    <div v-if="req.status === 'rejected' && req.rejectionReason" class="text-[10px] text-rose-600 dark:text-rose-400 max-w-xs truncate mx-auto mt-0.5" :title="req.rejectionReason">
-                      {{ req.rejectionReason }}
-                    </div>
-                  </td>
-
-                  <td class="py-3 px-4 text-right">
-                    <div v-if="req.status === 'pending'" class="flex items-center justify-end gap-1.5">
-                      <button 
-                        @click="promptRejectTeacherRequest(req)"
-                        class="px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/50 font-bold text-xs transition cursor-pointer flex items-center gap-1 active:scale-95"
-                        title="Tolak permohonan status Guru"
+                    <td class="py-3 px-4 text-center">
+                      <span 
+                        class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border"
+                        :class="req.status === 'pending' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 animate-pulse' : req.status === 'approved' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'"
                       >
-                        <X class="w-3.5 h-3.5" />
-                        <span>Tolak</span>
-                      </button>
+                        {{ req.status === 'pending' ? 'Menunggu Review' : req.status === 'approved' ? 'Disetujui' : 'Ditolak' }}
+                      </span>
+                      <div v-if="req.status === 'rejected' && req.rejectionReason" class="text-[10px] text-rose-600 dark:text-rose-400 max-w-xs truncate mx-auto mt-0.5" :title="req.rejectionReason">
+                        {{ req.rejectionReason }}
+                      </div>
+                    </td>
 
-                      <button 
-                        @click="promptApproveTeacherRequest(req)"
-                        class="px-4 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer flex items-center gap-1 active:scale-95"
-                        title="Setujui permohonan dan jadikan anggota sebagai Guru"
-                      >
-                        <Check class="w-3.5 h-3.5" />
-                        <span>Terima Permintaan</span>
-                      </button>
-                    </div>
+                    <td class="py-3 px-4 text-right">
+                      <div v-if="req.status === 'pending'" class="flex items-center justify-end gap-1.5">
+                        <button 
+                          @click="promptRejectTeacherRequest(req)"
+                          class="px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/50 font-bold text-xs transition cursor-pointer flex items-center gap-1 active:scale-95"
+                          title="Tolak permohonan status Guru"
+                        >
+                          <X class="w-3.5 h-3.5" />
+                          <span>Tolak</span>
+                        </button>
 
-                    <div v-else class="text-[11px] text-slate-400">
-                      <div>Oleh: <span class="text-slate-700 dark:text-slate-300 font-semibold">{{ req.reviewedBy || 'Admin' }}</span></div>
-                      <div class="text-[10px]">{{ req.reviewedDate ? formatDateTime(req.reviewedDate) : '' }}</div>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                        <button 
+                          @click="promptApproveTeacherRequest(req)"
+                          class="px-4 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer flex items-center gap-1 active:scale-95"
+                          title="Setujui permohonan dan jadikan anggota sebagai Guru"
+                        >
+                          <Check class="w-3.5 h-3.5" />
+                          <span>Terima Permintaan</span>
+                        </button>
+                      </div>
+
+                      <div v-else class="text-[11px] text-slate-400">
+                        <div>Oleh: <span class="text-slate-700 dark:text-slate-300 font-semibold">{{ req.reviewedBy || 'Admin' }}</span></div>
+                        <div class="text-[10px]">{{ req.reviewedDate ? formatDateTime(req.reviewedDate) : '' }}</div>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Server-Side Pagination Controls for Teacher Requests -->
+            <AdminPagination 
+              v-model:currentPage="teacherRequestCurrentPage"
+              v-model:itemsPerPage="teacherRequestItemsPerPage"
+              :totalPages="teacherRequestTotalPages"
+              :totalItems="filteredTeacherRequests.length"
+              itemName="permohonan guru"
+            />
           </div>
         </div>
 
@@ -1347,180 +1365,191 @@
           </div>
 
           <!-- Mobile Cards for Student Verifications -->
-          <div v-else class="grid grid-cols-1 gap-3.5 md:hidden">
-            <div 
-              v-for="req in filteredStudentVerifications" 
-              :key="req.id"
-              class="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-100 dark:border-slate-800 shadow-sm space-y-3"
-            >
-              <div class="flex items-start gap-3">
-                <!-- Selfie Preview (Clickable) -->
-                <div class="relative group cursor-pointer shrink-0" @click="openSelfiePreview(req.selfieUrl, req.memberName)">
-                  <img 
-                    :src="req.selfieUrl" 
-                    class="w-16 h-20 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shadow-xs" 
-                    alt="Selfie" 
-                    referrerpolicy="no-referrer"
-                  />
-                  <div class="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition">
-                    <Eye class="w-4 h-4" />
-                  </div>
-                </div>
-
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center justify-between gap-1">
-                    <span class="font-mono text-[10px] text-slate-400">{{ req.id }}</span>
-                    <span 
-                      class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase border tracking-wider"
-                      :class="req.status === 'pending' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 animate-pulse' : req.status === 'approved' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'"
-                    >
-                      {{ req.status === 'pending' ? 'Menunggu' : req.status === 'approved' ? 'Disetujui' : 'Ditolak' }}
-                    </span>
-                  </div>
-                  <h4 class="font-bold text-slate-900 dark:text-white text-sm mt-0.5 truncate">{{ req.memberName }}</h4>
-                  <div class="text-[11px] text-blue-600 dark:text-blue-400 font-mono font-medium">{{ req.memberCardNumber }}</div>
-                  
-                  <!-- NIS & NISN Info -->
-                  <div class="mt-1.5 p-2 rounded-xl bg-slate-50/80 dark:bg-slate-850/80 border border-slate-100 dark:border-slate-800 text-[11px] space-y-0.5">
-                    <div class="flex justify-between">
-                      <span class="text-slate-500 dark:text-slate-400">NIS:</span>
-                      <strong class="font-mono text-slate-800 dark:text-slate-200">{{ req.nis }}</strong>
-                    </div>
-                    <div class="flex justify-between">
-                      <span class="text-slate-500 dark:text-slate-400">NISN:</span>
-                      <strong class="font-mono text-slate-800 dark:text-slate-200">{{ req.nisn }}</strong>
+          <div v-else class="space-y-4">
+            <div class="grid grid-cols-1 gap-3.5 md:hidden">
+              <div 
+                v-for="req in paginatedStudentVerifications" 
+                :key="req.id"
+                class="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-100 dark:border-slate-800 shadow-sm space-y-3"
+              >
+                <div class="flex items-start gap-3">
+                  <!-- Selfie Preview (Clickable) -->
+                  <div class="relative group cursor-pointer shrink-0" @click="openSelfiePreview(req.selfieUrl, req.memberName)">
+                    <img 
+                      :src="req.selfieUrl" 
+                      class="w-16 h-20 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shadow-xs" 
+                      alt="Selfie" 
+                      referrerpolicy="no-referrer"
+                    />
+                    <div class="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition">
+                      <Eye class="w-4 h-4" />
                     </div>
                   </div>
 
-                  <div class="text-[10px] text-slate-400 mt-1">Diajukan: {{ formatDateTime(req.requestDate) }}</div>
-                </div>
-              </div>
-
-              <!-- Rejection Reason Note if rejected -->
-              <div v-if="req.status === 'rejected'" class="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-900/50 text-[11px] text-rose-700 dark:text-rose-300">
-                <strong>Alasan Penolakan:</strong> {{ req.rejectionReason || '-' }}
-              </div>
-
-              <!-- Action Buttons for Pending Requests -->
-              <div v-if="req.status === 'pending'" class="pt-2 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-2">
-                <button 
-                  @click="promptRejectStudentRequest(req)"
-                  class="py-2 px-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/50 font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
-                >
-                  <X class="w-3.5 h-3.5" />
-                  <span>Tolak</span>
-                </button>
-                <button 
-                  @click="promptApproveStudentRequest(req)"
-                  class="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
-                >
-                  <Check class="w-3.5 h-3.5" />
-                  <span>Setujui Siswa</span>
-                </button>
-              </div>
-
-              <div v-else class="pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex justify-between">
-                <span>Ditinjau oleh: <strong class="text-slate-800 dark:text-slate-200">{{ req.reviewedBy || 'Admin' }}</strong></span>
-                <span>{{ req.reviewedDate ? formatDateTime(req.reviewedDate) : '-' }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Desktop Table for Student Verifications -->
-          <div v-if="filteredStudentVerifications.length > 0" class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80">
-            <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
-              <thead class="bg-slate-50 dark:bg-slate-850/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 font-bold">
-                <tr>
-                  <th class="py-3.5 px-4 text-center">Foto Selfie</th>
-                  <th class="py-3.5 px-4">Nama & No. Kartu</th>
-                  <th class="py-3.5 px-4">Identitas Siswa (NIS / NISN)</th>
-                  <th class="py-3.5 px-4">Kontak Pemohon</th>
-                  <th class="py-3.5 px-4">Waktu Pengajuan</th>
-                  <th class="py-3.5 px-4 text-center">Status</th>
-                  <th class="py-3.5 px-4 text-right">Aksi Verifikasi</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
-                <tr v-for="req in filteredStudentVerifications" :key="req.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
-                  <td class="py-3 px-4 text-center">
-                    <div 
-                      class="relative inline-block group cursor-pointer" 
-                      @click="openSelfiePreview(req.selfieUrl, req.memberName)"
-                      title="Klik untuk memperbesar foto selfie"
-                    >
-                      <img 
-                        :src="req.selfieUrl" 
-                        class="w-12 h-14 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shadow-xs group-hover:scale-105 transition" 
-                        alt="Selfie" 
-                        referrerpolicy="no-referrer"
-                      />
-                      <div class="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition">
-                        <Eye class="w-4 h-4" />
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-1">
+                      <span class="font-mono text-[10px] text-slate-400">{{ req.id }}</span>
+                      <span 
+                        class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase border tracking-wider"
+                        :class="req.status === 'pending' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 animate-pulse' : req.status === 'approved' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'"
+                      >
+                        {{ req.status === 'pending' ? 'Menunggu' : req.status === 'approved' ? 'Disetujui' : 'Ditolak' }}
+                      </span>
+                    </div>
+                    <h4 class="font-bold text-slate-900 dark:text-white text-sm mt-0.5 truncate">{{ req.memberName }}</h4>
+                    <div class="text-[11px] text-blue-600 dark:text-blue-400 font-mono font-medium">{{ req.memberCardNumber }}</div>
+                    
+                    <!-- NIS & NISN Info -->
+                    <div class="mt-1.5 p-2 rounded-xl bg-slate-50/80 dark:bg-slate-850/80 border border-slate-100 dark:border-slate-800 text-[11px] space-y-0.5">
+                      <div class="flex justify-between">
+                        <span class="text-slate-500 dark:text-slate-400">NIS:</span>
+                        <strong class="font-mono text-slate-800 dark:text-slate-200">{{ req.nis }}</strong>
+                      </div>
+                      <div class="flex justify-between">
+                        <span class="text-slate-500 dark:text-slate-400">NISN:</span>
+                        <strong class="font-mono text-slate-800 dark:text-slate-200">{{ req.nisn }}</strong>
                       </div>
                     </div>
-                  </td>
 
-                  <td class="py-3 px-4">
-                    <div class="font-bold text-slate-900 dark:text-white">{{ req.memberName }}</div>
-                    <div class="text-[11px] text-blue-600 dark:text-blue-400 font-mono font-medium">{{ req.memberCardNumber }}</div>
-                    <div class="text-[10px] text-slate-400 font-mono">ID: {{ req.id }}</div>
-                  </td>
+                    <div class="text-[10px] text-slate-400 mt-1">Diajukan: {{ formatDateTime(req.requestDate) }}</div>
+                  </div>
+                </div>
 
-                  <td class="py-3 px-4">
-                    <div class="font-mono text-slate-900 dark:text-slate-100">NIS: <strong class="font-bold">{{ req.nis }}</strong></div>
-                    <div class="font-mono text-slate-600 dark:text-slate-400 text-[11px]">NISN: <strong>{{ req.nisn }}</strong></div>
-                  </td>
+                <!-- Rejection Reason Note if rejected -->
+                <div v-if="req.status === 'rejected'" class="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-900/50 text-[11px] text-rose-700 dark:text-rose-300">
+                  <strong>Alasan Penolakan:</strong> {{ req.rejectionReason || '-' }}
+                </div>
 
-                  <td class="py-3 px-4">
-                    <div class="text-slate-800 dark:text-slate-200">{{ req.memberEmail || '-' }}</div>
-                    <div class="text-[11px] text-slate-500 dark:text-slate-400 font-mono">{{ req.memberPhone || '-' }}</div>
-                  </td>
+                <!-- Action Buttons for Pending Requests -->
+                <div v-if="req.status === 'pending'" class="pt-2 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-2">
+                  <button 
+                    @click="promptRejectStudentRequest(req)"
+                    class="py-2 px-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/50 font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
+                  >
+                    <X class="w-3.5 h-3.5" />
+                    <span>Tolak</span>
+                  </button>
+                  <button 
+                    @click="promptApproveStudentRequest(req)"
+                    class="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
+                  >
+                    <Check class="w-3.5 h-3.5" />
+                    <span>Setujui Siswa</span>
+                  </button>
+                </div>
 
-                  <td class="py-3 px-4 text-slate-600 dark:text-slate-300 font-medium">
-                    {{ formatDateTime(req.requestDate) }}
-                  </td>
+                <div v-else class="pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex justify-between">
+                  <span>Ditinjau oleh: <strong class="text-slate-800 dark:text-slate-200">{{ req.reviewedBy || 'Admin' }}</strong></span>
+                  <span>{{ req.reviewedDate ? formatDateTime(req.reviewedDate) : '-' }}</span>
+                </div>
+              </div>
+            </div>
 
-                  <td class="py-3 px-4 text-center">
-                    <span 
-                      class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border"
-                      :class="req.status === 'pending' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 animate-pulse' : req.status === 'approved' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'"
-                    >
-                      {{ req.status === 'pending' ? 'Menunggu Review' : req.status === 'approved' ? 'Disetujui' : 'Ditolak' }}
-                    </span>
-                    <div v-if="req.status === 'rejected' && req.rejectionReason" class="text-[10px] text-rose-600 dark:text-rose-400 max-w-xs truncate mx-auto mt-0.5" :title="req.rejectionReason">
-                      {{ req.rejectionReason }}
-                    </div>
-                  </td>
-
-                  <td class="py-3 px-4 text-right">
-                    <div v-if="req.status === 'pending'" class="flex items-center justify-end gap-1.5">
-                      <button 
-                        @click="promptRejectStudentRequest(req)"
-                        class="px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/50 font-bold text-xs transition cursor-pointer flex items-center gap-1 active:scale-95"
-                        title="Tolak permohonan verifikasi siswa"
+            <!-- Desktop Table for Student Verifications -->
+            <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80">
+              <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+                <thead class="bg-slate-50 dark:bg-slate-850/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 font-bold">
+                  <tr>
+                    <th class="py-3.5 px-4 text-center">Foto Selfie</th>
+                    <th class="py-3.5 px-4">Nama & No. Kartu</th>
+                    <th class="py-3.5 px-4">Identitas Siswa (NIS / NISN)</th>
+                    <th class="py-3.5 px-4">Kontak Pemohon</th>
+                    <th class="py-3.5 px-4">Waktu Pengajuan</th>
+                    <th class="py-3.5 px-4 text-center">Status</th>
+                    <th class="py-3.5 px-4 text-right">Aksi Verifikasi</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+                  <tr v-for="req in paginatedStudentVerifications" :key="req.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
+                    <td class="py-3 px-4 text-center">
+                      <div 
+                        class="relative inline-block group cursor-pointer" 
+                        @click="openSelfiePreview(req.selfieUrl, req.memberName)"
+                        title="Klik untuk memperbesar foto selfie"
                       >
-                        <X class="w-3.5 h-3.5" />
-                        <span>Tolak</span>
-                      </button>
+                        <img 
+                          :src="req.selfieUrl" 
+                          class="w-12 h-14 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shadow-xs group-hover:scale-105 transition" 
+                          alt="Selfie" 
+                          referrerpolicy="no-referrer"
+                        />
+                        <div class="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition">
+                          <Eye class="w-4 h-4" />
+                        </div>
+                      </div>
+                    </td>
 
-                      <button 
-                        @click="promptApproveStudentRequest(req)"
-                        class="px-4 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer flex items-center gap-1 active:scale-95"
-                        title="Setujui verifikasi siswa untuk akses e-Book"
+                    <td class="py-3 px-4">
+                      <div class="font-bold text-slate-900 dark:text-white">{{ req.memberName }}</div>
+                      <div class="text-[11px] text-blue-600 dark:text-blue-400 font-mono font-medium">{{ req.memberCardNumber }}</div>
+                      <div class="text-[10px] text-slate-400 font-mono">ID: {{ req.id }}</div>
+                    </td>
+
+                    <td class="py-3 px-4">
+                      <div class="font-mono text-slate-900 dark:text-slate-100">NIS: <strong class="font-bold">{{ req.nis }}</strong></div>
+                      <div class="font-mono text-slate-600 dark:text-slate-400 text-[11px]">NISN: <strong>{{ req.nisn }}</strong></div>
+                    </td>
+
+                    <td class="py-3 px-4">
+                      <div class="text-slate-800 dark:text-slate-200">{{ req.memberEmail || '-' }}</div>
+                      <div class="text-[11px] text-slate-500 dark:text-slate-400 font-mono">{{ req.memberPhone || '-' }}</div>
+                    </td>
+
+                    <td class="py-3 px-4 text-slate-600 dark:text-slate-300 font-medium">
+                      {{ formatDateTime(req.requestDate) }}
+                    </td>
+
+                    <td class="py-3 px-4 text-center">
+                      <span 
+                        class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border"
+                        :class="req.status === 'pending' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 animate-pulse' : req.status === 'approved' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'"
                       >
-                        <Check class="w-3.5 h-3.5" />
-                        <span>Setujui Siswa</span>
-                      </button>
-                    </div>
+                        {{ req.status === 'pending' ? 'Menunggu Review' : req.status === 'approved' ? 'Disetujui' : 'Ditolak' }}
+                      </span>
+                      <div v-if="req.status === 'rejected' && req.rejectionReason" class="text-[10px] text-rose-600 dark:text-rose-400 max-w-xs truncate mx-auto mt-0.5" :title="req.rejectionReason">
+                        {{ req.rejectionReason }}
+                      </div>
+                    </td>
 
-                    <div v-else class="text-[11px] text-slate-400">
-                      <div>Oleh: <span class="text-slate-700 dark:text-slate-300 font-semibold">{{ req.reviewedBy || 'Admin' }}</span></div>
-                      <div class="text-[10px]">{{ req.reviewedDate ? formatDateTime(req.reviewedDate) : '' }}</div>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                    <td class="py-3 px-4 text-right">
+                      <div v-if="req.status === 'pending'" class="flex items-center justify-end gap-1.5">
+                        <button 
+                          @click="promptRejectStudentRequest(req)"
+                          class="px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/50 font-bold text-xs transition cursor-pointer flex items-center gap-1 active:scale-95"
+                          title="Tolak permohonan verifikasi siswa"
+                        >
+                          <X class="w-3.5 h-3.5" />
+                          <span>Tolak</span>
+                        </button>
+
+                        <button 
+                          @click="promptApproveStudentRequest(req)"
+                          class="px-4 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer flex items-center gap-1 active:scale-95"
+                          title="Setujui verifikasi siswa untuk akses e-Book"
+                        >
+                          <Check class="w-3.5 h-3.5" />
+                          <span>Setujui Siswa</span>
+                        </button>
+                      </div>
+
+                      <div v-else class="text-[11px] text-slate-400">
+                        <div>Oleh: <span class="text-slate-700 dark:text-slate-300 font-semibold">{{ req.reviewedBy || 'Admin' }}</span></div>
+                        <div class="text-[10px]">{{ req.reviewedDate ? formatDateTime(req.reviewedDate) : '' }}</div>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination Verifikasi Siswa -->
+            <AdminPagination 
+              v-model:currentPage="studentVerificationCurrentPage"
+              v-model:itemsPerPage="studentVerificationItemsPerPage"
+              :totalPages="studentVerificationTotalPages"
+              :totalItems="filteredStudentVerifications.length"
+              itemName="permohonan siswa"
+            />
           </div>
         </div>
 
@@ -1916,68 +1945,13 @@
             </div>
 
             <!-- Pagination Controls for Master Data Buku -->
-            <div class="p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/80 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-              <div class="flex items-center gap-3 text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs">
-                <span>
-                  Menampilkan <strong class="text-slate-800 dark:text-slate-200">{{ ((bookCurrentPage - 1) * bookItemsPerPage) + 1 }}</strong> - 
-                  <strong class="text-slate-800 dark:text-slate-200">{{ Math.min(bookCurrentPage * bookItemsPerPage, filteredBooks.length) }}</strong> 
-                  dari <strong class="text-slate-800 dark:text-slate-200">{{ filteredBooks.length }}</strong> buku
-                </span>
-                <div class="flex items-center gap-1 pl-2 border-l border-slate-200 dark:border-slate-700">
-                  <span class="text-slate-400">Baris:</span>
-                  <div class="w-24">
-                    <CustomSelect 
-                      v-model="bookItemsPerPage"
-                      :options="bookPaginationOptions"
-                      variant="compact"
-                      size="sm"
-                      placement="top"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <!-- Buttons -->
-              <div class="flex items-center gap-1">
-                <button 
-                  @click="bookCurrentPage = 1"
-                  :disabled="bookCurrentPage === 1"
-                  class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
-                  title="Halaman Pertama"
-                >
-                  <ChevronsLeft class="w-4 h-4" />
-                </button>
-                <button 
-                  @click="bookCurrentPage--"
-                  :disabled="bookCurrentPage === 1"
-                  class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
-                  title="Halaman Sebelumnya"
-                >
-                  <ChevronLeft class="w-4 h-4" />
-                </button>
-
-                <span class="px-2.5 py-1 font-bold text-slate-700 dark:text-slate-300 text-xs">
-                  Hal {{ bookCurrentPage }} / {{ bookTotalPages }}
-                </span>
-
-                <button 
-                  @click="bookCurrentPage++"
-                  :disabled="bookCurrentPage >= bookTotalPages"
-                  class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
-                  title="Halaman Selanjutnya"
-                >
-                  <ChevronRight class="w-4 h-4" />
-                </button>
-                <button 
-                  @click="bookCurrentPage = bookTotalPages"
-                  :disabled="bookCurrentPage >= bookTotalPages"
-                  class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
-                  title="Halaman Terakhir"
-                >
-                  <ChevronsRight class="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+            <AdminPagination 
+              v-model:currentPage="bookCurrentPage"
+              v-model:itemsPerPage="bookItemsPerPage"
+              :totalPages="bookTotalPages"
+              :totalItems="filteredBooks.length"
+              itemName="buku"
+            />
           </template>
         </div>
 
@@ -2010,57 +1984,68 @@
           </div>
 
           <!-- Categories Bento Grid -->
-          <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div 
-              v-for="cat in filteredCategories" 
-              :key="cat.id"
-              class="bg-white dark:bg-slate-900/80 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
-            >
-              <div>
-                <div class="flex items-center justify-between gap-2">
-                  <div class="flex items-center gap-2.5">
-                    <div 
-                      class="w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold shadow-xs shrink-0"
-                      :style="{ backgroundColor: cat.color || '#3b82f6' }"
-                    >
-                      <Tag class="w-4 h-4" />
+          <div v-else class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div 
+                v-for="cat in paginatedCategories" 
+                :key="cat.id"
+                class="bg-white dark:bg-slate-900/80 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+              >
+                <div>
+                  <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2.5">
+                      <div 
+                        class="w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold shadow-xs shrink-0"
+                        :style="{ backgroundColor: cat.color || '#3b82f6' }"
+                      >
+                        <Tag class="w-4 h-4" />
+                      </div>
+                      <h4 class="font-bold text-sm text-slate-900 dark:text-white line-clamp-1">{{ cat.name }}</h4>
                     </div>
-                    <h4 class="font-bold text-sm text-slate-900 dark:text-white line-clamp-1">{{ cat.name }}</h4>
+
+                    <span 
+                      class="text-[11px] font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap"
+                      :style="{ backgroundColor: `${cat.color || '#3b82f6'}15`, color: cat.color || '#3b82f6' }"
+                    >
+                      {{ getBooksCountByCategory(cat.name) }} Buku
+                    </span>
                   </div>
 
-                  <span 
-                    class="text-[11px] font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap"
-                    :style="{ backgroundColor: `${cat.color || '#3b82f6'}15`, color: cat.color || '#3b82f6' }"
-                  >
-                    {{ getBooksCountByCategory(cat.name) }} Buku
-                  </span>
+                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-3 line-clamp-2 leading-relaxed">
+                    {{ cat.description || 'Belum ada deskripsi untuk kategori ini.' }}
+                  </p>
                 </div>
 
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-3 line-clamp-2 leading-relaxed">
-                  {{ cat.description || 'Belum ada deskripsi untuk kategori ini.' }}
-                </p>
-              </div>
-
-              <div class="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <span class="text-[10px] font-mono text-slate-400 dark:text-slate-500 font-bold uppercase">{{ cat.id }}</span>
-                <div class="flex items-center gap-1">
-                  <button 
-                    @click="openEditCategoryModal(cat)"
-                    class="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
-                    title="Edit Kategori"
-                  >
-                    <Pencil class="w-3.5 h-3.5" />
-                  </button>
-                  <button 
-                    @click="handleDeleteCategory(cat.id, cat.name)"
-                    class="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-slate-600 dark:text-slate-300 hover:text-rose-700 dark:hover:text-rose-300 transition cursor-pointer"
-                    title="Hapus Kategori"
-                  >
-                    <Trash2 class="w-3.5 h-3.5" />
-                  </button>
+                <div class="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <span class="text-[10px] font-mono text-slate-400 dark:text-slate-500 font-bold uppercase">{{ cat.id }}</span>
+                  <div class="flex items-center gap-1">
+                    <button 
+                      @click="openEditCategoryModal(cat)"
+                      class="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
+                      title="Edit Kategori"
+                    >
+                      <Pencil class="w-3.5 h-3.5" />
+                    </button>
+                    <button 
+                      @click="handleDeleteCategory(cat.id, cat.name)"
+                      class="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-slate-600 dark:text-slate-300 hover:text-rose-700 dark:hover:text-rose-300 transition cursor-pointer"
+                      title="Hapus Kategori"
+                    >
+                      <Trash2 class="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
+
+            <!-- Pagination Kategori Buku -->
+            <AdminPagination 
+              v-model:currentPage="categoryCurrentPage"
+              v-model:itemsPerPage="categoryItemsPerPage"
+              :totalPages="categoryTotalPages"
+              :totalItems="filteredCategories.length"
+              itemName="kategori buku"
+            />
           </div>
         </div>
 
@@ -2128,111 +2113,122 @@
           </div>
 
           <!-- Shelves Grid with Drag & Drop Sorting -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div 
-              v-for="(shelf, index) in adminDisplayedShelves" 
-              :key="shelf.id"
-              draggable="true"
-              @dragstart="handleAdminDragStart(shelf, $event)"
-              @dragover.prevent="handleAdminDragOver(shelf, $event)"
-              @dragenter.prevent="handleAdminDragEnter(shelf)"
-              @dragleave="handleAdminDragLeave(shelf)"
-              @drop.prevent="handleAdminDrop(shelf)"
-              @dragend="handleAdminDragEnd"
-              class="bg-white dark:bg-slate-900/80 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 shadow-sm hover:shadow-md transition-all flex flex-col justify-between cursor-grab active:cursor-grabbing relative group"
-              :class="[
-                adminDraggedShelfId === shelf.id ? 'opacity-40 scale-95 border-dashed border-blue-400 bg-blue-50/30' : '',
-                adminDragOverShelfId === shelf.id && adminDraggedShelfId !== shelf.id ? 'ring-2 ring-blue-500 scale-[1.02] shadow-lg border-blue-500 bg-blue-50/20' : ''
-              ]"
-            >
-              <div>
-                <!-- Top position bar & quick move buttons -->
-                <div class="mb-3 pb-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs select-none">
-                  <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-mono text-[11px] font-bold border border-slate-200/80 dark:border-slate-700">
-                    <GripVertical class="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition-colors" />
-                    <span>Urutan #{{ index + 1 }}</span>
-                  </div>
-                  <div class="flex items-center gap-1" @click.stop>
-                    <button 
-                      type="button"
-                      @click="moveAdminShelfStep(shelf.id, 'prev')"
-                      :disabled="index === 0 || isReorderingAdminShelves"
-                      class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-slate-600 dark:text-slate-300 hover:text-blue-700 dark:hover:text-blue-300 flex items-center justify-center transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                      title="Geser ke posisi sebelumnya"
-                    >
-                      <ChevronLeft class="w-3.5 h-3.5" />
-                    </button>
-                    <button 
-                      type="button"
-                      @click="moveAdminShelfStep(shelf.id, 'next')"
-                      :disabled="index === adminDisplayedShelves.length - 1 || isReorderingAdminShelves"
-                      class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-slate-600 dark:text-slate-300 hover:text-blue-700 dark:hover:text-blue-300 flex items-center justify-center transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                      title="Geser ke posisi berikutnya"
-                    >
-                      <ChevronRight class="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                <div class="flex items-start justify-between gap-2">
-                  <div class="flex items-center gap-3">
-                    <div 
-                      class="w-10 h-10 rounded-xl flex items-center justify-center font-mono font-extrabold text-sm shadow-xs shrink-0 border select-none"
-                      :style="{ backgroundColor: `${shelf.color}15`, color: shelf.color, borderColor: `${shelf.color}30` }"
-                    >
-                      {{ shelf.code }}
+          <div class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div 
+                v-for="(shelf, index) in paginatedShelves" 
+                :key="shelf.id"
+                draggable="true"
+                @dragstart="handleAdminDragStart(shelf, $event)"
+                @dragover.prevent="handleAdminDragOver(shelf, $event)"
+                @dragenter.prevent="handleAdminDragEnter(shelf)"
+                @dragleave="handleAdminDragLeave(shelf)"
+                @drop.prevent="handleAdminDrop(shelf)"
+                @dragend="handleAdminDragEnd"
+                class="bg-white dark:bg-slate-900/80 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 shadow-sm hover:shadow-md transition-all flex flex-col justify-between cursor-grab active:cursor-grabbing relative group"
+                :class="[
+                  adminDraggedShelfId === shelf.id ? 'opacity-40 scale-95 border-dashed border-blue-400 bg-blue-50/30' : '',
+                  adminDragOverShelfId === shelf.id && adminDraggedShelfId !== shelf.id ? 'ring-2 ring-blue-500 scale-[1.02] shadow-lg border-blue-500 bg-blue-50/20' : ''
+                ]"
+              >
+                <div>
+                  <!-- Top position bar & quick move buttons -->
+                  <div class="mb-3 pb-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs select-none">
+                    <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-mono text-[11px] font-bold border border-slate-200/80 dark:border-slate-700">
+                      <GripVertical class="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                      <span>Urutan #{{ ((shelfCurrentPage - 1) * shelfItemsPerPage) + index + 1 }}</span>
                     </div>
-                    <div>
-                      <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
-                        Lantai {{ shelf.floor }} • {{ shelf.zone }}
-                      </span>
-                      <h4 class="font-bold text-sm text-slate-900 dark:text-white line-clamp-1 mt-0.5">{{ shelf.name }}</h4>
+                    <div class="flex items-center gap-1" @click.stop>
+                      <button 
+                        type="button"
+                        @click="moveAdminShelfStep(shelf.id, 'prev')"
+                        :disabled="(((shelfCurrentPage - 1) * shelfItemsPerPage) + index) === 0 || isReorderingAdminShelves"
+                        class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-slate-600 dark:text-slate-300 hover:text-blue-700 dark:hover:text-blue-300 flex items-center justify-center transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                        title="Geser ke posisi sebelumnya"
+                      >
+                        <ChevronLeft class="w-3.5 h-3.5" />
+                      </button>
+                      <button 
+                        type="button"
+                        @click="moveAdminShelfStep(shelf.id, 'next')"
+                        :disabled="(((shelfCurrentPage - 1) * shelfItemsPerPage) + index) === adminDisplayedShelves.length - 1 || isReorderingAdminShelves"
+                        class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-slate-600 dark:text-slate-300 hover:text-blue-700 dark:hover:text-blue-300 flex items-center justify-center transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                        title="Geser ke posisi berikutnya"
+                      >
+                        <ChevronRight class="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
+
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="flex items-center gap-3">
+                      <div 
+                        class="w-10 h-10 rounded-xl flex items-center justify-center font-mono font-extrabold text-sm shadow-xs shrink-0 border select-none"
+                        :style="{ backgroundColor: `${shelf.color}15`, color: shelf.color, borderColor: `${shelf.color}30` }"
+                      >
+                        {{ shelf.code }}
+                      </div>
+                      <div>
+                        <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
+                          Lantai {{ shelf.floor }} • {{ shelf.zone }}
+                        </span>
+                        <h4 class="font-bold text-sm text-slate-900 dark:text-white line-clamp-1 mt-0.5">{{ shelf.name }}</h4>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-2.5 line-clamp-2 leading-relaxed">
+                    {{ shelf.description || `Koleksi kategori ${shelf.category}.` }}
+                  </p>
+
+                  <!-- Capacity Info -->
+                  <div class="mt-3.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-850/80 border border-slate-100 dark:border-slate-800 text-xs space-y-1.5">
+                    <div class="flex justify-between text-slate-600 dark:text-slate-300 text-[11px]">
+                      <span>Kapasitas:</span>
+                      <span class="font-bold text-slate-800 dark:text-slate-200">{{ getShelfBooksCount(shelf.id) }} / {{ shelf.capacity }} Buku</span>
+                    </div>
+                    <div class="h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                      <div 
+                        class="h-full rounded-full transition-all duration-300"
+                        :style="{ 
+                          width: `${Math.min(100, (getShelfBooksCount(shelf.id) / shelf.capacity) * 100)}%`,
+                          backgroundColor: shelf.color || '#3b82f6'
+                        }"
+                      ></div>
+                    </div>
+                  </div>
                 </div>
 
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-2.5 line-clamp-2 leading-relaxed">
-                  {{ shelf.description || `Koleksi kategori ${shelf.category}.` }}
-                </p>
-
-                <!-- Capacity Info -->
-                <div class="mt-3.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-850/80 border border-slate-100 dark:border-slate-800 text-xs space-y-1.5">
-                  <div class="flex justify-between text-slate-600 dark:text-slate-300 text-[11px]">
-                    <span>Kapasitas:</span>
-                    <span class="font-bold text-slate-800 dark:text-slate-200">{{ getShelfBooksCount(shelf.id) }} / {{ shelf.capacity }} Buku</span>
+                <div class="pt-3 mt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between" @click.stop>
+                  <span class="text-[10px] font-mono text-slate-400 dark:text-slate-500 font-bold uppercase">{{ shelf.shelfRow || 'Baris A1' }}</span>
+                  <div class="flex items-center gap-1">
+                    <button 
+                      @click="openEditShelfModalAdmin(shelf)"
+                      class="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
+                      title="Edit Rak"
+                    >
+                      <Pencil class="w-3.5 h-3.5" />
+                    </button>
+                    <button 
+                      @click="handleDeleteShelfAdmin(shelf.id, shelf.name)"
+                      class="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-slate-600 dark:text-slate-300 hover:text-rose-700 dark:hover:text-rose-300 transition cursor-pointer"
+                      title="Hapus Rak"
+                    >
+                      <Trash2 class="w-3.5 h-3.5" />
+                    </button>
                   </div>
-                  <div class="h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                    <div 
-                      class="h-full rounded-full transition-all duration-300"
-                      :style="{ 
-                        width: `${Math.min(100, (getShelfBooksCount(shelf.id) / shelf.capacity) * 100)}%`,
-                        backgroundColor: shelf.color || '#3b82f6'
-                      }"
-                    ></div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="pt-3 mt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between" @click.stop>
-                <span class="text-[10px] font-mono text-slate-400 dark:text-slate-500 font-bold uppercase">{{ shelf.shelfRow || 'Baris A1' }}</span>
-                <div class="flex items-center gap-1">
-                  <button 
-                    @click="openEditShelfModalAdmin(shelf)"
-                    class="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
-                    title="Edit Rak"
-                  >
-                    <Pencil class="w-3.5 h-3.5" />
-                  </button>
-                  <button 
-                    @click="handleDeleteShelfAdmin(shelf.id, shelf.name)"
-                    class="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-slate-600 dark:text-slate-300 hover:text-rose-700 dark:hover:text-rose-300 transition cursor-pointer"
-                    title="Hapus Rak"
-                  >
-                    <Trash2 class="w-3.5 h-3.5" />
-                  </button>
                 </div>
               </div>
             </div>
+
+            <!-- Pagination Tata Letak & Urutan Rak -->
+            <AdminPagination 
+              v-model:currentPage="shelfCurrentPage"
+              v-model:itemsPerPage="shelfItemsPerPage"
+              :totalPages="shelfTotalPages"
+              :totalItems="adminDisplayedShelves.length"
+              itemName="rak perpustakaan"
+            />
           </div>
         </div>
 
@@ -3138,6 +3134,7 @@ import DeviceSessionsModal from '../components/DeviceSessionsModal.vue';
 import AdminVisitsModal from '../components/AdminVisitsModal.vue';
 import ShelfModal from '../components/ShelfModal.vue';
 import CustomSelect from '../components/CustomSelect.vue';
+import AdminPagination from '../components/AdminPagination.vue';
 import { useModalBack } from '../composables/useModalBack.js';
 import { 
   ShieldCheck, BookPlus, CheckCircle2, BookOpen, CheckCircle, 
@@ -3230,7 +3227,7 @@ const currentSearchInput = computed({
 // Riwayat Peminjaman (Buku Fisik & e-Book yang telah dikembalikan)
 const loanHistoryFilter = ref<'all' | 'physical' | 'ebook'>('all');
 const historyCurrentPage = ref(1);
-const historyItemsPerPage = ref(10);
+const historyItemsPerPage = ref(25);
 
 const returnedPhysicalCount = computed(() => store.returnedLoans.filter(l => !l.isEbook).length);
 const returnedEbookCount = computed(() => store.returnedLoans.filter(l => l.isEbook).length);
@@ -3318,7 +3315,7 @@ watch([bookSearch, bookItemsPerPage], () => {
   bookCurrentPage.value = 1;
 });
 
-// Booking: Search
+// Booking: Search & Pagination (25 data per halaman)
 const filteredBookings = computed(() => {
   let list = store.bookings.filter(b => 
     (b.status === 'active_hold' || b.status === 'booked') &&
@@ -3339,7 +3336,23 @@ const filteredBookings = computed(() => {
   return list;
 });
 
-// Kategori: Search
+const bookingCurrentPage = ref(1);
+const bookingItemsPerPage = ref(25);
+
+const bookingTotalPages = computed(() => {
+  return Math.max(1, Math.ceil(filteredBookings.value.length / bookingItemsPerPage.value));
+});
+
+const paginatedBookings = computed(() => {
+  const start = (bookingCurrentPage.value - 1) * bookingItemsPerPage.value;
+  return filteredBookings.value.slice(start, start + bookingItemsPerPage.value);
+});
+
+watch([bookingSearch, bookingItemsPerPage], () => {
+  bookingCurrentPage.value = 1;
+});
+
+// Kategori: Search & Pagination (25 data per halaman)
 const filteredCategories = computed(() => {
   let list = store.categories;
   if (categorySearch.value.trim()) {
@@ -3350,6 +3363,22 @@ const filteredCategories = computed(() => {
     );
   }
   return list;
+});
+
+const categoryCurrentPage = ref(1);
+const categoryItemsPerPage = ref(25);
+
+const categoryTotalPages = computed(() => {
+  return Math.max(1, Math.ceil(filteredCategories.value.length / categoryItemsPerPage.value));
+});
+
+const paginatedCategories = computed(() => {
+  const start = (categoryCurrentPage.value - 1) * categoryItemsPerPage.value;
+  return filteredCategories.value.slice(start, start + categoryItemsPerPage.value);
+});
+
+watch([categorySearch, categoryItemsPerPage], () => {
+  categoryCurrentPage.value = 1;
 });
 
 const memberFilter = ref('all');
@@ -3782,6 +3811,23 @@ const adminDisplayedShelves = computed(() => {
   return list.filter(s => s.floor === adminSelectedFloor.value);
 });
 
+// Tata Letak & Urutan Rak Pagination (25 data per halaman)
+const shelfCurrentPage = ref(1);
+const shelfItemsPerPage = ref(25);
+
+const shelfTotalPages = computed(() => {
+  return Math.max(1, Math.ceil(adminDisplayedShelves.value.length / shelfItemsPerPage.value));
+});
+
+const paginatedShelves = computed(() => {
+  const start = (shelfCurrentPage.value - 1) * shelfItemsPerPage.value;
+  return adminDisplayedShelves.value.slice(start, start + shelfItemsPerPage.value);
+});
+
+watch([adminSelectedFloor, shelfItemsPerPage], () => {
+  shelfCurrentPage.value = 1;
+});
+
 const hasShelvesCustomOrder = computed(() => {
   return store.shelves.some(s => typeof s.order === 'number');
 });
@@ -3952,6 +3998,23 @@ const filteredMembers = computed(() => {
   return list;
 });
 
+// Kelola Anggota Pagination (25 data per halaman)
+const memberCurrentPage = ref(1);
+const memberItemsPerPage = ref(25);
+
+const memberTotalPages = computed(() => {
+  return Math.max(1, Math.ceil(filteredMembers.value.length / memberItemsPerPage.value));
+});
+
+const paginatedMembers = computed(() => {
+  const start = (memberCurrentPage.value - 1) * memberItemsPerPage.value;
+  return filteredMembers.value.slice(start, start + memberItemsPerPage.value);
+});
+
+watch([memberSearch, memberFilter, memberItemsPerPage], () => {
+  memberCurrentPage.value = 1;
+});
+
 const openAddMemberModal = () => {
   selectedMemberForEdit.value = null;
   isMemberFormOpen.value = true;
@@ -3997,6 +4060,23 @@ const filteredLoans = computed(() => {
     );
   }
   return list;
+});
+
+// Daftar Peminjaman Aktif Pagination (25 data per halaman)
+const loanCurrentPage = ref(1);
+const loanItemsPerPage = ref(25);
+
+const loanTotalPages = computed(() => {
+  return Math.max(1, Math.ceil(filteredLoans.value.length / loanItemsPerPage.value));
+});
+
+const paginatedLoans = computed(() => {
+  const start = (loanCurrentPage.value - 1) * loanItemsPerPage.value;
+  return filteredLoans.value.slice(start, start + loanItemsPerPage.value);
+});
+
+watch([circulationSearch, loanItemsPerPage], () => {
+  loanCurrentPage.value = 1;
 });
 
 const formatCountdown = (expiresAtStr: string) => {
@@ -4180,6 +4260,23 @@ const filteredTeacherRequests = computed(() => {
   return list;
 });
 
+// Verifikasi Guru Pagination (25 data per halaman)
+const teacherRequestCurrentPage = ref(1);
+const teacherRequestItemsPerPage = ref(25);
+
+const teacherRequestTotalPages = computed(() => {
+  return Math.max(1, Math.ceil(filteredTeacherRequests.value.length / teacherRequestItemsPerPage.value));
+});
+
+const paginatedTeacherRequests = computed(() => {
+  const start = (teacherRequestCurrentPage.value - 1) * teacherRequestItemsPerPage.value;
+  return filteredTeacherRequests.value.slice(start, start + teacherRequestItemsPerPage.value);
+});
+
+watch([teacherRequestSearch, teacherRequestFilter, teacherRequestItemsPerPage], () => {
+  teacherRequestCurrentPage.value = 1;
+});
+
 // Student Verification Requests Management State & Handlers
 const studentVerificationFilter = ref('all');
 const isRejectStudentModalOpen = ref(false);
@@ -4204,6 +4301,23 @@ const filteredStudentVerifications = computed(() => {
     );
   }
   return list;
+});
+
+// Verifikasi Siswa Pagination (25 data per halaman)
+const studentVerificationCurrentPage = ref(1);
+const studentVerificationItemsPerPage = ref(25);
+
+const studentVerificationTotalPages = computed(() => {
+  return Math.max(1, Math.ceil(filteredStudentVerifications.value.length / studentVerificationItemsPerPage.value));
+});
+
+const paginatedStudentVerifications = computed(() => {
+  const start = (studentVerificationCurrentPage.value - 1) * studentVerificationItemsPerPage.value;
+  return filteredStudentVerifications.value.slice(start, start + studentVerificationItemsPerPage.value);
+});
+
+watch([studentVerificationSearch, studentVerificationFilter, studentVerificationItemsPerPage], () => {
+  studentVerificationCurrentPage.value = 1;
 });
 
 // Student Verification Approval Custom Modal State
