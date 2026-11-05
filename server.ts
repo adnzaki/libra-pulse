@@ -149,6 +149,51 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
+// Helper membaca versi dan build number server secara dinamis dari src/config/version.ts
+function getServerAppVersion() {
+  try {
+    const versionFilePath = path.join(process.cwd(), 'src', 'config', 'version.ts')
+    if (fs.existsSync(versionFilePath)) {
+      const content = fs.readFileSync(versionFilePath, 'utf8')
+      const buildMatch = content.match(/export\s+const\s+APP_BUILD_NUMBER\s*=\s*['"]([^'"]+)['"]/)
+      const versionMatch = content.match(/export\s+const\s+CURRENT_APP_VERSION\s*=\s*['"]([^'"]+)['"]/)
+      const releaseDateMatch = content.match(/export\s+const\s+APP_RELEASE_DATE\s*=\s*['"]([^'"]+)['"]/)
+
+      if (buildMatch && versionMatch) {
+        return {
+          version: versionMatch[1],
+          buildNumber: buildMatch[1],
+          releaseDate: releaseDateMatch ? releaseDateMatch[1] : undefined
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Gagal membaca version.ts dinamis di server:', err)
+  }
+
+  return {
+    version: '1.0.0',
+    buildNumber: '10002',
+    releaseDate: '4 November 2026'
+  }
+}
+
+// Endpoint Deteksi Versi & Build Number Server secara Real-time
+app.get('/api/app-version', (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+  res.setHeader('Pragma', 'no-cache')
+  res.setHeader('Expires', '0')
+
+  const info = getServerAppVersion()
+  res.json({
+    success: true,
+    version: info.version,
+    buildNumber: info.buildNumber,
+    releaseDate: info.releaseDate,
+    timestamp: Date.now()
+  })
+})
+
 // Endpoint Cek Status Konfigurasi SMTP
 app.get('/api/email-status', (req, res) => {
   const host = process.env.SMTP_HOST

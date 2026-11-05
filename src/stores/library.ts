@@ -10,7 +10,7 @@ import {
 } from '../lib/offline-manager.js';
 import { initialBooks, initialCategories, initialShelves, initialMembers, defaultSuspendConfig } from '../lib/default-catalog.js';
 import { getCurrentDeviceId, detectCurrentDeviceInfo } from '../utils/deviceDetector.js';
-import { CURRENT_APP_VERSION, APP_BUILD_NUMBER, DEFAULT_APP_VERSION_CONFIG, isNewerVersion } from '../config/version.js';
+import { CURRENT_APP_VERSION, APP_BUILD_NUMBER, DEFAULT_APP_VERSION_CONFIG, isNewerVersion, isNewerAppRelease } from '../config/version.js';
 
 export const isSuperAdminMember = (m: any): boolean => {
   if (!m) return false;
@@ -594,19 +594,28 @@ export const useLibraryStore = defineStore('library', {
           }
         });
         subscribeToFirestoreDoc<AppVersionConfig>('config', 'app_version', (versionData) => {
-          if (versionData && versionData.version) {
-            const isRemoteNewer = isNewerVersion(versionData.version, this.currentAppVersion);
-            const isLocalNewer = isNewerVersion(this.currentAppVersion, versionData.version);
+          if (versionData && (versionData.version || versionData.buildNumber)) {
+            const remoteRelease = {
+              version: versionData.version || this.currentAppVersion,
+              buildNumber: versionData.buildNumber || '10000'
+            };
+            const localRelease = {
+              version: this.currentAppVersion,
+              buildNumber: this.currentBuildNumber
+            };
+
+            const isRemoteNewer = isNewerAppRelease(remoteRelease, localRelease);
+            const isLocalNewer = isNewerAppRelease(localRelease, remoteRelease);
 
             if (isLocalNewer) {
-              // Versi aplikasi yang sedang berjalan lebih baru dari dokumen Firestore -> sinkronkan ke Firestore
+              // Versi/build lokal lebih baru daripada Firestore -> perbarui dokumen Firestore
               syncAppVersionDoc(DEFAULT_APP_VERSION_CONFIG).catch(() => {});
               this.appVersionConfig = { ...DEFAULT_APP_VERSION_CONFIG };
               this.remoteAppVersion = CURRENT_APP_VERSION;
               this.hasNewVersionAvailable = false;
             } else {
               this.appVersionConfig = { ...DEFAULT_APP_VERSION_CONFIG, ...versionData };
-              this.remoteAppVersion = versionData.version;
+              this.remoteAppVersion = versionData.version || CURRENT_APP_VERSION;
               this.hasNewVersionAvailable = isRemoteNewer;
               if (isRemoteNewer) {
                 this.isDismissedUpdateBanner = false;
@@ -660,6 +669,9 @@ export const useLibraryStore = defineStore('library', {
             });
           }
         }
+
+        // Pengawas perubahan versi dan build number server secara otomatis
+        this.startServerVersionWatcher();
       }).catch(err => {
         console.warn('Realtime listener setup warning:', err);
       });
@@ -4111,18 +4123,113 @@ export const useLibraryStore = defineStore('library', {
       }, 100);
     },
 
-    async broadcastNewAppVersion(newVersion: string, updateMessage?: string) {
+    async broadcastNewAppVersion(newVersion: string, updateMessage?: string, newBuildNumber?: string) {
+      const targetBuild = (newBuildNumber || '').trim() || APP_BUILD_NUMBER;
       const payload: AppVersionConfig = {
         version: newVersion,
-        buildNumber: APP_BUILD_NUMBER,
+        buildNumber: targetBuild,
         releaseDate: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
-        updateMessage: updateMessage || `Pembaruan sistem Libra versi ${newVersion} (Build ${APP_BUILD_NUMBER}) telah tersedia. Silakan muat ulang halaman untuk menggunakan fitur terbaru.`,
+        updateMessage: updateMessage || `Pembaruan sistem Libra versi ${newVersion} (Build ${targetBuild}) telah tersedia. Silakan muat ulang halaman untuk menggunakan fitur terbaru.`,
         forceReload: false
       };
       const { syncAppVersionDoc } = await import('../lib/firebase.js');
       await syncAppVersionDoc(payload);
-      this.showToast(`📢 Versi baru (${newVersion} - Build ${APP_BUILD_NUMBER}) berhasil disiarkan ke seluruh pengguna via Cloud Firestore!`);
+      this.showToast(`📢 Versi baru (${newVersion} - Build ${targetBuild}) berhasil disiarkan ke seluruh pengguna via Cloud Firestore!`);
       return { success: true };
+    },
+
+    startServerVersionWatcher() {
+      if (typeof window === 'undefined') return;
+
+      // 1. Cek langsung saat aplikasi dimuat
+      this.checkServerVersionUpdate();
+
+      // 2. Cek berkala setiap 15 detik di latar belakang
+      if (!(window as any).__libra_version_timer__) {
+        (window as any).__libra_version_timer__ = setInterval(() => {
+          this.checkServerVersionUpdate();
+        }, 15000);
+      }
+
+      // 3. Cek instan ketika pengguna membuka kembali tab browser / jendela aplikasi
+      if (!(window as any).__libra_focus_listener__) {
+        (window as any).__libra_focus_listener__ = true;
+        window.addEventListener('focus', () => {
+          this.checkServerVersionUpdate();
+        });
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') {
+            this.checkServerVersionUpdate();
+          }
+        });
+      }
+    },
+
+    async checkServerVersionUpdate(manualNotify = false) {
+      if (typeof window === 'undefined') return;
+
+      try {
+        const res = await fetch(`/api/app-version?_t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        });
+
+        if (!res.ok) return;
+
+        const data = await res.json();
+        if (data && (data.version || data.buildNumber)) {
+          const remoteRelease = {
+            version: data.version || this.currentAppVersion,
+            buildNumber: data.buildNumber || this.currentBuildNumber
+          };
+          const localRelease = {
+            version: this.currentAppVersion,
+            buildNumber: this.currentBuildNumber
+          };
+
+          if (isNewerAppRelease(remoteRelease, localRelease)) {
+            console.log(`[AutoDetect] Perubahan aplikasi di server terdeteksi: v${remoteRelease.version} (Build ${remoteRelease.buildNumber}) > Aktif: v${localRelease.version} (Build ${localRelease.buildNumber})`);
+
+            this.hasNewVersionAvailable = true;
+            this.isDismissedUpdateBanner = false;
+            this.remoteAppVersion = remoteRelease.version;
+            this.appVersionConfig = {
+              ...this.appVersionConfig,
+              version: remoteRelease.version,
+              buildNumber: String(remoteRelease.buildNumber),
+              releaseDate: data.releaseDate || this.appVersionConfig.releaseDate,
+              updateMessage: `Pembaruan aplikasi Libra v${remoteRelease.version} (Build ${remoteRelease.buildNumber}) terdeteksi di server. Silakan muat ulang halaman untuk menggunakan versi terbaru.`
+            };
+
+            // Sinkronkan ke Firestore jika terhubung agar perangkat lain yang tidak sedang mem-poll API juga menerima alert
+            try {
+              const { syncAppVersionDoc } = await import('../lib/firebase.js');
+              await syncAppVersionDoc({
+                version: remoteRelease.version,
+                buildNumber: String(remoteRelease.buildNumber),
+                releaseDate: data.releaseDate || new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+                updateMessage: `Pembaruan aplikasi Libra v${remoteRelease.version} (Build ${remoteRelease.buildNumber}) telah tersedia. Silakan muat ulang halaman.`,
+                forceReload: false
+              });
+            } catch (err) {
+              // Ignore offline sync errors
+            }
+
+            if (manualNotify) {
+              this.showToast(`Pembaruan terdeteksi di server: v${remoteRelease.version} (Build ${remoteRelease.buildNumber})!`);
+            }
+          } else if (manualNotify) {
+            this.showToast(`Aplikasi sudah merupakan versi & build terbaru: v${this.currentAppVersion} (Build ${this.currentBuildNumber}).`);
+          }
+        }
+      } catch (err) {
+        if (manualNotify) {
+          this.showToast('Gagal memeriksa pembaruan ke server.');
+        }
+      }
     },
 
     setTheme(theme: AppTheme) {

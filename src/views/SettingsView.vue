@@ -313,6 +313,16 @@
             <span>Lihat Catatan Rilis (Changelog)</span>
           </button>
           <button 
+            @click="triggerManualServerCheck"
+            :disabled="isCheckingServerUpdate"
+            class="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/50 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-bold rounded-xl text-xs transition flex items-center gap-1.5 cursor-pointer border border-blue-200 dark:border-blue-800 disabled:opacity-50 shadow-xs"
+            title="Cek apakah ada perubahan kode atau build number baru di server sekarang"
+          >
+            <RefreshCw class="w-3.5 h-3.5" :class="isCheckingServerUpdate ? 'animate-spin' : ''" />
+            <span>{{ isCheckingServerUpdate ? 'Memeriksa...' : 'Cek Update Server' }}</span>
+          </button>
+
+          <button 
             @click="store.openVersionUpdateModal()"
             class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs"
           >
@@ -325,15 +335,25 @@
       <!-- Version Status Grid -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
         <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 space-y-1">
-          <span class="text-slate-400 dark:text-slate-400 text-[10px] uppercase font-bold block">Versi Bundel Aplikasi (Client)</span>
-          <span class="font-mono font-bold text-slate-800 dark:text-white text-sm block">v{{ store.currentAppVersion }}</span>
-          <span class="text-[11px] text-slate-500 dark:text-slate-400">Versi kode yang terpasang di peramban saat ini.</span>
+          <span class="text-slate-400 dark:text-slate-400 text-[10px] uppercase font-bold block">Versi Bundel Klien (Aktif)</span>
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="font-mono font-bold text-slate-800 dark:text-white text-sm">v{{ store.currentAppVersion }}</span>
+            <span class="px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 text-[10px] font-mono font-bold text-slate-700 dark:text-slate-300">
+              Build {{ store.currentBuildNumber }}
+            </span>
+          </div>
+          <span class="text-[11px] text-slate-500 dark:text-slate-400">Versi kode & nomor build yang terpasang di browser ini.</span>
         </div>
 
         <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 space-y-1">
           <span class="text-slate-400 dark:text-slate-400 text-[10px] uppercase font-bold block">Versi Terdaftar di Cloud</span>
-          <span class="font-mono font-bold text-blue-700 dark:text-blue-400 text-sm block">v{{ store.appVersionConfig.version }}</span>
-          <span class="text-[11px] text-slate-500 dark:text-slate-400">Target versi yang disiarkan ke seluruh pengguna.</span>
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="font-mono font-bold text-blue-700 dark:text-blue-400 text-sm">v{{ store.appVersionConfig.version }}</span>
+            <span class="px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950 text-[10px] font-mono font-bold text-blue-700 dark:text-blue-300">
+              Build {{ store.appVersionConfig.buildNumber || store.currentBuildNumber }}
+            </span>
+          </div>
+          <span class="text-[11px] text-slate-500 dark:text-slate-400">Target versi & nomor build yang disiarkan ke seluruh pengguna.</span>
         </div>
 
         <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 space-y-1">
@@ -348,7 +368,7 @@
             </span>
           </div>
           <span class="text-[11px] text-slate-500 dark:text-slate-400">
-            {{ store.hasNewVersionAvailable ? 'Banner reload aktif di layar pengguna' : 'Klien sudah versi terbaru' }}
+            {{ store.hasNewVersionAvailable ? 'Banner update aktif mendeteksi versi/build baru' : 'Klien sudah versi & build paling mutakhir' }}
           </span>
         </div>
       </div>
@@ -358,21 +378,32 @@
         <div class="flex items-center justify-between">
           <span class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
             <Radio class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 animate-pulse" />
-            Siarkan Versi Baru ke Seluruh Klien (Simulasi / Rilis OTA)
+            Siarkan Versi / Build Baru ke Seluruh Klien (Simulasi / Rilis OTA)
           </span>
-          <span class="text-[11px] text-slate-400 dark:text-slate-400">Otomatis memicu notifikasi pembaruan di semua pengguna</span>
+          <span class="text-[11px] text-slate-400 dark:text-slate-400">Pembaruan versi maupun build number akan memicu notifikasi</span>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
           <div class="sm:col-span-1">
+            <label class="block text-[10px] font-bold text-slate-500 mb-1">Versi Rilis:</label>
             <input 
               v-model="newVersionInput" 
               type="text" 
-              placeholder="Misal: 1.0.0-rc.3"
+              placeholder="Misal: 1.0.0"
+              class="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 font-mono focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div class="sm:col-span-1">
+            <label class="block text-[10px] font-bold text-slate-500 mb-1">Nomor Build:</label>
+            <input 
+              v-model="newBuildInput" 
+              type="text" 
+              placeholder="Misal: 10003"
               class="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 font-mono focus:outline-hidden focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div class="sm:col-span-2">
+            <label class="block text-[10px] font-bold text-slate-500 mb-1">Pesan Pembaruan:</label>
             <input 
               v-model="newVersionMessage" 
               type="text" 
@@ -390,16 +421,16 @@
           >
             <Loader2 v-if="isBroadcastingVersion" class="w-4 h-4 animate-spin" />
             <Radio v-else class="w-3.5 h-3.5" />
-            <span>{{ isBroadcastingVersion ? 'Menyiarkan...' : 'Siarkan Versi Ini' }}</span>
+            <span>{{ isBroadcastingVersion ? 'Menyiarkan...' : 'Siarkan Versi & Build Ini' }}</span>
           </button>
 
           <button 
             @click="resetToCurrentVersion"
             :disabled="isBroadcastingVersion"
             class="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-xl transition cursor-pointer"
-            :title="`Kembalikan versi cloud ke versi aplikasi ini (${store.currentAppVersion})`"
+            :title="`Kembalikan versi cloud ke versi aplikasi ini (${store.currentAppVersion} - Build ${store.currentBuildNumber})`"
           >
-            Reset Cloud ke v{{ store.currentAppVersion }}
+            Reset Cloud ke v{{ store.currentAppVersion }} (Build {{ store.currentBuildNumber }})
           </button>
         </div>
       </div>
@@ -729,15 +760,27 @@ watch(() => store.isSuperAdmin, (isSuper) => {
 });
 
 // Version Management & OTA Broadcast
-const newVersionInput = ref(store.currentAppVersion || '1.0.0-rc.3');
+const newVersionInput = ref(store.currentAppVersion || '1.0.0');
+const newBuildInput = ref(store.currentBuildNumber || '10002');
 const newVersionMessage = ref('Pembaruan sistem Libra telah tersedia. Silakan muat ulang halaman.');
 const isBroadcastingVersion = ref(false);
+const isCheckingServerUpdate = ref(false);
+
+const triggerManualServerCheck = async () => {
+  if (isCheckingServerUpdate.value) return;
+  isCheckingServerUpdate.value = true;
+  try {
+    await store.checkServerVersionUpdate(true);
+  } finally {
+    isCheckingServerUpdate.value = false;
+  }
+};
 
 const handleBroadcastVersion = async () => {
   if (!newVersionInput.value.trim()) return;
   isBroadcastingVersion.value = true;
   try {
-    await store.broadcastNewAppVersion(newVersionInput.value.trim(), newVersionMessage.value.trim());
+    await store.broadcastNewAppVersion(newVersionInput.value.trim(), newVersionMessage.value.trim(), newBuildInput.value.trim());
   } finally {
     isBroadcastingVersion.value = false;
   }
@@ -746,8 +789,9 @@ const handleBroadcastVersion = async () => {
 const resetToCurrentVersion = async () => {
   isBroadcastingVersion.value = true;
   try {
-    await store.broadcastNewAppVersion(store.currentAppVersion, `Aplikasi berjalan pada versi resmi v${store.currentAppVersion}.`);
-    newVersionInput.value = store.currentAppVersion || '1.0.0-rc.3';
+    await store.broadcastNewAppVersion(store.currentAppVersion, `Aplikasi berjalan pada versi resmi v${store.currentAppVersion} (Build ${store.currentBuildNumber}).`, store.currentBuildNumber);
+    newVersionInput.value = store.currentAppVersion || '1.0.0';
+    newBuildInput.value = store.currentBuildNumber || '10002';
   } finally {
     isBroadcastingVersion.value = false;
   }

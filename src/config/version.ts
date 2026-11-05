@@ -132,3 +132,53 @@ export function isNewerVersion(remoteVersion: string, currentVersion: string = C
   // Compare prerelease identifiers, e.g. "rc.1" vs "beta.5"
   return r.prerelease.localeCompare(c.prerelease, undefined, { numeric: true }) > 0;
 }
+
+/**
+ * Memeriksa apakah release dari remote (server atau Firestore) lebih baru dibanding yang berjalan di klien.
+ * Logika evaluasi:
+ * 1. Semantic Version (misal 1.0.1 > 1.0.0 atau 1.0.0 > 1.0.0-rc.1)
+ * 2. Jika versi identik: periksa Build Number (misal build 10003 > 10002)
+ */
+export function isNewerAppRelease(
+  remote: { version?: string; buildNumber?: string | number } | null | undefined,
+  current: { version?: string; buildNumber?: string | number } = { version: CURRENT_APP_VERSION, buildNumber: APP_BUILD_NUMBER }
+): boolean {
+  if (!remote) return false;
+
+  const rVer = (remote.version || '').trim();
+  const cVer = (current.version || CURRENT_APP_VERSION).trim();
+
+  // 1. Cek perbedaan semantic version
+  if (rVer && cVer && rVer !== cVer) {
+    if (isNewerVersion(rVer, cVer)) return true;
+    if (isNewerVersion(cVer, rVer)) return false;
+  }
+
+  // 2. Jika versi identik atau salah satu belum ada, bandingkan build number
+  const rBuildRaw = String(remote.buildNumber ?? '').trim();
+  const cBuildRaw = String(current.buildNumber ?? APP_BUILD_NUMBER).trim();
+
+  if (!rBuildRaw || !cBuildRaw || rBuildRaw === cBuildRaw) {
+    return false;
+  }
+
+  const rBuildNum = parseInt(rBuildRaw, 10);
+  const cBuildNum = parseInt(cBuildRaw, 10);
+
+  if (!isNaN(rBuildNum) && !isNaN(cBuildNum)) {
+    return rBuildNum > cBuildNum;
+  }
+
+  // Fallback perbandingan natural string (misal: '10002b' vs '10002a')
+  return rBuildRaw.localeCompare(cBuildRaw, undefined, { numeric: true }) > 0;
+}
+
+/**
+ * Memeriksa apakah release lokal lebih baru daripada remote release (misal setelah rilis kode baru).
+ */
+export function isOlderAppRelease(
+  remote: { version?: string; buildNumber?: string | number } | null | undefined,
+  current: { version?: string; buildNumber?: string | number } = { version: CURRENT_APP_VERSION, buildNumber: APP_BUILD_NUMBER }
+): boolean {
+  return isNewerAppRelease(current, remote);
+}
