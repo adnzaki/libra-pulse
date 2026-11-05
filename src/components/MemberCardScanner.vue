@@ -352,7 +352,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onBeforeUnmount } from 'vue';
+import { ref, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import { Html5Qrcode } from 'html5-qrcode';
 import CustomSelect from './CustomSelect.vue';

@@ -6,7 +6,24 @@ import multer from 'multer'
 import { createServer as createViteServer } from 'vite'
 
 const app = express()
-const PORT = 3000
+
+// Support CLI arguments (--port 3000) or process.env.PORT
+let PORT = Number(process.env.PORT) || 3000
+const portArgIdx = process.argv.indexOf('--port')
+if (portArgIdx !== -1 && process.argv[portArgIdx + 1]) {
+  const parsed = Number(process.argv[portArgIdx + 1])
+  if (!isNaN(parsed) && parsed > 0) {
+    PORT = parsed
+  }
+}
+
+// Global process error handlers to prevent sudden process crashes
+process.on('uncaughtException', (err) => {
+  console.error('[Server] Uncaught Exception:', err)
+})
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[Server] Unhandled Rejection at:', promise, 'reason:', reason)
+})
 
 // 1. Parsing Limit Standard & Headers
 app.use((req, res, next) => {
@@ -144,6 +161,54 @@ const ebookUpload = multer({
 })
 
 // 4. API ROUTES (Harus didefinisikan sebelum startServer / vite.middlewares)
+
+// Build Info & Production File Sensitivity Tracking
+const serverStartTime = Date.now()
+
+function getBuildInfo() {
+  const distIndex = path.join(process.cwd(), 'dist', 'index.html')
+  let buildTime = serverStartTime
+  let buildHash = `dev_${serverStartTime}`
+
+  if (fs.existsSync(distIndex)) {
+    try {
+      const stat = fs.statSync(distIndex)
+      buildTime = Math.floor(stat.mtimeMs)
+      buildHash = `build_${stat.size}_${Math.floor(stat.mtimeMs)}`
+    } catch {
+      // fallback
+    }
+  } else {
+    try {
+      const srcDir = path.join(process.cwd(), 'src')
+      if (fs.existsSync(srcDir)) {
+        const stat = fs.statSync(srcDir)
+        buildTime = Math.floor(stat.mtimeMs)
+        buildHash = `dev_${Math.floor(stat.mtimeMs)}`
+      }
+    } catch {}
+  }
+
+  return {
+    buildTime,
+    buildHash,
+    serverTime: Date.now(),
+    version: process.env.npm_package_version || '1.0.0',
+    mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
+  }
+}
+
+app.get('/api/build-info', (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+  res.setHeader('Pragma', 'no-cache')
+  res.json(getBuildInfo())
+})
+
+app.get('/api/version', (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+  res.setHeader('Pragma', 'no-cache')
+  res.json(getBuildInfo())
+})
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
@@ -877,8 +942,32 @@ async function startServer() {
     })
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running at http://0.0.0.0:${PORT}`)
+  })
+
+  server.on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.warn(`[Server] Port ${PORT} is busy, will retry in 1s...`)
+      setTimeout(() => {
+        try {
+          server.close()
+        } catch {}
+        server.listen(PORT, '0.0.0.0')
+      }, 1000)
+    } else {
+      console.error('[Server] Listener error:', err)
+    }
+  })
+
+  process.on('SIGTERM', () => {
+    try {
+      server.close(() => {
+        process.exit(0)
+      })
+    } catch {
+      process.exit(0)
+    }
   })
 }
 
