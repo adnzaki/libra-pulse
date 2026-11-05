@@ -329,6 +329,30 @@
                     </button>
                   </div>
                 </div>
+
+                <!-- Server Loading Indicator Bar -->
+                <div v-if="isServerLoading" class="py-3 px-4 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 flex items-center justify-center gap-2 text-blue-700 dark:text-blue-300 text-xs font-semibold">
+                  <Loader2 class="w-4 h-4 animate-spin text-blue-600 dark:text-blue-400" />
+                  <span>Memuat data presensi dari server (25 data/halaman)...</span>
+                </div>
+
+                <!-- Server-Side Pagination Identik Model Master Data Buku -->
+                <AdminPagination 
+                  v-if="dateFilter === 'all' && totalVisitsCount > 0"
+                  v-model:currentPage="currentPage"
+                  v-model:itemsPerPage="pageSize"
+                  :totalPages="totalPages"
+                  :totalItems="totalVisitsCount"
+                  itemName="presensi kunjungan"
+                  class="mt-4"
+                />
+              </div>
+
+              <!-- Loading State saat belum ada data server -->
+              <div v-else-if="isServerLoading" class="text-center py-12 px-4 rounded-3xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center gap-3">
+                <Loader2 class="w-8 h-8 animate-spin text-blue-600 dark:text-blue-400" />
+                <p class="font-bold text-sm text-slate-700 dark:text-slate-300">Memuat Presensi dari Server...</p>
+                <p class="text-xs text-slate-400">Sedang mengambil 25 data presensi kunjungan per halaman</p>
               </div>
 
               <!-- Empty State -->
@@ -1365,7 +1389,9 @@ import { ref, computed, watch, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useLibraryStore } from '../stores/library.js';
 import type { LibraryVisit, VisitPurpose, Member, VisitToken } from '../types.js';
+import { isTodayVisit, getTodayDateString, formatToJakartaDateString } from '../utils/dateUtils.js';
 import MemberCardScanner from './MemberCardScanner.vue';
+import AdminPagination from './AdminPagination.vue';
 import QRCode from 'qrcode';
 import { 
   UserCheck, 
@@ -1388,7 +1414,9 @@ import {
   RefreshCw,
   AlertCircle,
   Loader2,
-  Clock
+  Clock,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-vue-next';
 
 const props = defineProps<{
@@ -1414,7 +1442,14 @@ const pendingMemberVisits = computed(() => {
 const memberCheckinSubTab = ref<'queue' | 'direct'>('direct');
 
 const tabs = computed(() => [
-  { id: 'list', label: 'Daftar Presensi', icon: ListFilter, badge: store.todayVisitsCount },
+  { 
+    id: 'list', 
+    label: 'Daftar Presensi', 
+    icon: ListFilter, 
+    badge: dateFilter.value === 'all' 
+      ? (totalVisitsCount.value > 0 ? `${totalVisitsCount.value} Total` : '0') 
+      : store.todayVisitsCount 
+  },
   { id: 'tokens', label: 'Kelola Token', icon: KeyRound, badge: store.activeVisitToken ? store.activeVisitToken.token : 'Belum Ada' },
   { id: 'manual_guest', label: 'Input Manual Non-Member', icon: UserPlus },
   { 
@@ -1429,10 +1464,16 @@ const tabs = computed(() => [
 
 const approvePendingVisit = async (visitId: string) => {
   await store.approveVisit(visitId, store.currentUser?.name);
+  if (dateFilter.value === 'all') {
+    fetchServerVisits();
+  }
 };
 
 const rejectPendingVisit = async (visitId: string) => {
   await store.rejectVisit(visitId);
+  if (dateFilter.value === 'all') {
+    fetchServerVisits();
+  }
 };
 
 const approveAllPendingVisits = async () => {
@@ -1441,6 +1482,9 @@ const approveAllPendingVisits = async () => {
     await store.approveVisit(v.id, store.currentUser?.name);
   }
   store.showToast(`Semua ${list.length} antrian anggota berhasil disetujui.`);
+  if (dateFilter.value === 'all') {
+    fetchServerVisits();
+  }
 };
 
 const getMemberAvatar = (memberId?: string, cardNumber?: string): string => {
@@ -1451,7 +1495,7 @@ const getMemberAvatar = (memberId?: string, cardNumber?: string): string => {
 // Filters for List Tab
 const searchQuery = ref('');
 const dateFilter = ref<'today' | 'all' | 'custom'>('today');
-const customDate = ref(new Date().toISOString().slice(0, 10));
+const customDate = ref(getTodayDateString());
 const typeFilter = ref<'all' | 'member' | 'non_member'>('all');
 const purposeFilter = ref<string>('all');
 
@@ -1481,7 +1525,7 @@ const manualForm = ref({
   purpose: 'Membaca Buku' as VisitPurpose,
   purposeDetails: '',
   phone: '',
-  visitDate: new Date().toISOString().slice(0, 10),
+  visitDate: getTodayDateString(),
   notes: '',
   tokenUsed: ''
 });
@@ -1631,32 +1675,72 @@ const deleteToken = async (tokenId: string) => {
   }
 };
 
-const filteredVisits = computed(() => {
+// Server-Side Pagination (Default 25 data per halaman gaya Master Data Buku untuk 'Semua' / Semua Hari)
+const currentPage = ref(1);
+const pageSize = ref(25);
+const totalServerVisits = ref(0);
+const totalServerPages = ref(1);
+const serverVisitsList = ref<LibraryVisit[]>([]);
+const isServerLoading = ref(false);
+let serverFetchDebounceTimer: any = null;
+
+const fetchServerVisits = async () => {
+  if (!props.isOpen || activeTab.value !== 'list' || dateFilter.value !== 'all') {
+    return;
+  }
+
+  isServerLoading.value = true;
+  try {
+    const params = new URLSearchParams({
+      page: String(currentPage.value),
+      limit: String(pageSize.value),
+      dateFilter: 'all',
+      type: typeFilter.value,
+      purpose: purposeFilter.value,
+      search: (searchQuery.value || '').trim()
+    });
+
+    const res = await fetch(`/api/visits?${params.toString()}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
+    });
+
+    if (res.ok) {
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        serverVisitsList.value = json.data;
+        totalServerVisits.value = json.pagination?.total ?? json.data.length;
+        totalServerPages.value = json.pagination?.totalPages ?? 1;
+        return;
+      }
+    }
+  } catch (err) {
+    console.warn('[Visits] Server-side pagination fetch error, fallback ke lokal:', err);
+  } finally {
+    isServerLoading.value = false;
+  }
+};
+
+const triggerDebouncedServerFetch = () => {
+  if (serverFetchDebounceTimer) clearTimeout(serverFetchDebounceTimer);
+  serverFetchDebounceTimer = setTimeout(() => {
+    fetchServerVisits();
+  }, 300);
+};
+
+// Filter lokal (digunakan untuk 'today', 'custom', atau fallback offline jika server belum merespon)
+const localFilteredVisits = computed(() => {
   const query = (searchQuery.value || '').trim().toLowerCase();
-  const now = new Date();
-  const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  const utcToday = now.toISOString().slice(0, 10);
 
   return store.visits.filter(v => {
     // Date filter
     if (dateFilter.value === 'today') {
-      const isDateMatch = v.visitDate === localToday || v.visitDate === utcToday;
-      if (!isDateMatch) {
-        if (v.timestamp) {
-          const t = new Date(v.timestamp);
-          if (!isNaN(t.getTime())) {
-            const tLocal = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
-            const tUtc = t.toISOString().slice(0, 10);
-            if (tLocal !== localToday && tUtc !== utcToday) return false;
-          } else {
-            return false;
-          }
-        } else {
-          return false;
-        }
-      }
+      if (!isTodayVisit(v)) return false;
     } else if (dateFilter.value === 'custom') {
-      if (v.visitDate !== customDate.value) return false;
+      const vDate = formatToJakartaDateString(v.timestamp || v.visitDate);
+      if (vDate !== customDate.value) return false;
     }
 
     // Type filter
@@ -1682,6 +1766,86 @@ const filteredVisits = computed(() => {
     return true;
   });
 });
+
+const filteredVisits = computed(() => {
+  if (dateFilter.value === 'all') {
+    // Jika data server tersedia atau sedang loading, tampilkan data server paginated
+    if (serverVisitsList.value.length > 0 || isServerLoading.value) {
+      return serverVisitsList.value;
+    }
+    // Fallback: client pagination 25 data per halaman jika offline
+    const startIndex = (currentPage.value - 1) * pageSize.value;
+    return localFilteredVisits.value.slice(startIndex, startIndex + pageSize.value);
+  }
+
+  // Untuk 'today' dan 'custom', tampilkan data tanggal yang difilter
+  return localFilteredVisits.value;
+});
+
+const totalVisitsCount = computed(() => {
+  if (dateFilter.value === 'all') {
+    return totalServerVisits.value || localFilteredVisits.value.length;
+  }
+  return localFilteredVisits.value.length;
+});
+
+const totalPages = computed(() => {
+  if (dateFilter.value === 'all') {
+    return totalServerPages.value || Math.max(1, Math.ceil(localFilteredVisits.value.length / pageSize.value));
+  }
+  return 1;
+});
+
+// Watchers untuk sinkronisasi server-side pagination gaya Master Data Buku
+watch(() => props.isOpen, (open) => {
+  if (open && dateFilter.value === 'all') {
+    currentPage.value = 1;
+    fetchServerVisits();
+  }
+});
+
+watch(dateFilter, (newVal) => {
+  currentPage.value = 1;
+  if (newVal === 'all') {
+    fetchServerVisits();
+  }
+});
+
+watch(pageSize, () => {
+  currentPage.value = 1;
+  if (dateFilter.value === 'all') {
+    fetchServerVisits();
+  }
+});
+
+watch(currentPage, () => {
+  if (dateFilter.value === 'all') {
+    fetchServerVisits();
+  }
+});
+
+watch([typeFilter, purposeFilter], () => {
+  currentPage.value = 1;
+  if (dateFilter.value === 'all') {
+    fetchServerVisits();
+  }
+});
+
+watch(searchQuery, () => {
+  currentPage.value = 1;
+  if (dateFilter.value === 'all') {
+    triggerDebouncedServerFetch();
+  }
+});
+
+watch(
+  () => store.visits.length,
+  () => {
+    if (props.isOpen && dateFilter.value === 'all') {
+      fetchServerVisits();
+    }
+  }
+);
 
 const formatVisitDate = (dateStr?: string) => {
   if (!dateStr) return '-';
@@ -1714,6 +1878,9 @@ const handleClose = () => {
 const confirmDeleteVisit = async (visit: LibraryVisit) => {
   if (confirm(`Hapus catatan kunjungan dari "${visit.name}"?`)) {
     await store.deleteVisit(visit.id);
+    if (dateFilter.value === 'all') {
+      fetchServerVisits();
+    }
   }
 };
 
@@ -1747,7 +1914,7 @@ const submitManualGuest = async () => {
         purpose: 'Membaca Buku',
         purposeDetails: '',
         phone: '',
-        visitDate: new Date().toISOString().slice(0, 10),
+        visitDate: getTodayDateString(),
         notes: '',
         tokenUsed: ''
       };

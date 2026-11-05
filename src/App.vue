@@ -171,10 +171,13 @@ const store = useLibraryStore();
 
 onMounted(async () => {
   store.initTheme();
+  // Cek versi baru ke server seketika saat aplikasi baru dibuka atau di-reload manual
+  store.checkServerVersionUpdate();
   await store.initAll();
 
   if (typeof window !== 'undefined') {
     window.addEventListener('focus', () => {
+      store.checkServerVersionUpdate();
       if (store.currentUser) {
         store.checkAndAutoRegisterCurrentDevice(false);
       }

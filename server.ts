@@ -259,6 +259,152 @@ app.get('/api/app-version', (req, res) => {
   })
 })
 
+// Helper Firestore Client untuk Endpoint Server-Side (Pagination & Query)
+let serverFirestoreDb: any = null
+async function getServerFirestore() {
+  if (serverFirestoreDb) return serverFirestoreDb
+  try {
+    const configPath = path.join(process.cwd(), 'firebase-applet-config.json')
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
+      if (config.apiKey && config.projectId) {
+        const { initializeApp, getApps } = await import('firebase/app')
+        const { getFirestore } = await import('firebase/firestore')
+        const app = getApps().find(a => a.name === 'server-firestore') || initializeApp(config, 'server-firestore')
+        serverFirestoreDb = getFirestore(app)
+        return serverFirestoreDb
+      }
+    }
+  } catch (err) {
+    console.warn('[Server] Firestore initialization warning:', err)
+  }
+  return null
+}
+
+// Endpoint Server-Side Pagination Daftar Presensi Kunjungan (25 data per halaman)
+app.get('/api/visits', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+  res.setHeader('Pragma', 'no-cache')
+
+  try {
+    const page = Math.max(1, parseInt(req.query.page as string) || 1)
+    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit as string) || 25))
+    const search = ((req.query.search || req.query.query || '') as string).trim().toLowerCase()
+    const type = ((req.query.type || 'all') as string).trim()
+    const purpose = ((req.query.purpose || 'all') as string).trim()
+    const dateFilter = ((req.query.dateFilter || 'all') as string).trim()
+    const customDate = ((req.query.customDate || '') as string).trim()
+
+    const db = await getServerFirestore()
+    if (!db) {
+      return res.status(500).json({ success: false, message: 'Database server tidak tersedia' })
+    }
+
+    const { collection, getDocs } = await import('firebase/firestore')
+    const visitsRef = collection(db, 'visits')
+    const snap = await getDocs(visitsRef)
+
+    let allVisits: any[] = []
+    snap.forEach((d) => {
+      allVisits.push({ id: d.id, ...d.data() })
+    })
+
+    // Urutkan data presensi descending (terbaru ke terlama)
+    allVisits.sort((a, b) => {
+      const timeA = new Date(a.timestamp || a.visitDate || 0).getTime()
+      const timeB = new Date(b.timestamp || b.visitDate || 0).getTime()
+      return timeB - timeA
+    })
+
+    // Filter Tanggal
+    if (dateFilter === 'today') {
+      const todayJakarta = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Jakarta',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(new Date())
+
+      allVisits = allVisits.filter((v) => {
+        if (v.timestamp) {
+          const d = new Date(v.timestamp)
+          if (!isNaN(d.getTime())) {
+            const jDate = new Intl.DateTimeFormat('en-CA', {
+              timeZone: 'Asia/Jakarta',
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+            }).format(d)
+            return jDate === todayJakarta
+          }
+        }
+        return (v.visitDate || '').trim().slice(0, 10) === todayJakarta
+      })
+    } else if (dateFilter === 'custom' && customDate) {
+      allVisits = allVisits.filter((v) => {
+        if (v.timestamp) {
+          const d = new Date(v.timestamp)
+          if (!isNaN(d.getTime())) {
+            const jDate = new Intl.DateTimeFormat('en-CA', {
+              timeZone: 'Asia/Jakarta',
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+            }).format(d)
+            return jDate === customDate
+          }
+        }
+        return (v.visitDate || '').trim().slice(0, 10) === customDate
+      })
+    }
+
+    // Filter Tipe Pengunjung (member / non_member)
+    if (type !== 'all') {
+      allVisits = allVisits.filter((v) => v.visitorType === type)
+    }
+
+    // Filter Tujuan Kunjungan
+    if (purpose !== 'all') {
+      allVisits = allVisits.filter((v) => v.purpose === purpose)
+    }
+
+    // Filter Pencarian Teks (Nama, ID/Kartu, Instansi, Token)
+    if (search) {
+      allVisits = allVisits.filter((v) => {
+        const matchName = v.name?.toLowerCase().includes(search)
+        const matchOrigin = v.origin?.toLowerCase().includes(search)
+        const matchCard = v.memberCardNumber?.toLowerCase().includes(search)
+        const matchId = v.id?.toLowerCase().includes(search)
+        const matchToken = v.tokenUsed?.toLowerCase().includes(search)
+        return matchName || matchOrigin || matchCard || matchId || matchToken
+      })
+    }
+
+    const total = allVisits.length
+    const totalPages = Math.ceil(total / limit) || 1
+    const startIndex = (page - 1) * limit
+    const paginatedData = allVisits.slice(startIndex, startIndex + limit)
+
+    return res.json({
+      success: true,
+      data: paginatedData,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+        startIndex: total === 0 ? 0 : startIndex + 1,
+        endIndex: Math.min(startIndex + limit, total),
+      },
+    })
+  } catch (err: any) {
+    console.error('[Server] /api/visits error:', err)
+    return res.status(500).json({ success: false, message: err?.message || 'Gagal memuat presensi kunjungan' })
+  }
+})
+
 // Endpoint Cek Status Konfigurasi SMTP
 app.get('/api/email-status', (req, res) => {
   const host = process.env.SMTP_HOST

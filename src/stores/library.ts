@@ -11,6 +11,7 @@ import {
 import { initialBooks, initialCategories, initialShelves, initialMembers, defaultSuspendConfig } from '../lib/default-catalog.js';
 import { getCurrentDeviceId, detectCurrentDeviceInfo } from '../utils/deviceDetector.js';
 import { CURRENT_APP_VERSION, APP_BUILD_NUMBER, DEFAULT_APP_VERSION_CONFIG, isNewerVersion, isNewerAppRelease } from '../config/version.js';
+import { isTodayVisit, getTodayDateString } from '../utils/dateUtils.js';
 
 export const isSuperAdminMember = (m: any): boolean => {
   if (!m) return false;
@@ -421,21 +422,7 @@ export const useLibraryStore = defineStore('library', {
 
     // Library Visits Getters
     todayVisits: (state) => {
-      const now = new Date();
-      const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      const utcToday = now.toISOString().slice(0, 10);
-      return state.visits.filter(v => {
-        if (v.visitDate === localToday || v.visitDate === utcToday) return true;
-        if (v.timestamp) {
-          const t = new Date(v.timestamp);
-          if (!isNaN(t.getTime())) {
-            const tLocal = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
-            const tUtc = t.toISOString().slice(0, 10);
-            return tLocal === localToday || tUtc === utcToday;
-          }
-        }
-        return false;
-      });
+      return state.visits.filter(v => isTodayVisit(v));
     },
     todayVisitsCount(state): number {
       return (this.todayVisits as LibraryVisit[]).length;
@@ -3604,7 +3591,7 @@ export const useLibraryStore = defineStore('library', {
         const todayDateStr = borrowDate;
         const alreadyVisited = this.visits.some(v => 
           (v.memberId === bk.memberId || v.memberCardNumber === bk.memberCardNumber) && 
-          v.visitDate === todayDateStr &&
+          isTodayVisit(v) &&
           v.purpose === 'Meminjam Buku'
         );
         if (!alreadyVisited) {
@@ -3766,7 +3753,7 @@ export const useLibraryStore = defineStore('library', {
         const todayDateStr = borrowDate;
         const alreadyVisited = this.visits.some(v => 
           (v.memberId === member?.id || v.memberCardNumber === resolvedCardNumber) && 
-          v.visitDate === todayDateStr &&
+          isTodayVisit(v) &&
           v.purpose === 'Meminjam Buku'
         );
         if (!alreadyVisited) {
@@ -4154,11 +4141,11 @@ export const useLibraryStore = defineStore('library', {
       // 1. Cek langsung saat aplikasi dimuat
       this.checkServerVersionUpdate();
 
-      // 2. Cek berkala setiap 15 detik di latar belakang
+      // 2. Cek berkala setiap 1 menit (60 detik) di latar belakang
       if (!(window as any).__libra_version_timer__) {
         (window as any).__libra_version_timer__ = setInterval(() => {
           this.checkServerVersionUpdate();
-        }, 15000);
+        }, 60000);
       }
 
       // 3. Cek instan ketika pengguna membuka kembali tab browser / jendela aplikasi
@@ -4465,10 +4452,8 @@ export const useLibraryStore = defineStore('library', {
       tokenUsed?: string;
     }) {
       try {
-        const now = new Date();
-        const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-        const visitDate = payload.visitDate || localDate;
-        const timestamp = now.toISOString();
+        const visitDate = payload.visitDate || getTodayDateString();
+        const timestamp = new Date().toISOString();
 
         // Check-in member & tamu secara default langsung 'approved' agar akses & sirkulasi aktif seketika
         const status: VisitStatus = payload.status || 'approved';

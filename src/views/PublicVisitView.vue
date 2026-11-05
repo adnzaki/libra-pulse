@@ -740,6 +740,7 @@ import { ref, computed, onMounted, watchEffect, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useLibraryStore } from '../stores/library.js';
 import type { Member, LibraryVisit, VisitPurpose } from '../types.js';
+import { isTodayVisit } from '../utils/dateUtils.js';
 import MemberCardScanner from '../components/MemberCardScanner.vue';
 import { 
   Sparkles, 
@@ -865,13 +866,10 @@ onMounted(() => {
     activeTab.value = 'member';
     matchedMember.value = store.currentUser;
 
-    const now = new Date();
-    const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    const utcToday = now.toISOString().slice(0, 10);
     const pendingToday = store.visits.find(v => 
       v.visitorType === 'member' && 
       (v.memberId === store.currentUser?.id || v.memberCardNumber === store.currentUser?.cardNumber) &&
-      (v.visitDate === localToday || v.visitDate === utcToday) &&
+      isTodayVisit(v) &&
       v.status === 'pending'
     );
     if (pendingToday) {
