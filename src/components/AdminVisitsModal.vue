@@ -988,7 +988,10 @@
                 </div>
 
               <div v-if="adminMemberScanMode === 'camera'">
-                <MemberCardScanner @scan-success="handleAdminMemberScanned" />
+                <MemberCardScanner 
+                  @scan-success="handleAdminMemberScanned" 
+                  @selected="handleAdminScannerSelected"
+                />
               </div>
 
               <div v-else class="space-y-3">
@@ -1169,10 +1172,10 @@
                   type="button"
                   @click="submitAdminMemberVisit"
                   :disabled="isSubmitting"
-                  class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-emerald-600/20 transition cursor-pointer active:scale-98 flex items-center justify-center gap-2"
+                  class="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-emerald-600/20 transition cursor-pointer active:scale-98 flex items-center justify-center gap-2"
                 >
                   <UserCheck class="w-4 h-4" />
-                  <span>Konfirmasi Check-in {{ adminMatchedMember.name }}</span>
+                  <span>Konfirmasi Akses dan Sirkulasi ({{ adminMatchedMember.name }})</span>
                 </button>
               </div>
 
@@ -1407,15 +1410,8 @@ const pendingMemberVisits = computed(() => {
   return store.visits.filter(v => v.visitorType === 'member' && v.status === 'pending');
 });
 
-// Sub-Tab di dalam Check-in Member: 'queue' (Antrian Masuk) vs 'direct' (Check-in Meja Sirkulasi)
-const memberCheckinSubTab = ref<'queue' | 'direct'>('queue');
-
-// Jika ada antrian pending saat modal dibuka atau berubah, arahkan sub-tab ke antrian
-watch(() => pendingMemberVisits.value.length, (count) => {
-  if (count > 0 && activeTab.value === 'member_checkin') {
-    memberCheckinSubTab.value = 'queue';
-  }
-});
+// Sub-Tab di dalam Check-in Member: 'direct' (Check-in Meja Sirkulasi) vs 'queue' (Antrian Masuk)
+const memberCheckinSubTab = ref<'queue' | 'direct'>('direct');
 
 const tabs = computed(() => [
   { id: 'list', label: 'Daftar Presensi', icon: ListFilter, badge: store.todayVisitsCount },
@@ -1637,12 +1633,28 @@ const deleteToken = async (tokenId: string) => {
 
 const filteredVisits = computed(() => {
   const query = (searchQuery.value || '').trim().toLowerCase();
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const utcToday = now.toISOString().slice(0, 10);
 
   return store.visits.filter(v => {
     // Date filter
     if (dateFilter.value === 'today') {
-      if (v.visitDate !== todayStr) return false;
+      const isDateMatch = v.visitDate === localToday || v.visitDate === utcToday;
+      if (!isDateMatch) {
+        if (v.timestamp) {
+          const t = new Date(v.timestamp);
+          if (!isNaN(t.getTime())) {
+            const tLocal = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+            const tUtc = t.toISOString().slice(0, 10);
+            if (tLocal !== localToday && tUtc !== utcToday) return false;
+          } else {
+            return false;
+          }
+        } else {
+          return false;
+        }
+      }
     } else if (dateFilter.value === 'custom') {
       if (v.visitDate !== customDate.value) return false;
     }
@@ -1883,7 +1895,18 @@ const clearAdminSearch = () => {
   adminMemberError.value = '';
 };
 
+const handleAdminScannerSelected = (member: Member) => {
+  if (!member) return;
+  adminMatchedMember.value = member;
+  adminMemberSearchKey.value = member.name;
+  adminMemberCandidates.value = [];
+  adminMemberError.value = '';
+  adminMemberScanMode.value = 'manual';
+  store.showToast(`Anggota "${member.name}" berhasil dipilih. Silakan konfirmasi akses & sirkulasi.`);
+};
+
 const handleAdminMemberScanned = (scannedCode: string) => {
+  if (!scannedCode) return;
   adminMemberSearchKey.value = scannedCode;
   adminMemberScanMode.value = 'manual';
   lookupAdminMember();
@@ -1898,23 +1921,27 @@ const submitAdminMemberVisit = async () => {
       ? 'Dewan Guru SDN Pengasinan VII'
       : (adminMatchedMember.value.memberType === 'siswa' ? 'Siswa SDN Pengasinan VII' : 'SDN Pengasinan VII');
 
+    const memberName = adminMatchedMember.value.name;
     const res = await store.recordVisit({
       visitorType: 'member',
+      status: 'approved',
       memberId: adminMatchedMember.value.id,
       memberCardNumber: adminMatchedMember.value.cardNumber,
       memberType: adminMatchedMember.value.memberType || 'siswa',
-      name: adminMatchedMember.value.name,
+      name: memberName,
       origin: origin,
       purpose: adminMemberPurpose.value,
       source: adminMemberScanMode.value === 'camera' ? 'qr_scan' : 'manual_admin'
     });
 
     if (res.success) {
-      store.showToast(`Check-in member ${adminMatchedMember.value.name} berhasil!`);
+      store.showToast(`✅ Konfirmasi Akses & Sirkulasi untuk "${memberName}" berhasil dicatat!`);
       adminMatchedMember.value = null;
       adminMemberCandidates.value = [];
       adminMemberSearchKey.value = '';
       activeTab.value = 'list';
+      dateFilter.value = 'today';
+      searchQuery.value = '';
     }
   } finally {
     isSubmitting.value = false;

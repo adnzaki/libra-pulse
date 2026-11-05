@@ -421,20 +421,30 @@ export const useLibraryStore = defineStore('library', {
 
     // Library Visits Getters
     todayVisits: (state) => {
-      const todayStr = new Date().toISOString().slice(0, 10);
-      return state.visits.filter(v => v.visitDate === todayStr);
+      const now = new Date();
+      const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const utcToday = now.toISOString().slice(0, 10);
+      return state.visits.filter(v => {
+        if (v.visitDate === localToday || v.visitDate === utcToday) return true;
+        if (v.timestamp) {
+          const t = new Date(v.timestamp);
+          if (!isNaN(t.getTime())) {
+            const tLocal = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+            const tUtc = t.toISOString().slice(0, 10);
+            return tLocal === localToday || tUtc === utcToday;
+          }
+        }
+        return false;
+      });
     },
-    todayVisitsCount: (state) => {
-      const todayStr = new Date().toISOString().slice(0, 10);
-      return state.visits.filter(v => v.visitDate === todayStr).length;
+    todayVisitsCount(state): number {
+      return (this.todayVisits as LibraryVisit[]).length;
     },
-    todayMemberVisitsCount: (state) => {
-      const todayStr = new Date().toISOString().slice(0, 10);
-      return state.visits.filter(v => v.visitDate === todayStr && v.visitorType === 'member').length;
+    todayMemberVisitsCount(state): number {
+      return (this.todayVisits as LibraryVisit[]).filter(v => v.visitorType === 'member').length;
     },
-    todayGuestVisitsCount: (state) => {
-      const todayStr = new Date().toISOString().slice(0, 10);
-      return state.visits.filter(v => v.visitDate === todayStr && v.visitorType === 'non_member').length;
+    todayGuestVisitsCount(state): number {
+      return (this.todayVisits as LibraryVisit[]).filter(v => v.visitorType === 'non_member').length;
     },
     activeVisitToken(state): VisitToken | null {
       const now = Date.now();
@@ -4456,21 +4466,22 @@ export const useLibraryStore = defineStore('library', {
     }) {
       try {
         const now = new Date();
-        const visitDate = payload.visitDate || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const visitDate = payload.visitDate || localDate;
         const timestamp = now.toISOString();
 
-        // Tentukan status default: jika member mandiri dari public form, default status adalah 'pending' (menunggu konfirmasi admin)
-        const defaultStatus: VisitStatus = (payload.visitorType === 'member' && payload.source === 'public_form')
-          ? 'pending'
-          : 'approved';
-        const status = payload.status || defaultStatus;
+        // Check-in member & tamu secara default langsung 'approved' agar akses & sirkulasi aktif seketika
+        const status: VisitStatus = payload.status || 'approved';
+        const defaultApprover = this.currentUser?.name 
+          ? `Petugas (${this.currentUser.name})` 
+          : (payload.source === 'manual_admin' ? 'Petugas Perpustakaan' : 'Sistem Presensi Anggota');
 
         const newVisit: LibraryVisit = {
           id: `VISIT-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`,
           visitorType: payload.visitorType,
           status,
           approvedAt: status === 'approved' ? timestamp : undefined,
-          approvedBy: status === 'approved' ? (this.currentUser?.name ? `Petugas (${this.currentUser.name})` : 'Sistem') : undefined,
+          approvedBy: status === 'approved' ? defaultApprover : undefined,
           name: (payload.name || '').trim(),
           origin: (payload.origin || '').trim() || 'Umum',
           purpose: payload.purpose || 'Membaca Buku',

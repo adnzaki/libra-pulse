@@ -481,15 +481,29 @@ const startCamera = async () => {
 };
 
 const stopCamera = async () => {
-  if (html5QrScanner && isCameraActive.value) {
+  isCameraActive.value = false;
+  if (html5QrScanner) {
+    const scanner = html5QrScanner;
+    html5QrScanner = null;
     try {
-      await html5QrScanner.stop();
-      html5QrScanner = null;
-    } catch (err) {
-      console.error(err);
+      if (typeof scanner.getState === 'function') {
+        const state = scanner.getState();
+        if (state === 2 || state === 3) {
+          await scanner.stop().catch(() => {});
+        }
+      } else {
+        await scanner.stop().catch(() => {});
+      }
+    } catch (err: any) {
+      if (!err?.message?.includes('Cannot stop') && !String(err).includes('Cannot stop')) {
+        console.warn('Booking camera stop error:', err);
+      }
+    } finally {
+      try {
+        scanner.clear();
+      } catch {}
     }
   }
-  isCameraActive.value = false;
 };
 
 const closeModal = () => {

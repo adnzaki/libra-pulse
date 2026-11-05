@@ -243,7 +243,13 @@
     <div v-if="scannedResult" class="p-4 sm:p-5 rounded-3xl border animate-in fade-in duration-200 shadow-sm" :class="scannedResult.member.isSuspended ? 'bg-rose-50/50 border-rose-200' : 'bg-blue-50/40 border-blue-100'">
       <div class="flex items-start justify-between gap-3">
         <div class="flex items-center gap-3.5 min-w-0">
-          <img :src="scannedResult.member.avatar" class="w-12 h-12 rounded-2xl object-cover border-2 shadow-sm shrink-0" :class="scannedResult.member.isSuspended ? 'border-rose-400' : 'border-blue-400'" alt="Avatar" />
+          <img 
+            :src="scannedResult.member.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'" 
+            @error="(e: any) => { e.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'; }"
+            class="w-12 h-12 rounded-2xl object-cover border-2 shadow-sm shrink-0" 
+            :class="scannedResult.member.isSuspended ? 'border-rose-400' : 'border-blue-400'" 
+            alt="Avatar" 
+          />
           <div class="min-w-0">
             <div class="flex items-center gap-2 flex-wrap">
               <h4 class="font-bold text-slate-900 text-sm truncate">{{ scannedResult.member.name }}</h4>
@@ -271,9 +277,9 @@
 
       <div class="mt-4 flex gap-2">
         <button 
-          @click="$emit('selected', scannedResult.member)"
+          @click="handleSelectMember(scannedResult.member)"
           type="button"
-          class="flex-1 py-2.5 px-4 rounded-full text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-95"
+          class="flex-1 py-3 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-95"
           :class="scannedResult.member.isSuspended ? 'bg-slate-200 text-slate-600 hover:bg-slate-300' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200'"
         >
           <UserCheck class="w-4 h-4" />
@@ -296,7 +302,13 @@ import {
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight
 } from 'lucide-vue-next';
 
-const emit = defineEmits(['selected']);
+const emit = defineEmits(['selected', 'scan-success']);
+
+const handleSelectMember = (member: any) => {
+  if (!member) return;
+  emit('selected', member);
+  emit('scan-success', member.cardNumber || member.id || '');
+};
 
 const store = useLibraryStore();
 const perPageOptions = [
@@ -361,7 +373,11 @@ const nextPage = () => {
   }
 };
 
+let isStartingCamera = false;
+
 const startCamera = async () => {
+  if (isStartingCamera || cameraActive.value) return;
+  isStartingCamera = true;
   try {
     cameraActive.value = true;
     html5QrCode = new Html5Qrcode('qr-reader');
@@ -378,19 +394,36 @@ const startCamera = async () => {
     console.error('Camera QR error', err);
     store.setError('Tidak dapat mengakses kamera. Pastikan izin kamera telah diberikan.');
     cameraActive.value = false;
+  } finally {
+    isStartingCamera = false;
   }
 };
 
 const stopCamera = async () => {
-  if (html5QrCode && cameraActive.value) {
+  cameraActive.value = false;
+  if (html5QrCode) {
+    const scanner = html5QrCode;
+    html5QrCode = null;
     try {
-      await html5QrCode.stop();
-      html5QrCode = null;
-    } catch (err) {
-      console.error(err);
+      if (typeof scanner.getState === 'function') {
+        const state = scanner.getState();
+        // State 2 = SCANNING, 3 = PAUSED
+        if (state === 2 || state === 3) {
+          await scanner.stop().catch(() => {});
+        }
+      } else {
+        await scanner.stop().catch(() => {});
+      }
+    } catch (err: any) {
+      if (!err?.message?.includes('Cannot stop') && !String(err).includes('Cannot stop')) {
+        console.warn('Camera stop error:', err);
+      }
+    } finally {
+      try {
+        scanner.clear();
+      } catch {}
     }
   }
-  cameraActive.value = false;
 };
 
 const handleManualLookup = async () => {

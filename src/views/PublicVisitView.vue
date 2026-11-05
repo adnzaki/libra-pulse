@@ -111,7 +111,7 @@
       <div class="space-y-2">
         <span class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-xs font-extrabold uppercase tracking-wider border border-emerald-300 dark:border-emerald-700 shadow-xs">
           <Sparkles class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-          <span>Anda Sudah Diperbolehkan Masuk</span>
+          <span>Akses & Sirkulasi Dikonfirmasi (Diperbolehkan Masuk)</span>
         </span>
         <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">
           Selamat Datang, {{ submittedVisit.name }}!
@@ -495,6 +495,7 @@
           <div v-if="memberScanMode === 'camera'" class="animate-in fade-in duration-200">
             <MemberCardScanner 
               @scan-success="handleMemberCodeScanned"
+              @selected="handleMemberScannerSelected"
             />
           </div>
 
@@ -699,10 +700,10 @@
             type="button"
             @click="submitMemberVisit"
             :disabled="isSubmitting"
-            class="w-full py-3 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-emerald-600/20 transition cursor-pointer active:scale-98 flex items-center justify-center gap-2"
+            class="w-full py-3.5 px-5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-emerald-600/20 transition cursor-pointer active:scale-98 flex items-center justify-center gap-2"
           >
             <UserCheck class="w-4 h-4" />
-            <span>Check-in Sekarang sebagai {{ matchedMember.name }}</span>
+            <span>Konfirmasi Akses dan Sirkulasi (Check-in {{ matchedMember.name }})</span>
           </button>
         </div>
 
@@ -864,12 +865,13 @@ onMounted(() => {
     activeTab.value = 'member';
     matchedMember.value = store.currentUser;
 
-    // Periksa apakah member ini sudah memiliki antrian masuk yang sedang pending hari ini
-    const today = new Date().toISOString().slice(0, 10);
+    const now = new Date();
+    const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const utcToday = now.toISOString().slice(0, 10);
     const pendingToday = store.visits.find(v => 
       v.visitorType === 'member' && 
       (v.memberId === store.currentUser?.id || v.memberCardNumber === store.currentUser?.cardNumber) &&
-      v.visitDate === today &&
+      (v.visitDate === localToday || v.visitDate === utcToday) &&
       v.status === 'pending'
     );
     if (pendingToday) {
@@ -1015,7 +1017,18 @@ const clearMemberSearch = () => {
   memberSearchError.value = '';
 };
 
+const handleMemberScannerSelected = (member: Member) => {
+  if (!member) return;
+  matchedMember.value = member;
+  memberSearchKey.value = member.name;
+  memberCandidates.value = [];
+  memberSearchError.value = '';
+  memberScanMode.value = 'manual';
+  store.showToast(`Anggota "${member.name}" berhasil dipilih. Silakan konfirmasi akses & sirkulasi.`);
+};
+
 const handleMemberCodeScanned = (scannedCode: string) => {
+  if (!scannedCode) return;
   memberSearchKey.value = scannedCode;
   memberScanMode.value = 'manual';
   lookupMember();
@@ -1090,10 +1103,10 @@ const submitMemberVisit = async () => {
       ? 'Dewan Guru SDN Pengasinan VII'
       : (matchedMember.value.memberType === 'siswa' ? 'Siswa SDN Pengasinan VII' : 'SDN Pengasinan VII');
 
-    // Kunjungan member masuk sebagai 'pending' untuk diverifikasi oleh admin perpustakaan
+    // Check-in member kunjungan: langsung berstatus approved (akses & sirkulasi aktif)
     const res = await store.recordVisit({
       visitorType: 'member',
-      status: 'pending',
+      status: 'approved',
       memberId: matchedMember.value.id,
       memberCardNumber: matchedMember.value.cardNumber,
       memberType: matchedMember.value.memberType || 'siswa',
@@ -1109,7 +1122,7 @@ const submitMemberVisit = async () => {
     if (res.success && res.visit) {
       submittedVisit.value = res.visit;
       memberCandidates.value = [];
-      store.showToast('Permintaan check-in terkirim! Menunggu konfirmasi admin perpustakaan.');
+      store.showToast(`✅ Konfirmasi Akses & Sirkulasi berhasil, selamat datang ${matchedMember.value.name}!`);
     }
   } finally {
     isSubmitting.value = false;
