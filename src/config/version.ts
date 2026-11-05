@@ -1,9 +1,17 @@
 import type { ChangelogItem, AppVersionConfig } from '../types.js';
 
+/**
+ * ============================================================================
+ * PUSAT KONFIGURASI BUILD NUMBER & VERSI APLIKASI LIBRA
+ * Cukup ubah konstanta APP_BUILD_NUMBER di bawah ini saat ingin merilis build baru!
+ * Semua komponen, banner update, modal changelog, dan sinkronisasi Firestore
+ * akan secara otomatis mengikuti konstanta ini.
+ * ============================================================================
+ */
+export const APP_BUILD_NUMBER = '10002';
 export const CURRENT_APP_VERSION = '1.0.0';
-export const APP_BUILD_NUMBER = '10001';
-export const APP_RELEASE_DATE = '3 November 2026';
-export const APP_RELEASE_CODENAME = 'Libra Stabil (Build 10001)';
+export const APP_RELEASE_DATE = '4 November 2026';
+export const APP_RELEASE_CODENAME = `Libra Stabil (Build ${APP_BUILD_NUMBER})`;
 
 export const DEFAULT_APP_VERSION_CONFIG: AppVersionConfig = {
   version: CURRENT_APP_VERSION,
@@ -11,11 +19,33 @@ export const DEFAULT_APP_VERSION_CONFIG: AppVersionConfig = {
   releaseDate: APP_RELEASE_DATE,
   forceReload: false,
   minSupportedVersion: '1.0.0',
-  updateMessage: 'Pembaruan aplikasi Libra v1.0.0 (Build 10001) Versi Stabil telah tersedia dengan penambahan Buku Tamu Online, pagination di seluruh modul panel admin, perbaikan bug buku terhapus, dan penyegaran tampilan notifikasi update yang lebih tenang dan elegan.',
-  changelogSummary: 'Rilis Stabil v1.0.0 Build 10001: Buku Tamu Online, Pagination Panel Admin, Perbaikan Bug Buku Terhapus, dan Pembaruan Tampilan Update Aplikasi.'
+  updateMessage: `Pembaruan aplikasi Libra v${CURRENT_APP_VERSION} (Build ${APP_BUILD_NUMBER}) telah tersedia dengan penyempurnaan alur muat ulang bebas blank screen dan peningkatan stabilitas sistem.`,
+  changelogSummary: `Rilis Stabil v${CURRENT_APP_VERSION} Build ${APP_BUILD_NUMBER}: Konstanta Build Number Terpusat dan Perbaikan Blank Screen saat Muat Ulang Pembaruan.`
 };
 
 export const CHANGELOG_LIST: ChangelogItem[] = [
+  {
+    id: 'fix-blank-screen-reload-10002',
+    title: 'Perbaikan Kendala Blank Screen saat Muat Ulang Pembaruan',
+    description:
+      'Memperbaiki kendala halaman blank putih saat mengklik tombol "Muat Ulang Halaman" pada banner pembaruan. Sistem kini secara otomatis membersihkan cache storage browser, memperbarui service worker di latar belakang, dan melakukan pemuatan ulang dengan cache-busting sehingga versi terbaru langsung aktif dengan mulus.',
+    targetAudience: 'all',
+    targetAudienceLabel: 'Semua Pengguna',
+    category: 'fix',
+    badge: `Build ${APP_BUILD_NUMBER}`,
+    iconName: 'RefreshCw',
+  },
+  {
+    id: 'feature-centralized-build-number',
+    title: 'Konfigurasi Nomor Build Terpusat (Single Source of Truth)',
+    description:
+      `Nomor build aplikasi (${APP_BUILD_NUMBER}) kini dikelola melalui satu konstanta terpusat (APP_BUILD_NUMBER) di src/config/version.ts. Mengubah nilai konstanta ini akan otomatis memperbarui tampilan banner versi, riwayat changelog, footer, serta payload sinkronisasi Firestore tanpa perlu mengedit komponen lain secara manual.`,
+    targetAudience: 'admin',
+    targetAudienceLabel: 'Khusus Admin',
+    category: 'improvement',
+    badge: 'Sistem',
+    iconName: 'Sparkles',
+  },
   {
     id: 'feature-buku-tamu-online',
     title: 'Penambahan Fitur Buku Tamu & Presensi Kunjungan Online',

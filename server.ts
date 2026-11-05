@@ -806,8 +806,28 @@ async function startServer() {
     app.use(vite.middlewares)
   } else {
     const distPath = path.join(process.cwd(), 'dist')
-    app.use(express.static(distPath))
+    
+    // 1. Static dist files dengan no-cache untuk index.html agar hash bundle baru selalu terbaca
+    app.use(express.static(distPath, {
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.html') || filePath.endsWith('.webmanifest')) {
+          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+          res.setHeader('Pragma', 'no-cache')
+          res.setHeader('Expires', '0')
+        }
+      }
+    }))
+
+    // 2. Mencegah chunk modul /assets yang tidak ditemukan jatuh ke index.html (MIME type mismatch)
+    app.use('/assets', (req, res) => {
+      res.status(404).send('Asset not found')
+    })
+
+    // 3. SPA Fallback untuk rute aplikasi (dengan header no-cache ketat)
     app.get('*', (req, res) => {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+      res.setHeader('Pragma', 'no-cache')
+      res.setHeader('Expires', '0')
       res.sendFile(path.join(distPath, 'index.html'))
     })
   }

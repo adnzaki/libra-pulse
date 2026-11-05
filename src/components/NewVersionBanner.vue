@@ -19,7 +19,7 @@
             <div class="flex items-center gap-2 flex-wrap">
               <span class="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Pembaruan Tersedia</span>
               <span class="px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-300 border border-blue-500/30 text-[10px] font-mono font-bold tracking-wide">
-                v{{ store.appVersionConfig.version }} (Build {{ store.appVersionConfig.buildNumber || '10001' }})
+                v{{ store.appVersionConfig.version }} (Build {{ store.appVersionConfig.buildNumber || APP_BUILD_NUMBER }})
               </span>
             </div>
 
@@ -30,7 +30,7 @@
 
             <div class="text-[11px] text-slate-400 mt-2 flex items-center gap-1.5 font-mono">
               <span>Versi aktif:</span>
-              <span class="font-semibold text-slate-200 bg-white/5 px-2 py-0.5 rounded-md border border-white/10">v{{ store.currentAppVersion }}</span>
+              <span class="font-semibold text-slate-200 bg-white/5 px-2 py-0.5 rounded-md border border-white/10">v{{ store.currentAppVersion }} (Build {{ APP_BUILD_NUMBER }})</span>
             </div>
           </div>
         </div>
@@ -48,11 +48,13 @@
       <!-- Action Buttons -->
       <div class="relative mt-4 pt-3.5 border-t border-slate-800/80 flex flex-wrap items-center gap-2">
         <button 
-          @click="store.reloadApplication()"
-          class="flex-1 min-w-[140px] px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold rounded-xl text-xs transition-all flex items-center justify-center gap-2 shadow-sm shadow-blue-500/25 active:scale-95 cursor-pointer"
+          @click="handleReload"
+          :disabled="isReloading"
+          class="flex-1 min-w-[140px] px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold rounded-xl text-xs transition-all flex items-center justify-center gap-2 shadow-sm shadow-blue-500/25 active:scale-95 cursor-pointer disabled:opacity-75 disabled:pointer-events-none"
         >
-          <RefreshCw class="w-3.5 h-3.5" />
-          <span>Muat Ulang Halaman</span>
+          <Loader2 v-if="isReloading" class="w-3.5 h-3.5 animate-spin" />
+          <RefreshCw v-else class="w-3.5 h-3.5" />
+          <span>{{ isReloading ? 'Memuat Ulang...' : 'Muat Ulang Halaman' }}</span>
         </button>
 
         <button 
@@ -69,8 +71,17 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
-import { Sparkles, RefreshCw, HelpCircle, X } from 'lucide-vue-next';
+import { Sparkles, RefreshCw, HelpCircle, X, Loader2 } from 'lucide-vue-next';
+import { APP_BUILD_NUMBER } from '../config/version.js';
 
 const store = useLibraryStore();
+const isReloading = ref(false);
+
+const handleReload = async () => {
+  if (isReloading.value) return;
+  isReloading.value = true;
+  await store.reloadApplication();
+};
 </script>

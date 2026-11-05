@@ -151,4 +151,31 @@ router.beforeEach(async (to, from, next) => {
   next();
 });
 
+// Bersihkan parameter cache-busting (_v) dari URL setelah reload selesai agar URL tetap bersih
+if (typeof window !== 'undefined' && window.location.search.includes('_v=')) {
+  try {
+    const cleanUrl = new URL(window.location.href);
+    cleanUrl.searchParams.delete('_v');
+    const newPath = cleanUrl.pathname + (cleanUrl.search ? cleanUrl.search : '') + cleanUrl.hash;
+    window.history.replaceState({}, document.title, newPath);
+  } catch (e) {
+    // Ignore history replace state errors
+  }
+}
+
+// Tangani kendala chunk failure (MIME type mismatch / stale bundle) jika terjadi deployment baru saat navigasi
+router.onError((error, to) => {
+  const msg = error?.message || '';
+  const isChunkError = 
+    msg.includes('Failed to fetch dynamically imported module') ||
+    msg.includes('Importing a module script failed') ||
+    msg.includes('error loading dynamically imported module');
+
+  if (isChunkError) {
+    console.warn('[Router] Chunk modul lawas tidak ditemukan pasca update, memuat ulang halaman...', error);
+    const targetUrl = to?.fullPath || window.location.pathname;
+    window.location.replace(targetUrl);
+  }
+});
+
 export default router;

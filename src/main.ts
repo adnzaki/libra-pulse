@@ -8,7 +8,7 @@ import './index.css';
 // Register Service Worker for PWA installability & offline support
 if ('serviceWorker' in navigator && !import.meta.env.DEV) {
   try {
-    registerSW({
+    const updateSW = registerSW({
       immediate: true,
       onNeedRefresh() {
         console.log('[PWA] Konten versi baru tersedia.');
@@ -17,6 +17,9 @@ if ('serviceWorker' in navigator && !import.meta.env.DEV) {
         console.log('[PWA] Libra siap digunakan dalam mode offline.');
       },
     });
+    if (typeof window !== 'undefined') {
+      (window as any).__pwa_update_sw__ = updateSW;
+    }
   } catch (err) {
     console.warn('[PWA] Service worker skipped:', err);
   }

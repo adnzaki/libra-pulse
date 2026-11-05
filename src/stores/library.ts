@@ -10,7 +10,7 @@ import {
 } from '../lib/offline-manager.js';
 import { initialBooks, initialCategories, initialShelves, initialMembers, defaultSuspendConfig } from '../lib/default-catalog.js';
 import { getCurrentDeviceId, detectCurrentDeviceInfo } from '../utils/deviceDetector.js';
-import { CURRENT_APP_VERSION, DEFAULT_APP_VERSION_CONFIG, isNewerVersion } from '../config/version.js';
+import { CURRENT_APP_VERSION, APP_BUILD_NUMBER, DEFAULT_APP_VERSION_CONFIG, isNewerVersion } from '../config/version.js';
 
 export const isSuperAdminMember = (m: any): boolean => {
   if (!m) return false;
@@ -150,6 +150,7 @@ export const useLibraryStore = defineStore('library', {
 
     // App Versioning & Real-time Update System
     currentAppVersion: CURRENT_APP_VERSION,
+    currentBuildNumber: APP_BUILD_NUMBER,
     remoteAppVersion: CURRENT_APP_VERSION,
     appVersionConfig: DEFAULT_APP_VERSION_CONFIG as AppVersionConfig,
     hasNewVersionAvailable: false,
@@ -4055,22 +4056,72 @@ export const useLibraryStore = defineStore('library', {
       this.isDismissedUpdateBanner = true;
     },
 
-    reloadApplication() {
-      if (typeof window !== 'undefined') {
-        window.location.reload();
+    async reloadApplication() {
+      if (typeof window === 'undefined') return;
+
+      try {
+        // 1. Panggil updateSW dari virtual:pwa-register jika tersedia
+        if (typeof (window as any).__pwa_update_sw__ === 'function') {
+          try {
+            await (window as any).__pwa_update_sw__(true);
+          } catch (e) {
+            console.warn('[PWA] Error calling updateSW:', e);
+          }
+        }
+
+        // 2. Bersihkan seluruh CacheStorage browser agar tidak ada sisa chunk lama yang memicu error MIME
+        if ('caches' in window) {
+          try {
+            const cacheKeys = await caches.keys();
+            await Promise.all(cacheKeys.map(k => caches.delete(k)));
+          } catch (e) {
+            console.warn('[Cache] Gagal membersihkan CacheStorage:', e);
+          }
+        }
+
+        // 3. Update Service Worker yang terdaftar
+        if ('serviceWorker' in navigator) {
+          try {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (const reg of registrations) {
+              if (reg.waiting) {
+                reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+              }
+              await reg.update().catch(() => {});
+            }
+          } catch (e) {
+            console.warn('[SW] Gagal mengupdate service worker:', e);
+          }
+        }
+      } catch (err) {
+        console.warn('Gagal membersihkan cache aplikasi:', err);
       }
+
+      // 4. Force hard reload dengan cache-busting timestamp parameter
+      // Ini memaksa browser dan web server untuk mengunduh index.html baru,
+      // alih-alih mengambil index.html lama yang masih merujuk ke chunk hash lawas.
+      setTimeout(() => {
+        try {
+          const url = new URL(window.location.href);
+          url.searchParams.set('_v', Date.now().toString());
+          window.location.replace(url.toString());
+        } catch {
+          window.location.reload();
+        }
+      }, 100);
     },
 
     async broadcastNewAppVersion(newVersion: string, updateMessage?: string) {
       const payload: AppVersionConfig = {
         version: newVersion,
+        buildNumber: APP_BUILD_NUMBER,
         releaseDate: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
-        updateMessage: updateMessage || `Pembaruan sistem Libra versi ${newVersion} telah tersedia. Silakan muat ulang halaman untuk menggunakan fitur terbaru.`,
+        updateMessage: updateMessage || `Pembaruan sistem Libra versi ${newVersion} (Build ${APP_BUILD_NUMBER}) telah tersedia. Silakan muat ulang halaman untuk menggunakan fitur terbaru.`,
         forceReload: false
       };
       const { syncAppVersionDoc } = await import('../lib/firebase.js');
       await syncAppVersionDoc(payload);
-      this.showToast(`📢 Versi baru (${newVersion}) berhasil disiarkan ke seluruh pengguna via Cloud Firestore!`);
+      this.showToast(`📢 Versi baru (${newVersion} - Build ${APP_BUILD_NUMBER}) berhasil disiarkan ke seluruh pengguna via Cloud Firestore!`);
       return { success: true };
     },
 
