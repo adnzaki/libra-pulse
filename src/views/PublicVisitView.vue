@@ -24,24 +24,100 @@
       </div>
     </div>
 
-    <!-- SUCCESS SCREEN -->
+    <!-- MULTI-STATE VISITATION SCREEN (Menunggu Konfirmasi Admin / Diperbolehkan Masuk / Ditolak) -->
+    <!-- STATE 1: MENUNGGU KONFIRMASI ADMIN -->
     <div 
-      v-if="submittedVisit" 
-      class="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-8 border border-slate-100 dark:border-slate-800 shadow-xl text-center space-y-6 animate-in zoom-in-95 duration-300 w-full"
+      v-if="submittedVisit && submittedVisit.status === 'pending'"
+      class="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 border-2 border-amber-300 dark:border-amber-700/80 shadow-xl text-center space-y-6 animate-in zoom-in-95 duration-300 w-full"
     >
-      <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-inner border border-emerald-200 dark:border-emerald-800">
-        <CheckCircle2 class="w-10 h-10 sm:w-12 sm:h-12" />
+      <div class="relative w-16 h-16 sm:w-20 sm:h-20 mx-auto">
+        <div class="absolute inset-0 rounded-full bg-amber-400/20 animate-ping"></div>
+        <div class="relative w-full h-full rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 flex items-center justify-center shadow-inner border-2 border-amber-300 dark:border-amber-700">
+          <Clock class="w-8 h-8 sm:w-10 sm:h-10 animate-pulse" />
+        </div>
       </div>
 
       <div class="space-y-2">
-        <span class="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs font-bold uppercase tracking-wider border border-emerald-200 dark:border-emerald-800">
-          Presensi Berhasil Dicatat
+        <span class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 text-xs font-extrabold uppercase tracking-wider border border-amber-300 dark:border-amber-700 shadow-xs">
+          <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+          <span>Menunggu Konfirmasi Admin</span>
+        </span>
+        <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">
+          Mohon Menunggu di Meja Sirkulasi
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-md mx-auto leading-relaxed">
+          Permintaan check-in Anda atas nama <strong>{{ submittedVisit.name }}</strong> telah masuk ke antrian buku tamu. Harap menunggu petugas perpustakaan menyetujui kedatangan Anda.
+        </p>
+      </div>
+
+      <!-- Real-time Status Card -->
+      <div class="bg-amber-50/70 dark:bg-amber-950/30 rounded-2xl p-4 sm:p-5 border border-amber-200/80 dark:border-amber-800/80 text-left max-w-md mx-auto space-y-3">
+        <div class="flex items-center justify-between pb-2 border-b border-amber-200 dark:border-amber-800/80 text-xs">
+          <span class="text-slate-500 dark:text-slate-400 font-medium">Nomor Antrian:</span>
+          <span class="font-mono font-bold text-amber-700 dark:text-amber-300">{{ submittedVisit.id }}</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2.5 text-xs">
+          <div>
+            <span class="text-slate-400 dark:text-slate-500 block text-[11px]">Nama Anggota:</span>
+            <span class="font-bold text-slate-800 dark:text-slate-200 truncate block">
+              {{ submittedVisit.name }}
+            </span>
+          </div>
+          <div>
+            <span class="text-slate-400 dark:text-slate-500 block text-[11px]">ID / No. Kartu:</span>
+            <span class="font-mono font-bold text-slate-800 dark:text-slate-200">
+              {{ submittedVisit.memberCardNumber || '-' }}
+            </span>
+          </div>
+          <div>
+            <span class="text-slate-400 dark:text-slate-500 block text-[11px]">Tujuan Kunjungan:</span>
+            <span class="font-bold text-blue-600 dark:text-blue-400">{{ submittedVisit.purpose }}</span>
+          </div>
+          <div>
+            <span class="text-slate-400 dark:text-slate-500 block text-[11px]">Waktu Pengajuan:</span>
+            <span class="font-medium text-slate-800 dark:text-slate-200">{{ formattedTime(submittedVisit.timestamp) }}</span>
+          </div>
+        </div>
+
+        <div class="pt-2 border-t border-amber-200/80 dark:border-amber-800/60 flex items-center gap-2 text-[11px] text-amber-800 dark:text-amber-300">
+          <Loader2 class="w-3.5 h-3.5 animate-spin shrink-0 text-amber-600 dark:text-amber-400" />
+          <span>Sistem terhubung real-time. Halaman akan otomatis terbuka ketika admin menekan <strong>Setujui</strong>.</span>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-center gap-3 pt-1">
+        <button 
+          @click="cancelPendingVisit"
+          type="button"
+          class="px-5 py-2.5 rounded-full border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 text-xs font-bold transition cursor-pointer active:scale-95"
+        >
+          Batalkan Permintaan
+        </button>
+      </div>
+    </div>
+
+    <!-- STATE 2: APPROVED SCREEN ("Anda sudah diperbolehkan masuk") -->
+    <div 
+      v-else-if="submittedVisit && (submittedVisit.status === 'approved' || !submittedVisit.status)"
+      class="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-8 border-2 border-emerald-300 dark:border-emerald-800 shadow-xl text-center space-y-6 animate-in zoom-in-95 duration-300 w-full"
+    >
+      <div class="relative w-16 h-16 sm:w-20 sm:h-20 mx-auto">
+        <div class="absolute inset-0 rounded-full bg-emerald-400/20 animate-ping"></div>
+        <div class="relative w-full h-full rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-inner border-2 border-emerald-300 dark:border-emerald-700">
+          <CheckCircle2 class="w-10 h-10 sm:w-12 sm:h-12" />
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <span class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-xs font-extrabold uppercase tracking-wider border border-emerald-300 dark:border-emerald-700 shadow-xs">
+          <Sparkles class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+          <span>Anda Sudah Diperbolehkan Masuk</span>
         </span>
         <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">
           Selamat Datang, {{ submittedVisit.name }}!
         </h2>
-        <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-          Terima kasih telah berkunjung ke Perpustakaan SDN Pengasinan VII. Selamat menikmati waktu membaca dan berkegiatan.
+        <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-md mx-auto leading-relaxed">
+          Kunjungan Anda telah dikonfirmasi dan disetujui oleh admin perpustakaan. Silakan masuk ke ruang perpustakaan dan gunakan fasilitas dengan tertib.
         </p>
       </div>
 
@@ -67,8 +143,14 @@
             <span class="font-semibold text-slate-800 dark:text-slate-200 truncate block">{{ submittedVisit.origin }}</span>
           </div>
           <div>
-            <span class="text-slate-400 dark:text-slate-500 block text-[11px]">Waktu Check-in:</span>
-            <span class="font-medium text-slate-800 dark:text-slate-200">{{ formattedTime(submittedVisit.timestamp) }}</span>
+            <span class="text-slate-400 dark:text-slate-500 block text-[11px]">Waktu Masuk:</span>
+            <span class="font-medium text-slate-800 dark:text-slate-200">{{ formattedTime(submittedVisit.approvedAt || submittedVisit.timestamp) }}</span>
+          </div>
+          <div v-if="submittedVisit.approvedBy" class="col-span-2 pt-1 border-t border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
+            <span class="text-slate-400 dark:text-slate-500 text-[11px]">Dikonfirmasi Oleh:</span>
+            <span class="font-bold text-emerald-700 dark:text-emerald-300 text-[11px]">
+              {{ submittedVisit.approvedBy }}
+            </span>
           </div>
           <div v-if="submittedVisit.tokenUsed" class="col-span-2 pt-1 border-t border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
             <span class="text-slate-400 dark:text-slate-500 text-[11px]">Kode Token Terverifikasi:</span>
@@ -83,10 +165,10 @@
       <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
         <button 
           @click="resetForm"
-          class="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-full shadow-md shadow-blue-500/20 transition cursor-pointer active:scale-95 flex items-center justify-center gap-2"
+          class="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-full shadow-md shadow-emerald-500/20 transition cursor-pointer active:scale-95 flex items-center justify-center gap-2"
         >
-          <UserPlus class="w-4 h-4" />
-          <span>Isi Presensi Pengunjung Lain</span>
+          <CheckCircle2 class="w-4 h-4" />
+          <span>Selesai & Mengerti</span>
         </button>
 
         <router-link 
@@ -96,6 +178,45 @@
           <BookOpen class="w-4 h-4" />
           <span>Jelajahi Katalog Buku</span>
         </router-link>
+
+        <router-link 
+          to="/member-portal"
+          class="w-full sm:w-auto px-5 py-3 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-semibold text-xs rounded-full transition cursor-pointer flex items-center justify-center gap-2"
+        >
+          <User class="w-4 h-4" />
+          <span>Portal Pinjaman Saya</span>
+        </router-link>
+      </div>
+    </div>
+
+    <!-- STATE 3: REJECTED SCREEN -->
+    <div 
+      v-else-if="submittedVisit && submittedVisit.status === 'rejected'"
+      class="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 border border-rose-300 dark:border-rose-800 shadow-xl text-center space-y-6 animate-in zoom-in-95 duration-300 w-full"
+    >
+      <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto shadow-inner border border-rose-200 dark:border-rose-800">
+        <AlertCircle class="w-10 h-10 sm:w-12 sm:h-12" />
+      </div>
+
+      <div class="space-y-2">
+        <span class="px-3 py-1 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 text-xs font-bold uppercase tracking-wider border border-rose-300 dark:border-rose-700">
+          Permintaan Belum Disetujui
+        </span>
+        <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">
+          Check-in Belum Disetujui Petugas
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+          Permintaan masuk Anda belum dapat disetujui oleh admin saat ini. Silakan langsung menemui petugas di meja sirkulasi perpustakaan.
+        </p>
+      </div>
+
+      <div class="flex items-center justify-center gap-3 pt-2">
+        <button 
+          @click="resetForm"
+          class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-full shadow-md transition cursor-pointer active:scale-95"
+        >
+          Coba Lagi
+        </button>
       </div>
     </div>
 
@@ -302,160 +423,193 @@
 
       <!-- TAB 2: CHECK-IN MEMBER PERPUSTAKAAN -->
       <div v-else class="space-y-5">
-        <div class="p-3.5 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800/60 text-xs text-blue-900 dark:text-blue-200 space-y-1">
-          <div class="font-bold flex items-center gap-1.5">
-            <QrCode class="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            <span>Presensi Anggota Cepat</span>
+        <!-- Banner Khusus Member yang Sedang Login (Otomatis Terkunci ke Diri Sendiri, Mencegah Manipulasi/Penyamaran) -->
+        <div v-if="isLoggedInMember" class="p-4 rounded-2xl bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-200/90 dark:border-emerald-800/60 text-xs text-emerald-900 dark:text-emerald-200 space-y-1.5 shadow-xs">
+          <div class="font-extrabold flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300">
+            <ShieldCheck class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span>Presensi Anggota Terverifikasi (Akun Pribadi)</span>
           </div>
-          <p class="text-[11px] text-blue-700 dark:text-blue-300">
-            Arahkan kamera ke QR Code Kartu Member Digital Anda atau ketik Nomor Kartu Anggota (contoh: <code>LIB-001</code>).
+          <p class="text-[11px] text-emerald-700 dark:text-emerald-300/90 leading-relaxed">
+            Anda masuk sebagai <strong>{{ store.currentUser?.name }}</strong> ({{ store.currentUser?.cardNumber }}). Demi keamanan data dan mencegah peniruan identitas, presensi kunjungan otomatis atas nama akun Anda sendiri.
           </p>
         </div>
 
-        <!-- Member Scanner or Input Toggle (Full Width 100% on Mobile) -->
-        <div class="flex items-center justify-center gap-2 w-full">
-          <button 
-            type="button"
-            @click="memberScanMode = 'manual'"
-            class="flex-1 py-2.5 px-3 rounded-full text-xs font-bold transition cursor-pointer active:scale-95 flex items-center justify-center gap-1.5"
-            :class="memberScanMode === 'manual' 
-              ? 'bg-blue-600 text-white shadow-xs' 
-              : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'"
-          >
-            <Search class="w-3.5 h-3.5 shrink-0" />
-            <span>Ketik Nama / ID Member</span>
-          </button>
-          <button 
-            type="button"
-            @click="memberScanMode = 'camera'"
-            class="flex-1 py-2.5 px-3 rounded-full text-xs font-bold transition cursor-pointer active:scale-95 flex items-center justify-center gap-1.5"
-            :class="memberScanMode === 'camera' 
-              ? 'bg-blue-600 text-white shadow-xs' 
-              : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'"
-          >
-            <Camera class="w-3.5 h-3.5 shrink-0" />
-            <span>Scan QR Kamera</span>
-          </button>
-        </div>
-
-        <!-- Camera Scanner Component -->
-        <div v-if="memberScanMode === 'camera'" class="animate-in fade-in duration-200">
-          <MemberCardScanner 
-            @scan-success="handleMemberCodeScanned"
-          />
-        </div>
-
-        <!-- Manual Card Lookup Form (Search by Name or Card Number) -->
-        <div v-else class="space-y-3">
-          <div class="space-y-1.5">
-            <div class="flex items-center justify-between">
-              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                Nama Member / Nomor Kartu (ID Member)
-              </label>
-              <span v-if="matchedMember" class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                <CheckCircle2 class="w-3.5 h-3.5" /> Data Ditemukan
-              </span>
+        <!-- Mode Scanner & Pencarian Member (HANYA MUNCUL JIKA BELUM LOGIN / ADMIN, HILANGKAN UNTUK MEMBER LOGIN) -->
+        <template v-else>
+          <div class="p-3.5 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800/60 text-xs text-blue-900 dark:text-blue-200 space-y-1">
+            <div class="font-bold flex items-center gap-1.5">
+              <QrCode class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <span>Presensi Anggota Cepat</span>
             </div>
-            <div class="flex gap-2">
-              <div class="relative flex-1">
-                <Search class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input 
-                  v-model="memberSearchKey"
-                  type="text"
-                  placeholder="Ketik minimal 3 karakter nama lengkap, atau nomor kartu (LIB-001)..."
-                  @keydown.enter.prevent="lookupMember"
-                  @input="onMemberSearchInput"
-                  class="w-full pl-10 pr-10 py-2.5 sm:py-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white placeholder-slate-400 text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition"
-                />
-                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-                  <Loader2 v-if="isSearchingMember" class="w-4 h-4 text-blue-500 animate-spin" />
-                  <button 
-                    v-else-if="memberSearchKey"
-                    type="button"
-                    @click="clearMemberSearch"
-                    class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-full cursor-pointer"
-                    title="Hapus pencarian"
-                  >
-                    <X class="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-              <button 
-                type="button"
-                @click="lookupMember"
-                :disabled="isSearchingMember"
-                class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-2xl shadow-sm transition cursor-pointer active:scale-95 shrink-0 flex items-center gap-1.5 disabled:opacity-75"
-              >
-                <Loader2 v-if="isSearchingMember" class="w-3.5 h-3.5 animate-spin" />
-                <Search v-else class="w-3.5 h-3.5" />
-                <span>{{ isSearchingMember ? 'Mencari...' : 'Cari' }}</span>
-              </button>
-            </div>
-            <div class="flex flex-wrap items-center justify-between text-[11px] gap-1 pt-0.5">
-              <p v-if="memberSearchKey.trim().length > 0 && memberSearchKey.trim().length < 3" class="text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
-                <span>⚠️ Ketik minimal 3 karakter untuk mencari ({{ memberSearchKey.trim().length }}/3)</span>
-              </p>
-              <p v-else-if="isSearchingMember" class="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-1">
-                <Loader2 class="w-3 h-3 animate-spin" />
-                <span>Mencari ke database server perpustakaan...</span>
-              </p>
-              <p v-else class="text-slate-500 dark:text-slate-400">
-                💡 Ketik minimal 3 karakter, sistem akan otomatis mencari ke server setelah jeda 500ms.
-              </p>
-              <span v-if="memberCandidates.length > 0 && !matchedMember" class="text-blue-600 dark:text-blue-400 font-bold ml-auto">
-                {{ memberCandidates.length }} anggota ditemukan
-              </span>
-            </div>
+            <p class="text-[11px] text-blue-700 dark:text-blue-300">
+              Arahkan kamera ke QR Code Kartu Member Digital Anda atau ketik Nomor Kartu Anggota (contoh: <code>LIB-001</code>).
+            </p>
           </div>
 
-          <!-- Multiple Candidates Suggestion / Search Result List -->
-          <div 
-            v-if="memberCandidates.length >= 1 && !matchedMember" 
-            class="space-y-2 p-3 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 animate-in fade-in duration-200"
-          >
-            <div class="flex items-center justify-between text-xs px-1">
-              <span class="font-bold text-slate-700 dark:text-slate-300">
-                Ditemukan {{ memberCandidates.length }} Anggota:
-              </span>
-              <span class="text-[11px] text-slate-500 dark:text-slate-400">Pilih profil Anda:</span>
+          <!-- Banner Ajakan Login untuk Member yang Belum Masuk -->
+          <div v-if="!store.currentUser" class="p-3.5 rounded-2xl bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200/90 dark:border-amber-800/60 text-xs text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="space-y-0.5">
+              <div class="font-bold flex items-center gap-1.5 text-amber-800 dark:text-amber-300">
+                <UserCheck class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                <span>Sudah Punya Akun Anggota?</span>
+              </div>
+              <p class="text-[11px] text-amber-700 dark:text-amber-300/90">
+                Masuk ke akun Anda agar presensi tercatat otomatis dan terverifikasi secara resmi.
+              </p>
             </div>
-            <div class="max-h-60 overflow-y-auto space-y-1.5 pr-0.5">
-              <button 
-                v-for="cand in memberCandidates"
-                :key="cand.id"
-                type="button"
-                @click="selectMemberCandidate(cand)"
-                class="w-full p-2.5 rounded-xl border text-left flex items-center justify-between gap-3 transition cursor-pointer active:scale-98 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/80 hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/40"
-              >
-                <div class="flex items-center gap-2.5 min-w-0">
-                  <img 
-                    :src="cand.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'" 
-                    alt="Avatar"
-                    class="w-9 h-9 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+            <router-link 
+              to="/login?redirect=/kunjungan"
+              class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-xs transition cursor-pointer active:scale-95 shrink-0 text-center"
+            >
+              Masuk Sekarang
+            </router-link>
+          </div>
+
+          <!-- Member Scanner or Input Toggle (Full Width 100% on Mobile) -->
+          <div class="flex items-center justify-center gap-2 w-full">
+            <button 
+              type="button"
+              @click="memberScanMode = 'manual'"
+              class="flex-1 py-2.5 px-3 rounded-full text-xs font-bold transition cursor-pointer active:scale-95 flex items-center justify-center gap-1.5"
+              :class="memberScanMode === 'manual' 
+                ? 'bg-blue-600 text-white shadow-xs' 
+                : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'"
+            >
+              <Search class="w-3.5 h-3.5 shrink-0" />
+              <span>Ketik Nama / ID Member</span>
+            </button>
+            <button 
+              type="button"
+              @click="memberScanMode = 'camera'"
+              class="flex-1 py-2.5 px-3 rounded-full text-xs font-bold transition cursor-pointer active:scale-95 flex items-center justify-center gap-1.5"
+              :class="memberScanMode === 'camera' 
+                ? 'bg-blue-600 text-white shadow-xs' 
+                : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'"
+            >
+              <Camera class="w-3.5 h-3.5 shrink-0" />
+              <span>Scan QR Kamera</span>
+            </button>
+          </div>
+
+          <!-- Camera Scanner Component -->
+          <div v-if="memberScanMode === 'camera'" class="animate-in fade-in duration-200">
+            <MemberCardScanner 
+              @scan-success="handleMemberCodeScanned"
+            />
+          </div>
+
+          <!-- Manual Card Lookup Form (Search by Name or Card Number) -->
+          <div v-else class="space-y-3">
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between">
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Nama Member / Nomor Kartu (ID Member)
+                </label>
+                <span v-if="matchedMember" class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                  <CheckCircle2 class="w-3.5 h-3.5" /> Data Ditemukan
+                </span>
+              </div>
+              <div class="flex gap-2">
+                <div class="relative flex-1">
+                  <Search class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input 
+                    v-model="memberSearchKey"
+                    type="text"
+                    placeholder="Ketik minimal 3 karakter nama lengkap, atau nomor kartu (LIB-001)..."
+                    @keydown.enter.prevent="lookupMember"
+                    @input="onMemberSearchInput"
+                    class="w-full pl-10 pr-10 py-2.5 sm:py-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white placeholder-slate-400 text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition"
                   />
-                  <div class="min-w-0 flex-1">
-                    <div class="flex items-center gap-1.5 flex-wrap">
-                      <span class="font-extrabold text-xs text-slate-900 dark:text-white truncate">{{ cand.name }}</span>
-                      <span 
-                        class="px-1.5 py-0.2 rounded-full text-[9px] font-bold"
-                        :class="cand.memberType === 'guru' ? 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300'"
-                      >
-                        {{ cand.memberType === 'guru' ? 'Guru' : 'Siswa' }}
-                      </span>
-                    </div>
-                    <div class="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
-                      <span>{{ cand.cardNumber }}</span>
-                      <span v-if="cand.nis">• NIS: {{ cand.nis }}</span>
-                    </div>
+                  <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                    <Loader2 v-if="isSearchingMember" class="w-4 h-4 text-blue-500 animate-spin" />
+                    <button 
+                      v-else-if="memberSearchKey"
+                      type="button"
+                      @click="clearMemberSearch"
+                      class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-full cursor-pointer"
+                      title="Hapus pencarian"
+                    >
+                      <X class="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
-                <span class="px-2.5 py-1 rounded-lg bg-blue-600 text-white text-[10px] font-bold shrink-0 shadow-xs">
-                  Pilih Saya
+                <button 
+                  type="button"
+                  @click="lookupMember"
+                  :disabled="isSearchingMember"
+                  class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-2xl shadow-sm transition cursor-pointer active:scale-95 shrink-0 flex items-center gap-1.5 disabled:opacity-75"
+                >
+                  <Loader2 v-if="isSearchingMember" class="w-3.5 h-3.5 animate-spin" />
+                  <Search v-else class="w-3.5 h-3.5" />
+                  <span>{{ isSearchingMember ? 'Mencari...' : 'Cari' }}</span>
+                </button>
+              </div>
+              <div class="flex flex-wrap items-center justify-between text-[11px] gap-1 pt-0.5">
+                <p v-if="memberSearchKey.trim().length > 0 && memberSearchKey.trim().length < 3" class="text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+                  <span>⚠️ Ketik minimal 3 karakter untuk mencari ({{ memberSearchKey.trim().length }}/3)</span>
+                </p>
+                <p v-else-if="isSearchingMember" class="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-1">
+                  <Loader2 class="w-3 h-3 animate-spin" />
+                  <span>Mencari ke database server perpustakaan...</span>
+                </p>
+                <p v-else class="text-slate-500 dark:text-slate-400">
+                  💡 Ketik minimal 3 karakter, sistem akan otomatis mencari ke server setelah jeda 500ms.
+                </p>
+                <span v-if="memberCandidates.length > 0 && !matchedMember" class="text-blue-600 dark:text-blue-400 font-bold ml-auto">
+                  {{ memberCandidates.length }} anggota ditemukan
                 </span>
-              </button>
+              </div>
+            </div>
+
+            <!-- Multiple Candidates Suggestion / Search Result List -->
+            <div 
+              v-if="memberCandidates.length >= 1 && !matchedMember" 
+              class="space-y-2 p-3 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 animate-in fade-in duration-200"
+            >
+              <div class="flex items-center justify-between text-xs px-1">
+                <span class="font-bold text-slate-700 dark:text-slate-300">
+                  Ditemukan {{ memberCandidates.length }} Anggota:
+                </span>
+                <span class="text-[11px] text-slate-500 dark:text-slate-400">Pilih profil Anda:</span>
+              </div>
+              <div class="max-h-60 overflow-y-auto space-y-1.5 pr-0.5">
+                <button 
+                  v-for="cand in memberCandidates"
+                  :key="cand.id"
+                  type="button"
+                  @click="selectMemberCandidate(cand)"
+                  class="w-full p-2.5 rounded-xl border text-left flex items-center justify-between gap-3 transition cursor-pointer active:scale-98 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/80 hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/40"
+                >
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <img 
+                      :src="cand.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'" 
+                      alt="Avatar"
+                      class="w-9 h-9 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+                    />
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center gap-1.5 flex-wrap">
+                        <span class="font-extrabold text-xs text-slate-900 dark:text-white truncate">{{ cand.name }}</span>
+                        <span 
+                          class="px-1.5 py-0.2 rounded-full text-[9px] font-bold"
+                          :class="cand.memberType === 'guru' ? 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300'"
+                        >
+                          {{ cand.memberType === 'guru' ? 'Guru' : 'Siswa' }}
+                        </span>
+                      </div>
+                      <div class="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
+                        <span>{{ cand.cardNumber }}</span>
+                        <span v-if="cand.nis">• NIS: {{ cand.nis }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <span class="px-2.5 py-1 rounded-lg bg-blue-600 text-white text-[10px] font-bold shrink-0 shadow-xs">
+                    Pilih Saya
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </template>
 
         <!-- Found Member Confirmation Card -->
         <div 
@@ -467,12 +621,17 @@
               <CheckCircle2 class="w-3.5 h-3.5" /> Konfirmasi Anggota
             </span>
             <button 
+              v-if="!isLoggedInMember"
               type="button" 
               @click="matchedMember = null; memberSearchKey = ''" 
               class="text-[11px] font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:underline cursor-pointer"
             >
               Ganti Anggota
             </button>
+            <span v-else class="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100/90 dark:bg-emerald-900/60 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+              <ShieldCheck class="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+              <span>Akun Terverifikasi</span>
+            </span>
           </div>
 
           <div class="flex items-center gap-3">
@@ -576,7 +735,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watchEffect, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useLibraryStore } from '../stores/library.js';
 import type { Member, LibraryVisit, VisitPurpose } from '../types.js';
@@ -600,7 +759,9 @@ import {
   KeyRound,
   Search,
   X,
-  Loader2
+  Loader2,
+  ShieldCheck,
+  Clock
 } from 'lucide-vue-next';
 
 const store = useLibraryStore();
@@ -609,6 +770,11 @@ const route = useRoute();
 const activeTab = ref<'non_member' | 'member'>('non_member');
 const isSubmitting = ref(false);
 const submittedVisit = ref<LibraryVisit | null>(null);
+
+// Status apakah yang membuka adalah member yang sudah login
+const isLoggedInMember = computed(() => {
+  return Boolean(store.currentUser && store.currentUser.role === 'member');
+});
 
 const quickOriginChips = [
   'Wali Murid SDN Pengasinan VII',
@@ -642,6 +808,32 @@ const memberPurposeDetails = ref('');
 const isSearchingMember = ref(false);
 let memberSearchDebounceTimer: any = null;
 
+// Mengunci akun jika member sedang login agar tidak dapat memilih anggota lain
+watchEffect(() => {
+  if (isLoggedInMember.value && store.currentUser) {
+    matchedMember.value = store.currentUser;
+  }
+});
+
+// Pantau update status kunjungan secara real-time (ketika admin menekan "Setujui" di antrian masuk)
+watch(
+  () => store.visits,
+  (allVisits) => {
+    if (submittedVisit.value && submittedVisit.value.status === 'pending') {
+      const live = allVisits.find(v => v.id === submittedVisit.value?.id);
+      if (live && live.status && live.status !== submittedVisit.value.status) {
+        submittedVisit.value = { ...live };
+        if (live.status === 'approved') {
+          store.showToast('Persetujuan diterima: Anda sudah diperbolehkan masuk!');
+        } else if (live.status === 'rejected') {
+          store.showToast('Permintaan check-in belum disetujui admin.');
+        }
+      }
+    }
+  },
+  { deep: true }
+);
+
 const formattedCurrentDate = computed(() => {
   return new Intl.DateTimeFormat('id-ID', {
     weekday: 'long',
@@ -667,10 +859,22 @@ onMounted(() => {
     guestForm.value.token = route.query.token.toUpperCase().trim();
   }
 
-  // If currentUser is already logged in, automatically pre-select their member profile
-  if (store.currentUser && store.currentUser.role === 'member') {
+  // If currentUser is already logged in, automatically pre-select their member profile and tab
+  if (isLoggedInMember.value && store.currentUser) {
     activeTab.value = 'member';
     matchedMember.value = store.currentUser;
+
+    // Periksa apakah member ini sudah memiliki antrian masuk yang sedang pending hari ini
+    const today = new Date().toISOString().slice(0, 10);
+    const pendingToday = store.visits.find(v => 
+      v.visitorType === 'member' && 
+      (v.memberId === store.currentUser?.id || v.memberCardNumber === store.currentUser?.cardNumber) &&
+      v.visitDate === today &&
+      v.status === 'pending'
+    );
+    if (pendingToday) {
+      submittedVisit.value = pendingToday;
+    }
   }
 });
 
@@ -864,7 +1068,20 @@ const submitNonMemberVisit = async () => {
   }
 };
 
+const cancelPendingVisit = async () => {
+  if (submittedVisit.value && submittedVisit.value.status === 'pending') {
+    const id = submittedVisit.value.id;
+    await store.deleteVisit(id);
+    submittedVisit.value = null;
+    store.showToast('Permintaan check-in telah dibatalkan.');
+  }
+};
+
 const submitMemberVisit = async () => {
+  // Pastikan jika member sedang login, profil kunjungan selalu terkunci ke akun dirinya sendiri
+  if (isLoggedInMember.value && store.currentUser) {
+    matchedMember.value = store.currentUser;
+  }
   if (!matchedMember.value) return;
 
   isSubmitting.value = true;
@@ -873,8 +1090,10 @@ const submitMemberVisit = async () => {
       ? 'Dewan Guru SDN Pengasinan VII'
       : (matchedMember.value.memberType === 'siswa' ? 'Siswa SDN Pengasinan VII' : 'SDN Pengasinan VII');
 
+    // Kunjungan member masuk sebagai 'pending' untuk diverifikasi oleh admin perpustakaan
     const res = await store.recordVisit({
       visitorType: 'member',
+      status: 'pending',
       memberId: matchedMember.value.id,
       memberCardNumber: matchedMember.value.cardNumber,
       memberType: matchedMember.value.memberType || 'siswa',
@@ -884,13 +1103,13 @@ const submitMemberVisit = async () => {
       purposeDetails: memberVisitPurpose.value === 'Lainnya' ? memberPurposeDetails.value : undefined,
       phone: matchedMember.value.phone,
       email: matchedMember.value.email,
-      source: memberScanMode.value === 'camera' ? 'qr_scan' : 'public_form'
+      source: 'public_form'
     });
 
     if (res.success && res.visit) {
       submittedVisit.value = res.visit;
       memberCandidates.value = [];
-      store.showToast(`Presensi berhasil, selamat datang ${matchedMember.value.name}!`);
+      store.showToast('Permintaan check-in terkirim! Menunggu konfirmasi admin perpustakaan.');
     }
   } finally {
     isSubmitting.value = false;
@@ -909,7 +1128,14 @@ const resetForm = () => {
     notes: ''
   };
   tokenError.value = '';
-  matchedMember.value = null;
+
+  // Jika member sedang login, pertahankan profil dirinya sendiri agar tidak dapat diubah
+  if (isLoggedInMember.value && store.currentUser) {
+    matchedMember.value = store.currentUser;
+  } else {
+    matchedMember.value = null;
+  }
+
   memberSearchKey.value = '';
   memberSearchError.value = '';
   memberCandidates.value = [];

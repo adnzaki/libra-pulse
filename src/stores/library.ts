@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { Book, Shelf, Member, Booking, Loan, SuspendConfig, NotificationLog, LibraryStats, BookCategory, TeacherRequest, StudentVerificationRequest, UserDeviceSession, AppVersionConfig, AppTheme, LibraryVisit, VisitPurpose, VisitorType, VisitSource, VisitToken } from '../types.js';
+import type { Book, Shelf, Member, Booking, Loan, SuspendConfig, NotificationLog, LibraryStats, BookCategory, TeacherRequest, StudentVerificationRequest, UserDeviceSession, AppVersionConfig, AppTheme, LibraryVisit, VisitPurpose, VisitorType, VisitSource, VisitToken, VisitStatus } from '../types.js';
 import { 
   getOfflineCachedData, 
   downloadAllForOfflineAccess, 
@@ -4292,6 +4292,7 @@ export const useLibraryStore = defineStore('library', {
       notes?: string;
       visitDate?: string;
       source?: VisitSource;
+      status?: VisitStatus;
       handledBy?: string;
       tokenUsed?: string;
     }) {
@@ -4300,9 +4301,18 @@ export const useLibraryStore = defineStore('library', {
         const visitDate = payload.visitDate || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         const timestamp = now.toISOString();
 
+        // Tentukan status default: jika member mandiri dari public form, default status adalah 'pending' (menunggu konfirmasi admin)
+        const defaultStatus: VisitStatus = (payload.visitorType === 'member' && payload.source === 'public_form')
+          ? 'pending'
+          : 'approved';
+        const status = payload.status || defaultStatus;
+
         const newVisit: LibraryVisit = {
           id: `VISIT-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`,
           visitorType: payload.visitorType,
+          status,
+          approvedAt: status === 'approved' ? timestamp : undefined,
+          approvedBy: status === 'approved' ? (this.currentUser?.name ? `Petugas (${this.currentUser.name})` : 'Sistem') : undefined,
           name: (payload.name || '').trim(),
           origin: (payload.origin || '').trim() || 'Umum',
           purpose: payload.purpose || 'Membaca Buku',
@@ -4338,6 +4348,71 @@ export const useLibraryStore = defineStore('library', {
       } catch (err: any) {
         console.error('Record visit error:', err);
         return { success: false, error: err?.message || 'Gagal mencatat kunjungan' };
+      }
+    },
+
+    async approveVisit(visitId: string, adminName?: string) {
+      try {
+        const idx = this.visits.findIndex(v => v.id === visitId);
+        if (idx === -1) return { success: false, error: 'Data kunjungan tidak ditemukan' };
+
+        const approver = adminName || (this.currentUser?.name ? `Petugas (${this.currentUser.name})` : 'Admin Perpustakaan');
+        const updated: LibraryVisit = {
+          ...this.visits[idx],
+          status: 'approved',
+          approvedAt: new Date().toISOString(),
+          approvedBy: approver
+        };
+
+        this.visits[idx] = updated;
+        this.persistVisitsToLocalCache();
+
+        // Sync to Firestore
+        import('../lib/firebase.js').then(({ syncVisitDoc }) => {
+          syncVisitDoc(updated).catch(err => {
+            console.warn('Approve visit fallback to offline queue:', err);
+            queueOfflineMutation({ action: 'saveVisit', collection: 'visits', docId: updated.id, data: updated });
+            this.pendingMutationsCount++;
+          });
+        });
+
+        this.showToast(`Kunjungan ${updated.name} telah disetujui. Anggota diperbolehkan masuk.`);
+        return { success: true, visit: updated };
+      } catch (err: any) {
+        console.error('Approve visit error:', err);
+        return { success: false, error: err?.message || 'Gagal menyetujui kunjungan' };
+      }
+    },
+
+    async rejectVisit(visitId: string, reason?: string) {
+      try {
+        const idx = this.visits.findIndex(v => v.id === visitId);
+        if (idx === -1) return { success: false, error: 'Data kunjungan tidak ditemukan' };
+
+        const existingNotes = this.visits[idx].notes || '';
+        const noteAddition = reason ? ` | Ditolak admin: ${reason}` : ' | Ditolak oleh admin';
+        const updated: LibraryVisit = {
+          ...this.visits[idx],
+          status: 'rejected',
+          notes: `${existingNotes}${noteAddition}`.trim()
+        };
+
+        this.visits[idx] = updated;
+        this.persistVisitsToLocalCache();
+
+        import('../lib/firebase.js').then(({ syncVisitDoc }) => {
+          syncVisitDoc(updated).catch(err => {
+            console.warn('Reject visit fallback to offline queue:', err);
+            queueOfflineMutation({ action: 'saveVisit', collection: 'visits', docId: updated.id, data: updated });
+            this.pendingMutationsCount++;
+          });
+        });
+
+        this.showToast(`Permintaan kunjungan ${updated.name} telah ditolak.`);
+        return { success: true, visit: updated };
+      } catch (err: any) {
+        console.error('Reject visit error:', err);
+        return { success: false, error: err?.message || 'Gagal menolak kunjungan' };
       }
     },
 

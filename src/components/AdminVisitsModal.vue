@@ -56,7 +56,9 @@
               <span 
                 v-if="tab.badge !== undefined" 
                 class="px-1.5 py-0.2 rounded-full text-[10px] font-bold"
-                :class="activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'"
+                :class="tab.isAlert 
+                  ? 'bg-rose-500 text-white animate-pulse font-black shadow-xs' 
+                  : (activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300')"
               >
                 {{ tab.badge }}
               </span>
@@ -69,6 +71,31 @@
             <!-- TAB 1: DAFTAR PRESENSI (REKAP DATA) -->
             <div v-if="activeTab === 'list'" class="space-y-4">
               
+              <!-- Pending Entrance Queue Alert Banner -->
+              <div v-if="pendingMemberVisits.length > 0" class="p-3.5 sm:p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border-2 border-amber-300 dark:border-amber-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xs animate-in slide-in-from-top-1 duration-200">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs animate-pulse">
+                    <Clock class="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 class="font-extrabold text-amber-950 dark:text-amber-200 text-xs sm:text-sm">
+                      Ada {{ pendingMemberVisits.length }} Anggota Menunggu di Antrian Masuk
+                    </h4>
+                    <p class="text-[11px] text-amber-700 dark:text-amber-300">
+                      Anggota yang melakukan check-in mandiri menunggu persetujuan admin untuk diperbolehkan masuk.
+                    </p>
+                  </div>
+                </div>
+                <button 
+                  type="button"
+                  @click="activeTab = 'member_checkin'; memberCheckinSubTab = 'queue'"
+                  class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition cursor-pointer active:scale-95 shrink-0 flex items-center justify-center gap-1.5 self-start sm:self-center"
+                >
+                  <Clock class="w-3.5 h-3.5" />
+                  <span>Buka Antrian ({{ pendingMemberVisits.length }})</span>
+                </button>
+              </div>
+
               <!-- Quick Stats Grid -->
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
                 <div class="p-3 sm:p-4 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60">
@@ -241,6 +268,13 @@
                         </span>
 
                         <span 
+                          v-if="visit.status === 'pending'" 
+                          class="px-2 py-0.2 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-700 animate-pulse flex items-center gap-1"
+                        >
+                          <Clock class="w-2.5 h-2.5" /> Antrian Masuk
+                        </span>
+
+                        <span 
                           v-if="visit.tokenUsed" 
                           class="px-2 py-0.2 rounded-full text-[10px] font-mono font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
                           title="Token kunjungan yang digunakan"
@@ -264,8 +298,8 @@
                     </div>
                   </div>
 
-                  <!-- Date Time and Delete Action -->
-                  <div class="flex items-center justify-between sm:justify-end gap-3 text-xs pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-700/60 shrink-0">
+                  <!-- Date Time, Quick Approve and Delete Action -->
+                  <div class="flex items-center justify-between sm:justify-end gap-2.5 text-xs pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-700/60 shrink-0">
                     <div class="text-left sm:text-right">
                       <span class="font-medium text-slate-700 dark:text-slate-300 block text-[11px]">
                         {{ formatVisitDate(visit.visitDate) }}
@@ -274,6 +308,17 @@
                         {{ formatTime(visit.timestamp) }}
                       </span>
                     </div>
+
+                    <button 
+                      v-if="visit.status === 'pending'"
+                      @click="approvePendingVisit(visit.id)"
+                      type="button"
+                      class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition cursor-pointer active:scale-95 flex items-center gap-1"
+                      title="Setujui Masuk Anggota"
+                    >
+                      <CheckCircle class="w-3.5 h-3.5" />
+                      <span>Setujui</span>
+                    </button>
 
                     <button 
                       @click="confirmDeleteVisit(visit)"
@@ -746,39 +791,201 @@
               </form>
             </div>
 
-            <!-- TAB 3: CHECK-IN CEPAT MEMBER (PETUGAS INPUT/SCAN MEMBER) -->
+            <!-- TAB 3: CHECK-IN MEMBER & ANTRIAN MASUK -->
             <div v-else-if="activeTab === 'member_checkin'" class="space-y-4 w-full sm:max-w-xl mx-auto">
-              <div class="p-3.5 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 text-xs text-blue-900 dark:text-blue-200 space-y-1">
-                <div class="font-bold flex items-center gap-1.5">
-                  <QrCode class="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                  <span>Check-in Cepat Anggota Perpustakaan</span>
-                </div>
-                <p class="text-[11px] text-blue-700 dark:text-blue-300">
-                  Scan QR code pada kartu anggota fisik/digital siswa & guru, atau ketik Nama / Nomor Kartu / ID Member yang disebutkan anggota.
-                </p>
+              
+              <!-- Sub-tab Selector: Antrian Masuk vs Check-in Meja -->
+              <div class="flex items-center gap-2 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700">
+                <button
+                  type="button"
+                  @click="memberCheckinSubTab = 'queue'"
+                  class="flex-1 py-2 px-3 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center gap-2 relative"
+                  :class="memberCheckinSubTab === 'queue' 
+                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs' 
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
+                >
+                  <Clock class="w-4 h-4 shrink-0" />
+                  <span>Antrian Masuk</span>
+                  <span 
+                    v-if="pendingMemberVisits.length > 0"
+                    class="px-2 py-0.5 rounded-full text-[10px] font-extrabold"
+                    :class="memberCheckinSubTab === 'queue' ? 'bg-amber-500 text-white animate-pulse' : 'bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold'"
+                  >
+                    {{ pendingMemberVisits.length }}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  @click="memberCheckinSubTab = 'direct'"
+                  class="flex-1 py-2 px-3 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center gap-2"
+                  :class="memberCheckinSubTab === 'direct' 
+                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs' 
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
+                >
+                  <UserCheck class="w-4 h-4 shrink-0" />
+                  <span>Input / Scan di Meja</span>
+                </button>
               </div>
 
-              <!-- Scanner or Search Mode Toggle (Full Width on Mobile) -->
-              <div class="flex items-center justify-center gap-2 w-full">
-                <button 
-                  type="button"
-                  @click="adminMemberScanMode = 'manual'"
-                  class="flex-1 py-2 px-3 rounded-full text-xs font-bold transition cursor-pointer active:scale-95 flex items-center justify-center gap-1.5"
-                  :class="adminMemberScanMode === 'manual' ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'"
+              <!-- SUB-TAB 1: ANTRIAN MASUK MEMBER (MENUNGGU KONFIRMASI ADMIN) -->
+              <div v-if="memberCheckinSubTab === 'queue'" class="space-y-3.5">
+                <!-- Queue Header / Summary -->
+                <div class="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-xs">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs" :class="pendingMemberVisits.length > 0 ? 'animate-pulse' : ''">
+                      <Clock class="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div class="font-extrabold text-amber-950 dark:text-amber-200 text-xs sm:text-sm">
+                        Antrian Konfirmasi Masuk
+                      </div>
+                      <p class="text-[11px] text-amber-700 dark:text-amber-300">
+                        {{ pendingMemberVisits.length > 0 
+                          ? `${pendingMemberVisits.length} anggota sedang menunggu persetujuan Anda`
+                          : 'Tidak ada antrian anggota yang menunggu saat ini' }}
+                      </p>
+                    </div>
+                  </div>
+                  <button 
+                    v-if="pendingMemberVisits.length > 1"
+                    type="button"
+                    @click="approveAllPendingVisits"
+                    class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition cursor-pointer active:scale-95 shrink-0 flex items-center gap-1"
+                  >
+                    <CheckCircle class="w-3.5 h-3.5" />
+                    <span>Setujui Semua</span>
+                  </button>
+                </div>
+
+                <!-- Empty State -->
+                <div 
+                  v-if="pendingMemberVisits.length === 0" 
+                  class="py-12 px-4 text-center rounded-3xl bg-slate-50 dark:bg-slate-800/40 border-2 border-dashed border-slate-200 dark:border-slate-700 space-y-3"
                 >
-                  <Search class="w-3.5 h-3.5 shrink-0" />
-                  <span>Ketik Nama / ID Member</span>
-                </button>
-                <button 
-                  type="button"
-                  @click="adminMemberScanMode = 'camera'"
-                  class="flex-1 py-2 px-3 rounded-full text-xs font-bold transition cursor-pointer active:scale-95 flex items-center justify-center gap-1.5"
-                  :class="adminMemberScanMode === 'camera' ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'"
-                >
-                  <Camera class="w-3.5 h-3.5 shrink-0" />
-                  <span>Scan Kamera</span>
-                </button>
+                  <div class="w-14 h-14 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-xs">
+                    <CheckCircle class="w-7 h-7" />
+                  </div>
+                  <div class="space-y-1">
+                    <h4 class="font-black text-sm sm:text-base text-slate-800 dark:text-slate-200">
+                      Antrian Masuk Kosong
+                    </h4>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                      Semua anggota yang melakukan check-in sudah disetujui, atau belum ada anggota yang meminta izin masuk.
+                    </p>
+                  </div>
+                  <button 
+                    type="button"
+                    @click="memberCheckinSubTab = 'direct'"
+                    class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition cursor-pointer active:scale-95 mt-2"
+                  >
+                    <UserCheck class="w-3.5 h-3.5" />
+                    <span>Input / Scan Anggota di Meja</span>
+                  </button>
+                </div>
+
+                <!-- Pending Queue List -->
+                <div v-else class="space-y-2.5 max-h-[460px] overflow-y-auto pr-0.5">
+                  <div 
+                    v-for="v in pendingMemberVisits"
+                    :key="v.id"
+                    class="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 shadow-xs hover:border-amber-400 dark:hover:border-amber-600 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in-50 duration-200"
+                  >
+                    <div class="flex items-center gap-3 min-w-0">
+                      <img 
+                        :src="getMemberAvatar(v.memberId, v.memberCardNumber)" 
+                        alt="Foto Anggota" 
+                        class="w-12 h-12 rounded-xl object-cover border-2 border-amber-300 dark:border-amber-600 shadow-xs shrink-0"
+                      />
+                      <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                          <h4 class="font-black text-sm text-slate-900 dark:text-white truncate">
+                            {{ v.name }}
+                          </h4>
+                          <span 
+                            class="px-2 py-0.2 rounded-full text-[10px] font-bold"
+                            :class="v.memberType === 'guru' 
+                              ? 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300' 
+                              : 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300'"
+                          >
+                            {{ v.memberType === 'guru' ? 'Guru' : 'Siswa' }}
+                          </span>
+                        </div>
+                        <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">
+                          <span class="font-bold text-amber-700 dark:text-amber-400">{{ v.memberCardNumber || 'Member' }}</span>
+                          <span>•</span>
+                          <span class="text-[11px] font-sans font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                            🎯 {{ v.purpose }}
+                          </span>
+                        </div>
+                        <div class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
+                          <Clock class="w-3 h-3" />
+                          <span>Menunggu sejak {{ formatTime(v.createdAt) }}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                      <button 
+                        type="button"
+                        @click="rejectPendingVisit(v.id)"
+                        class="px-3 py-2 rounded-xl border border-rose-200 dark:border-rose-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-bold text-xs transition cursor-pointer active:scale-95 flex items-center gap-1"
+                        title="Tolak izin masuk"
+                      >
+                        <X class="w-3.5 h-3.5" />
+                        <span>Tolak</span>
+                      </button>
+                      <button 
+                        type="button"
+                        @click="approvePendingVisit(v.id)"
+                        class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md shadow-emerald-600/20 transition cursor-pointer active:scale-95 flex items-center gap-1.5"
+                      >
+                        <CheckCircle class="w-4 h-4" />
+                        <span>Setujui</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="p-2.5 rounded-xl bg-blue-50/60 dark:bg-blue-950/30 text-[11px] text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                    <span class="text-base shrink-0">💡</span>
+                    <span>Setelah Anda mengklik <strong>Setujui</strong>, layar HP/perangkat anggota akan otomatis menampilkan notifikasi <strong>"Anda sudah diperbolehkan masuk"</strong> secara seketika.</span>
+                  </div>
+                </div>
               </div>
+
+              <!-- SUB-TAB 2: INPUT / SCAN DI MEJA (DIRECT ADMIN CHECK-IN) -->
+              <div v-else class="space-y-4">
+                <div class="p-3.5 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 text-xs text-blue-900 dark:text-blue-200 space-y-1">
+                  <div class="font-bold flex items-center gap-1.5">
+                    <QrCode class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <span>Check-in Cepat Anggota di Meja Petugas</span>
+                  </div>
+                  <p class="text-[11px] text-blue-700 dark:text-blue-300">
+                    Scan QR code pada kartu anggota fisik/digital siswa & guru, atau ketik Nama / Nomor Kartu / ID Member yang disebutkan anggota.
+                  </p>
+                </div>
+
+                <!-- Scanner or Search Mode Toggle (Full Width on Mobile) -->
+                <div class="flex items-center justify-center gap-2 w-full">
+                  <button 
+                    type="button"
+                    @click="adminMemberScanMode = 'manual'"
+                    class="flex-1 py-2 px-3 rounded-full text-xs font-bold transition cursor-pointer active:scale-95 flex items-center justify-center gap-1.5"
+                    :class="adminMemberScanMode === 'manual' ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'"
+                  >
+                    <Search class="w-3.5 h-3.5 shrink-0" />
+                    <span>Ketik Nama / ID Member</span>
+                  </button>
+                  <button 
+                    type="button"
+                    @click="adminMemberScanMode = 'camera'"
+                    class="flex-1 py-2 px-3 rounded-full text-xs font-bold transition cursor-pointer active:scale-95 flex items-center justify-center gap-1.5"
+                    :class="adminMemberScanMode === 'camera' ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'"
+                  >
+                    <Camera class="w-3.5 h-3.5 shrink-0" />
+                    <span>Scan Kamera</span>
+                  </button>
+                </div>
 
               <div v-if="adminMemberScanMode === 'camera'">
                 <MemberCardScanner @scan-success="handleAdminMemberScanned" />
@@ -974,6 +1181,7 @@
                 <span>{{ adminMemberError }}</span>
               </div>
             </div>
+          </div>
 
             <!-- TAB 4: QR MEJA RESEPSIONIS (STAND DESK / CETAK QR) -->
             <div v-else-if="activeTab === 'desk_qr'" class="space-y-5 max-w-lg mx-auto text-center">
@@ -1176,7 +1384,8 @@ import {
   Plus,
   RefreshCw,
   AlertCircle,
-  Loader2
+  Loader2,
+  Clock
 } from 'lucide-vue-next';
 
 const props = defineProps<{
@@ -1193,13 +1402,55 @@ const router = useRouter();
 const activeTab = ref<'list' | 'tokens' | 'manual_guest' | 'member_checkin' | 'desk_qr'>('list');
 const isSubmitting = ref(false);
 
+// Antrian Member Masuk yang Menunggu Persetujuan Admin
+const pendingMemberVisits = computed(() => {
+  return store.visits.filter(v => v.visitorType === 'member' && v.status === 'pending');
+});
+
+// Sub-Tab di dalam Check-in Member: 'queue' (Antrian Masuk) vs 'direct' (Check-in Meja Sirkulasi)
+const memberCheckinSubTab = ref<'queue' | 'direct'>('queue');
+
+// Jika ada antrian pending saat modal dibuka atau berubah, arahkan sub-tab ke antrian
+watch(() => pendingMemberVisits.value.length, (count) => {
+  if (count > 0 && activeTab.value === 'member_checkin') {
+    memberCheckinSubTab.value = 'queue';
+  }
+});
+
 const tabs = computed(() => [
   { id: 'list', label: 'Daftar Presensi', icon: ListFilter, badge: store.todayVisitsCount },
   { id: 'tokens', label: 'Kelola Token', icon: KeyRound, badge: store.activeVisitToken ? store.activeVisitToken.token : 'Belum Ada' },
   { id: 'manual_guest', label: 'Input Manual Non-Member', icon: UserPlus },
-  { id: 'member_checkin', label: 'Check-in Member', icon: UserCheck },
+  { 
+    id: 'member_checkin', 
+    label: 'Check-in Member', 
+    icon: UserCheck, 
+    badge: pendingMemberVisits.value.length > 0 ? `${pendingMemberVisits.value.length} Antrian` : undefined,
+    isAlert: pendingMemberVisits.value.length > 0 
+  },
   { id: 'desk_qr', label: 'QR Code', icon: QrCode }
 ]);
+
+const approvePendingVisit = async (visitId: string) => {
+  await store.approveVisit(visitId, store.currentUser?.name);
+};
+
+const rejectPendingVisit = async (visitId: string) => {
+  await store.rejectVisit(visitId);
+};
+
+const approveAllPendingVisits = async () => {
+  const list = [...pendingMemberVisits.value];
+  for (const v of list) {
+    await store.approveVisit(v.id, store.currentUser?.name);
+  }
+  store.showToast(`Semua ${list.length} antrian anggota berhasil disetujui.`);
+};
+
+const getMemberAvatar = (memberId?: string, cardNumber?: string): string => {
+  const member = store.members.find(m => (memberId && m.id === memberId) || (cardNumber && m.cardNumber === cardNumber));
+  return member?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80';
+};
 
 // Filters for List Tab
 const searchQuery = ref('');

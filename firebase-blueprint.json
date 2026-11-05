@@ -214,6 +214,9 @@
       "properties": {
         "id": { "type": "string", "maxLength": 64 },
         "visitorType": { "type": "string", "enum": ["member", "non_member"] },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "approvedAt": { "type": "string", "maxLength": 50 },
+        "approvedBy": { "type": "string", "maxLength": 150 },
         "memberId": { "type": "string", "maxLength": 64 },
         "memberCardNumber": { "type": "string", "maxLength": 50 },
         "name": { "type": "string", "maxLength": 150 },

@@ -231,10 +231,14 @@ export type AppTheme = 'light' | 'dark' | 'elegant';
 export type VisitPurpose = 'Membaca Buku' | 'Observasi' | 'Meminjam Buku' | 'Lainnya';
 export type VisitorType = 'member' | 'non_member';
 export type VisitSource = 'auto_borrow' | 'qr_scan' | 'public_form' | 'manual_admin';
+export type VisitStatus = 'pending' | 'approved' | 'rejected';
 
 export interface LibraryVisit {
   id: string;
   visitorType: VisitorType;
+  status?: VisitStatus; // 'pending' (menunggu konfirmasi admin) | 'approved' (disetujui masuk) | 'rejected'
+  approvedAt?: string;
+  approvedBy?: string;
   memberId?: string;
   memberCardNumber?: string;
   memberType?: 'guru' | 'siswa' | 'umum';
