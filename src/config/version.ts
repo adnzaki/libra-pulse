@@ -8,7 +8,7 @@ import type { ChangelogItem, AppVersionConfig } from '../types.js';
  * akan secara otomatis mengikuti konstanta ini.
  * ============================================================================
  */
-export const APP_BUILD_NUMBER = '10002';
+export const APP_BUILD_NUMBER = '10003';
 export const CURRENT_APP_VERSION = '1.0.0';
 export const APP_RELEASE_DATE = '4 November 2026';
 export const APP_RELEASE_CODENAME = `Libra Stabil (Build ${APP_BUILD_NUMBER})`;
@@ -24,28 +24,6 @@ export const DEFAULT_APP_VERSION_CONFIG: AppVersionConfig = {
 };
 
 export const CHANGELOG_LIST: ChangelogItem[] = [
-  {
-    id: 'fix-blank-screen-reload-10002',
-    title: 'Perbaikan Kendala Blank Screen saat Muat Ulang Pembaruan',
-    description:
-      'Memperbaiki kendala halaman blank putih saat mengklik tombol "Muat Ulang Halaman" pada banner pembaruan. Sistem kini secara otomatis membersihkan cache storage browser, memperbarui service worker di latar belakang, dan melakukan pemuatan ulang dengan cache-busting sehingga versi terbaru langsung aktif dengan mulus.',
-    targetAudience: 'all',
-    targetAudienceLabel: 'Semua Pengguna',
-    category: 'fix',
-    badge: `Build ${APP_BUILD_NUMBER}`,
-    iconName: 'RefreshCw',
-  },
-  {
-    id: 'feature-centralized-build-number',
-    title: 'Konfigurasi Nomor Build Terpusat (Single Source of Truth)',
-    description:
-      `Nomor build aplikasi (${APP_BUILD_NUMBER}) kini dikelola melalui satu konstanta terpusat (APP_BUILD_NUMBER) di src/config/version.ts. Mengubah nilai konstanta ini akan otomatis memperbarui tampilan banner versi, riwayat changelog, footer, serta payload sinkronisasi Firestore tanpa perlu mengedit komponen lain secara manual.`,
-    targetAudience: 'admin',
-    targetAudienceLabel: 'Khusus Admin',
-    category: 'improvement',
-    badge: 'Sistem',
-    iconName: 'Sparkles',
-  },
   {
     id: 'feature-buku-tamu-online',
     title: 'Penambahan Fitur Buku Tamu & Presensi Kunjungan Online',
@@ -81,7 +59,8 @@ export const CHANGELOG_LIST: ChangelogItem[] = [
   },
   {
     id: 'calm-elegant-update-banner',
-    title: 'Pembaruan Tampilan Pemberitahuan Update Aplikasi yang Tenang & Elegan',
+    title:
+      'Pembaruan Tampilan Pemberitahuan Update Aplikasi yang Tenang & Elegan',
     description:
       'Memperbarui desain notifikasi update aplikasi dengan perpaduan warna yang lebih tenang (calm), gradasi halus (subtle gradient), latar belakang kaca modern (soft glassmorphism), tipografi jernih, dan tata letak tombol yang lebih rapi serta nyaman dipandang.',
     targetAudience: 'all',
@@ -90,7 +69,18 @@ export const CHANGELOG_LIST: ChangelogItem[] = [
     badge: 'Antarmuka UI',
     iconName: 'Sparkles',
   },
-];
+  {
+    id: 'fix-blank-screen-reload-10002',
+    title: 'Perbaikan Kendala Blank Screen saat Muat Ulang Pembaruan',
+    description:
+      'Memperbaiki kendala halaman blank putih saat mengklik tombol "Muat Ulang Halaman" pada banner pembaruan. Sistem kini secara otomatis membersihkan cache storage browser, memperbarui service worker di latar belakang, dan melakukan pemuatan ulang dengan cache-busting sehingga versi terbaru langsung aktif dengan mulus.',
+    targetAudience: 'all',
+    targetAudienceLabel: 'Semua Pengguna',
+    category: 'fix',
+    badge: `Build ${APP_BUILD_NUMBER}`,
+    iconName: 'RefreshCw',
+  },
+]
 
 /**
  * Parses semantic version string into numbers and identifiers
