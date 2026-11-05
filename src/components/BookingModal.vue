@@ -169,11 +169,66 @@
                 </button>
               </div>
 
-              <!-- Embedded Camera QR Scanner Area -->
-              <div v-if="isCameraActive" class="mb-3 p-3 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-2">
-                <div id="booking-qr-reader" class="w-full max-h-52 rounded-xl overflow-hidden bg-slate-950 mx-auto"></div>
-                <p class="text-[11px] text-slate-300">Arahkan kamera ke QR Code atau Barcode pada kartu anggota</p>
-              </div>
+              <!-- Teleport Fullscreen Camera to Body -->
+              <Teleport to="body">
+                <div 
+                  v-if="isCameraActive" 
+                  class="fixed inset-0 z-[99999] bg-slate-950 w-full h-[100dvh] flex flex-col justify-between overflow-hidden animate-in fade-in"
+                  style="position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100vw !important; height: 100dvh !important; z-index: 99999 !important;"
+                >
+                  <!-- Scanner Video Container Fullscreen -->
+                  <div id="booking-qr-reader" class="absolute inset-0 w-full h-full"></div>
+
+                  <!-- Top Bar Header -->
+                  <div class="absolute top-0 left-0 right-0 p-4 pt-6 bg-gradient-to-b from-slate-950/95 via-slate-950/70 to-transparent z-20 flex items-center justify-between gap-3 text-white">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                      <div class="w-9 h-9 rounded-xl bg-blue-600/80 backdrop-blur-md flex items-center justify-center text-white shrink-0 shadow-md">
+                        <Scan class="w-5 h-5 animate-pulse text-cyan-300" />
+                      </div>
+                      <div class="min-w-0">
+                        <h4 class="font-extrabold text-sm sm:text-base tracking-tight text-white truncate">Pindai QR Kartu Anggota</h4>
+                        <p class="text-[11px] sm:text-xs text-slate-300 truncate">Booking: {{ book?.title }}</p>
+                      </div>
+                    </div>
+                    <button 
+                      @click="stopCamera"
+                      type="button"
+                      class="w-10 h-10 rounded-full bg-slate-800/80 hover:bg-slate-700 text-white flex items-center justify-center transition cursor-pointer active:scale-95 shadow-md border border-white/10 shrink-0"
+                      title="Tutup Kamera"
+                    >
+                      <X class="w-5 h-5 stroke-[2.5]" />
+                    </button>
+                  </div>
+
+                  <!-- Center Target Viewfinder Frame with Neon Corners & Animated Scan Line -->
+                  <div class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+                    <div class="relative w-72 h-72 sm:w-80 sm:h-80 rounded-3xl border-2 border-white/20">
+                      <div class="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-blue-400 rounded-tl-2xl shadow-[0_0_15px_rgba(96,165,250,0.9)]"></div>
+                      <div class="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-blue-400 rounded-tr-2xl shadow-[0_0_15px_rgba(96,165,250,0.9)]"></div>
+                      <div class="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-blue-400 rounded-bl-2xl shadow-[0_0_15px_rgba(96,165,250,0.9)]"></div>
+                      <div class="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-blue-400 rounded-br-2xl shadow-[0_0_15px_rgba(96,165,250,0.9)]"></div>
+                      <div class="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent animate-pulse shadow-[0_0_12px_#22d3ee] top-1/2 -translate-y-1/2"></div>
+                    </div>
+                  </div>
+
+                  <!-- Bottom Bar Controls -->
+                  <div class="absolute bottom-0 left-0 right-0 p-5 pb-8 sm:pb-6 bg-gradient-to-t from-slate-950/95 via-slate-950/80 to-transparent z-20 flex flex-col items-center gap-3">
+                    <p class="text-xs sm:text-sm text-slate-200 font-medium text-center">
+                      Posisikan QR Code / Barcode kartu di tengah kotak pembidik
+                    </p>
+                    <div class="flex items-center gap-3 w-full max-w-sm">
+                      <button 
+                        @click="stopCamera"
+                        type="button"
+                        class="w-full py-3 px-4 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm backdrop-blur-md border border-white/10 transition cursor-pointer active:scale-95 flex items-center justify-center gap-2"
+                      >
+                        <Keyboard class="w-4 h-4" />
+                        <span>Ketik Nomor Kartu Saja</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </Teleport>
 
               <div class="relative">
                 <input 
@@ -344,7 +399,10 @@
 import { ref, computed, onBeforeUnmount, nextTick, toRef } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
 import type { Book, Member } from '../types.js';
-import { BookmarkCheck, Bookmark, X, Clock, AlertCircle, Camera, QrCode, ShieldCheck, GraduationCap, CheckCircle2 } from 'lucide-vue-next';
+import { 
+  BookmarkCheck, Bookmark, X, Clock, AlertCircle, Camera, QrCode, 
+  ShieldCheck, GraduationCap, CheckCircle2, Scan, Keyboard 
+} from 'lucide-vue-next';
 import { Html5Qrcode } from 'html5-qrcode';
 import confetti from 'canvas-confetti';
 import { useModalBack } from '../composables/useModalBack.js';
@@ -462,9 +520,18 @@ const startCamera = async () => {
     isCameraActive.value = true;
     await nextTick();
     html5QrScanner = new Html5Qrcode('booking-qr-reader');
+    const qrboxFunction = (viewfinderWidth: number, viewfinderHeight: number) => {
+      const minEdgePercentage = 0.72;
+      const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+      const qrboxSize = Math.max(200, Math.min(Math.floor(minEdgeSize * minEdgePercentage), 340));
+      return {
+        width: qrboxSize,
+        height: qrboxSize
+      };
+    };
     await html5QrScanner.start(
       { facingMode: 'environment' },
-      { fps: 10, qrbox: { width: 220, height: 220 } },
+      { fps: 10, qrbox: qrboxFunction },
       (decodedText) => {
         cardNumberInput.value = decodedText.trim();
         handleCardInputChanged();
@@ -601,4 +668,26 @@ onBeforeUnmount(() => {
   stopCamera();
 });
 </script>
+
+<style scoped>
+:deep(#booking-qr-reader) {
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: #020617 !important;
+}
+:deep(#booking-qr-reader video) {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+:deep(#booking-qr-reader__scan_region) {
+  background: transparent !important;
+}
+:deep(#booking-qr-reader__dashboard) {
+  display: none !important;
+}
+</style>
 

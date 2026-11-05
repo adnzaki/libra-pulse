@@ -37,32 +37,92 @@
 
     <!-- Camera Mode -->
     <div v-if="mode === 'camera'" class="space-y-3">
-      <div class="relative bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 aspect-video flex flex-col items-center justify-center shadow-inner">
-        <div id="qr-reader" class="w-full h-full max-h-64"></div>
-        
-        <div v-if="!cameraActive" class="absolute inset-0 flex flex-col items-center justify-center p-4 text-center bg-slate-900/90 space-y-3">
-          <Camera class="w-10 h-10 text-slate-500 animate-pulse" />
-          <p class="text-xs text-slate-300 max-w-xs">Arahkan kamera perangkat ke QR Code pada kartu member fisik atau digital</p>
-          <button 
-            @click="startCamera"
-            type="button"
-            class="px-5 py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 transition flex items-center gap-2 cursor-pointer active:scale-95"
-          >
-            <Sparkles class="w-3.5 h-3.5" />
-            Aktifkan Scanner Kamera
-          </button>
-        </div>
-
-        <div v-if="cameraActive" class="absolute top-3 right-3 z-10">
-          <button 
-            @click="stopCamera"
-            type="button"
-            class="px-3.5 py-1.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold shadow-md cursor-pointer active:scale-95"
-          >
-            Matikan Kamera
-          </button>
-        </div>
+      <!-- Inactive Camera Box (Normal Card Placeholder) -->
+      <div class="bg-slate-900 rounded-2xl border border-slate-200 aspect-video flex flex-col items-center justify-center p-4 text-center space-y-3">
+        <Camera class="w-10 h-10 text-slate-500 animate-pulse" />
+        <p class="text-xs text-slate-300 max-w-xs">Arahkan kamera perangkat ke QR Code pada kartu member fisik atau digital</p>
+        <button 
+          @click="startCamera"
+          type="button"
+          class="px-5 py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 transition flex items-center gap-2 cursor-pointer active:scale-95"
+        >
+          <Sparkles class="w-3.5 h-3.5" />
+          <span>{{ cameraActive ? 'Kamera Aktif...' : 'Aktifkan Scanner Kamera' }}</span>
+        </button>
       </div>
+
+      <!-- Teleport Fullscreen Camera to Body: Truly 100% of the entire viewport! -->
+      <Teleport to="body">
+        <div 
+          v-if="cameraActive" 
+          class="fixed inset-0 z-[99999] bg-slate-950 w-full h-[100dvh] flex flex-col justify-between overflow-hidden"
+          style="position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100vw !important; height: 100dvh !important;"
+        >
+          <!-- Scanner Video Container Fullscreen -->
+          <div id="qr-reader" class="absolute inset-0 w-full h-full"></div>
+
+          <!-- Top Bar Header -->
+          <div class="absolute top-0 left-0 right-0 p-4 pt-6 bg-gradient-to-b from-slate-950/95 via-slate-950/70 to-transparent z-20 flex items-center justify-between gap-3 text-white">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="w-9 h-9 rounded-xl bg-blue-600/80 backdrop-blur-md flex items-center justify-center text-white shrink-0 shadow-md">
+                <Scan class="w-5 h-5 animate-pulse text-cyan-300" />
+              </div>
+              <div class="min-w-0">
+                <h4 class="font-extrabold text-sm sm:text-base tracking-tight text-white truncate">Pindai QR Kartu Anggota</h4>
+                <p class="text-[11px] sm:text-xs text-slate-300 truncate">Arahkan kamera ke QR Code atau Barcode kartu</p>
+              </div>
+            </div>
+            <button 
+              @click="stopCamera"
+              type="button"
+              class="w-10 h-10 rounded-full bg-slate-800/80 hover:bg-slate-700 text-white flex items-center justify-center transition cursor-pointer active:scale-95 shadow-md border border-white/10 shrink-0"
+              title="Tutup Kamera"
+            >
+              <X class="w-5 h-5 stroke-[2.5]" />
+            </button>
+          </div>
+
+          <!-- Center Target Viewfinder Frame with Neon Corners & Animated Scan Line -->
+          <div class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+            <div class="relative w-72 h-72 sm:w-80 sm:h-80 rounded-3xl border-2 border-white/20">
+              <!-- Corner brackets glowing neon -->
+              <div class="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-blue-400 rounded-tl-2xl shadow-[0_0_15px_rgba(96,165,250,0.9)]"></div>
+              <div class="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-blue-400 rounded-tr-2xl shadow-[0_0_15px_rgba(96,165,250,0.9)]"></div>
+              <div class="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-blue-400 rounded-bl-2xl shadow-[0_0_15px_rgba(96,165,250,0.9)]"></div>
+              <div class="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-blue-400 rounded-br-2xl shadow-[0_0_15px_rgba(96,165,250,0.9)]"></div>
+
+              <!-- Animated Laser Scan line -->
+              <div class="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent animate-pulse shadow-[0_0_12px_#22d3ee] top-1/2 -translate-y-1/2"></div>
+            </div>
+          </div>
+
+          <!-- Bottom Control Bar -->
+          <div class="absolute bottom-0 left-0 right-0 p-5 pb-8 sm:pb-6 bg-gradient-to-t from-slate-950/95 via-slate-950/80 to-transparent z-20 flex flex-col items-center gap-3">
+            <p class="text-xs sm:text-sm text-slate-200 font-medium text-center">
+              Posisikan QR Code kartu di tengah kotak pembidik
+            </p>
+            <div class="flex items-center gap-3 w-full max-w-sm">
+              <button 
+                @click="mode = 'manual'; stopCamera()"
+                type="button"
+                class="flex-1 py-3 px-4 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm backdrop-blur-md border border-white/10 transition cursor-pointer active:scale-95 flex items-center justify-center gap-2"
+              >
+                <Keyboard class="w-4 h-4" />
+                <span>Ketik Manual</span>
+              </button>
+              <button 
+                @click="stopCamera"
+                type="button"
+                class="flex-1 py-3 px-4 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs sm:text-sm shadow-lg shadow-rose-600/30 transition cursor-pointer active:scale-95 flex items-center justify-center gap-2"
+              >
+                <X class="w-4 h-4" />
+                <span>Tutup Scanner</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </Teleport>
+
       <p class="text-[11px] text-slate-400 text-center">Mendukung pembacaan QR Code kartu member secara real-time.</p>
     </div>
 
@@ -380,10 +440,20 @@ const startCamera = async () => {
   isStartingCamera = true;
   try {
     cameraActive.value = true;
+    await nextTick();
     html5QrCode = new Html5Qrcode('qr-reader');
+    const qrboxFunction = (viewfinderWidth: number, viewfinderHeight: number) => {
+      const minEdgePercentage = 0.72;
+      const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+      const qrboxSize = Math.max(200, Math.min(Math.floor(minEdgeSize * minEdgePercentage), 340));
+      return {
+        width: qrboxSize,
+        height: qrboxSize
+      };
+    };
     await html5QrCode.start(
       { facingMode: 'environment' },
-      { fps: 10, qrbox: { width: 250, height: 250 } },
+      { fps: 10, qrbox: qrboxFunction },
       (decodedText) => {
         handleCardFound(decodedText);
         stopCamera();
@@ -457,3 +527,25 @@ onBeforeUnmount(() => {
   stopCamera();
 });
 </script>
+
+<style scoped>
+:deep(#qr-reader) {
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: #020617 !important;
+}
+:deep(#qr-reader video) {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+:deep(#qr-reader__scan_region) {
+  background: transparent !important;
+}
+:deep(#qr-reader__dashboard) {
+  display: none !important;
+}
+</style>
