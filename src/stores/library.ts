@@ -12,6 +12,7 @@ import { initialBooks, initialCategories, initialShelves, initialMembers, defaul
 import { getCurrentDeviceId, detectCurrentDeviceInfo } from '../utils/deviceDetector.js';
 import { CURRENT_APP_VERSION, APP_BUILD_NUMBER, DEFAULT_APP_VERSION_CONFIG, isNewerVersion, isNewerAppRelease } from '../config/version.js';
 import { isTodayVisit, getTodayDateString } from '../utils/dateUtils.js';
+import { invalidateClientCache } from '../utils/apiCache.js';
 
 export const isSuperAdminMember = (m: any): boolean => {
   if (!m) return false;
@@ -452,6 +453,23 @@ export const useLibraryStore = defineStore('library', {
   },
 
   actions: {
+    async fetchServerStats() {
+      try {
+        const res = await fetch('/api/stats', { headers: { 'Cache-Control': 'no-cache' } });
+        if (res.ok) {
+          const json = await res.json();
+          if (json && json.success && json.stats) {
+            this.stats = {
+              ...(this.stats || {}),
+              ...json.stats
+            };
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to fetch server stats:', err);
+      }
+    },
+
     // ------------------------------------------------------------------------
     // Realtime Listener Setup & Online/Offline Events
     // ------------------------------------------------------------------------
@@ -495,31 +513,6 @@ export const useLibraryStore = defineStore('library', {
           return;
         }
 
-        subscribeToFirestoreCollection<Book>('books', (items) => {
-          if (items && Array.isArray(items)) {
-            this.books = items.filter(b => !this.isBookDeleted(b.id));
-            this.isUsingOfflineData = false;
-            this.calculateStats();
-            this.persistToLocalCache();
-          }
-        });
-
-        subscribeToFirestoreCollection<any>('deleted_books', (items) => {
-          if (items && Array.isArray(items)) {
-            let hasChanged = false;
-            for (const item of items) {
-              if (item?.id && !this.deletedBookIds.has(item.id)) {
-                this.markBookAsDeleted(item.id);
-                hasChanged = true;
-              }
-            }
-            if (hasChanged || this.books.some(b => this.isBookDeleted(b.id))) {
-              this.books = this.books.filter(b => !this.isBookDeleted(b.id));
-              this.calculateStats();
-              this.persistToLocalCache();
-            }
-          }
-        });
         subscribeToFirestoreCollection<Shelf>('shelves', (items) => {
           if (items && items.length > 0) {
             this.shelves = sortShelves(items);
@@ -534,53 +527,7 @@ export const useLibraryStore = defineStore('library', {
             this.persistToLocalCache();
           }
         });
-        subscribeToFirestoreCollection<Member>('members', (items) => {
-          if (items && items.length > 0) {
-            this.members = items;
-            if (this.currentUser) {
-              const current = items.find(m => m.id === this.currentUser?.id || m.email?.toLowerCase() === this.currentUser?.email?.toLowerCase());
-              if (current) this.currentUser = current;
-            }
-            this.calculateStats();
-            this.persistToLocalCache();
-          }
-        });
-        subscribeToFirestoreCollection<Loan>('loans', (items) => {
-          if (items) {
-            for (const item of items) {
-              if (item.status === 'returned') {
-                this.processedEbookReturnIds.add(item.id);
-              }
-            }
-            this.loans = items;
-            this.calculateStats();
-            this.persistToLocalCache();
-          }
-        });
-        subscribeToFirestoreCollection<Booking>('bookings', (items) => {
-          if (items) {
-            this.bookings = items;
-            this.checkAndCleanExpiredBookings({ silent: true });
-            this.calculateStats();
-            this.persistToLocalCache();
-          }
-        });
-        subscribeToFirestoreCollection<NotificationLog>('notifications', (items) => {
-          if (items) {
-            this.notifications = items;
-            this.persistToLocalCache();
-          }
-        });
-        subscribeToFirestoreCollection<TeacherRequest>('teacher_requests', (items) => {
-          if (items) {
-            this.teacherRequests = items.sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
-          }
-        });
-        subscribeToFirestoreCollection<StudentVerificationRequest>('student_verifications', (items) => {
-          if (items) {
-            this.studentVerifications = items.sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
-          }
-        });
+        this.fetchServerStats();
         subscribeToFirestoreCollection<any>('config', (items) => {
           if (items && items.length > 0) {
             const susp = items.find(i => (i as any).maxActiveLoans !== undefined || (i as any).id === 'suspend_config');
@@ -1300,60 +1247,29 @@ export const useLibraryStore = defineStore('library', {
 
         this.setupRealtimeListeners();
 
-        let fBooks = await getFirestoreCollection<Book>('books');
-        
-        // If Firestore is empty on initial bootstrap, populate catalog into Firestore (only if not quota exhausted)
-        if (fBooks.length === 0 && !isFirestoreQuotaExhausted()) {
-          const didSeed = await checkAndSeedFirestore();
-          if (didSeed) {
-            fBooks = await getFirestoreCollection<Book>('books');
-          }
-        }
-
-        // Filter out any tombstoned/deleted books
-        fBooks = (fBooks || []).filter(b => !this.isBookDeleted(b.id));
-
-        const isSystemBootstrapped = localStorage.getItem('libra_system_bootstrapped') === 'true';
-
-        if (fBooks.length > 0 || isSystemBootstrapped) {
-          const [fShelves, fCats, fMembers, fLoans, fBookings, fConfig, fNotifs, fTeacherReqs, fStudentVerifs, fDeviceSessions] = await Promise.all([
+        try {
+          const [fShelves, fCats, fConfig, fDeviceSessions] = await Promise.all([
             getFirestoreCollection<Shelf>('shelves'),
             getFirestoreCollection<BookCategory>('categories'),
-            getFirestoreCollection<Member>('members'),
-            getFirestoreCollection<Loan>('loans'),
-            getFirestoreCollection<Booking>('bookings'),
             getFirestoreCollection<SuspendConfig>('config'),
-            getFirestoreCollection<NotificationLog>('notifications'),
-            getFirestoreCollection<TeacherRequest>('teacher_requests'),
-            getFirestoreCollection<StudentVerificationRequest>('student_verifications'),
             getFirestoreCollection<UserDeviceSession>('device_sessions'),
           ]);
 
-          this.books = fBooks;
-          localStorage.setItem('libra_system_bootstrapped', 'true');
           if (fShelves && fShelves.length > 0) this.shelves = sortShelves(fShelves);
           if (fCats && fCats.length > 0) this.categories = fCats;
-          if (fMembers && fMembers.length > 0) this.members = fMembers;
-          this.loans = fLoans || [];
-          for (const l of this.loans) {
-            if (l.status === 'returned') {
-              this.processedEbookReturnIds.add(l.id);
-            }
-          }
-          this.bookings = fBookings || [];
-          this.notifications = fNotifs || [];
-          this.teacherRequests = (fTeacherReqs || []).sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
-          this.studentVerifications = (fStudentVerifs || []).sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
-          this.deviceSessions = fDeviceSessions || [];
           if (fConfig && fConfig.length > 0) {
             const susp = fConfig.find(c => (c as any).maxActiveLoans !== undefined || (c as any).id === 'suspend_config');
             if (susp) this.suspendConfig = susp;
           }
+          this.deviceSessions = fDeviceSessions || [];
+
+          // Ambil ringkasan statistik server tanpa menarik ribuan data dokumen
+          await this.fetchServerStats();
 
           this.isUsingOfflineData = false;
           this.persistToLocalCache();
-        } else {
-          // If Firestore is unreachable or quota exhausted, maintain local fallback
+        } catch (fetchErr) {
+          console.warn('Lightweight fetch fallback to offline:', fetchErr);
           this.loadOfflineFallback();
         }
 
@@ -1569,6 +1485,9 @@ export const useLibraryStore = defineStore('library', {
           console.warn('Failed to load firebase for saveBook:', err);
         });
 
+        invalidateClientCache('books');
+        this.fetchServerStats();
+
         this.showToast(`Buku "${savedBook.title}" berhasil disimpan!`);
         return { success: true, book: savedBook };
       } catch (err: any) {
@@ -1612,6 +1531,9 @@ export const useLibraryStore = defineStore('library', {
           queueOfflineMutation({ action: 'deleteBook', collection: 'books', docId: bookId });
           this.pendingMutationsCount++;
         }
+
+        invalidateClientCache('books');
+        this.fetchServerStats();
 
         this.showToast(`Buku "${title}" berhasil dihapus.`);
         return { success: true };
@@ -2256,10 +2178,28 @@ export const useLibraryStore = defineStore('library', {
         return { success: false, error: 'Nomor kartu tidak boleh kosong.' };
       }
 
-      const member = this.members.find(m => 
+      let member = this.members.find(m => 
         (m.cardNumber && m.cardNumber.toLowerCase() === cleanCard) ||
         (m.id && m.id.toLowerCase() === cleanCard)
       );
+
+      if (!member) {
+        try {
+          const res = await fetch(`/api/members?search=${encodeURIComponent(cleanCard)}&limit=5`);
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success && json.data && json.data.length > 0) {
+              member = json.data.find((m: any) => 
+                (m.cardNumber && m.cardNumber.toLowerCase() === cleanCard) ||
+                (m.id && m.id.toLowerCase() === cleanCard)
+              ) || json.data[0];
+              if (member && !this.members.some(m => m.id === member.id)) {
+                this.members.push(member);
+              }
+            }
+          }
+        } catch {}
+      }
 
       if (!member) {
         return { 
@@ -2268,8 +2208,27 @@ export const useLibraryStore = defineStore('library', {
         };
       }
 
-      const activeLoans = this.loans.filter(l => l.memberId === member.id && (l.status === 'borrowed' || l.status === 'active' || l.status === 'overdue'));
-      const activeBookings = this.bookings.filter(b => b.memberId === member.id && (b.status === 'ready_for_pickup' || b.status === 'booked' || b.status === 'active_hold'));
+      let activeLoans = this.loans.filter(l => l.memberId === member.id && (l.status === 'borrowed' || l.status === 'active' || l.status === 'overdue'));
+      let activeBookings = this.bookings.filter(b => b.memberId === member.id && (b.status === 'ready_for_pickup' || b.status === 'booked' || b.status === 'active_hold'));
+
+      try {
+        const [loanRes, bookRes] = await Promise.all([
+          fetch(`/api/loans?search=${encodeURIComponent(member.cardNumber || member.id)}&status=active&limit=25`),
+          fetch(`/api/bookings?search=${encodeURIComponent(member.cardNumber || member.id)}&status=active&limit=25`)
+        ]);
+        if (loanRes.ok) {
+          const loanJson = await loanRes.json();
+          if (loanJson.success && Array.isArray(loanJson.data)) {
+            activeLoans = loanJson.data;
+          }
+        }
+        if (bookRes.ok) {
+          const bookJson = await bookRes.json();
+          if (bookJson.success && Array.isArray(bookJson.data)) {
+            activeBookings = bookJson.data;
+          }
+        }
+      } catch {}
 
       return {
         success: true,
@@ -2285,12 +2244,32 @@ export const useLibraryStore = defineStore('library', {
       const cleanIdent = (credentials.identifier || '').trim().toLowerCase();
       const enteredPass = credentials.password || '';
 
-      const matchedMember = this.members.find(m => 
+      let matchedMember = this.members.find(m => 
         (m.email && m.email.toLowerCase() === cleanIdent) ||
         (m.cardNumber && m.cardNumber.toLowerCase() === cleanIdent) ||
         (m.id && m.id.toLowerCase() === cleanIdent) ||
         (cleanIdent === 'admin' && m.role === 'admin')
       );
+
+      if (!matchedMember) {
+        try {
+          const res = await fetch(`/api/members?search=${encodeURIComponent(cleanIdent)}&limit=5`);
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success && json.data && json.data.length > 0) {
+              matchedMember = json.data.find((m: any) => 
+                (m.email && m.email.toLowerCase() === cleanIdent) ||
+                (m.cardNumber && m.cardNumber.toLowerCase() === cleanIdent) ||
+                (m.id && m.id.toLowerCase() === cleanIdent) ||
+                (cleanIdent === 'admin' && m.role === 'admin')
+              ) || json.data[0];
+              if (matchedMember && !this.members.some(m => m.id === matchedMember.id)) {
+                this.members.push(matchedMember);
+              }
+            }
+          }
+        } catch {}
+      }
 
       if (matchedMember) {
         const { verifyPassword, hashPassword } = await import('../lib/crypto.js');
@@ -3388,6 +3367,10 @@ export const useLibraryStore = defineStore('library', {
           this.pendingMutationsCount++;
         }
 
+        invalidateClientCache('bookings');
+        invalidateClientCache('books');
+        this.fetchServerStats();
+
         this.showToast('✅ Berhasil booking buku! Buku ditahan selama 24 jam.');
         return { success: true, booking: newBooking };
       } catch (err: any) {
@@ -3422,6 +3405,10 @@ export const useLibraryStore = defineStore('library', {
         if (book) queueOfflineMutation({ action: 'saveBook', collection: 'books', docId: book.id, data: book });
         this.pendingMutationsCount++;
       }
+
+      invalidateClientCache('bookings');
+      invalidateClientCache('books');
+      this.fetchServerStats();
 
       this.showToast('Booking berhasil dibatalkan dan buku dikembalikan ke stok.');
       return { success: true };
@@ -3630,6 +3617,11 @@ export const useLibraryStore = defineStore('library', {
         this.pendingMutationsCount++;
       }
 
+      invalidateClientCache('bookings');
+      invalidateClientCache('loans');
+      invalidateClientCache('books');
+      this.fetchServerStats();
+
       this.showToast(`✅ Buku "${book.title}" berhasil diserahkan ke ${bk.memberName} (Durasi pinjam ${loanDays} hari)!`);
       return { success: true, loan: newLoan };
     },
@@ -3792,6 +3784,10 @@ export const useLibraryStore = defineStore('library', {
         this.pendingMutationsCount++;
       }
 
+      invalidateClientCache('loans');
+      invalidateClientCache('books');
+      this.fetchServerStats();
+
       this.showToast(`✅ Peminjaman buku "${book.title}" berhasil dicatat (Durasi pinjam ${loanDays} hari)!`);
       return { success: true, loan: newLoan };
     },
@@ -3878,6 +3874,10 @@ export const useLibraryStore = defineStore('library', {
       // Reconcile all suspensions and sync any remaining updates
       await this.checkOverdueAndAutoSuspend();
 
+      invalidateClientCache('loans');
+      invalidateClientCache('books');
+      this.fetchServerStats();
+
       this.showToast(options?.customToast || '✅ Buku berhasil dikembalikan!');
       return { success: true };
     },
@@ -3906,6 +3906,9 @@ export const useLibraryStore = defineStore('library', {
       } catch {
         // Persist in local cache if offline
       }
+
+      invalidateClientCache('loans');
+      this.fetchServerStats();
 
       this.showToast(`🗑️ Riwayat peminjaman "${removed.bookTitle}" berhasil dihapus.`);
       return { success: true };

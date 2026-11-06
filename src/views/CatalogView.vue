@@ -249,7 +249,7 @@
         </div>
 
         <div class="flex items-center justify-between sm:justify-end gap-3 text-[11px] sm:text-xs text-slate-400 shrink-0">
-          <span class="truncate">Menampilkan <strong class="text-slate-800">{{ filteredBooks.length }}</strong> buku (Hal {{ currentPage }}/{{ totalPages }})</span>
+          <span class="truncate">Menampilkan <strong class="text-slate-800">{{ totalBooksCount }}</strong> buku (Hal {{ currentPage }}/{{ totalPages }})</span>
           <button 
             v-if="selectedCategory !== 'all' || selectedShelfId !== 'all' || availabilityFilter !== 'all' || bookTypeFilter !== 'all' || searchQuery"
             @click="resetFilters" 
@@ -263,7 +263,7 @@
 
     <!-- Books Grid (Optimized 2-columns on mobile, 4-columns on desktop) -->
     <section id="catalog-books-section" class="relative z-0">
-      <div v-if="filteredBooks.length > 0" class="space-y-4">
+      <div v-if="totalBooksCount > 0" class="space-y-4">
         <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
           <div 
             v-for="book in paginatedBooks" 
@@ -373,9 +373,9 @@
           <!-- Top Row: Full width with Count on Left & Items Per Page on Right -->
           <div class="flex items-center justify-between gap-2 text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs w-full">
             <div class="min-w-0">
-              Menampilkan <strong class="text-slate-900 dark:text-white font-bold">{{ ((currentPage - 1) * itemsPerPage) + 1 }}</strong> - 
-              <strong class="text-slate-900 dark:text-white font-bold">{{ Math.min(currentPage * itemsPerPage, filteredBooks.length) }}</strong> 
-              dari <strong class="text-slate-900 dark:text-white font-bold">{{ filteredBooks.length }}</strong> buku
+              Menampilkan <strong class="text-slate-900 dark:text-white font-bold">{{ totalBooksCount > 0 ? ((currentPage - 1) * itemsPerPage) + 1 : 0 }}</strong> - 
+              <strong class="text-slate-900 dark:text-white font-bold">{{ Math.min(currentPage * itemsPerPage, totalBooksCount) }}</strong> 
+              dari <strong class="text-slate-900 dark:text-white font-bold">{{ totalBooksCount }}</strong> buku
             </div>
             <div class="shrink-0 w-24">
               <CustomSelect 
@@ -604,9 +604,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useLibraryStore } from '../stores/library.js';
+import { fetchPaginatedData } from '../utils/apiCache.js';
 import type { Book, Loan } from '../types.js';
 import BookingModal from '../components/BookingModal.vue';
 import BookDetailModal from '../components/BookDetailModal.vue';
@@ -734,56 +735,70 @@ const selectCategoryAndClose = (cat: string) => {
   isCategoryModalOpen.value = false;
 };
 
-const filteredBooks = computed(() => {
-  let list = [...store.books];
+// Server-Side Paginated Catalog State
+const paginatedBooks = ref<Book[]>([]);
+const totalBooksCount = ref(0);
+const totalPages = ref(1);
+const isCatalogLoading = ref(false);
 
-  // Filter jenis buku: Semua / Buku Cetak / e-Book
-  if (bookTypeFilter.value === 'physical') {
-    list = list.filter(b => !b.isEbook);
-  } else if (bookTypeFilter.value === 'ebook') {
-    list = list.filter(b => !!b.isEbook);
+const filteredBooks = computed(() => paginatedBooks.value);
+
+const loadServerCatalog = async (forceRefresh = false) => {
+  isCatalogLoading.value = true;
+  try {
+    const res = await fetchPaginatedData<Book>('books', {
+      page: currentPage.value,
+      limit: itemsPerPage.value,
+      search: searchQuery.value.trim(),
+      category: selectedCategory.value,
+      shelfId: selectedShelfId.value,
+      availability: availabilityFilter.value,
+      bookType: bookTypeFilter.value
+    }, { forceRefresh });
+
+    paginatedBooks.value = res.data;
+    totalBooksCount.value = res.pagination.total;
+    totalPages.value = res.pagination.totalPages;
+  } catch (err) {
+    console.warn('Catalog fetch fallback to store:', err);
+    let list = [...store.books];
+    if (bookTypeFilter.value === 'physical') list = list.filter(b => !b.isEbook);
+    else if (bookTypeFilter.value === 'ebook') list = list.filter(b => !!b.isEbook);
+    if (searchQuery.value.trim()) {
+      const q = searchQuery.value.toLowerCase().trim();
+      list = list.filter(b => b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q) || b.isbn.toLowerCase().includes(q));
+    }
+    if (selectedCategory.value !== 'all') list = list.filter(b => b.category === selectedCategory.value);
+    if (selectedShelfId.value !== 'all') list = list.filter(b => b.shelfId === selectedShelfId.value);
+    if (availabilityFilter.value === 'available') list = list.filter(b => b.availableCopies > 0);
+    totalBooksCount.value = list.length;
+    totalPages.value = Math.max(1, Math.ceil(list.length / itemsPerPage.value));
+    const start = (currentPage.value - 1) * itemsPerPage.value;
+    paginatedBooks.value = list.slice(start, start + itemsPerPage.value);
+  } finally {
+    isCatalogLoading.value = false;
   }
-
-  if (searchQuery.value.trim()) {
-    const q = searchQuery.value.toLowerCase().trim();
-    list = list.filter(b => 
-      b.title.toLowerCase().includes(q) ||
-      b.author.toLowerCase().includes(q) ||
-      b.isbn.toLowerCase().includes(q) ||
-      b.barcode.toLowerCase().includes(q)
-    );
-  }
-
-  if (selectedCategory.value !== 'all') {
-    list = list.filter(b => b.category === selectedCategory.value);
-  }
-
-  if (selectedShelfId.value !== 'all') {
-    list = list.filter(b => b.shelfId === selectedShelfId.value);
-  }
-
-  if (availabilityFilter.value === 'available') {
-    list = list.filter(b => b.availableCopies > 0);
-  }
-
-  return list;
-});
+};
 
 // Pagination State & Logic
 const currentPage = ref(1);
 const itemsPerPage = ref(12);
 
-const totalPages = computed(() => {
-  return Math.max(1, Math.ceil(filteredBooks.value.length / itemsPerPage.value));
-});
-
-const paginatedBooks = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage.value;
-  return filteredBooks.value.slice(start, start + itemsPerPage.value);
-});
-
+let catalogSearchDebounce: any = null;
 watch([searchQuery, selectedCategory, selectedShelfId, availabilityFilter, bookTypeFilter, itemsPerPage], () => {
   currentPage.value = 1;
+  if (catalogSearchDebounce) clearTimeout(catalogSearchDebounce);
+  catalogSearchDebounce = setTimeout(() => {
+    loadServerCatalog();
+  }, 250);
+});
+
+watch(currentPage, () => {
+  loadServerCatalog();
+});
+
+onMounted(() => {
+  loadServerCatalog();
 });
 
 const goToPage = (page: number) => {

@@ -1013,8 +1013,9 @@
 
               <div v-if="adminMemberScanMode === 'camera'">
                 <MemberCardScanner 
-                  @scan-success="handleAdminMemberScanned" 
+                  action-button-text="Konfirmasi Akses & Sirkulasi"
                   @selected="handleAdminScannerSelected"
+                  @scan-success="handleAdminMemberScanned" 
                 />
               </div>
 
@@ -1944,16 +1945,19 @@ const searchAdminMembers = (query: string): Member[] => {
 const performAdminMemberSearch = async (query: string) => {
   isAdminSearchingMember.value = true;
   try {
-    if (!store.isOfflineMode && !store.isQuotaExhausted) {
+    let serverMatches: Member[] = [];
+    if (!store.isOfflineMode) {
       try {
-        const { db } = await import('../lib/firebase.js');
-        const { collection, getDocs } = await import('firebase/firestore');
-        const snap = await getDocs(collection(db, 'members'));
-        if (!snap.empty) {
-          const serverMembers: Member[] = [];
-          snap.forEach(docSnap => serverMembers.push(docSnap.data() as Member));
-          if (serverMembers.length > 0) {
-            store.members = serverMembers;
+        const res = await fetch(`/api/members?search=${encodeURIComponent(query)}&limit=10`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data)) {
+            serverMatches = json.data;
+            serverMatches.forEach(m => {
+              const idx = store.members.findIndex(existing => existing.id === m.id);
+              if (idx >= 0) store.members[idx] = m;
+              else store.members.push(m);
+            });
           }
         }
       } catch (err) {
@@ -1961,7 +1965,7 @@ const performAdminMemberSearch = async (query: string) => {
       }
     }
 
-    const matches = searchAdminMembers(query);
+    const matches = serverMatches.length > 0 ? serverMatches : searchAdminMembers(query);
     adminMemberCandidates.value = matches;
     if (matches.length === 1 && (matches[0].cardNumber.toLowerCase() === query.toLowerCase() || matches[0].name.toLowerCase() === query.toLowerCase())) {
       adminMatchedMember.value = matches[0];
@@ -2062,21 +2066,23 @@ const clearAdminSearch = () => {
   adminMemberError.value = '';
 };
 
-const handleAdminScannerSelected = (member: Member) => {
+const handleAdminScannerSelected = async (member: Member) => {
   if (!member) return;
   adminMatchedMember.value = member;
   adminMemberSearchKey.value = member.name;
   adminMemberCandidates.value = [];
   adminMemberError.value = '';
-  adminMemberScanMode.value = 'manual';
-  store.showToast(`Anggota "${member.name}" berhasil dipilih. Silakan konfirmasi akses & sirkulasi.`);
+  // Langsung eksekusi pencatatan kunjungan dan sirkulasi
+  await submitAdminMemberVisit();
 };
 
 const handleAdminMemberScanned = (scannedCode: string) => {
   if (!scannedCode) return;
-  adminMemberSearchKey.value = scannedCode;
-  adminMemberScanMode.value = 'manual';
-  lookupAdminMember();
+  if (!adminMatchedMember.value) {
+    adminMemberSearchKey.value = scannedCode;
+    adminMemberScanMode.value = 'manual';
+    lookupAdminMember();
+  }
 };
 
 const submitAdminMemberVisit = async () => {
@@ -2097,11 +2103,11 @@ const submitAdminMemberVisit = async () => {
       memberType: adminMatchedMember.value.memberType || 'siswa',
       name: memberName,
       origin: origin,
-      purpose: adminMemberPurpose.value,
+      purpose: adminMemberPurpose.value || 'Membaca Buku',
       source: adminMemberScanMode.value === 'camera' ? 'qr_scan' : 'manual_admin'
     });
 
-    if (res.success) {
+    if (res && res.success) {
       store.showToast(`✅ Konfirmasi Akses & Sirkulasi untuk "${memberName}" berhasil dicatat!`);
       adminMatchedMember.value = null;
       adminMemberCandidates.value = [];
@@ -2109,7 +2115,14 @@ const submitAdminMemberVisit = async () => {
       activeTab.value = 'list';
       dateFilter.value = 'today';
       searchQuery.value = '';
+      currentPage.value = 1;
+      fetchServerVisits();
+    } else {
+      store.setError(res?.error || 'Gagal mencatat kunjungan anggota');
     }
+  } catch (err: any) {
+    console.error('Error submitting admin member visit:', err);
+    store.setError(err?.message || 'Terjadi kesalahan sistem saat konfirmasi kunjungan');
   } finally {
     isSubmitting.value = false;
   }

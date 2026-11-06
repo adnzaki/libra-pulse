@@ -2264,36 +2264,41 @@
     <DirectLoanModal 
       :is-open="isDirectLoanOpen"
       @close="isDirectLoanOpen = false"
+      @issued="() => { isDirectLoanOpen = false; loadAdminLoans(true); loadAdminBooks(true); }"
     />
 
     <ReturnBookModal 
       :is-open="isReturnOpen"
       :selected-loan="selectedLoanForReturn"
       @close="isReturnOpen = false"
+      @returned="() => { isReturnOpen = false; loadAdminLoans(true); loadAdminLoanHistory(true); loadAdminBooks(true); }"
     />
 
     <NotificationModal 
       :is-open="isNotifyOpen"
       :preselected-loan="selectedLoanForNotify"
-      @close="isNotifyOpen = false"
+      @close="() => { isNotifyOpen = false; loadAdminNotifications(true); }"
     />
 
     <BookFormModal 
       :is-open="isBookFormOpen"
       :book="selectedBookForEdit"
       @close="isBookFormOpen = false"
+      @saved="() => { isBookFormOpen = false; loadAdminBooks(true); }"
     />
 
     <CategoryFormModal 
       :is-open="isCategoryModalOpen"
       :category="selectedCategoryForEdit"
       @close="isCategoryModalOpen = false"
+      @saved="() => { isCategoryModalOpen = false; loadAdminCategories(true); }"
     />
 
     <MemberFormModal 
       :is-open="isMemberFormOpen"
       :member="selectedMemberForEdit"
-      @close="isMemberFormOpen = false"
+      @close="() => { isMemberFormOpen = false; loadAdminMembers(true); }"
+      @saved="() => { isMemberFormOpen = false; loadAdminMembers(true); }"
     />
 
     <!-- Admin Self Change Password Modal -->
@@ -2307,7 +2312,7 @@
       :is-open="isCollectBookingOpen"
       :booking="selectedBookingForCollect"
       @close="closeCollectBookingModal"
-      @collected="closeCollectBookingModal"
+      @collected="() => { closeCollectBookingModal(); loadAdminBookings(true); loadAdminLoans(true); loadAdminBooks(true); }"
     />
 
     <!-- Admin Direct Reset Member Password Modal -->
@@ -2979,6 +2984,7 @@
       :is-open="isShelfModalOpenAdmin"
       :shelf="selectedShelfForEditAdmin"
       @close="isShelfModalOpenAdmin = false"
+      @saved="() => { isShelfModalOpenAdmin = false; loadAdminShelves(true); }"
     />
 
     <!-- Modal Pilihan Menu Pengelolaan Data Perpustakaan -->
@@ -3145,7 +3151,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useLibraryStore } from '../stores/library.js';
-import type { Loan, Book, BookCategory, Member, Booking, Shelf } from '../types.js';
+import { fetchPaginatedData } from '../utils/apiCache.js';
+import type { Loan, Book, BookCategory, Member, Booking, Shelf, NotificationLog, TeacherRequest, StudentVerificationRequest } from '../types.js';
 import DirectLoanModal from '../components/DirectLoanModal.vue';
 import ReturnBookModal from '../components/ReturnBookModal.vue';
 import NotificationModal from '../components/NotificationModal.vue';
@@ -3252,47 +3259,52 @@ const currentSearchInput = computed({
   }
 });
 
-// Riwayat Peminjaman (Buku Fisik & e-Book yang telah dikembalikan)
+// ---------------------------------------------------------------------------
+// Server-Side Paginated Modules (25 Data Per Halaman, Caching & Revisions)
+// ---------------------------------------------------------------------------
+
+// 1. Riwayat Peminjaman Selesai
 const loanHistoryFilter = ref<'all' | 'physical' | 'ebook'>('all');
 const historyCurrentPage = ref(1);
 const historyItemsPerPage = ref(25);
+const paginatedLoanHistory = ref<Loan[]>([]);
+const historyTotalCount = ref(0);
+const historyTotalPages = ref(1);
+const filteredLoanHistory = computed(() => ({ length: historyTotalCount.value }));
 
 const returnedPhysicalCount = computed(() => store.returnedLoans.filter(l => !l.isEbook).length);
 const returnedEbookCount = computed(() => store.returnedLoans.filter(l => l.isEbook).length);
 
-const filteredLoanHistory = computed(() => {
-  let list = store.returnedLoans;
-  if (loanHistoryFilter.value === 'physical') {
-    list = list.filter(l => !l.isEbook);
-  } else if (loanHistoryFilter.value === 'ebook') {
-    list = list.filter(l => l.isEbook);
+const loadAdminLoanHistory = async (force = false) => {
+  try {
+    const res = await fetchPaginatedData<Loan>('loans', {
+      page: historyCurrentPage.value,
+      limit: historyItemsPerPage.value,
+      search: loanHistorySearch.value.trim(),
+      status: 'returned',
+      bookType: loanHistoryFilter.value
+    }, { forceRefresh: force });
+    paginatedLoanHistory.value = res.data;
+    historyTotalCount.value = res.pagination.total;
+    historyTotalPages.value = res.pagination.totalPages;
+  } catch {
+    let list = store.returnedLoans;
+    if (loanHistoryFilter.value === 'physical') list = list.filter(l => !l.isEbook);
+    else if (loanHistoryFilter.value === 'ebook') list = list.filter(l => l.isEbook);
+    historyTotalCount.value = list.length;
+    historyTotalPages.value = Math.max(1, Math.ceil(list.length / historyItemsPerPage.value));
+    const start = (historyCurrentPage.value - 1) * historyItemsPerPage.value;
+    paginatedLoanHistory.value = list.slice(start, start + historyItemsPerPage.value);
   }
-  if (loanHistorySearch.value.trim()) {
-    const q = loanHistorySearch.value.toLowerCase().trim();
-    list = list.filter(l => 
-      l.id.toLowerCase().includes(q) ||
-      l.bookTitle.toLowerCase().includes(q) ||
-      l.memberName.toLowerCase().includes(q) ||
-      l.memberCardNumber.toLowerCase().includes(q) ||
-      (l.shelfCode && l.shelfCode.toLowerCase().includes(q)) ||
-      (l.handledBy && l.handledBy.toLowerCase().includes(q))
-    );
-  }
-  return list;
-});
+};
 
-const historyTotalPages = computed(() => {
-  return Math.max(1, Math.ceil(filteredLoanHistory.value.length / historyItemsPerPage.value));
-});
-
-const paginatedLoanHistory = computed(() => {
-  const start = (historyCurrentPage.value - 1) * historyItemsPerPage.value;
-  return filteredLoanHistory.value.slice(start, start + historyItemsPerPage.value);
-});
-
+let historySearchDebounce: any = null;
 watch([loanHistorySearch, loanHistoryFilter, historyItemsPerPage], () => {
   historyCurrentPage.value = 1;
+  if (historySearchDebounce) clearTimeout(historySearchDebounce);
+  historySearchDebounce = setTimeout(() => loadAdminLoanHistory(), 250);
 });
+watch(historyCurrentPage, () => loadAdminLoanHistory());
 
 const handleDeleteLoanHistory = (loan: Loan) => {
   openConfirmDialog({
@@ -3303,143 +3315,151 @@ const handleDeleteLoanHistory = (loan: Loan) => {
     type: 'danger',
     onConfirm: async () => {
       await store.deleteLoanHistory(loan.id);
+      loadAdminLoanHistory(true);
     }
   });
 };
 
-// Master Data Buku: Search & Pagination
-const filteredBooks = computed(() => {
-  let list = store.books;
-  if (bookSearch.value.trim()) {
-    const q = bookSearch.value.toLowerCase().trim();
-    list = list.filter(b => 
-      b.title.toLowerCase().includes(q) ||
-      b.author.toLowerCase().includes(q) ||
-      (b.publisher && b.publisher.toLowerCase().includes(q)) ||
-      (b.category && b.category.toLowerCase().includes(q)) ||
-      (b.shelfCode && b.shelfCode.toLowerCase().includes(q)) ||
-      (b.shelfName && b.shelfName.toLowerCase().includes(q)) ||
-      (b.isbn && b.isbn.toLowerCase().includes(q)) ||
-      (b.barcode && b.barcode.toLowerCase().includes(q)) ||
-      (b.year && b.year.toString().includes(q))
-    );
-  }
-  return list;
-});
-
+// 2. Master Data Buku (25 Data Per Halaman Standar)
 const bookCurrentPage = ref(1);
-const bookItemsPerPage = ref(10);
+const bookItemsPerPage = ref(25);
+const paginatedBooks = ref<Book[]>([]);
+const bookTotalCount = ref(0);
+const bookTotalPages = ref(1);
+const filteredBooks = computed(() => ({ length: bookTotalCount.value }));
 
-const bookTotalPages = computed(() => {
-  return Math.max(1, Math.ceil(filteredBooks.value.length / bookItemsPerPage.value));
-});
+const loadAdminBooks = async (force = false) => {
+  try {
+    const res = await fetchPaginatedData<Book>('books', {
+      page: bookCurrentPage.value,
+      limit: bookItemsPerPage.value,
+      search: bookSearch.value.trim()
+    }, { forceRefresh: force });
+    paginatedBooks.value = res.data;
+    bookTotalCount.value = res.pagination.total;
+    bookTotalPages.value = res.pagination.totalPages;
+  } catch {
+    const list = store.books;
+    bookTotalCount.value = list.length;
+    bookTotalPages.value = Math.max(1, Math.ceil(list.length / bookItemsPerPage.value));
+    const start = (bookCurrentPage.value - 1) * bookItemsPerPage.value;
+    paginatedBooks.value = list.slice(start, start + bookItemsPerPage.value);
+  }
+};
 
-const paginatedBooks = computed(() => {
-  const start = (bookCurrentPage.value - 1) * bookItemsPerPage.value;
-  return filteredBooks.value.slice(start, start + bookItemsPerPage.value);
-});
-
+let bookSearchDebounce: any = null;
 watch([bookSearch, bookItemsPerPage], () => {
   bookCurrentPage.value = 1;
+  if (bookSearchDebounce) clearTimeout(bookSearchDebounce);
+  bookSearchDebounce = setTimeout(() => loadAdminBooks(), 250);
 });
+watch(bookCurrentPage, () => loadAdminBooks());
 
-// Booking: Search & Pagination (25 data per halaman)
-const filteredBookings = computed(() => {
-  let list = store.bookings.filter(b => 
-    (b.status === 'active_hold' || b.status === 'booked') &&
-    Boolean(b.expiresAt && new Date(b.expiresAt).getTime() > now.value)
-  );
-  if (bookingSearch.value.trim()) {
-    const q = bookingSearch.value.toLowerCase().trim();
-    list = list.filter(b => 
-      b.id.toLowerCase().includes(q) ||
-      b.bookTitle.toLowerCase().includes(q) ||
-      b.memberName.toLowerCase().includes(q) ||
-      b.memberCardNumber.toLowerCase().includes(q) ||
-      (b.memberEmail && b.memberEmail.toLowerCase().includes(q)) ||
-      (b.memberPhone && b.memberPhone.includes(q)) ||
-      (b.shelfCode && b.shelfCode.toLowerCase().includes(q))
-    );
-  }
-  return list;
-});
-
+// 3. Daftar Booking Aktif
 const bookingCurrentPage = ref(1);
 const bookingItemsPerPage = ref(25);
+const paginatedBookings = ref<Booking[]>([]);
+const bookingTotalCount = ref(0);
+const bookingTotalPages = ref(1);
+const filteredBookings = computed(() => ({ length: bookingTotalCount.value }));
 
-const bookingTotalPages = computed(() => {
-  return Math.max(1, Math.ceil(filteredBookings.value.length / bookingItemsPerPage.value));
-});
+const loadAdminBookings = async (force = false) => {
+  try {
+    const res = await fetchPaginatedData<Booking>('bookings', {
+      page: bookingCurrentPage.value,
+      limit: bookingItemsPerPage.value,
+      search: bookingSearch.value.trim(),
+      status: 'active_hold'
+    }, { forceRefresh: force });
+    paginatedBookings.value = res.data;
+    bookingTotalCount.value = res.pagination.total;
+    bookingTotalPages.value = res.pagination.totalPages;
+  } catch {
+    const list = store.activeHoldBookings;
+    bookingTotalCount.value = list.length;
+    bookingTotalPages.value = Math.max(1, Math.ceil(list.length / bookingItemsPerPage.value));
+    const start = (bookingCurrentPage.value - 1) * bookingItemsPerPage.value;
+    paginatedBookings.value = list.slice(start, start + bookingItemsPerPage.value);
+  }
+};
 
-const paginatedBookings = computed(() => {
-  const start = (bookingCurrentPage.value - 1) * bookingItemsPerPage.value;
-  return filteredBookings.value.slice(start, start + bookingItemsPerPage.value);
-});
-
+let bookingSearchDebounce: any = null;
 watch([bookingSearch, bookingItemsPerPage], () => {
   bookingCurrentPage.value = 1;
+  if (bookingSearchDebounce) clearTimeout(bookingSearchDebounce);
+  bookingSearchDebounce = setTimeout(() => loadAdminBookings(), 250);
 });
+watch(bookingCurrentPage, () => loadAdminBookings());
 
-// Kategori: Search & Pagination (25 data per halaman)
-const filteredCategories = computed(() => {
-  let list = store.categories;
-  if (categorySearch.value.trim()) {
-    const q = categorySearch.value.toLowerCase().trim();
-    list = list.filter(c => 
-      c.name.toLowerCase().includes(q) ||
-      (c.description && c.description.toLowerCase().includes(q))
-    );
-  }
-  return list;
-});
-
+// 4. Kategori Buku
 const categoryCurrentPage = ref(1);
 const categoryItemsPerPage = ref(25);
+const paginatedCategories = ref<BookCategory[]>([]);
+const categoryTotalCount = ref(0);
+const categoryTotalPages = ref(1);
+const filteredCategories = computed(() => ({ length: categoryTotalCount.value }));
 
-const categoryTotalPages = computed(() => {
-  return Math.max(1, Math.ceil(filteredCategories.value.length / categoryItemsPerPage.value));
-});
+const loadAdminCategories = async (force = false) => {
+  try {
+    const res = await fetchPaginatedData<BookCategory>('categories', {
+      page: categoryCurrentPage.value,
+      limit: categoryItemsPerPage.value,
+      search: categorySearch.value.trim()
+    }, { forceRefresh: force });
+    paginatedCategories.value = res.data;
+    categoryTotalCount.value = res.pagination.total;
+    categoryTotalPages.value = res.pagination.totalPages;
+  } catch {
+    const list = store.categories;
+    categoryTotalCount.value = list.length;
+    categoryTotalPages.value = Math.max(1, Math.ceil(list.length / categoryItemsPerPage.value));
+    const start = (categoryCurrentPage.value - 1) * categoryItemsPerPage.value;
+    paginatedCategories.value = list.slice(start, start + categoryItemsPerPage.value);
+  }
+};
 
-const paginatedCategories = computed(() => {
-  const start = (categoryCurrentPage.value - 1) * categoryItemsPerPage.value;
-  return filteredCategories.value.slice(start, start + categoryItemsPerPage.value);
-});
-
+let categorySearchDebounce: any = null;
 watch([categorySearch, categoryItemsPerPage], () => {
   categoryCurrentPage.value = 1;
+  if (categorySearchDebounce) clearTimeout(categorySearchDebounce);
+  categorySearchDebounce = setTimeout(() => loadAdminCategories(), 250);
 });
+watch(categoryCurrentPage, () => loadAdminCategories());
 
-// Notifikasi Keterlambatan: Search & Pagination (25 data per halaman default, gaya Master Data Buku)
-const filteredNotifications = computed(() => {
-  let list = store.notifications;
-  if (notificationSearch.value.trim()) {
-    const q = notificationSearch.value.toLowerCase().trim();
-    list = list.filter(n => 
-      (n.memberName && n.memberName.toLowerCase().includes(q)) ||
-      (n.recipient && n.recipient.toLowerCase().includes(q)) ||
-      (n.message && n.message.toLowerCase().includes(q)) ||
-      (n.type && n.type.toLowerCase().includes(q)) ||
-      (n.status && n.status.toLowerCase().includes(q))
-    );
-  }
-  return list;
-});
-
+// 5. Notifikasi Keterlambatan
 const notificationCurrentPage = ref(1);
 const notificationItemsPerPage = ref(25);
+const paginatedNotifications = ref<NotificationLog[]>([]);
+const notificationTotalCount = ref(0);
+const notificationTotalPages = ref(1);
+const filteredNotifications = computed(() => ({ length: notificationTotalCount.value }));
 
-const notificationTotalPages = computed(() => {
-  return Math.max(1, Math.ceil(filteredNotifications.value.length / notificationItemsPerPage.value));
-});
+const loadAdminNotifications = async (force = false) => {
+  try {
+    const res = await fetchPaginatedData<NotificationLog>('notifications', {
+      page: notificationCurrentPage.value,
+      limit: notificationItemsPerPage.value,
+      search: notificationSearch.value.trim()
+    }, { forceRefresh: force });
+    paginatedNotifications.value = res.data;
+    notificationTotalCount.value = res.pagination.total;
+    notificationTotalPages.value = res.pagination.totalPages;
+  } catch {
+    const list = store.notifications;
+    notificationTotalCount.value = list.length;
+    notificationTotalPages.value = Math.max(1, Math.ceil(list.length / notificationItemsPerPage.value));
+    const start = (notificationCurrentPage.value - 1) * notificationItemsPerPage.value;
+    paginatedNotifications.value = list.slice(start, start + notificationItemsPerPage.value);
+  }
+};
 
-const paginatedNotifications = computed(() => {
-  const start = (notificationCurrentPage.value - 1) * notificationItemsPerPage.value;
-  return filteredNotifications.value.slice(start, start + notificationItemsPerPage.value);
-});
-
+let notificationSearchDebounce: any = null;
 watch([notificationSearch, notificationItemsPerPage], () => {
   notificationCurrentPage.value = 1;
+  if (notificationSearchDebounce) clearTimeout(notificationSearchDebounce);
+  notificationSearchDebounce = setTimeout(() => loadAdminNotifications(), 250);
 });
+watch(notificationCurrentPage, () => loadAdminNotifications());
 
 const memberFilter = ref('all');
 const now = ref(Date.now());
@@ -3865,28 +3885,42 @@ const adminSelectedFloor = ref(0);
 const isShelfModalOpenAdmin = ref(false);
 const selectedShelfForEditAdmin = ref<Shelf | null>(null);
 
-const adminDisplayedShelves = computed(() => {
-  const list = store.sortedShelves || store.shelves;
-  if (adminSelectedFloor.value === 0) return list;
-  return list.filter(s => s.floor === adminSelectedFloor.value);
-});
-
-// Tata Letak & Urutan Rak Pagination (25 data per halaman)
+// 6. Tata Letak & Urutan Rak (25 data per halaman)
 const shelfCurrentPage = ref(1);
 const shelfItemsPerPage = ref(25);
+const paginatedShelves = ref<Shelf[]>([]);
+const shelfTotalCount = ref(0);
+const shelfTotalPages = ref(1);
+const adminDisplayedShelves = computed(() => ({ length: shelfTotalCount.value }));
 
-const shelfTotalPages = computed(() => {
-  return Math.max(1, Math.ceil(adminDisplayedShelves.value.length / shelfItemsPerPage.value));
-});
-
-const paginatedShelves = computed(() => {
-  const start = (shelfCurrentPage.value - 1) * shelfItemsPerPage.value;
-  return adminDisplayedShelves.value.slice(start, start + shelfItemsPerPage.value);
-});
+const loadAdminShelves = async (force = false) => {
+  try {
+    const res = await fetchPaginatedData<Shelf>('shelves', {
+      page: shelfCurrentPage.value,
+      limit: shelfItemsPerPage.value
+    }, { forceRefresh: force });
+    let data = res.data;
+    if (adminSelectedFloor.value !== 0) {
+      data = data.filter(s => s.floor === adminSelectedFloor.value);
+    }
+    paginatedShelves.value = data;
+    shelfTotalCount.value = res.pagination.total;
+    shelfTotalPages.value = res.pagination.totalPages;
+  } catch {
+    const list = store.sortedShelves || store.shelves;
+    const filtered = adminSelectedFloor.value === 0 ? list : list.filter(s => s.floor === adminSelectedFloor.value);
+    shelfTotalCount.value = filtered.length;
+    shelfTotalPages.value = Math.max(1, Math.ceil(filtered.length / shelfItemsPerPage.value));
+    const start = (shelfCurrentPage.value - 1) * shelfItemsPerPage.value;
+    paginatedShelves.value = filtered.slice(start, start + shelfItemsPerPage.value);
+  }
+};
 
 watch([adminSelectedFloor, shelfItemsPerPage], () => {
   shelfCurrentPage.value = 1;
+  loadAdminShelves();
 });
+watch(shelfCurrentPage, () => loadAdminShelves());
 
 const hasShelvesCustomOrder = computed(() => {
   return store.shelves.some(s => typeof s.order === 'number');
@@ -4058,22 +4092,41 @@ const filteredMembers = computed(() => {
   return list;
 });
 
-// Kelola Anggota Pagination (25 data per halaman)
+// 7. Kelola Anggota (25 data per halaman)
 const memberCurrentPage = ref(1);
 const memberItemsPerPage = ref(25);
+const paginatedMembers = ref<Member[]>([]);
+const memberTotalCount = ref(0);
+const memberTotalPages = ref(1);
+const filteredMembers = computed(() => ({ length: memberTotalCount.value }));
 
-const memberTotalPages = computed(() => {
-  return Math.max(1, Math.ceil(filteredMembers.value.length / memberItemsPerPage.value));
-});
+const loadAdminMembers = async (force = false) => {
+  try {
+    const res = await fetchPaginatedData<Member>('members', {
+      page: memberCurrentPage.value,
+      limit: memberItemsPerPage.value,
+      search: memberSearch.value.trim(),
+      status: memberFilter.value
+    }, { forceRefresh: force });
+    paginatedMembers.value = res.data;
+    memberTotalCount.value = res.pagination.total;
+    memberTotalPages.value = res.pagination.totalPages;
+  } catch {
+    const list = store.members;
+    memberTotalCount.value = list.length;
+    memberTotalPages.value = Math.max(1, Math.ceil(list.length / memberItemsPerPage.value));
+    const start = (memberCurrentPage.value - 1) * memberItemsPerPage.value;
+    paginatedMembers.value = list.slice(start, start + memberItemsPerPage.value);
+  }
+};
 
-const paginatedMembers = computed(() => {
-  const start = (memberCurrentPage.value - 1) * memberItemsPerPage.value;
-  return filteredMembers.value.slice(start, start + memberItemsPerPage.value);
-});
-
+let memberSearchDebounce: any = null;
 watch([memberSearch, memberFilter, memberItemsPerPage], () => {
   memberCurrentPage.value = 1;
+  if (memberSearchDebounce) clearTimeout(memberSearchDebounce);
+  memberSearchDebounce = setTimeout(() => loadAdminMembers(), 250);
 });
+watch(memberCurrentPage, () => loadAdminMembers());
 
 const openAddMemberModal = () => {
   selectedMemberForEdit.value = null;
@@ -4107,37 +4160,41 @@ const handleDeleteMember = (memberId: string, memberName: string) => {
   });
 };
 
-const filteredLoans = computed(() => {
-  let list = store.loans.filter(l => l.status === 'active' || l.status === 'overdue');
-  if (circulationSearch.value.trim()) {
-    const q = circulationSearch.value.toLowerCase().trim();
-    list = list.filter(l => 
-      l.id.toLowerCase().includes(q) ||
-      l.bookTitle.toLowerCase().includes(q) ||
-      l.memberName.toLowerCase().includes(q) ||
-      l.memberCardNumber.toLowerCase().includes(q) ||
-      (l.shelfCode && l.shelfCode.toLowerCase().includes(q))
-    );
-  }
-  return list;
-});
-
-// Daftar Peminjaman Aktif Pagination (25 data per halaman)
+// 8. Sirkulasi Peminjaman Aktif (25 data per halaman)
 const loanCurrentPage = ref(1);
 const loanItemsPerPage = ref(25);
+const paginatedLoans = ref<Loan[]>([]);
+const loanTotalCount = ref(0);
+const loanTotalPages = ref(1);
+const filteredLoans = computed(() => ({ length: loanTotalCount.value }));
 
-const loanTotalPages = computed(() => {
-  return Math.max(1, Math.ceil(filteredLoans.value.length / loanItemsPerPage.value));
-});
+const loadAdminLoans = async (force = false) => {
+  try {
+    const res = await fetchPaginatedData<Loan>('loans', {
+      page: loanCurrentPage.value,
+      limit: loanItemsPerPage.value,
+      search: circulationSearch.value.trim(),
+      status: 'active'
+    }, { forceRefresh: force });
+    paginatedLoans.value = res.data;
+    loanTotalCount.value = res.pagination.total;
+    loanTotalPages.value = res.pagination.totalPages;
+  } catch {
+    const list = store.activeLoans;
+    loanTotalCount.value = list.length;
+    loanTotalPages.value = Math.max(1, Math.ceil(list.length / loanItemsPerPage.value));
+    const start = (loanCurrentPage.value - 1) * loanItemsPerPage.value;
+    paginatedLoans.value = list.slice(start, start + loanItemsPerPage.value);
+  }
+};
 
-const paginatedLoans = computed(() => {
-  const start = (loanCurrentPage.value - 1) * loanItemsPerPage.value;
-  return filteredLoans.value.slice(start, start + loanItemsPerPage.value);
-});
-
+let loanSearchDebounce: any = null;
 watch([circulationSearch, loanItemsPerPage], () => {
   loanCurrentPage.value = 1;
+  if (loanSearchDebounce) clearTimeout(loanSearchDebounce);
+  loanSearchDebounce = setTimeout(() => loadAdminLoans(), 250);
 });
+watch(loanCurrentPage, () => loadAdminLoans());
 
 const formatCountdown = (expiresAtStr: string) => {
   if (!expiresAtStr) return '00:00:00';
@@ -4320,22 +4377,42 @@ const filteredTeacherRequests = computed(() => {
   return list;
 });
 
-// Verifikasi Guru Pagination (25 data per halaman)
+// 9. Verifikasi Guru (25 data per halaman)
 const teacherRequestCurrentPage = ref(1);
 const teacherRequestItemsPerPage = ref(25);
+const paginatedTeacherRequests = ref<TeacherRequest[]>([]);
+const teacherRequestTotalCount = ref(0);
+const teacherRequestTotalPages = ref(1);
+const filteredTeacherRequests = computed(() => ({ length: teacherRequestTotalCount.value }));
 
-const teacherRequestTotalPages = computed(() => {
-  return Math.max(1, Math.ceil(filteredTeacherRequests.value.length / teacherRequestItemsPerPage.value));
-});
+const loadAdminTeacherRequests = async (force = false) => {
+  try {
+    const res = await fetchPaginatedData<TeacherRequest>('teacher-requests', {
+      page: teacherRequestCurrentPage.value,
+      limit: teacherRequestItemsPerPage.value,
+      search: teacherRequestSearch.value.trim(),
+      status: teacherRequestFilter.value
+    }, { forceRefresh: force });
+    paginatedTeacherRequests.value = res.data;
+    teacherRequestTotalCount.value = res.pagination.total;
+    teacherRequestTotalPages.value = res.pagination.totalPages;
+  } catch {
+    let list = store.teacherRequests;
+    if (teacherRequestFilter.value !== 'all') list = list.filter(r => r.status === teacherRequestFilter.value);
+    teacherRequestTotalCount.value = list.length;
+    teacherRequestTotalPages.value = Math.max(1, Math.ceil(list.length / teacherRequestItemsPerPage.value));
+    const start = (teacherRequestCurrentPage.value - 1) * teacherRequestItemsPerPage.value;
+    paginatedTeacherRequests.value = list.slice(start, start + teacherRequestItemsPerPage.value);
+  }
+};
 
-const paginatedTeacherRequests = computed(() => {
-  const start = (teacherRequestCurrentPage.value - 1) * teacherRequestItemsPerPage.value;
-  return filteredTeacherRequests.value.slice(start, start + teacherRequestItemsPerPage.value);
-});
-
+let teacherSearchDebounce: any = null;
 watch([teacherRequestSearch, teacherRequestFilter, teacherRequestItemsPerPage], () => {
   teacherRequestCurrentPage.value = 1;
+  if (teacherSearchDebounce) clearTimeout(teacherSearchDebounce);
+  teacherSearchDebounce = setTimeout(() => loadAdminTeacherRequests(), 250);
 });
+watch(teacherRequestCurrentPage, () => loadAdminTeacherRequests());
 
 // Student Verification Requests Management State & Handlers
 const studentVerificationFilter = ref('all');
@@ -4344,41 +4421,42 @@ const selectedStudentReqForReject = ref<any>(null);
 const rejectStudentReasonInput = ref('');
 const isProcessingRejectStudent = ref(false);
 
-const filteredStudentVerifications = computed(() => {
-  let list = store.studentVerifications;
-  if (studentVerificationFilter.value !== 'all') {
-    list = list.filter(r => r.status === studentVerificationFilter.value);
-  }
-  if (studentVerificationSearch.value.trim()) {
-    const q = studentVerificationSearch.value.toLowerCase().trim();
-    list = list.filter(r => 
-      r.memberName.toLowerCase().includes(q) ||
-      r.memberCardNumber.toLowerCase().includes(q) ||
-      (r.memberEmail && r.memberEmail.toLowerCase().includes(q)) ||
-      (r.memberPhone && r.memberPhone.includes(q)) ||
-      (r.nis && r.nis.toLowerCase().includes(q)) ||
-      (r.nisn && r.nisn.toLowerCase().includes(q))
-    );
-  }
-  return list;
-});
-
-// Verifikasi Siswa Pagination (25 data per halaman)
+// 10. Verifikasi Siswa e-Book (25 data per halaman)
 const studentVerificationCurrentPage = ref(1);
 const studentVerificationItemsPerPage = ref(25);
+const paginatedStudentVerifications = ref<StudentVerificationRequest[]>([]);
+const studentVerificationTotalCount = ref(0);
+const studentVerificationTotalPages = ref(1);
+const filteredStudentVerifications = computed(() => ({ length: studentVerificationTotalCount.value }));
 
-const studentVerificationTotalPages = computed(() => {
-  return Math.max(1, Math.ceil(filteredStudentVerifications.value.length / studentVerificationItemsPerPage.value));
-});
+const loadAdminStudentVerifications = async (force = false) => {
+  try {
+    const res = await fetchPaginatedData<StudentVerificationRequest>('student-verifications', {
+      page: studentVerificationCurrentPage.value,
+      limit: studentVerificationItemsPerPage.value,
+      search: studentVerificationSearch.value.trim(),
+      status: studentVerificationFilter.value
+    }, { forceRefresh: force });
+    paginatedStudentVerifications.value = res.data;
+    studentVerificationTotalCount.value = res.pagination.total;
+    studentVerificationTotalPages.value = res.pagination.totalPages;
+  } catch {
+    let list = store.studentVerifications;
+    if (studentVerificationFilter.value !== 'all') list = list.filter(r => r.status === studentVerificationFilter.value);
+    studentVerificationTotalCount.value = list.length;
+    studentVerificationTotalPages.value = Math.max(1, Math.ceil(list.length / studentVerificationItemsPerPage.value));
+    const start = (studentVerificationCurrentPage.value - 1) * studentVerificationItemsPerPage.value;
+    paginatedStudentVerifications.value = list.slice(start, start + studentVerificationItemsPerPage.value);
+  }
+};
 
-const paginatedStudentVerifications = computed(() => {
-  const start = (studentVerificationCurrentPage.value - 1) * studentVerificationItemsPerPage.value;
-  return filteredStudentVerifications.value.slice(start, start + studentVerificationItemsPerPage.value);
-});
-
+let studentSearchDebounce: any = null;
 watch([studentVerificationSearch, studentVerificationFilter, studentVerificationItemsPerPage], () => {
   studentVerificationCurrentPage.value = 1;
+  if (studentSearchDebounce) clearTimeout(studentSearchDebounce);
+  studentSearchDebounce = setTimeout(() => loadAdminStudentVerifications(), 250);
 });
+watch(studentVerificationCurrentPage, () => loadAdminStudentVerifications());
 
 // Student Verification Approval Custom Modal State
 const isApproveStudentModalOpen = ref(false);

@@ -338,12 +338,14 @@
       <div class="mt-4 flex gap-2">
         <button 
           @click="handleSelectMember(scannedResult.member)"
+          :disabled="isSubmittingAction"
           type="button"
-          class="flex-1 py-3 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-95"
+          class="flex-1 py-3 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-95 disabled:opacity-75"
           :class="scannedResult.member.isSuspended ? 'bg-slate-200 text-slate-600 hover:bg-slate-300' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200'"
         >
-          <UserCheck class="w-4 h-4" />
-          <span>Tampilkan Kartu &amp; Akses Sirkulasi</span>
+          <Loader2 v-if="isSubmittingAction" class="w-4 h-4 animate-spin text-white" />
+          <UserCheck v-else class="w-4 h-4" />
+          <span>{{ isSubmittingAction ? 'Memproses Konfirmasi...' : actionButtonText }}</span>
         </button>
       </div>
     </div>
@@ -358,16 +360,32 @@ import { Html5Qrcode } from 'html5-qrcode';
 import CustomSelect from './CustomSelect.vue';
 import { 
   QrCode, Camera, Keyboard, Sparkles, Scan, 
-  AlertTriangle, UserCheck, Search, X,
+  AlertTriangle, UserCheck, Search, X, Loader2,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight
 } from 'lucide-vue-next';
 
+const props = withDefaults(defineProps<{
+  actionButtonText?: string;
+  autoConfirm?: boolean;
+}>(), {
+  actionButtonText: 'Konfirmasi Akses & Sirkulasi',
+  autoConfirm: false
+});
+
 const emit = defineEmits(['selected', 'scan-success']);
 
-const handleSelectMember = (member: any) => {
-  if (!member) return;
-  emit('selected', member);
-  emit('scan-success', member.cardNumber || member.id || '');
+const isSubmittingAction = ref(false);
+
+const handleSelectMember = async (member: any) => {
+  if (!member || isSubmittingAction.value) return;
+  isSubmittingAction.value = true;
+  try {
+    emit('selected', member);
+  } finally {
+    setTimeout(() => {
+      isSubmittingAction.value = false;
+    }, 1200);
+  }
 };
 
 const store = useLibraryStore();
@@ -512,7 +530,9 @@ const handleCardFound = async (cardNumber: string) => {
     const res = await store.lookupMemberByCard(cardNumber);
     if (res.success) {
       scannedResult.value = res.data;
-      emit('selected', res.data.member);
+      if (props.autoConfirm) {
+        emit('selected', res.data.member);
+      }
       store.showToast(`Kartu ${res.data.member.name} (${res.data.member.cardNumber}) terdeteksi!`);
     } else {
       scannedResult.value = null;

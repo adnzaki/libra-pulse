@@ -281,7 +281,700 @@ async function getServerFirestore() {
   return null
 }
 
-// Endpoint Server-Side Pagination Daftar Presensi Kunjungan (25 data per halaman)
+// Global Collection Revision Tracker for Smart Cache Invalidation
+const collectionRevisions: Record<string, number> = {
+  books: Date.now(),
+  members: Date.now(),
+  loans: Date.now(),
+  bookings: Date.now(),
+  notifications: Date.now(),
+  student_verifications: Date.now(),
+  teacher_requests: Date.now(),
+  shelves: Date.now(),
+  categories: Date.now(),
+  visits: Date.now(),
+  stats: Date.now()
+}
+
+const serverCollectionCache = new Map<string, { data: any[]; fetchedAt: number; revision: number }>()
+const SERVER_CACHE_TTL = 30000 // 30 detik TTL
+
+export function invalidateServerCollection(collectionName: string) {
+  collectionRevisions[collectionName] = Date.now()
+  serverCollectionCache.delete(collectionName)
+  if (['books', 'loans', 'bookings', 'members'].includes(collectionName)) {
+    collectionRevisions.stats = Date.now()
+    serverCollectionCache.delete('stats')
+  }
+}
+
+async function getCachedServerCollection(collectionName: string): Promise<any[]> {
+  const currentRev = collectionRevisions[collectionName] || 1
+  const cached = serverCollectionCache.get(collectionName)
+  const now = Date.now()
+
+  if (cached && cached.revision === currentRev && now - cached.fetchedAt < SERVER_CACHE_TTL) {
+    return cached.data
+  }
+
+  const db = await getServerFirestore()
+  if (!db) return []
+
+  try {
+    const { collection, getDocs } = await import('firebase/firestore')
+    const snap = await getDocs(collection(db, collectionName))
+    const list: any[] = []
+    snap.forEach((d) => {
+      list.push({ id: d.id, ...d.data() })
+    })
+
+    serverCollectionCache.set(collectionName, {
+      data: list,
+      fetchedAt: now,
+      revision: currentRev
+    })
+    return list
+  } catch (err) {
+    console.error(`[Server] Error loading collection ${collectionName}:`, err)
+    return cached ? cached.data : []
+  }
+}
+
+// 1. Endpoint Revisions Check
+app.get('/api/data-revisions', (_req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+  res.json({
+    success: true,
+    revisions: collectionRevisions,
+    timestamp: Date.now()
+  })
+})
+
+// 2. Endpoint Mutasi Invalidation Hook
+app.post('/api/notify-mutation', express.json(), (req, res) => {
+  const coll = req.body?.collection
+  if (coll && typeof coll === 'string') {
+    invalidateServerCollection(coll)
+  }
+  res.json({ success: true, timestamp: Date.now() })
+})
+
+// 3. Endpoint Server-Side Pagination: Master Data & Katalog Buku (/api/books)
+app.get('/api/books', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+  try {
+    const page = Math.max(1, parseInt(req.query.page as string) || 1)
+    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit as string) || 25))
+    const search = ((req.query.search || req.query.q || '') as string).trim().toLowerCase()
+    const category = ((req.query.category || 'all') as string).trim()
+    const shelfId = ((req.query.shelfId || req.query.shelf || 'all') as string).trim()
+    const availability = ((req.query.availability || 'all') as string).trim()
+    const bookType = ((req.query.bookType || 'all') as string).trim()
+    const sort = ((req.query.sort || 'newest') as string).trim()
+
+    const [allRawBooks, deletedBooks] = await Promise.all([
+      getCachedServerCollection('books'),
+      getCachedServerCollection('deleted_books')
+    ])
+
+    const deletedIds = new Set(deletedBooks.map(d => d.id))
+    let books = allRawBooks.filter(b => !deletedIds.has(b.id))
+
+    // Filter Kategori
+    if (category && category !== 'all') {
+      books = books.filter(b => b.category === category)
+    }
+
+    // Filter Rak
+    if (shelfId && shelfId !== 'all') {
+      books = books.filter(b => b.shelfId === shelfId || b.shelfCode === shelfId)
+    }
+
+    // Filter Ketersediaan
+    if (availability === 'available') {
+      books = books.filter(b => (b.availableCopies || 0) > 0)
+    } else if (availability === 'borrowed') {
+      books = books.filter(b => (b.availableCopies || 0) <= 0)
+    }
+
+    // Filter Tipe Buku (e-book / fisik)
+    if (bookType === 'ebook') {
+      books = books.filter(b => Boolean(b.isEbook))
+    } else if (bookType === 'physical') {
+      books = books.filter(b => !b.isEbook)
+    }
+
+    // Filter Pencarian Teks
+    if (search) {
+      books = books.filter(b => 
+        (b.title && b.title.toLowerCase().includes(search)) ||
+        (b.author && b.author.toLowerCase().includes(search)) ||
+        (b.publisher && b.publisher.toLowerCase().includes(search)) ||
+        (b.isbn && b.isbn.toLowerCase().includes(search)) ||
+        (b.barcode && b.barcode.toLowerCase().includes(search)) ||
+        (b.shelfCode && b.shelfCode.toLowerCase().includes(search)) ||
+        (b.shelfName && b.shelfName.toLowerCase().includes(search)) ||
+        (b.category && b.category.toLowerCase().includes(search)) ||
+        (b.year && String(b.year).includes(search))
+      )
+    }
+
+    // Sorting
+    if (sort === 'title_asc') {
+      books.sort((a, b) => (a.title || '').localeCompare(b.title || ''))
+    } else if (sort === 'title_desc') {
+      books.sort((a, b) => (b.title || '').localeCompare(a.title || ''))
+    } else if (sort === 'popular') {
+      books.sort((a, b) => ((b.totalCopies || 0) - (b.availableCopies || 0)) - ((a.totalCopies || 0) - (a.availableCopies || 0)))
+    } else {
+      // Default: Newest first
+      books.sort((a, b) => {
+        const timeA = new Date(a.createdAt || 0).getTime()
+        const timeB = new Date(b.createdAt || 0).getTime()
+        return timeB - timeA
+      })
+    }
+
+    const total = books.length
+    const totalPages = Math.ceil(total / limit) || 1
+    const startIndex = (page - 1) * limit
+    const paginatedData = books.slice(startIndex, startIndex + limit)
+
+    return res.json({
+      success: true,
+      data: paginatedData,
+      revision: collectionRevisions.books || 1,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+        startIndex: total === 0 ? 0 : startIndex + 1,
+        endIndex: Math.min(startIndex + limit, total),
+      }
+    })
+  } catch (err: any) {
+    console.error('[Server] /api/books error:', err)
+    return res.status(500).json({ success: false, message: err?.message || 'Gagal memuat buku' })
+  }
+})
+
+// 4. Endpoint Server-Side Pagination: Anggota (/api/members)
+app.get('/api/members', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+  try {
+    const page = Math.max(1, parseInt(req.query.page as string) || 1)
+    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit as string) || 25))
+    const search = ((req.query.search || '') as string).trim().toLowerCase()
+    const role = ((req.query.role || 'all') as string).trim()
+    const memberType = ((req.query.memberType || 'all') as string).trim()
+    const status = ((req.query.status || 'all') as string).trim()
+
+    let members = await getCachedServerCollection('members')
+
+    // Saring role jika diminta
+    if (role !== 'all') {
+      members = members.filter(m => m.role === role)
+    }
+
+    if (memberType !== 'all') {
+      members = members.filter(m => m.memberType === memberType)
+    }
+
+    if (status === 'suspended') {
+      members = members.filter(m => Boolean(m.isSuspended))
+    } else if (status === 'active') {
+      members = members.filter(m => !m.isSuspended)
+    }
+
+    if (search) {
+      members = members.filter(m => 
+        (m.name && m.name.toLowerCase().includes(search)) ||
+        (m.cardNumber && m.cardNumber.toLowerCase().includes(search)) ||
+        (m.email && m.email.toLowerCase().includes(search)) ||
+        (m.phone && m.phone.toLowerCase().includes(search)) ||
+        (m.nis && m.nis.toLowerCase().includes(search)) ||
+        (m.nisn && m.nisn.toLowerCase().includes(search)) ||
+        (m.id && m.id.toLowerCase().includes(search))
+      )
+    }
+
+    // Urutkan alfabetis berdasarkan nama
+    members.sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+
+    const total = members.length
+    const totalPages = Math.ceil(total / limit) || 1
+    const startIndex = (page - 1) * limit
+    const paginatedData = members.slice(startIndex, startIndex + limit)
+
+    return res.json({
+      success: true,
+      data: paginatedData,
+      revision: collectionRevisions.members || 1,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+        startIndex: total === 0 ? 0 : startIndex + 1,
+        endIndex: Math.min(startIndex + limit, total),
+      }
+    })
+  } catch (err: any) {
+    console.error('[Server] /api/members error:', err)
+    return res.status(500).json({ success: false, message: err?.message || 'Gagal memuat anggota' })
+  }
+})
+
+// 5. Endpoint Server-Side Pagination: Peminjaman & Riwayat (/api/loans)
+app.get('/api/loans', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+  try {
+    const page = Math.max(1, parseInt(req.query.page as string) || 1)
+    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit as string) || 25))
+    const search = ((req.query.search || '') as string).trim().toLowerCase()
+    const status = ((req.query.status || 'all') as string).trim()
+
+    let loans = await getCachedServerCollection('loans')
+
+    if (status === 'active') {
+      loans = loans.filter(l => l.status === 'active' || l.status === 'overdue')
+    } else if (status === 'overdue') {
+      loans = loans.filter(l => l.status === 'overdue')
+    } else if (status === 'returned') {
+      loans = loans.filter(l => l.status === 'returned')
+    } else if (status !== 'all') {
+      loans = loans.filter(l => l.status === status)
+    }
+
+    if (search) {
+      loans = loans.filter(l => 
+        (l.bookTitle && l.bookTitle.toLowerCase().includes(search)) ||
+        (l.memberName && l.memberName.toLowerCase().includes(search)) ||
+        (l.memberCardNumber && l.memberCardNumber.toLowerCase().includes(search)) ||
+        (l.barcode && l.barcode.toLowerCase().includes(search)) ||
+        (l.shelfCode && l.shelfCode.toLowerCase().includes(search)) ||
+        (l.id && l.id.toLowerCase().includes(search))
+      )
+    }
+
+    // Urutkan transaksi terbaru ke terlama
+    loans.sort((a, b) => {
+      const timeA = new Date(a.borrowDate || a.createdAt || 0).getTime()
+      const timeB = new Date(b.borrowDate || b.createdAt || 0).getTime()
+      return timeB - timeA
+    })
+
+    const total = loans.length
+    const totalPages = Math.ceil(total / limit) || 1
+    const startIndex = (page - 1) * limit
+    const paginatedData = loans.slice(startIndex, startIndex + limit)
+
+    return res.json({
+      success: true,
+      data: paginatedData,
+      revision: collectionRevisions.loans || 1,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+        startIndex: total === 0 ? 0 : startIndex + 1,
+        endIndex: Math.min(startIndex + limit, total),
+      }
+    })
+  } catch (err: any) {
+    console.error('[Server] /api/loans error:', err)
+    return res.status(500).json({ success: false, message: err?.message || 'Gagal memuat pinjaman' })
+  }
+})
+
+// 6. Endpoint Server-Side Pagination: Booking (/api/bookings)
+app.get('/api/bookings', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+  try {
+    const page = Math.max(1, parseInt(req.query.page as string) || 1)
+    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit as string) || 25))
+    const search = ((req.query.search || '') as string).trim().toLowerCase()
+    const status = ((req.query.status || 'active') as string).trim()
+
+    let bookings = await getCachedServerCollection('bookings')
+    const now = Date.now()
+
+    if (status === 'active') {
+      bookings = bookings.filter(b => 
+        (b.status === 'active_hold' || b.status === 'booked') &&
+        Boolean(b.expiresAt && new Date(b.expiresAt).getTime() > now)
+      )
+    } else if (status !== 'all') {
+      bookings = bookings.filter(b => b.status === status)
+    }
+
+    if (search) {
+      bookings = bookings.filter(b => 
+        (b.id && b.id.toLowerCase().includes(search)) ||
+        (b.bookTitle && b.bookTitle.toLowerCase().includes(search)) ||
+        (b.memberName && b.memberName.toLowerCase().includes(search)) ||
+        (b.memberCardNumber && b.memberCardNumber.toLowerCase().includes(search)) ||
+        (b.shelfCode && b.shelfCode.toLowerCase().includes(search)) ||
+        (b.memberPhone && b.memberPhone.includes(search))
+      )
+    }
+
+    bookings.sort((a, b) => {
+      const timeA = new Date(a.createdAt || 0).getTime()
+      const timeB = new Date(b.createdAt || 0).getTime()
+      return timeB - timeA
+    })
+
+    const total = bookings.length
+    const totalPages = Math.ceil(total / limit) || 1
+    const startIndex = (page - 1) * limit
+    const paginatedData = bookings.slice(startIndex, startIndex + limit)
+
+    return res.json({
+      success: true,
+      data: paginatedData,
+      revision: collectionRevisions.bookings || 1,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+        startIndex: total === 0 ? 0 : startIndex + 1,
+        endIndex: Math.min(startIndex + limit, total),
+      }
+    })
+  } catch (err: any) {
+    console.error('[Server] /api/bookings error:', err)
+    return res.status(500).json({ success: false, message: err?.message || 'Gagal memuat booking' })
+  }
+})
+
+// 7. Endpoint Server-Side Pagination: Notifikasi (/api/notifications)
+app.get('/api/notifications', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+  try {
+    const page = Math.max(1, parseInt(req.query.page as string) || 1)
+    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit as string) || 25))
+    const search = ((req.query.search || '') as string).trim().toLowerCase()
+    const type = ((req.query.type || 'all') as string).trim()
+
+    let notifs = await getCachedServerCollection('notifications')
+
+    if (type !== 'all') {
+      notifs = notifs.filter(n => n.type === type)
+    }
+
+    if (search) {
+      notifs = notifs.filter(n => 
+        (n.recipient && n.recipient.toLowerCase().includes(search)) ||
+        (n.memberName && n.memberName.toLowerCase().includes(search)) ||
+        (n.message && n.message.toLowerCase().includes(search)) ||
+        (n.type && n.type.toLowerCase().includes(search)) ||
+        (n.status && n.status.toLowerCase().includes(search))
+      )
+    }
+
+    notifs.sort((a, b) => {
+      const timeA = new Date(a.sentAt || a.createdAt || 0).getTime()
+      const timeB = new Date(b.sentAt || b.createdAt || 0).getTime()
+      return timeB - timeA
+    })
+
+    const total = notifs.length
+    const totalPages = Math.ceil(total / limit) || 1
+    const startIndex = (page - 1) * limit
+    const paginatedData = notifs.slice(startIndex, startIndex + limit)
+
+    return res.json({
+      success: true,
+      data: paginatedData,
+      revision: collectionRevisions.notifications || 1,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+        startIndex: total === 0 ? 0 : startIndex + 1,
+        endIndex: Math.min(startIndex + limit, total),
+      }
+    })
+  } catch (err: any) {
+    console.error('[Server] /api/notifications error:', err)
+    return res.status(500).json({ success: false, message: err?.message || 'Gagal memuat notifikasi' })
+  }
+})
+
+// 8. Endpoint Server-Side Pagination: Verifikasi Siswa (/api/student-verifications)
+app.get('/api/student-verifications', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+  try {
+    const page = Math.max(1, parseInt(req.query.page as string) || 1)
+    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit as string) || 25))
+    const search = ((req.query.search || '') as string).trim().toLowerCase()
+    const status = ((req.query.status || 'all') as string).trim()
+
+    let items = await getCachedServerCollection('student_verifications')
+
+    if (status !== 'all') {
+      items = items.filter(i => i.status === status)
+    }
+
+    if (search) {
+      items = items.filter(i => 
+        (i.memberName && i.memberName.toLowerCase().includes(search)) ||
+        (i.cardNumber && i.cardNumber.toLowerCase().includes(search)) ||
+        (i.nis && i.nis.toLowerCase().includes(search)) ||
+        (i.nisn && i.nisn.toLowerCase().includes(search)) ||
+        (i.classGrade && i.classGrade.toLowerCase().includes(search))
+      )
+    }
+
+    items.sort((a, b) => new Date(b.requestDate || 0).getTime() - new Date(a.requestDate || 0).getTime())
+
+    const total = items.length
+    const totalPages = Math.ceil(total / limit) || 1
+    const startIndex = (page - 1) * limit
+    const paginatedData = items.slice(startIndex, startIndex + limit)
+
+    return res.json({
+      success: true,
+      data: paginatedData,
+      revision: collectionRevisions.student_verifications || 1,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+        startIndex: total === 0 ? 0 : startIndex + 1,
+        endIndex: Math.min(startIndex + limit, total),
+      }
+    })
+  } catch (err: any) {
+    console.error('[Server] /api/student-verifications error:', err)
+    return res.status(500).json({ success: false, message: err?.message || 'Gagal memuat verifikasi siswa' })
+  }
+})
+
+// 9. Endpoint Server-Side Pagination: Verifikasi Guru (/api/teacher-requests)
+app.get('/api/teacher-requests', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+  try {
+    const page = Math.max(1, parseInt(req.query.page as string) || 1)
+    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit as string) || 25))
+    const search = ((req.query.search || '') as string).trim().toLowerCase()
+    const status = ((req.query.status || 'all') as string).trim()
+
+    let items = await getCachedServerCollection('teacher_requests')
+
+    if (status !== 'all') {
+      items = items.filter(i => i.status === status)
+    }
+
+    if (search) {
+      items = items.filter(i => 
+        (i.memberName && i.memberName.toLowerCase().includes(search)) ||
+        (i.cardNumber && i.cardNumber.toLowerCase().includes(search)) ||
+        (i.nip && i.nip.toLowerCase().includes(search)) ||
+        (i.subject && i.subject.toLowerCase().includes(search))
+      )
+    }
+
+    items.sort((a, b) => new Date(b.requestDate || 0).getTime() - new Date(a.requestDate || 0).getTime())
+
+    const total = items.length
+    const totalPages = Math.ceil(total / limit) || 1
+    const startIndex = (page - 1) * limit
+    const paginatedData = items.slice(startIndex, startIndex + limit)
+
+    return res.json({
+      success: true,
+      data: paginatedData,
+      revision: collectionRevisions.teacher_requests || 1,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+        startIndex: total === 0 ? 0 : startIndex + 1,
+        endIndex: Math.min(startIndex + limit, total),
+      }
+    })
+  } catch (err: any) {
+    console.error('[Server] /api/teacher-requests error:', err)
+    return res.status(500).json({ success: false, message: err?.message || 'Gagal memuat permintaan verifikasi guru' })
+  }
+})
+
+// 10. Endpoint Server-Side Pagination: Rak Buku (/api/shelves)
+app.get('/api/shelves', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+  try {
+    const page = Math.max(1, parseInt(req.query.page as string) || 1)
+    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit as string) || 25))
+    const search = ((req.query.search || '') as string).trim().toLowerCase()
+
+    let items = await getCachedServerCollection('shelves')
+
+    if (search) {
+      items = items.filter(s => 
+        (s.code && s.code.toLowerCase().includes(search)) ||
+        (s.name && s.name.toLowerCase().includes(search)) ||
+        (s.location && s.location.toLowerCase().includes(search)) ||
+        (s.category && s.category.toLowerCase().includes(search))
+      )
+    }
+
+    items.sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0))
+
+    const total = items.length
+    const totalPages = Math.ceil(total / limit) || 1
+    const startIndex = (page - 1) * limit
+    const paginatedData = items.slice(startIndex, startIndex + limit)
+
+    return res.json({
+      success: true,
+      data: paginatedData,
+      revision: collectionRevisions.shelves || 1,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+        startIndex: total === 0 ? 0 : startIndex + 1,
+        endIndex: Math.min(startIndex + limit, total),
+      }
+    })
+  } catch (err: any) {
+    console.error('[Server] /api/shelves error:', err)
+    return res.status(500).json({ success: false, message: err?.message || 'Gagal memuat rak' })
+  }
+})
+
+// 11. Endpoint Server-Side Pagination: Kategori (/api/categories)
+app.get('/api/categories', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+  try {
+    const page = Math.max(1, parseInt(req.query.page as string) || 1)
+    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit as string) || 25))
+    const search = ((req.query.search || '') as string).trim().toLowerCase()
+
+    let items = await getCachedServerCollection('categories')
+
+    if (search) {
+      items = items.filter(c => 
+        (c.name && c.name.toLowerCase().includes(search)) ||
+        (c.description && c.description.toLowerCase().includes(search))
+      )
+    }
+
+    items.sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+
+    const total = items.length
+    const totalPages = Math.ceil(total / limit) || 1
+    const startIndex = (page - 1) * limit
+    const paginatedData = items.slice(startIndex, startIndex + limit)
+
+    return res.json({
+      success: true,
+      data: paginatedData,
+      revision: collectionRevisions.categories || 1,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+        startIndex: total === 0 ? 0 : startIndex + 1,
+        endIndex: Math.min(startIndex + limit, total),
+      }
+    })
+  } catch (err: any) {
+    console.error('[Server] /api/categories error:', err)
+    return res.status(500).json({ success: false, message: err?.message || 'Gagal memuat kategori' })
+  }
+})
+
+// 12. Endpoint Ringkasan Statistik Server Tanpa Download Dokumen (/api/stats)
+app.get('/api/stats', async (_req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+  try {
+    const [books, loans, bookings, members, deleted] = await Promise.all([
+      getCachedServerCollection('books'),
+      getCachedServerCollection('loans'),
+      getCachedServerCollection('bookings'),
+      getCachedServerCollection('members'),
+      getCachedServerCollection('deleted_books')
+    ])
+
+    const deletedIds = new Set(deleted.map(d => d.id))
+    const activeBooks = books.filter(b => !deletedIds.has(b.id))
+
+    let totalCopies = 0
+    let availableCopies = 0
+    for (const b of activeBooks) {
+      totalCopies += Number(b.totalCopies) || 0
+      availableCopies += Number(b.availableCopies) || 0
+    }
+
+    const borrowedCopies = Math.max(0, totalCopies - availableCopies)
+    const activeLoans = loans.filter(l => l.status === 'active' || l.status === 'overdue')
+    const overdueLoans = loans.filter(l => l.status === 'overdue')
+    const now = Date.now()
+    const activeBookings = bookings.filter(b => 
+      (b.status === 'active_hold' || b.status === 'booked') &&
+      Boolean(b.expiresAt && new Date(b.expiresAt).getTime() > now)
+    )
+
+    const totalMembers = members.length
+    const suspendedMembers = members.filter(m => m.isSuspended).length
+    const activeMembers = Math.max(0, totalMembers - suspendedMembers)
+    const returnedThisMonth = loans.filter(l => l.status === 'returned').length
+
+    res.json({
+      success: true,
+      stats: {
+        totalBooks: totalCopies || activeBooks.length,
+        totalTitles: activeBooks.length,
+        availableBooks: availableCopies,
+        borrowedBooks: borrowedCopies,
+        reservedBooks: activeBookings.length,
+        totalMembers,
+        activeMembers,
+        suspendedMembers,
+        activeLoans: activeLoans.length,
+        overdueLoans: overdueLoans.length,
+        activeBookings: activeBookings.length,
+        totalReturnedThisMonth: returnedThisMonth,
+        shelvesUtilizedPercent: 0
+      },
+      revision: collectionRevisions.stats || 1
+    })
+  } catch (err: any) {
+    console.error('[Server] /api/stats error:', err)
+    res.status(500).json({ success: false, message: err?.message || 'Gagal memuat statistik' })
+  }
+})
+
+// 13. Endpoint Server-Side Pagination Daftar Presensi Kunjungan (25 data per halaman)
 app.get('/api/visits', async (req, res) => {
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
   res.setHeader('Pragma', 'no-cache')
@@ -295,19 +988,7 @@ app.get('/api/visits', async (req, res) => {
     const dateFilter = ((req.query.dateFilter || 'all') as string).trim()
     const customDate = ((req.query.customDate || '') as string).trim()
 
-    const db = await getServerFirestore()
-    if (!db) {
-      return res.status(500).json({ success: false, message: 'Database server tidak tersedia' })
-    }
-
-    const { collection, getDocs } = await import('firebase/firestore')
-    const visitsRef = collection(db, 'visits')
-    const snap = await getDocs(visitsRef)
-
-    let allVisits: any[] = []
-    snap.forEach((d) => {
-      allVisits.push({ id: d.id, ...d.data() })
-    })
+    let allVisits = await getCachedServerCollection('visits')
 
     // Urutkan data presensi descending (terbaru ke terlama)
     allVisits.sort((a, b) => {
@@ -388,6 +1069,7 @@ app.get('/api/visits', async (req, res) => {
     return res.json({
       success: true,
       data: paginatedData,
+      revision: collectionRevisions.visits || 1,
       pagination: {
         page,
         limit,

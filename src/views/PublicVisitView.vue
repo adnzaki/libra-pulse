@@ -896,17 +896,19 @@ const searchMembers = (query: string): Member[] => {
 const performMemberSearch = async (query: string) => {
   isSearchingMember.value = true;
   try {
-    // Cari dan perbarui dari server Firestore jika online
-    if (!store.isOfflineMode && !store.isQuotaExhausted) {
+    let serverMatches: Member[] = [];
+    if (!store.isOfflineMode) {
       try {
-        const { db } = await import('../lib/firebase.js');
-        const { collection, getDocs } = await import('firebase/firestore');
-        const snap = await getDocs(collection(db, 'members'));
-        if (!snap.empty) {
-          const serverMembers: Member[] = [];
-          snap.forEach(docSnap => serverMembers.push(docSnap.data() as Member));
-          if (serverMembers.length > 0) {
-            store.members = serverMembers;
+        const res = await fetch(`/api/members?search=${encodeURIComponent(query)}&limit=10`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data)) {
+            serverMatches = json.data;
+            serverMatches.forEach(m => {
+              const idx = store.members.findIndex(existing => existing.id === m.id);
+              if (idx >= 0) store.members[idx] = m;
+              else store.members.push(m);
+            });
           }
         }
       } catch (err) {
@@ -914,7 +916,7 @@ const performMemberSearch = async (query: string) => {
       }
     }
 
-    const matches = searchMembers(query);
+    const matches = serverMatches.length > 0 ? serverMatches : searchMembers(query);
     memberCandidates.value = matches;
     if (matches.length === 1 && (matches[0].cardNumber.toLowerCase() === query.toLowerCase() || matches[0].name.toLowerCase() === query.toLowerCase())) {
       matchedMember.value = matches[0];
