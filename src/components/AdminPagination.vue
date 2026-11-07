@@ -49,9 +49,20 @@
         <ChevronLeft class="w-4 h-4" />
       </button>
 
-      <span class="px-2.5 py-1 font-bold text-slate-700 dark:text-slate-300 text-xs whitespace-nowrap">
-        Hal {{ currentPage }} / {{ totalPages }}
-      </span>
+      <div class="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300 text-xs whitespace-nowrap px-1">
+        <span>Hal</span>
+        <input 
+          type="number"
+          :min="1"
+          :max="totalPages"
+          :value="currentPage"
+          @change="onPageInputChange"
+          @keydown.enter="onPageInputChange"
+          class="w-12 px-1.5 py-0.5 text-center font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500 font-mono shadow-2xs"
+          title="Ketik nomor halaman lalu tekan Enter"
+        />
+        <span class="text-slate-500 dark:text-slate-400">/ {{ totalPages }}</span>
+      </div>
 
       <button 
         type="button"
@@ -127,6 +138,15 @@ const endItem = computed(() => {
 const goToPage = (page: number) => {
   if (page < 1 || page > props.totalPages || page === props.currentPage) return;
   emit('update:currentPage', page);
+};
+
+const onPageInputChange = (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  let val = parseInt(target.value, 10);
+  if (isNaN(val) || val < 1) val = 1;
+  if (val > props.totalPages) val = props.totalPages;
+  target.value = String(val);
+  goToPage(val);
 };
 
 const onItemsPerPageChange = (val: any) => {

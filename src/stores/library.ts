@@ -1583,6 +1583,7 @@ export const useLibraryStore = defineStore('library', {
 
         this.calculateStats();
         this.persistToLocalCache();
+        invalidateClientCache('shelves');
 
         import('../lib/firebase.js').then(({ syncShelfDoc }) => {
           syncShelfDoc(savedShelf).catch(() => {
@@ -1622,6 +1623,7 @@ export const useLibraryStore = defineStore('library', {
 
       this.shelves = sortShelves(this.shelves);
       this.persistToLocalCache();
+      invalidateClientCache('shelves');
 
       // Persist to Firebase in background
       const updates = Array.from(orderMap.entries()).map(([id, order]) => ({ id, order }));
@@ -1652,6 +1654,7 @@ export const useLibraryStore = defineStore('library', {
 
       this.shelves = sortShelves(this.shelves);
       this.persistToLocalCache();
+      invalidateClientCache('shelves');
 
       const updates = this.shelves.map((s, idx) => ({ id: s.id, order: idx }));
       import('../lib/firebase.js').then(({ syncShelvesOrder }) => {
@@ -1667,6 +1670,7 @@ export const useLibraryStore = defineStore('library', {
         this.shelves = this.shelves.filter(s => s.id !== shelfId);
         this.calculateStats();
         this.persistToLocalCache();
+        invalidateClientCache('shelves');
 
         import('../lib/firebase.js').then(({ removeShelfDoc }) => {
           removeShelfDoc(shelfId).catch(() => {
@@ -1722,6 +1726,7 @@ export const useLibraryStore = defineStore('library', {
 
         this.calculateStats();
         this.persistToLocalCache();
+        invalidateClientCache('categories');
 
         import('../lib/firebase.js').then(({ syncCategoryDoc }) => {
           syncCategoryDoc(savedCat).catch(() => {
@@ -1753,6 +1758,7 @@ export const useLibraryStore = defineStore('library', {
         this.categories = this.categories.filter(c => c.id !== categoryId);
         this.calculateStats();
         this.persistToLocalCache();
+        invalidateClientCache('categories');
 
         // Reassign affected books to fallback category
         if (oldName) {
@@ -1820,6 +1826,7 @@ export const useLibraryStore = defineStore('library', {
         this.members.unshift(newMember);
         this.calculateStats();
         this.persistToLocalCache();
+        invalidateClientCache('members');
 
         import('../lib/firebase.js').then(({ syncMemberDoc }) => {
           syncMemberDoc(newMember).catch(() => {
@@ -1861,6 +1868,7 @@ export const useLibraryStore = defineStore('library', {
         }
         this.calculateStats();
         this.persistToLocalCache();
+        invalidateClientCache('members');
 
         import('../lib/firebase.js').then(({ syncMemberDoc }) => {
           syncMemberDoc(updated).catch(err => {
@@ -1892,6 +1900,7 @@ export const useLibraryStore = defineStore('library', {
         if (this.currentUser?.id === memberId) await this.logout();
         this.calculateStats();
         this.persistToLocalCache();
+        invalidateClientCache('members');
 
         try {
           const { removeMemberDoc } = await import('../lib/firebase.js');
@@ -1973,6 +1982,7 @@ export const useLibraryStore = defineStore('library', {
 
       this.calculateStats();
       this.persistToLocalCache();
+      invalidateClientCache('members');
 
       try {
         const { syncMemberDoc } = await import('../lib/firebase.js');
@@ -2542,6 +2552,9 @@ export const useLibraryStore = defineStore('library', {
           this.showToast(`Permintaan dari ${currentReq.memberName} telah ditolak.`);
         }
 
+        invalidateClientCache('teacher_requests');
+        invalidateClientCache('members');
+
         return { success: true, request: updatedReq };
       } catch (err: any) {
         console.error('Review teacher request error:', err);
@@ -2761,6 +2774,9 @@ export const useLibraryStore = defineStore('library', {
         await syncNotificationDoc(resultNotif);
 
         this.persistToLocalCache();
+        invalidateClientCache('student_verifications');
+        invalidateClientCache('members');
+        invalidateClientCache('notifications');
         this.showToast(approve ? `Verifikasi siswa ${currentReq.memberName} disetujui! Hak akses e-Book telah aktif.` : `Verifikasi siswa ${currentReq.memberName} telah ditolak.`);
         return { success: true, request: updatedReq };
       } catch (err: any) {
@@ -4489,6 +4505,7 @@ export const useLibraryStore = defineStore('library', {
 
         this.visits.unshift(newVisit);
         this.persistVisitsToLocalCache();
+        invalidateClientCache('visits');
 
         // Optimistic sync to Firestore
         import('../lib/firebase.js').then(({ syncVisitDoc }) => {
@@ -4523,6 +4540,7 @@ export const useLibraryStore = defineStore('library', {
 
         this.visits[idx] = updated;
         this.persistVisitsToLocalCache();
+        invalidateClientCache('visits');
 
         // Sync to Firestore
         import('../lib/firebase.js').then(({ syncVisitDoc }) => {
@@ -4556,6 +4574,7 @@ export const useLibraryStore = defineStore('library', {
 
         this.visits[idx] = updated;
         this.persistVisitsToLocalCache();
+        invalidateClientCache('visits');
 
         import('../lib/firebase.js').then(({ syncVisitDoc }) => {
           syncVisitDoc(updated).catch(err => {
@@ -4577,6 +4596,7 @@ export const useLibraryStore = defineStore('library', {
       try {
         this.visits = this.visits.filter(v => v.id !== visitId);
         this.persistVisitsToLocalCache();
+        invalidateClientCache('visits');
 
         import('../lib/firebase.js').then(({ removeVisitDoc }) => {
           removeVisitDoc(visitId).catch(err => {

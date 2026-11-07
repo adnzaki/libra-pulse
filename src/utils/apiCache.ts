@@ -21,7 +21,7 @@ interface CacheEntry<T> {
 
 const memoryCache = new Map<string, CacheEntry<any>>();
 const CACHE_PREFIX = 'libra_page_cache_';
-const MAX_LOCAL_CACHE_ITEMS = 60;
+const MAX_LOCAL_CACHE_ITEMS = 150;
 
 // Revisions cache
 let serverRevisions: Record<string, number> = {};

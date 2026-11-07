@@ -68,6 +68,34 @@
           <!-- Modal Body Content -->
           <div class="p-3.5 sm:p-6 overflow-y-auto flex-1 min-h-0 space-y-5">
             
+            <!-- In-Modal Success Confirmation Banner -->
+            <div 
+              v-if="lastSuccessMessage" 
+              class="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border-2 border-emerald-500 text-emerald-900 dark:text-emerald-100 flex items-center justify-between gap-3 shadow-md animate-in slide-in-from-top-2 duration-300"
+            >
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <CheckCircle class="w-5 h-5" />
+                </div>
+                <div class="min-w-0">
+                  <h4 class="font-extrabold text-xs sm:text-sm text-emerald-950 dark:text-emerald-100 truncate">
+                    {{ lastSuccessMessage }}
+                  </h4>
+                  <p class="text-[11px] text-emerald-700 dark:text-emerald-300">
+                    Presensi tercatat otomatis dan hak akses sirkulasi aktif.
+                  </p>
+                </div>
+              </div>
+              <button 
+                type="button"
+                @click="lastSuccessMessage = ''" 
+                class="text-emerald-700 hover:text-emerald-900 dark:text-emerald-300 p-1 rounded-lg cursor-pointer shrink-0"
+                title="Tutup pemberitahuan"
+              >
+                <X class="w-4 h-4" />
+              </button>
+            </div>
+
             <!-- TAB 1: DAFTAR PRESENSI (REKAP DATA) -->
             <div v-if="activeTab === 'list'" class="space-y-4">
               
@@ -338,7 +366,7 @@
 
                 <!-- Server-Side Pagination Identik Model Master Data Buku -->
                 <AdminPagination 
-                  v-if="dateFilter === 'all' && totalVisitsCount > 0"
+                  v-if="totalVisitsCount > 0"
                   v-model:currentPage="currentPage"
                   v-model:itemsPerPage="pageSize"
                   :totalPages="totalPages"
@@ -1391,6 +1419,7 @@ import { useRouter } from 'vue-router';
 import { useLibraryStore } from '../stores/library.js';
 import type { LibraryVisit, VisitPurpose, Member, VisitToken } from '../types.js';
 import { isTodayVisit, getTodayDateString, formatToJakartaDateString } from '../utils/dateUtils.js';
+import { fetchPaginatedData, invalidateClientCache } from '../utils/apiCache.js';
 import MemberCardScanner from './MemberCardScanner.vue';
 import AdminPagination from './AdminPagination.vue';
 import QRCode from 'qrcode';
@@ -1433,6 +1462,7 @@ const router = useRouter();
 
 const activeTab = ref<'list' | 'tokens' | 'manual_guest' | 'member_checkin' | 'desk_qr'>('list');
 const isSubmitting = ref(false);
+const lastSuccessMessage = ref('');
 
 // Antrian Member Masuk yang Menunggu Persetujuan Admin
 const pendingMemberVisits = computed(() => {
@@ -1685,38 +1715,26 @@ const serverVisitsList = ref<LibraryVisit[]>([]);
 const isServerLoading = ref(false);
 let serverFetchDebounceTimer: any = null;
 
-const fetchServerVisits = async () => {
-  if (!props.isOpen || activeTab.value !== 'list' || dateFilter.value !== 'all') {
+const fetchServerVisits = async (forceRefresh = false) => {
+  if (!props.isOpen || activeTab.value !== 'list') {
     return;
   }
 
   isServerLoading.value = true;
   try {
-    const params = new URLSearchParams({
-      page: String(currentPage.value),
-      limit: String(pageSize.value),
-      dateFilter: 'all',
+    const res = await fetchPaginatedData<LibraryVisit>('visits', {
+      page: currentPage.value,
+      limit: pageSize.value,
+      dateFilter: dateFilter.value,
+      customDate: dateFilter.value === 'custom' ? customDate.value : undefined,
       type: typeFilter.value,
       purpose: purposeFilter.value,
       search: (searchQuery.value || '').trim()
-    });
+    }, { forceRefresh });
 
-    const res = await fetch(`/api/visits?${params.toString()}`, {
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache'
-      }
-    });
-
-    if (res.ok) {
-      const json = await res.json();
-      if (json.success && Array.isArray(json.data)) {
-        serverVisitsList.value = json.data;
-        totalServerVisits.value = json.pagination?.total ?? json.data.length;
-        totalServerPages.value = json.pagination?.totalPages ?? 1;
-        return;
-      }
-    }
+    serverVisitsList.value = res.data;
+    totalServerVisits.value = res.pagination.total;
+    totalServerPages.value = res.pagination.totalPages;
   } catch (err) {
     console.warn('[Visits] Server-side pagination fetch error, fallback ke lokal:', err);
   } finally {
@@ -1731,7 +1749,7 @@ const triggerDebouncedServerFetch = () => {
   }, 300);
 };
 
-// Filter lokal (digunakan untuk 'today', 'custom', atau fallback offline jika server belum merespon)
+// Filter lokal (digunakan sebagai fallback offline jika server belum merespon)
 const localFilteredVisits = computed(() => {
   const query = (searchQuery.value || '').trim().toLowerCase();
 
@@ -1769,81 +1787,73 @@ const localFilteredVisits = computed(() => {
 });
 
 const filteredVisits = computed(() => {
-  if (dateFilter.value === 'all') {
-    // Jika data server tersedia atau sedang loading, tampilkan data server paginated
-    if (serverVisitsList.value.length > 0 || isServerLoading.value) {
-      return serverVisitsList.value;
-    }
-    // Fallback: client pagination 25 data per halaman jika offline
-    const startIndex = (currentPage.value - 1) * pageSize.value;
-    return localFilteredVisits.value.slice(startIndex, startIndex + pageSize.value);
+  // Jika data server tersedia atau sedang loading, tampilkan data server paginated
+  if (serverVisitsList.value.length > 0 || isServerLoading.value) {
+    return serverVisitsList.value;
   }
-
-  // Untuk 'today' dan 'custom', tampilkan data tanggal yang difilter
-  return localFilteredVisits.value;
+  // Fallback: client pagination 25 data per halaman jika offline
+  const startIndex = (currentPage.value - 1) * pageSize.value;
+  return localFilteredVisits.value.slice(startIndex, startIndex + pageSize.value);
 });
 
 const totalVisitsCount = computed(() => {
-  if (dateFilter.value === 'all') {
-    return totalServerVisits.value || localFilteredVisits.value.length;
-  }
-  return localFilteredVisits.value.length;
+  return totalServerVisits.value || localFilteredVisits.value.length;
 });
 
 const totalPages = computed(() => {
-  if (dateFilter.value === 'all') {
-    return totalServerPages.value || Math.max(1, Math.ceil(localFilteredVisits.value.length / pageSize.value));
-  }
-  return 1;
+  return totalServerPages.value || Math.max(1, Math.ceil(localFilteredVisits.value.length / pageSize.value));
 });
 
 // Watchers untuk sinkronisasi server-side pagination gaya Master Data Buku
 watch(() => props.isOpen, (open) => {
-  if (open && dateFilter.value === 'all') {
+  if (open) {
     currentPage.value = 1;
     fetchServerVisits();
   }
 });
 
-watch(dateFilter, (newVal) => {
+watch(activeTab, (tab) => {
+  if (tab === 'list') {
+    fetchServerVisits();
+  }
+});
+
+watch(dateFilter, () => {
   currentPage.value = 1;
-  if (newVal === 'all') {
+  fetchServerVisits();
+});
+
+watch(customDate, () => {
+  if (dateFilter.value === 'custom') {
+    currentPage.value = 1;
     fetchServerVisits();
   }
 });
 
 watch(pageSize, () => {
   currentPage.value = 1;
-  if (dateFilter.value === 'all') {
-    fetchServerVisits();
-  }
+  fetchServerVisits();
 });
 
 watch(currentPage, () => {
-  if (dateFilter.value === 'all') {
-    fetchServerVisits();
-  }
+  fetchServerVisits();
 });
 
 watch([typeFilter, purposeFilter], () => {
   currentPage.value = 1;
-  if (dateFilter.value === 'all') {
-    fetchServerVisits();
-  }
+  fetchServerVisits();
 });
 
 watch(searchQuery, () => {
   currentPage.value = 1;
-  if (dateFilter.value === 'all') {
-    triggerDebouncedServerFetch();
-  }
+  triggerDebouncedServerFetch();
 });
 
 watch(
   () => store.visits.length,
   () => {
-    if (props.isOpen && dateFilter.value === 'all') {
-      fetchServerVisits();
+    if (props.isOpen && activeTab.value === 'list') {
+      fetchServerVisits(true);
     }
   }
 );
@@ -2108,7 +2118,9 @@ const submitAdminMemberVisit = async () => {
     });
 
     if (res && res.success) {
-      store.showToast(`✅ Konfirmasi Akses & Sirkulasi untuk "${memberName}" berhasil dicatat!`);
+      const msg = `Presensi & Sirkulasi untuk "${memberName}" Berhasil Dikonfirmasi!`;
+      lastSuccessMessage.value = msg;
+      store.showToast(`✅ ${msg}`);
       adminMatchedMember.value = null;
       adminMemberCandidates.value = [];
       adminMemberSearchKey.value = '';
@@ -2116,7 +2128,13 @@ const submitAdminMemberVisit = async () => {
       dateFilter.value = 'today';
       searchQuery.value = '';
       currentPage.value = 1;
-      fetchServerVisits();
+      invalidateClientCache('visits');
+      await fetchServerVisits(true);
+      setTimeout(() => {
+        if (lastSuccessMessage.value === msg) {
+          lastSuccessMessage.value = '';
+        }
+      }, 7000);
     } else {
       store.setError(res?.error || 'Gagal mencatat kunjungan anggota');
     }

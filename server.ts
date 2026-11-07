@@ -296,16 +296,54 @@ const collectionRevisions: Record<string, number> = {
   stats: Date.now()
 }
 
+const SERVER_CACHE_FILE = path.join(process.cwd(), 'uploads', 'server_collections_cache.json')
 const serverCollectionCache = new Map<string, { data: any[]; fetchedAt: number; revision: number }>()
-const SERVER_CACHE_TTL = 30000 // 30 detik TTL
+const SERVER_CACHE_TTL = 15 * 60 * 1000 // 15 menit TTL jika tidak ada mutasi (sangat hemat kuota read Firestore)
+
+// Muat cache koleksi dari disk saat startup agar server tidak langsung query Firestore
+function loadDiskCollectionCache() {
+  try {
+    if (fs.existsSync(SERVER_CACHE_FILE)) {
+      const parsed = JSON.parse(fs.readFileSync(SERVER_CACHE_FILE, 'utf8'))
+      if (parsed && typeof parsed === 'object') {
+        for (const [coll, item] of Object.entries(parsed)) {
+          if (item && Array.isArray((item as any).data)) {
+            serverCollectionCache.set(coll, item as any)
+            if ((item as any).revision) {
+              collectionRevisions[coll] = (item as any).revision
+            }
+          }
+        }
+        console.log(`[Server] Berhasil memuat ${serverCollectionCache.size} koleksi cache dari disk lokal.`)
+      }
+    }
+  } catch (err) {
+    console.warn('[Server] Catatan: Tidak dapat membaca disk cache awal:', err)
+  }
+}
+loadDiskCollectionCache()
+
+function saveDiskCollectionCache() {
+  try {
+    const obj: Record<string, any> = {}
+    for (const [k, v] of serverCollectionCache.entries()) {
+      obj[k] = v
+    }
+    fs.writeFileSync(SERVER_CACHE_FILE, JSON.stringify(obj))
+  } catch (err) {
+    console.warn('[Server] Catatan: Gagal menyimpan cache ke disk:', err)
+  }
+}
 
 export function invalidateServerCollection(collectionName: string) {
-  collectionRevisions[collectionName] = Date.now()
+  const newRev = Date.now()
+  collectionRevisions[collectionName] = newRev
   serverCollectionCache.delete(collectionName)
   if (['books', 'loans', 'bookings', 'members'].includes(collectionName)) {
-    collectionRevisions.stats = Date.now()
+    collectionRevisions.stats = newRev
     serverCollectionCache.delete('stats')
   }
+  saveDiskCollectionCache()
 }
 
 async function getCachedServerCollection(collectionName: string): Promise<any[]> {
@@ -313,14 +351,16 @@ async function getCachedServerCollection(collectionName: string): Promise<any[]>
   const cached = serverCollectionCache.get(collectionName)
   const now = Date.now()
 
+  // Jika cache valid dan revisi cocok serta belum kadaluarsa, gunakan cache 100% tanpa ke Firestore
   if (cached && cached.revision === currentRev && now - cached.fetchedAt < SERVER_CACHE_TTL) {
     return cached.data
   }
 
   const db = await getServerFirestore()
-  if (!db) return []
+  if (!db) return cached ? cached.data : []
 
   try {
+    console.log(`[Firestore] Mengambil dokumen koleksi '${collectionName}' dari server (Cache Miss/Mutasi)...`)
     const { collection, getDocs } = await import('firebase/firestore')
     const snap = await getDocs(collection(db, collectionName))
     const list: any[] = []
@@ -333,6 +373,7 @@ async function getCachedServerCollection(collectionName: string): Promise<any[]>
       fetchedAt: now,
       revision: currentRev
     })
+    saveDiskCollectionCache()
     return list
   } catch (err) {
     console.error(`[Server] Error loading collection ${collectionName}:`, err)

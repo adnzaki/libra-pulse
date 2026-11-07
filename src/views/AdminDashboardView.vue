@@ -3874,6 +3874,7 @@ const handleDeleteCategory = (catId: string, catName: string) => {
     type: 'danger',
     onConfirm: async () => {
       await store.deleteCategory(catId);
+      await loadAdminCategories(true);
     }
   });
 };
@@ -4059,38 +4060,6 @@ const handleDeleteShelfAdmin = (shelfId: string, shelfName?: string) => {
   });
 };
 
-const filteredMembers = computed(() => {
-  let list = store.members;
-
-  // Sembunyikan akun Super Admin dari admin lainnya agar tidak tampil dan tidak bisa diedit
-  if (!isCurrentSuperAdmin.value) {
-    list = list.filter(m => !isSuperAdminAccount(m));
-  }
-
-  if (memberFilter.value === 'active') {
-    list = list.filter(m => !m.isSuspended);
-  } else if (memberFilter.value === 'suspended') {
-    list = list.filter(m => m.isSuspended);
-  } else if (memberFilter.value === 'admin') {
-    list = list.filter(m => m.role === 'admin');
-  } else if (memberFilter.value === 'guru') {
-    list = list.filter(m => m.memberType === 'guru');
-  } else if (memberFilter.value === 'siswa') {
-    list = list.filter(m => m.memberType === 'siswa' || !m.memberType);
-  }
-
-  if (memberSearch.value.trim()) {
-    const q = memberSearch.value.toLowerCase().trim();
-    list = list.filter(m => 
-      m.name.toLowerCase().includes(q) ||
-      m.email.toLowerCase().includes(q) ||
-      m.cardNumber.toLowerCase().includes(q) ||
-      m.phone.includes(q) ||
-      (m.teacherNip && m.teacherNip.toLowerCase().includes(q))
-    );
-  }
-  return list;
-});
 
 // 7. Kelola Anggota (25 data per halaman)
 const memberCurrentPage = ref(1);
@@ -4156,6 +4125,7 @@ const handleDeleteMember = (memberId: string, memberName: string) => {
     type: 'danger',
     onConfirm: async () => {
       await store.deleteMember(memberId);
+      await loadAdminMembers(true);
     }
   });
 };
@@ -4247,6 +4217,7 @@ const handleDeleteBook = (bookId: string) => {
     type: 'danger',
     onConfirm: async () => {
       await store.deleteBook(bookId);
+      await loadAdminBooks(true);
     }
   });
 };
@@ -4259,6 +4230,7 @@ const handleCancelBooking = (bookingId: string) => {
     type: 'warning',
     onConfirm: async () => {
       await store.cancelBooking(bookingId);
+      await loadAdminBookings(true);
     }
   });
 };
@@ -4278,6 +4250,7 @@ const handleCleanExpiredBookingsManual = async () => {
     if (res.expiredCount === 0) {
       store.showToast('ℹ️ Tidak ada booking kadaluarsa. Semua data booking aktif dan stok buku valid.');
     }
+    await loadAdminBookings(true);
   } finally {
     isCleaningExpiredBookings.value = false;
   }
@@ -4295,6 +4268,7 @@ const handleUnsuspend = (memberId: string) => {
     type: 'success',
     onConfirm: async () => {
       await store.toggleMemberSuspend(memberId, false);
+      await loadAdminMembers(true);
     }
   });
 };
@@ -4359,23 +4333,6 @@ const openSelfiePreview = (url: string, name: string) => {
   previewSelfieName.value = name;
 };
 
-const filteredTeacherRequests = computed(() => {
-  let list = store.teacherRequests;
-  if (teacherRequestFilter.value !== 'all') {
-    list = list.filter(r => r.status === teacherRequestFilter.value);
-  }
-  if (teacherRequestSearch.value.trim()) {
-    const q = teacherRequestSearch.value.toLowerCase().trim();
-    list = list.filter(r => 
-      r.memberName.toLowerCase().includes(q) ||
-      r.memberCardNumber.toLowerCase().includes(q) ||
-      (r.memberEmail && r.memberEmail.toLowerCase().includes(q)) ||
-      (r.memberPhone && r.memberPhone.includes(q)) ||
-      (r.teacherNip && r.teacherNip.toLowerCase().includes(q))
-    );
-  }
-  return list;
-});
 
 // 9. Verifikasi Guru (25 data per halaman)
 const teacherRequestCurrentPage = ref(1);
@@ -4458,6 +4415,50 @@ watch([studentVerificationSearch, studentVerificationFilter, studentVerification
 });
 watch(studentVerificationCurrentPage, () => loadAdminStudentVerifications());
 
+// Reload active tab data when tab changes or on mounted
+const reloadActiveTab = async (force = false) => {
+  switch (activeTab.value) {
+    case 'books':
+      await loadAdminBooks(force);
+      break;
+    case 'members':
+      await loadAdminMembers(force);
+      break;
+    case 'loans':
+      await loadAdminLoans(force);
+      break;
+    case 'loan_history':
+      await loadAdminLoanHistory(force);
+      break;
+    case 'bookings':
+      await loadAdminBookings(force);
+      break;
+    case 'notifications':
+      await loadAdminNotifications(force);
+      break;
+    case 'teacher_requests':
+      await loadAdminTeacherRequests(force);
+      break;
+    case 'student_verifications':
+      await loadAdminStudentVerifications(force);
+      break;
+    case 'shelves':
+      await loadAdminShelves(force);
+      break;
+    case 'categories':
+      await loadAdminCategories(force);
+      break;
+  }
+};
+
+watch(activeTab, () => {
+  reloadActiveTab();
+});
+
+onMounted(() => {
+  reloadActiveTab();
+});
+
 // Student Verification Approval Custom Modal State
 const isApproveStudentModalOpen = ref(false);
 const selectedStudentReqForApprove = ref<any>(null);
@@ -4481,6 +4482,7 @@ const confirmApproveStudentRequest = async () => {
     const res = await store.reviewStudentVerification(targetReq.id, true);
     if (res.success) {
       store.showToast(`Verifikasi siswa ${targetReq.memberName} berhasil disetujui! Siswa kini dapat meminjam e-Book.`);
+      await loadAdminStudentVerifications(true);
     }
     closeApproveStudentModal();
   } catch (err) {
@@ -4511,6 +4513,7 @@ const confirmRejectStudentRequest = async () => {
     const res = await store.reviewStudentVerification(targetReq.id, false, reason);
     if (res.success) {
       store.showToast(`Permohonan verifikasi siswa ${targetReq.memberName} telah ditolak.`);
+      await loadAdminStudentVerifications(true);
     }
   } catch (err) {
     console.error('Failed to reject student verification:', err);
@@ -4543,6 +4546,7 @@ const confirmApproveTeacherRequest = async () => {
     const res = await store.reviewTeacherRequest(targetReq.id, true);
     if (res.success) {
       store.showToast(`Permohonan ${targetReq.memberName} berhasil disetujui sebagai Guru SDN Pengasinan VII!`);
+      await loadAdminTeacherRequests(true);
     }
     closeApproveTeacherModal();
   } catch (err) {
@@ -4577,6 +4581,7 @@ const confirmRejectTeacherRequest = async () => {
     const res = await store.reviewTeacherRequest(targetReq.id, false, reason);
     if (res.success) {
       store.showToast(`Permintaan status guru untuk ${targetReq.memberName} telah ditolak.`);
+      await loadAdminTeacherRequests(true);
     }
   } catch (err) {
     console.error('Failed to reject teacher request:', err);

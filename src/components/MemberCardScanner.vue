@@ -384,7 +384,8 @@ const handleSelectMember = async (member: any) => {
   } finally {
     setTimeout(() => {
       isSubmittingAction.value = false;
-    }, 1200);
+      scannedResult.value = null;
+    }, 600);
   }
 };
 
@@ -473,6 +474,7 @@ const startCamera = async () => {
       { facingMode: 'environment' },
       { fps: 10, qrbox: qrboxFunction },
       (decodedText) => {
+        emit('scan-success', decodedText);
         handleCardFound(decodedText);
         stopCamera();
       },
