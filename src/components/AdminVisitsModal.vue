@@ -545,12 +545,12 @@
 
                     <div class="space-y-1">
                       <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                        Kode Kustom <span class="text-[10px] text-slate-400 font-normal">(Kosongkan untuk otomatis LIB-XXXX)</span>
+                        Kode Kustom <span class="text-[10px] text-slate-400 font-normal">(Kosongkan untuk otomatis 6 digit angka acak)</span>
                       </label>
                       <input 
                         v-model="tokenGenForm.customCode"
                         type="text"
-                        placeholder="Contoh: LIB-TAMU-01"
+                        placeholder="Contoh: 849201"
                         class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-white font-mono uppercase"
                       />
                     </div>

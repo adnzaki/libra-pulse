@@ -319,10 +319,11 @@
             <input 
               v-model="guestForm.token"
               type="text"
+              inputmode="numeric"
               required
-              placeholder="Contoh: LIB-8492"
-              @input="tokenError = ''; guestForm.token = guestForm.token.toUpperCase()"
-              class="w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-white dark:bg-slate-800 border text-slate-800 dark:text-white placeholder-slate-400 font-mono font-bold tracking-wider text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-amber-500 uppercase transition"
+              placeholder="Contoh: 849201 (6 digit angka)"
+              @input="tokenError = ''; guestForm.token = guestForm.token.trim().toUpperCase()"
+              class="w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-white dark:bg-slate-800 border text-slate-800 dark:text-white placeholder-slate-400 font-mono font-bold tracking-widest text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-amber-500 uppercase transition"
               :class="tokenError ? 'border-rose-500 ring-2 ring-rose-500/20' : 'border-amber-200 dark:border-amber-700'"
             />
           </div>

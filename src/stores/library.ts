@@ -4384,9 +4384,9 @@ export const useLibraryStore = defineStore('library', {
         if (options?.customCode && options.customCode.trim()) {
           code = options.customCode.trim().toUpperCase().replace(/[^A-Z0-9-]/g, '');
         } else {
-          // Format ramah: LIB-XXXX (4 digit angka)
-          const rand = Math.floor(1000 + Math.random() * 9000);
-          code = `LIB-${rand}`;
+          // Format 6 digit angka acak (100000 - 999999)
+          const rand = Math.floor(100000 + Math.random() * 900000);
+          code = String(rand);
         }
 
         // Set default expiry for daily token (end of today)
