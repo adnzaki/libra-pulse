@@ -112,8 +112,8 @@
           <span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-[9px] sm:text-[10px] font-bold rounded-full uppercase border border-blue-200 dark:border-blue-800/60">Sirkulasi</span>
         </div>
         <div class="my-2.5 sm:my-4">
-          <div class="text-2xl sm:text-4xl font-extrabold font-sans text-slate-900 dark:text-white">{{ store.stats?.borrowedBooks || 0 }}</div>
-          <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">{{ store.activeLoans.length }} Pinjaman Aktif</p>
+          <div class="text-2xl sm:text-4xl font-extrabold font-sans text-slate-900 dark:text-white">{{ store.stats?.borrowedBooks ?? store.activeLoans.length }}</div>
+          <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">{{ store.stats?.activeLoans ?? store.activeLoans.length }} Pinjaman Aktif</p>
         </div>
         <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 sm:h-2 rounded-full overflow-hidden">
           <div class="bg-indigo-500 h-full rounded-full" style="width: 72%"></div>
@@ -126,19 +126,19 @@
           <span class="text-slate-400 dark:text-slate-500 text-[10px] sm:text-xs font-bold uppercase tracking-widest">Telat</span>
           <span 
             class="px-2 py-0.5 text-[9px] sm:text-[10px] font-bold rounded-full uppercase border"
-            :class="store.overdueLoans.length ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60' : 'bg-green-100 dark:bg-green-950/60 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800/60'"
+            :class="(store.stats?.overdueLoans ?? store.overdueLoans.length) ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60' : 'bg-green-100 dark:bg-green-950/60 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800/60'"
           >
-            {{ store.overdueLoans.length ? 'Perlu Aksi' : 'Aman' }}
+            {{ (store.stats?.overdueLoans ?? store.overdueLoans.length) ? 'Perlu Aksi' : 'Aman' }}
           </span>
         </div>
         <div class="my-2.5 sm:my-4">
-          <div class="text-2xl sm:text-4xl font-extrabold font-sans" :class="store.overdueLoans.length ? 'text-rose-600 dark:text-rose-400' : 'text-slate-900 dark:text-white'">
-            {{ store.overdueLoans.length }}
+          <div class="text-2xl sm:text-4xl font-extrabold font-sans" :class="(store.stats?.overdueLoans ?? store.overdueLoans.length) ? 'text-rose-600 dark:text-rose-400' : 'text-slate-900 dark:text-white'">
+            {{ store.stats?.overdueLoans ?? store.overdueLoans.length }}
           </div>
-          <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">{{ store.suspendedMembers.length }} Disuspend</p>
+          <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">{{ store.stats?.suspendedMembers ?? store.suspendedMembers.length }} Disuspend</p>
         </div>
         <button 
-          v-if="store.overdueLoans.length"
+          v-if="(store.stats?.overdueLoans ?? store.overdueLoans.length)"
           @click="openNotifyModal(null)"
           class="text-[11px] sm:text-xs font-bold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 flex items-center gap-1 pt-0.5 cursor-pointer truncate"
         >
@@ -184,7 +184,7 @@
 
     <!-- OVERDUE WARNING BENTO BOX (If overdue loans exist) -->
     <div 
-      v-if="store.overdueLoans.length > 0"
+      v-if="(store.stats?.overdueLoans ?? store.overdueLoans.length) > 0"
       class="bg-rose-50 dark:bg-rose-950/40 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-rose-200 dark:border-rose-900/50 text-rose-900 dark:text-rose-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4 shadow-xs"
     >
       <div class="flex items-center gap-3">
@@ -192,7 +192,7 @@
           <AlertTriangle class="w-5 h-5" />
         </div>
         <div>
-          <h3 class="font-bold text-sm sm:text-base text-rose-950 dark:text-rose-100">Perhatian: {{ store.overdueLoans.length }} Peminjaman Melewati Batas Waktu!</h3>
+          <h3 class="font-bold text-sm sm:text-base text-rose-950 dark:text-rose-100">Perhatian: {{ store.stats?.overdueLoans ?? store.overdueLoans.length }} Peminjaman Melewati Batas Waktu!</h3>
           <p class="text-xs text-rose-700 dark:text-rose-300 mt-0.5">Sanksi penangguhan (suspend) kartu anggota berlaku otomatis hingga buku dikembalikan.</p>
         </div>
       </div>
@@ -1622,7 +1622,7 @@
           <div class="space-y-3">
             <div class="flex items-center justify-between">
               <h4 class="font-bold text-sm text-slate-900 dark:text-white">Daftar Anggota yang Sedang Disuspend</h4>
-              <span class="text-xs text-rose-600 dark:text-rose-400 font-bold">{{ store.suspendedMembers.length }} Anggota Terkena Sanksi</span>
+              <span class="text-xs text-rose-600 dark:text-rose-400 font-bold">{{ store.stats?.suspendedMembers ?? effectiveSuspendedMembers.length }} Anggota Terkena Sanksi</span>
             </div>
 
             <div class="overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80">
@@ -1637,7 +1637,7 @@
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
-                  <tr v-for="m in store.suspendedMembers" :key="m.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
+                  <tr v-for="m in effectiveSuspendedMembers" :key="m.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
                     <td class="py-3 px-4 flex items-center gap-2.5">
                       <img :src="m.avatar" class="w-8 h-8 rounded-full object-cover border border-rose-300 dark:border-rose-900" alt="Avatar" />
                       <div>
@@ -1659,7 +1659,7 @@
                       </button>
                     </td>
                   </tr>
-                  <tr v-if="store.suspendedMembers.length === 0">
+                  <tr v-if="effectiveSuspendedMembers.length === 0">
                     <td colspan="5" class="py-6 text-center text-slate-400 dark:text-slate-500 italic">
                       Tidak ada anggota yang sedang dalam masa penangguhan (suspend).
                     </td>
@@ -2271,7 +2271,7 @@
       :is-open="isReturnOpen"
       :selected-loan="selectedLoanForReturn"
       @close="isReturnOpen = false"
-      @returned="() => { isReturnOpen = false; loadAdminLoans(true); loadAdminLoanHistory(true); loadAdminBooks(true); }"
+      @returned="() => { isReturnOpen = false; loadAdminLoans(true); loadAdminLoanHistory(true); loadAdminBooks(true); loadAdminMembers(true); store.fetchServerStats(); }"
     />
 
     <NotificationModal 
@@ -3685,7 +3685,7 @@ const primaryTabs = computed(() => [
     shortLabel: 'Peminjaman Aktif', 
     description: 'Kelola transaksi peminjaman aktif, pengembalian & lewat tempo', 
     icon: BookMarked, 
-    badge: store.activeLoans.length 
+    badge: store.stats?.activeLoans ?? store.activeLoans.length 
   },
   { 
     id: 'bookings', 
@@ -3693,20 +3693,20 @@ const primaryTabs = computed(() => [
     shortLabel: 'Booking 24h', 
     description: 'Antrean reservasi buku dengan batas waktu pengambilan 24 jam', 
     icon: Clock, 
-    badge: store.activeHoldBookings.length 
+    badge: store.stats?.activeBookings ?? store.activeHoldBookings.length 
   },
 ]);
 
 // Menu Modul Lainnya yang ada di dalam modal 'Pilihan Menu'
 const otherTabs = computed(() => [
-  { id: 'loan_history', label: 'Riwayat Peminjaman', description: 'Arsip peminjaman buku fisik & e-Book yang telah dikembalikan', icon: History, badge: store.returnedLoans.length },
+  { id: 'loan_history', label: 'Riwayat Peminjaman', description: 'Arsip peminjaman buku fisik & e-Book yang telah dikembalikan', icon: History, badge: store.stats?.totalReturnedThisMonth ?? store.returnedLoans.length },
   { id: 'members', label: 'Kelola Anggota', description: 'Data anggota perpustakaan, kartu QR & riwayat keanggotaan', icon: Users, badge: displayedTotalMembers.value },
   { id: 'student_verifications', label: 'Verifikasi Siswa', description: 'Verifikasi NIS, NISN & swafoto siswa untuk akses e-Book', icon: ShieldCheck, badge: store.pendingStudentVerificationsCount },
   { id: 'teacher_requests', label: 'Verifikasi Guru', description: 'Tinjau permohonan peningkatan status keanggotaan Guru', icon: GraduationCap, badge: store.pendingTeacherRequestsCount },
   { id: 'shelves', label: 'Tata Letak & Urutan Rak', description: 'Atur susunan posisi rak buku fisik 3 lantai & penataan urutan interaktif', icon: Layers, badge: store.shelves.length },
   { id: 'categories', label: 'Pengelolaan Kategori', description: 'Atur kategori koleksi buku & identitas warna label', icon: Tag, badge: store.categories.length },
-  { id: 'suspends', label: 'Sistem Suspend (1-30 Hari)', description: 'Konfigurasi sanksi otomatis & daftar anggota disuspend', icon: Sliders, badge: store.suspendedMembers.length },
-  { id: 'notifications', label: 'Notifikasi Keterlambatan', description: 'Riwayat pengiriman pengingat & broadcast keterlambatan', icon: Send, badge: store.overdueLoans.length },
+  { id: 'suspends', label: 'Sistem Suspend (1-30 Hari)', description: 'Konfigurasi sanksi otomatis & daftar anggota disuspend', icon: Sliders, badge: store.stats?.suspendedMembers ?? store.suspendedMembers.length },
+  { id: 'notifications', label: 'Notifikasi Keterlambatan', description: 'Riwayat pengiriman pengingat & broadcast keterlambatan', icon: Send, badge: store.stats?.overdueLoans ?? store.overdueLoans.length },
 ]);
 
 const adminTabs = computed(() => [
@@ -3730,7 +3730,7 @@ const allTabMenuModules = computed(() => [
     label: 'Sirkulasi & Pinjaman Aktif', 
     description: 'Kelola sirkulasi buku, pengembalian langsung, dan pantau pinjaman jatuh tempo', 
     icon: BookMarked, 
-    badge: store.activeLoans.length 
+    badge: store.stats?.activeLoans ?? store.activeLoans.length 
   },
   { 
     id: 'bookings', 
@@ -3738,7 +3738,7 @@ const allTabMenuModules = computed(() => [
     label: 'Booking 24 Jam (Hold)', 
     description: 'Antrean reservasi buku dengan otomatisasi batas waktu pengambilan 24 jam', 
     icon: Clock, 
-    badge: store.activeHoldBookings.length 
+    badge: store.stats?.activeBookings ?? store.activeHoldBookings.length 
   },
   { 
     id: 'loan_history', 
@@ -3746,7 +3746,7 @@ const allTabMenuModules = computed(() => [
     label: 'Riwayat Peminjaman', 
     description: 'Arsip seluruh transaksi peminjaman fisik & e-Book yang telah selesai dikembalikan', 
     icon: History, 
-    badge: store.returnedLoans.length 
+    badge: store.stats?.totalReturnedThisMonth ?? store.returnedLoans.length 
   },
   { 
     id: 'notifications', 
@@ -3754,8 +3754,8 @@ const allTabMenuModules = computed(() => [
     label: 'Notifikasi Keterlambatan', 
     description: 'Kirim broadcast pengingat dan pantau log peringatan peminjaman lewat tempo', 
     icon: Send, 
-    badge: store.overdueLoans.length,
-    isAlert: store.overdueLoans.length > 0
+    badge: store.stats?.overdueLoans ?? store.overdueLoans.length,
+    isAlert: (store.stats?.overdueLoans ?? store.overdueLoans.length) > 0
   },
   { 
     id: 'members', 
@@ -3805,8 +3805,8 @@ const allTabMenuModules = computed(() => [
     label: 'Sistem Suspend (1-30 Hari)', 
     description: 'Pengaturan sanksi penangguhan otomatis dan daftar anggota yang sedang disuspend', 
     icon: Sliders, 
-    badge: store.suspendedMembers.length,
-    isAlert: store.suspendedMembers.length > 0
+    badge: store.stats?.suspendedMembers ?? store.suspendedMembers.length,
+    isAlert: (store.stats?.suspendedMembers ?? store.suspendedMembers.length) > 0
   }
 ]);
 
@@ -4097,6 +4097,24 @@ watch([memberSearch, memberFilter, memberItemsPerPage], () => {
 });
 watch(memberCurrentPage, () => loadAdminMembers());
 
+const suspendedMembersList = ref<Member[]>([]);
+const loadAdminSuspendedMembers = async (force = false) => {
+  try {
+    const res = await fetchPaginatedData<Member>('members', {
+      page: 1,
+      limit: 100,
+      status: 'suspended'
+    }, { forceRefresh: force });
+    suspendedMembersList.value = res.data;
+  } catch {
+    suspendedMembersList.value = store.suspendedMembers;
+  }
+};
+const effectiveSuspendedMembers = computed(() => {
+  if (suspendedMembersList.value.length > 0) return suspendedMembersList.value;
+  return store.suspendedMembers;
+});
+
 const openAddMemberModal = () => {
   selectedMemberForEdit.value = null;
   isMemberFormOpen.value = true;
@@ -4269,6 +4287,8 @@ const handleUnsuspend = (memberId: string) => {
     onConfirm: async () => {
       await store.toggleMemberSuspend(memberId, false);
       await loadAdminMembers(true);
+      await loadAdminSuspendedMembers(true);
+      await store.fetchServerStats();
     }
   });
 };
@@ -4447,6 +4467,9 @@ const reloadActiveTab = async (force = false) => {
       break;
     case 'categories':
       await loadAdminCategories(force);
+      break;
+    case 'suspends':
+      await loadAdminSuspendedMembers(force);
       break;
   }
 };

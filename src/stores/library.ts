@@ -470,6 +470,44 @@ export const useLibraryStore = defineStore('library', {
       }
     },
 
+    async syncActiveLoansFromServer() {
+      try {
+        const res = await fetch('/api/loans?status=active&limit=100', {
+          headers: { 'Cache-Control': 'no-cache' }
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json && json.success && Array.isArray(json.data)) {
+            const serverActiveLoans: Loan[] = json.data;
+            const serverActiveIds = new Set(serverActiveLoans.map(l => l.id));
+
+            // Bersihkan atau tandai returned untuk pinjaman lokal yang sudah selesai di database server
+            for (const localLoan of this.loans) {
+              if (!serverActiveIds.has(localLoan.id) && (localLoan.status === 'active' || localLoan.status === 'overdue')) {
+                localLoan.status = 'returned';
+                localLoan.daysOverdue = 0;
+                localLoan.returnDate = localLoan.returnDate || new Date().toISOString().slice(0, 10);
+              }
+            }
+
+            // Gabungkan pinjaman aktif dari server ke dalam state lokal
+            for (const sLoan of serverActiveLoans) {
+              const idx = this.loans.findIndex(l => l.id === sLoan.id);
+              if (idx >= 0) {
+                this.loans[idx] = { ...this.loans[idx], ...sLoan };
+              } else {
+                this.loans.unshift(sLoan);
+              }
+            }
+
+            this.persistToLocalCache();
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to sync active loans from server:', err);
+      }
+    },
+
     // ------------------------------------------------------------------------
     // Realtime Listener Setup & Online/Offline Events
     // ------------------------------------------------------------------------
@@ -688,9 +726,7 @@ export const useLibraryStore = defineStore('library', {
         const isGuru = member.memberType === 'guru';
 
         // Deteksi apakah sanksi suspend berasal dari tindakan manual Admin
-        const isSuspendedByAdmin = member.suspendedBy === 'admin' || 
-                                   member.isManualSuspend === true || 
-                                   (member.suspendedUntil && new Date(member.suspendedUntil).getTime() >= Date.now() && !member.suspendReason?.toLowerCase().includes('otomatis'));
+        const isSuspendedByAdmin = member.suspendedBy === 'admin' || member.isManualSuspend === true;
 
         // Cek apakah masa berlaku suspend (suspendedUntil) sudah lewat
         const isSuspendExpired = member.suspendedUntil ? new Date(member.suspendedUntil).getTime() < Date.now() : false;
@@ -727,7 +763,7 @@ export const useLibraryStore = defineStore('library', {
             continue;
           }
 
-          // Untuk Siswa: jika pinjaman buku yang telat sudah beres atau suspend expired
+          // Untuk Siswa / sanksi otomatis: jika pinjaman buku yang telat sudah beres atau suspend expired
           if (!hasOverdue || isSuspendExpired) {
             member.isSuspended = false;
             member.suspendReason = '';
@@ -774,20 +810,23 @@ export const useLibraryStore = defineStore('library', {
       const totalCur = this.shelves.reduce((acc, s) => acc + (s.currentCount || 0), 0);
       const shelvesUtilizedPercent = totalCap > 0 ? Math.round((totalCur / totalCap) * 100) : 0;
 
+      // Prioritaskan nilai dari server stats jika sudah tersedia
+      const hasServerStats = Boolean(this.stats && typeof this.stats.activeLoans === 'number');
+
       this.stats = {
-        totalBooks,
-        totalTitles,
-        availableBooks,
-        borrowedBooks,
-        reservedBooks,
-        totalMembers,
-        activeMembers,
-        suspendedMembers,
-        activeLoans,
-        overdueLoans,
-        activeBookings,
-        totalReturnedThisMonth: this.loans.filter(l => l.status === 'returned').length,
-        shelvesUtilizedPercent
+        totalBooks: hasServerStats ? this.stats!.totalBooks : totalBooks,
+        totalTitles: hasServerStats ? this.stats!.totalTitles : totalTitles,
+        availableBooks: hasServerStats ? this.stats!.availableBooks : availableBooks,
+        borrowedBooks: hasServerStats ? this.stats!.borrowedBooks : borrowedBooks,
+        reservedBooks: hasServerStats ? this.stats!.reservedBooks : reservedBooks,
+        totalMembers: hasServerStats ? this.stats!.totalMembers : totalMembers,
+        activeMembers: hasServerStats ? this.stats!.activeMembers : activeMembers,
+        suspendedMembers: hasServerStats ? this.stats!.suspendedMembers : suspendedMembers,
+        activeLoans: hasServerStats ? this.stats!.activeLoans : activeLoans,
+        overdueLoans: hasServerStats ? this.stats!.overdueLoans : overdueLoans,
+        activeBookings: hasServerStats ? this.stats!.activeBookings : activeBookings,
+        totalReturnedThisMonth: hasServerStats ? this.stats!.totalReturnedThisMonth : this.loans.filter(l => l.status === 'returned').length,
+        shelvesUtilizedPercent: hasServerStats ? (this.stats!.shelvesUtilizedPercent || shelvesUtilizedPercent) : shelvesUtilizedPercent
       };
     },
 
@@ -1282,6 +1321,7 @@ export const useLibraryStore = defineStore('library', {
         }
 
         this.initTheme();
+        await this.syncActiveLoansFromServer();
         this.calculateStats();
         this.restoreUserSession();
         this.checkCurrentDeviceSessionStatus();
@@ -1924,10 +1964,9 @@ export const useLibraryStore = defineStore('library', {
       daysOrReason?: number | string, 
       reasonOrDays?: string | number
     ) {
-      const target = this.members.find(m => m.id === memberId);
-      if (!target) return { success: false, error: 'Anggota tidak ditemukan' };
+      let target = this.members.find(m => m.id === memberId);
 
-      if (isSuperAdminMember(target)) {
+      if (target && isSuperAdminMember(target)) {
         this.setError('Akun Super Admin tidak dapat disuspend.');
         return { success: false, error: 'Akses ditolak' };
       }
@@ -1943,7 +1982,6 @@ export const useLibraryStore = defineStore('library', {
         }
       } else if (typeof daysOrReason === 'string') {
         if (daysOrReason.trim()) {
-          // Cek apakah string ini sebenarnya representasi angka hari
           if (!isNaN(Number(daysOrReason)) && Number(daysOrReason) > 0) {
             days = Number(daysOrReason);
             if (typeof reasonOrDays === 'string' && reasonOrDays.trim()) {
@@ -1962,37 +2000,64 @@ export const useLibraryStore = defineStore('library', {
         days = reasonOrDays > 0 ? reasonOrDays : 7;
       }
 
-      target.isSuspended = suspend;
-      if (suspend) {
-        const suspendUntilDate = new Date(Date.now() + days * 86400000);
-        target.suspendedUntil = suspendUntilDate.toISOString().slice(0, 10);
-        target.suspendReason = reason;
-        target.suspendedBy = 'admin';
-        target.isManualSuspend = true;
-      } else {
-        target.suspendedUntil = null;
-        target.suspendReason = '';
-        target.suspendedBy = undefined;
-        target.isManualSuspend = false;
+      // 1. Eksekusi melalui Server Endpoint agar mutasi Firestore & Server Cache 100% konsisten
+      try {
+        const resp = await fetch(`/api/members/${encodeURIComponent(memberId)}/suspend`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ suspend, days, reason })
+        });
+        if (resp.ok) {
+          const resJson = await resp.json();
+          if (resJson?.member) {
+            if (target) {
+              Object.assign(target, resJson.member);
+            } else {
+              target = resJson.member;
+              this.members.push(target!);
+            }
+          }
+        }
+      } catch (apiErr) {
+        console.warn('[Store] Server suspend endpoint warning, fallback to direct Firestore:', apiErr);
       }
 
-      if (this.currentUser && (this.currentUser.id === target.id || this.currentUser.cardNumber === target.cardNumber)) {
-        this.currentUser = { ...target };
+      // 2. Direct Firestore fallback jika target ada di state lokal
+      if (target) {
+        target.isSuspended = suspend;
+        if (suspend) {
+          const suspendUntilDate = new Date(Date.now() + days * 86400000);
+          target.suspendedUntil = suspendUntilDate.toISOString().slice(0, 10);
+          target.suspendReason = reason;
+          target.suspendedBy = 'admin';
+          target.isManualSuspend = true;
+        } else {
+          target.suspendedUntil = null;
+          target.suspendReason = '';
+          target.suspendedBy = undefined;
+          target.isManualSuspend = false;
+        }
+
+        if (this.currentUser && (this.currentUser.id === target.id || this.currentUser.cardNumber === target.cardNumber)) {
+          this.currentUser = { ...target };
+        }
+
+        try {
+          const { syncMemberDoc } = await import('../lib/firebase.js');
+          await syncMemberDoc(target);
+        } catch {
+          queueOfflineMutation({ action: 'saveMember', collection: 'members', docId: target.id, data: target });
+          this.pendingMutationsCount++;
+        }
       }
 
+      invalidateClientCache('members');
+      await this.fetchServerStats();
       this.calculateStats();
       this.persistToLocalCache();
-      invalidateClientCache('members');
 
-      try {
-        const { syncMemberDoc } = await import('../lib/firebase.js');
-        await syncMemberDoc(target);
-      } catch {
-        queueOfflineMutation({ action: 'saveMember', collection: 'members', docId: target.id, data: target });
-        this.pendingMutationsCount++;
-      }
-
-      this.showToast(`Status sanksi anggota "${target.name}" berhasil diperbarui.`);
+      const memberName = target?.name || 'Anggota';
+      this.showToast(suspend ? `Sanksi suspend berhasil diterapkan pada ${memberName}.` : `Sanksi suspend berhasil dicabut, status ${memberName} aktif kembali.`);
       return { success: true };
     },
 
@@ -3817,43 +3882,56 @@ export const useLibraryStore = defineStore('library', {
     },
 
     async returnLoan(loanId: string, options?: { customToast?: string }) {
-      const loan = this.loans.find(l => l.id === loanId);
-      if (!loan) return { success: false };
+      // 1. Eksekusi melalui Server Endpoint agar mutasi Firestore & Server Cache 100% konsisten
+      try {
+        await fetch(`/api/loans/${encodeURIComponent(loanId)}/return`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ handledBy: 'Admin Sirkulasi' })
+        });
+      } catch (apiErr) {
+        console.warn('[Store] Server return endpoint warning, fallback to direct Firestore:', apiErr);
+      }
 
-      loan.status = 'returned';
-      loan.returnDate = new Date().toISOString().slice(0, 10);
-      loan.daysOverdue = 0;
-      (loan as any)._needsAutoReturnSync = false;
-      this.processedEbookReturnIds.add(loan.id);
+      let loan = this.loans.find(l => l.id === loanId);
+      if (loan) {
+        loan.status = 'returned';
+        loan.returnDate = new Date().toISOString().slice(0, 10);
+        loan.daysOverdue = 0;
+        (loan as any)._needsAutoReturnSync = false;
+        this.processedEbookReturnIds.add(loan.id);
+      }
+
       try {
         localStorage.setItem('pustaka_processed_ebook_returns', JSON.stringify([...this.processedEbookReturnIds]));
         const dismissedRaw = localStorage.getItem('dismissed_expired_ebook_notifs');
         const dismissedList: string[] = dismissedRaw ? JSON.parse(dismissedRaw) : [];
-        if (!dismissedList.includes(`loan_${loan.id}`)) {
-          dismissedList.push(`loan_${loan.id}`);
+        if (!dismissedList.includes(`loan_${loanId}`)) {
+          dismissedList.push(`loan_${loanId}`);
           localStorage.setItem('dismissed_expired_ebook_notifs', JSON.stringify(dismissedList));
         }
       } catch {}
 
-      const book = this.books.find(b => b.id === loan.bookId);
+      const book = loan ? this.books.find(b => b.id === loan!.bookId) : null;
       if (book) {
         book.availableCopies += 1;
         if (book.borrowedCopies > 0) book.borrowedCopies -= 1;
       }
 
-      const member = this.members.find(m => 
-        m.id === loan.memberId || 
-        m.cardNumber === loan.memberCardNumber ||
-        (m.email && loan.memberEmail && m.email.toLowerCase() === loan.memberEmail.toLowerCase())
-      );
+      const member = loan ? this.members.find(m => 
+        m.id === loan!.memberId || 
+        m.cardNumber === loan!.memberCardNumber ||
+        (m.email && loan!.memberEmail && m.email.toLowerCase() === loan!.memberEmail.toLowerCase())
+      ) : null;
+
       if (member && member.activeLoansCount && member.activeLoansCount > 0) {
         member.activeLoansCount -= 1;
       }
 
-      // If member was suspended due to overdue books, check if they now have NO remaining overdue loans
+      // Jika anggota terkena suspend karena keterlambatan, cek apakah masih ada pinjaman overdue lain
       if (member) {
         const remainingOverdue = this.loans.filter(
-          l => l.id !== loan.id &&
+          l => l.id !== loanId &&
                l.status === 'overdue' &&
                (l.memberId === member.id || l.memberCardNumber === member.cardNumber || (l.memberEmail && member.email && l.memberEmail.toLowerCase() === member.email.toLowerCase()))
         );
@@ -3870,32 +3948,31 @@ export const useLibraryStore = defineStore('library', {
         }
       }
 
-      this.calculateStats();
-      this.persistToLocalCache();
-
       try {
         const { syncLoanDoc, syncBookDoc, syncMemberDoc } = await import('../lib/firebase.js');
         await Promise.all([
-          syncLoanDoc(loan),
+          loan ? syncLoanDoc(loan) : Promise.resolve(),
           book ? syncBookDoc(book) : Promise.resolve(),
           member ? syncMemberDoc(member) : Promise.resolve()
         ]);
       } catch {
-        queueOfflineMutation({ action: 'saveLoan', collection: 'loans', docId: loan.id, data: loan });
+        if (loan) queueOfflineMutation({ action: 'saveLoan', collection: 'loans', docId: loan.id, data: loan });
         if (book) queueOfflineMutation({ action: 'saveBook', collection: 'books', docId: book.id, data: book });
         if (member) queueOfflineMutation({ action: 'saveMember', collection: 'members', docId: member.id, data: member });
         this.pendingMutationsCount++;
       }
 
-      // Reconcile all suspensions and sync any remaining updates
-      await this.checkOverdueAndAutoSuspend();
-
       invalidateClientCache('loans');
       invalidateClientCache('books');
-      this.fetchServerStats();
+      invalidateClientCache('members');
+
+      await this.syncActiveLoansFromServer();
+      await this.fetchServerStats();
+      await this.checkOverdueAndAutoSuspend();
+      this.persistToLocalCache();
 
       this.showToast(options?.customToast || '✅ Buku berhasil dikembalikan!');
-      return { success: true };
+      return { success: true, data: loan };
     },
 
     async returnEbookSelf(loanId: string) {

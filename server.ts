@@ -571,6 +571,61 @@ app.get('/api/members', async (req, res) => {
   }
 })
 
+// 4b. Endpoint Toggle Suspend Anggota (/api/members/:id/suspend)
+app.post('/api/members/:id/suspend', express.json(), async (req, res) => {
+  try {
+    const memberId = req.params.id
+    const { suspend, days = 7, reason = 'Sanksi Penangguhan Kartu Anggota' } = req.body || {}
+
+    const db = await getServerFirestore()
+    if (!db) return res.status(500).json({ success: false, message: 'Database Firestore tidak tersedia' })
+
+    const { doc, getDoc, updateDoc } = await import('firebase/firestore')
+    const memberRef = doc(db, 'members', memberId)
+    const memberSnap = await getDoc(memberRef)
+
+    if (!memberSnap.exists()) {
+      return res.status(404).json({ success: false, message: 'Anggota tidak ditemukan' })
+    }
+
+    const memberData = memberSnap.data()
+    let updates: any = {}
+
+    if (suspend) {
+      const suspendUntil = new Date(Date.now() + (Number(days) || 7) * 86400000).toISOString().slice(0, 10)
+      updates = {
+        isSuspended: true,
+        suspendedUntil: suspendUntil,
+        suspendReason: reason || 'Sanksi Penangguhan Kartu Anggota',
+        suspendedBy: 'admin',
+        isManualSuspend: true
+      }
+    } else {
+      // Cabut sanksi suspend secara bersih
+      updates = {
+        isSuspended: false,
+        suspendedUntil: null,
+        suspendReason: '',
+        suspendedBy: null,
+        isManualSuspend: false
+      }
+    }
+
+    await updateDoc(memberRef, updates)
+    invalidateServerCollection('members')
+    invalidateServerCollection('stats')
+
+    return res.json({
+      success: true,
+      message: suspend ? 'Anggota berhasil disuspend' : 'Sanksi suspend berhasil dicabut',
+      member: { ...memberData, ...updates }
+    })
+  } catch (err: any) {
+    console.error('[Server] /api/members/:id/suspend error:', err)
+    return res.status(500).json({ success: false, message: err?.message || 'Gagal mengubah status suspend anggota' })
+  }
+})
+
 // 5. Endpoint Server-Side Pagination: Peminjaman & Riwayat (/api/loans)
 app.get('/api/loans', async (req, res) => {
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
@@ -633,6 +688,182 @@ app.get('/api/loans', async (req, res) => {
   } catch (err: any) {
     console.error('[Server] /api/loans error:', err)
     return res.status(500).json({ success: false, message: err?.message || 'Gagal memuat pinjaman' })
+  }
+})
+
+// 5b. Endpoint Terima Pengembalian Buku & Auto-Unsuspend (/api/loans/:id/return)
+app.post('/api/loans/:id/return', express.json(), async (req, res) => {
+  try {
+    const loanId = req.params.id
+    const { handledBy = 'Admin Sirkulasi' } = req.body || {}
+
+    const db = await getServerFirestore()
+    if (!db) return res.status(500).json({ success: false, message: 'Database Firestore tidak tersedia' })
+
+    const { doc, getDoc, updateDoc, collection, getDocs } = await import('firebase/firestore')
+    const loanRef = doc(db, 'loans', loanId)
+    const loanSnap = await getDoc(loanRef)
+
+    if (!loanSnap.exists()) {
+      return res.status(404).json({ success: false, message: 'Data transaksi peminjaman tidak ditemukan' })
+    }
+
+    const loanData = loanSnap.data()
+    const today = new Date().toISOString().slice(0, 10)
+
+    // Update status peminjaman menjadi returned
+    await updateDoc(loanRef, {
+      status: 'returned',
+      returnDate: today,
+      daysOverdue: 0,
+      handledBy: handledBy || 'Admin Sirkulasi',
+      _needsAutoReturnSync: false
+    })
+
+    // Pulihkan kuota stok buku
+    if (loanData.bookId) {
+      try {
+        const bookRef = doc(db, 'books', loanData.bookId)
+        const bookSnap = await getDoc(bookRef)
+        if (bookSnap.exists()) {
+          const bData = bookSnap.data()
+          const total = Number(bData.totalCopies) || 1
+          const currentAvail = Number(bData.availableCopies) || 0
+          const newAvail = Math.min(total, currentAvail + 1)
+          const currentBorrowed = Number(bData.borrowedCopies) || 0
+          const newBorrowed = Math.max(0, currentBorrowed - 1)
+          await updateDoc(bookRef, {
+            availableCopies: newAvail,
+            borrowedCopies: newBorrowed
+          })
+        }
+      } catch (bErr) {
+        console.warn('[Server] Catatan pengembalian buku:', bErr)
+      }
+    }
+
+    // Perbarui anggota & auto-unsuspend jika tidak ada pinjaman terlambat lain
+    const memberId = loanData.memberId
+    if (memberId) {
+      try {
+        const memberRef = doc(db, 'members', memberId)
+        const memberSnap = await getDoc(memberRef)
+        if (memberSnap.exists()) {
+          const mData = memberSnap.data()
+          const newActiveCount = Math.max(0, (Number(mData.activeLoansCount) || 1) - 1)
+          const memberUpdates: any = {
+            activeLoansCount: newActiveCount
+          }
+
+          // Cek apakah ada pinjaman lain yang masih terlambat
+          const allLoansSnap = await getDocs(collection(db, 'loans'))
+          let hasOtherOverdue = false
+          allLoansSnap.forEach(d => {
+            if (d.id !== loanId) {
+              const l = d.data()
+              if (l.memberId === memberId && (l.status === 'overdue' || (l.status === 'active' && l.dueDate && l.dueDate < today))) {
+                hasOtherOverdue = true
+              }
+            }
+          })
+
+          // Jika sudah bersih dari pinjaman overdue dan terkena suspend otomatis
+          if (!hasOtherOverdue && mData.isSuspended && (!mData.isManualSuspend || mData.suspendedBy === 'auto' || mData.suspendReason?.includes('Keterlambatan'))) {
+            memberUpdates.isSuspended = false
+            memberUpdates.suspendReason = ''
+            memberUpdates.suspendedUntil = null
+            memberUpdates.suspendedBy = null
+            memberUpdates.isManualSuspend = false
+          }
+
+          await updateDoc(memberRef, memberUpdates)
+        }
+      } catch (mErr) {
+        console.warn('[Server] Catatan pembaruan anggota:', mErr)
+      }
+    }
+
+    invalidateServerCollection('loans')
+    invalidateServerCollection('books')
+    invalidateServerCollection('members')
+    invalidateServerCollection('stats')
+
+    return res.json({
+      success: true,
+      message: 'Buku berhasil dikembalikan dan status anggota telah diperbarui'
+    })
+  } catch (err: any) {
+    console.error('[Server] /api/loans/:id/return error:', err)
+    return res.status(500).json({ success: false, message: err?.message || 'Gagal memproses pengembalian buku' })
+  }
+})
+
+// 5c. Endpoint Rekonsiliasi Otomatis Sanksi Suspend (/api/members/reconcile-suspends)
+app.post('/api/members/reconcile-suspends', async (_req, res) => {
+  try {
+    const db = await getServerFirestore()
+    if (!db) return res.status(500).json({ success: false, message: 'Firestore tidak siap' })
+
+    const { collection, getDocs, doc, updateDoc } = await import('firebase/firestore')
+    const [loansSnap, membersSnap] = await Promise.all([
+      getDocs(collection(db, 'loans')),
+      getDocs(collection(db, 'members'))
+    ])
+
+    const today = new Date().toISOString().slice(0, 10)
+    const overdueMemberIds = new Set<string>()
+    const activeLoansMap = new Map<string, number>()
+
+    loansSnap.forEach(d => {
+      const l = d.data()
+      if (l.status === 'active' || l.status === 'overdue') {
+        if (l.memberId) {
+          activeLoansMap.set(l.memberId, (activeLoansMap.get(l.memberId) || 0) + 1)
+        }
+        if (l.status === 'overdue' || (l.status === 'active' && l.dueDate && l.dueDate < today)) {
+          if (l.memberId) overdueMemberIds.add(l.memberId)
+          if (l.memberCardNumber) overdueMemberIds.add(l.memberCardNumber)
+        }
+      }
+    })
+
+    let unsuspendedCount = 0
+    for (const docSnap of membersSnap.docs) {
+      const m = docSnap.data()
+      const hasOverdue = overdueMemberIds.has(m.id) || overdueMemberIds.has(m.cardNumber)
+      const actualActiveCount = activeLoansMap.get(m.id) || 0
+
+      let needsUpdate = false
+      const updates: any = {}
+
+      if (!hasOverdue && m.isSuspended && (m.suspendedBy === 'auto' || !m.isManualSuspend || m.suspendReason?.includes('Keterlambatan'))) {
+        updates.isSuspended = false
+        updates.suspendReason = ''
+        updates.suspendedUntil = null
+        updates.suspendedBy = null
+        updates.isManualSuspend = false
+        needsUpdate = true
+        unsuspendedCount++
+      }
+
+      if (m.activeLoansCount !== actualActiveCount) {
+        updates.activeLoansCount = actualActiveCount
+        needsUpdate = true
+      }
+
+      if (needsUpdate) {
+        await updateDoc(doc(db, 'members', docSnap.id), updates)
+      }
+    }
+
+    if (unsuspendedCount > 0) {
+      invalidateServerCollection('members')
+      invalidateServerCollection('stats')
+    }
+
+    return res.json({ success: true, unsuspendedCount })
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err?.message })
   }
 })
 

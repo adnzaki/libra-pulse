@@ -108,8 +108,8 @@
             <span v-else-if="store.pendingTeacherRequestsCount > 0" class="px-1.5 py-0.2 text-[10px] rounded-full bg-amber-500 text-white font-bold animate-pulse flex items-center gap-0.5" title="Permintaan Verifikasi Guru Menunggu Konfirmasi">
               <span>👨‍🏫</span> {{ store.pendingTeacherRequestsCount }}
             </span>
-            <span v-else-if="store.overdueLoans.length" class="px-1.5 py-0.2 text-[10px] rounded-full bg-rose-500 text-white font-bold animate-pulse">
-              {{ store.overdueLoans.length }} Telat
+            <span v-else-if="(store.stats?.overdueLoans ?? store.overdueLoans.length) > 0" class="px-1.5 py-0.2 text-[10px] rounded-full bg-rose-500 text-white font-bold animate-pulse">
+              {{ store.stats?.overdueLoans ?? store.overdueLoans.length }} Telat
             </span>
           </router-link>
         </nav>

@@ -76,10 +76,10 @@
         <div class="relative p-1">
           <ShieldCheck class="w-5 h-5 transition-transform" :class="$route.name === 'admin' ? 'scale-110' : ''" />
           <span 
-            v-if="store.overdueLoans.length" 
+            v-if="(store.stats?.overdueLoans ?? store.overdueLoans.length) > 0" 
             class="absolute -top-0.5 -right-1.5 px-1 min-w-[14px] h-[14px] flex items-center justify-center text-[9px] font-extrabold bg-rose-500 text-white rounded-full animate-pulse"
           >
-            {{ store.overdueLoans.length }}
+            {{ store.stats?.overdueLoans ?? store.overdueLoans.length }}
           </span>
         </div>
         <span class="text-[10px] tracking-tight mt-0.5">Admin</span>
