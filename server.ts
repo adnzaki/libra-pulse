@@ -298,9 +298,24 @@ const collectionRevisions: Record<string, number> = {
 
 const SERVER_CACHE_FILE = path.join(process.cwd(), 'uploads', 'server_collections_cache.json')
 const serverCollectionCache = new Map<string, { data: any[]; fetchedAt: number; revision: number }>()
-const SERVER_CACHE_TTL = 15 * 60 * 1000 // 15 menit TTL jika tidak ada mutasi (sangat hemat kuota read Firestore)
 
-// Muat cache koleksi dari disk saat startup agar server tidak langsung query Firestore
+// TTL dinamis per jenis koleksi agar sinkron antar perangkat namun tetap sangat hemat kuota read Firestore
+const COLLECTION_TTLS: Record<string, number> = {
+  visits: 30 * 1000,               // 30 detik (presensi buku tamu real-time antar perangkat)
+  loans: 45 * 1000,                // 45 detik (sirkulasi peminjaman & pengembalian aktif)
+  bookings: 45 * 1000,             // 45 detik (booking & hold buku 24 jam)
+  notifications: 60 * 1000,        // 60 detik (notifikasi)
+  student_verifications: 60 * 1000,// 60 detik (verifikasi siswa)
+  teacher_requests: 60 * 1000,     // 60 detik (permohonan guru)
+  members: 120 * 1000,             // 2 menit (master anggota)
+  books: 120 * 1000,               // 2 menit (katalog & master buku)
+  deleted_books: 120 * 1000,       // 2 menit (tombstone buku terhapus)
+  categories: 300 * 1000,          // 5 menit (kategori)
+  shelves: 300 * 1000,             // 5 menit (rak buku)
+}
+const DEFAULT_CACHE_TTL = 60 * 1000
+
+// Muat cache koleksi dari disk saat startup agar server siap melayani permintaan instan
 function loadDiskCollectionCache() {
   try {
     if (fs.existsSync(SERVER_CACHE_FILE)) {
@@ -344,21 +359,30 @@ export function invalidateServerCollection(
   const newRev = Date.now()
   collectionRevisions[collectionName] = newRev
 
-  const cached = serverCollectionCache.get(collectionName)
-  if (cached && Array.isArray(cached.data)) {
-    if (mutationType === 'upsert' && item && item.id) {
-      const idx = cached.data.findIndex((x: any) => x.id === item.id)
-      if (idx >= 0) {
-        cached.data[idx] = { ...cached.data[idx], ...item }
-      } else {
-        cached.data.unshift(item)
-      }
-    } else if (mutationType === 'delete' && (itemId || (item && item.id))) {
-      const targetId = itemId || item?.id
-      cached.data = cached.data.filter((x: any) => x.id !== targetId)
+  if (mutationType === 'refresh') {
+    // Reset fetchedAt agar query berikutnya memicu pembacaan segar dari Firestore
+    const existing = serverCollectionCache.get(collectionName)
+    if (existing) {
+      existing.fetchedAt = 0
+      existing.revision = newRev
     }
-    cached.revision = newRev
-    cached.fetchedAt = Date.now()
+  } else {
+    const cached = serverCollectionCache.get(collectionName)
+    if (cached && Array.isArray(cached.data)) {
+      if (mutationType === 'upsert' && item && item.id) {
+        const idx = cached.data.findIndex((x: any) => x.id === item.id)
+        if (idx >= 0) {
+          cached.data[idx] = { ...cached.data[idx], ...item }
+        } else {
+          cached.data.unshift(item)
+        }
+      } else if (mutationType === 'delete' && (itemId || (item && item.id))) {
+        const targetId = itemId || item?.id
+        cached.data = cached.data.filter((x: any) => x.id !== targetId)
+      }
+      cached.revision = newRev
+      cached.fetchedAt = Date.now()
+    }
   }
 
   if (['books', 'loans', 'bookings', 'members'].includes(collectionName)) {
@@ -367,34 +391,40 @@ export function invalidateServerCollection(
   saveDiskCollectionCache()
 }
 
-async function getCachedServerCollection(collectionName: string): Promise<any[]> {
+async function getCachedServerCollection(collectionName: string, forceRefresh = false): Promise<any[]> {
   const cached = serverCollectionCache.get(collectionName)
+  const ttl = COLLECTION_TTLS[collectionName] || DEFAULT_CACHE_TTL
+  const now = Date.now()
 
-  // 1. Jika data ada di memori, selalu gunakan data memori tanpa pernah query ulang Firestore
-  if (cached && Array.isArray(cached.data) && cached.data.length > 0) {
+  // 1. Jika data ada di memori dan belum kadaluarsa (TTL masih valid) serta tidak dipaksa refresh
+  if (!forceRefresh && cached && Array.isArray(cached.data) && (now - (cached.fetchedAt || 0) < ttl)) {
     return cached.data
   }
 
-  // 2. Jika tidak ada di memori, periksa apakah tersimpan di file disk lokal uploads/server_collections_cache.json
-  try {
-    if (fs.existsSync(SERVER_CACHE_FILE)) {
-      const parsed = JSON.parse(fs.readFileSync(SERVER_CACHE_FILE, 'utf8'))
-      if (parsed && parsed[collectionName] && Array.isArray(parsed[collectionName].data) && parsed[collectionName].data.length > 0) {
-        serverCollectionCache.set(collectionName, parsed[collectionName])
-        if (parsed[collectionName].revision) {
-          collectionRevisions[collectionName] = parsed[collectionName].revision
+  // 2. Jika memori belum ada tapi disk cache ada dan masih dalam batas TTL
+  if (!forceRefresh && !cached) {
+    try {
+      if (fs.existsSync(SERVER_CACHE_FILE)) {
+        const parsed = JSON.parse(fs.readFileSync(SERVER_CACHE_FILE, 'utf8'))
+        if (parsed && parsed[collectionName] && Array.isArray(parsed[collectionName].data)) {
+          const diskItem = parsed[collectionName]
+          if (now - (diskItem.fetchedAt || 0) < ttl) {
+            serverCollectionCache.set(collectionName, diskItem)
+            if (diskItem.revision) {
+              collectionRevisions[collectionName] = diskItem.revision
+            }
+            return diskItem.data
+          }
         }
-        return parsed[collectionName].data
       }
-    }
-  } catch {}
+    } catch {}
+  }
 
-  // 3. Fallback terakhir hanya jika cache benar-benar kosong saat cold start pertama kali
+  // 3. Ambil data terbaru dari Firestore untuk sinkronisasi antar-perangkat secara akurat
   const db = await getServerFirestore()
   if (!db) return cached ? cached.data : []
 
   try {
-    console.log(`[Firestore] Mengambil dokumen koleksi '${collectionName}' pertama kali (Cold Start)...`)
     const { collection, getDocs } = await import('firebase/firestore')
     const snap = await getDocs(collection(db, collectionName))
     const list: any[] = []
@@ -402,17 +432,23 @@ async function getCachedServerCollection(collectionName: string): Promise<any[]>
       list.push({ id: d.id, ...d.data() })
     })
 
-    const now = Date.now()
-    const currentRev = collectionRevisions[collectionName] || now
+    const fetchTime = Date.now()
+    const currentRev = fetchTime
+    collectionRevisions[collectionName] = currentRev
+
+    if (['books', 'loans', 'bookings', 'members'].includes(collectionName)) {
+      collectionRevisions.stats = currentRev
+    }
+
     serverCollectionCache.set(collectionName, {
       data: list,
-      fetchedAt: now,
+      fetchedAt: fetchTime,
       revision: currentRev
     })
     saveDiskCollectionCache()
     return list
   } catch (err) {
-    console.error(`[Server] Error loading collection ${collectionName}:`, err)
+    console.error(`[Server] Error loading collection ${collectionName} from Firestore:`, err)
     return cached ? cached.data : []
   }
 }
@@ -451,10 +487,11 @@ app.get('/api/books', async (req, res) => {
     const availability = ((req.query.availability || 'all') as string).trim()
     const bookType = ((req.query.bookType || 'all') as string).trim()
     const sort = ((req.query.sort || 'newest') as string).trim()
+    const force = req.query.force === 'true' || req.headers['cache-control']?.includes('no-cache')
 
     const [allRawBooks, deletedBooks] = await Promise.all([
-      getCachedServerCollection('books'),
-      getCachedServerCollection('deleted_books')
+      getCachedServerCollection('books', force),
+      getCachedServerCollection('deleted_books', force)
     ])
 
     const deletedIds = new Set(deletedBooks.map(d => d.id))
@@ -551,8 +588,9 @@ app.get('/api/members', async (req, res) => {
     const role = ((req.query.role || 'all') as string).trim()
     const memberType = ((req.query.memberType || 'all') as string).trim()
     const status = ((req.query.status || 'all') as string).trim()
+    const force = req.query.force === 'true' || req.headers['cache-control']?.includes('no-cache')
 
-    let members = await getCachedServerCollection('members')
+    let members = await getCachedServerCollection('members', force)
 
     // Saring role jika diminta
     if (role !== 'all') {
@@ -673,8 +711,9 @@ app.get('/api/loans', async (req, res) => {
     const limit = Math.max(1, Math.min(100, parseInt(req.query.limit as string) || 25))
     const search = ((req.query.search || '') as string).trim().toLowerCase()
     const status = ((req.query.status || 'all') as string).trim()
+    const force = req.query.force === 'true' || req.headers['cache-control']?.includes('no-cache')
 
-    let loans = await getCachedServerCollection('loans')
+    let loans = await getCachedServerCollection('loans', force)
 
     if (status === 'active') {
       loans = loans.filter(l => l.status === 'active' || l.status === 'overdue')
@@ -911,8 +950,9 @@ app.get('/api/bookings', async (req, res) => {
     const limit = Math.max(1, Math.min(100, parseInt(req.query.limit as string) || 25))
     const search = ((req.query.search || '') as string).trim().toLowerCase()
     const status = ((req.query.status || 'active') as string).trim()
+    const force = req.query.force === 'true' || req.headers['cache-control']?.includes('no-cache')
 
-    let bookings = await getCachedServerCollection('bookings')
+    let bookings = await getCachedServerCollection('bookings', force)
     const now = Date.now()
 
     if (status === 'active') {
@@ -975,8 +1015,9 @@ app.get('/api/notifications', async (req, res) => {
     const limit = Math.max(1, Math.min(100, parseInt(req.query.limit as string) || 25))
     const search = ((req.query.search || '') as string).trim().toLowerCase()
     const type = ((req.query.type || 'all') as string).trim()
+    const force = req.query.force === 'true' || req.headers['cache-control']?.includes('no-cache')
 
-    let notifs = await getCachedServerCollection('notifications')
+    let notifs = await getCachedServerCollection('notifications', force)
 
     if (type !== 'all') {
       notifs = notifs.filter(n => n.type === type)
@@ -1032,8 +1073,9 @@ app.get('/api/student-verifications', async (req, res) => {
     const limit = Math.max(1, Math.min(100, parseInt(req.query.limit as string) || 25))
     const search = ((req.query.search || '') as string).trim().toLowerCase()
     const status = ((req.query.status || 'all') as string).trim()
+    const force = req.query.force === 'true' || req.headers['cache-control']?.includes('no-cache')
 
-    let items = await getCachedServerCollection('student_verifications')
+    let items = await getCachedServerCollection('student_verifications', force)
 
     if (status !== 'all') {
       items = items.filter(i => i.status === status)
@@ -1085,8 +1127,9 @@ app.get('/api/teacher-requests', async (req, res) => {
     const limit = Math.max(1, Math.min(100, parseInt(req.query.limit as string) || 25))
     const search = ((req.query.search || '') as string).trim().toLowerCase()
     const status = ((req.query.status || 'all') as string).trim()
+    const force = req.query.force === 'true' || req.headers['cache-control']?.includes('no-cache')
 
-    let items = await getCachedServerCollection('teacher_requests')
+    let items = await getCachedServerCollection('teacher_requests', force)
 
     if (status !== 'all') {
       items = items.filter(i => i.status === status)
@@ -1136,8 +1179,9 @@ app.get('/api/shelves', async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page as string) || 1)
     const limit = Math.max(1, Math.min(100, parseInt(req.query.limit as string) || 25))
     const search = ((req.query.search || '') as string).trim().toLowerCase()
+    const force = req.query.force === 'true' || req.headers['cache-control']?.includes('no-cache')
 
-    let items = await getCachedServerCollection('shelves')
+    let items = await getCachedServerCollection('shelves', force)
 
     if (search) {
       items = items.filter(s => 
@@ -1183,8 +1227,9 @@ app.get('/api/categories', async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page as string) || 1)
     const limit = Math.max(1, Math.min(100, parseInt(req.query.limit as string) || 25))
     const search = ((req.query.search || '') as string).trim().toLowerCase()
+    const force = req.query.force === 'true' || req.headers['cache-control']?.includes('no-cache')
 
-    let items = await getCachedServerCollection('categories')
+    let items = await getCachedServerCollection('categories', force)
 
     if (search) {
       items = items.filter(c => 
@@ -1222,15 +1267,16 @@ app.get('/api/categories', async (req, res) => {
 })
 
 // 12. Endpoint Ringkasan Statistik Server Tanpa Download Dokumen (/api/stats)
-app.get('/api/stats', async (_req, res) => {
+app.get('/api/stats', async (req, res) => {
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
   try {
+    const force = req.query.force === 'true' || req.headers['cache-control']?.includes('no-cache')
     const [books, loans, bookings, members, deleted] = await Promise.all([
-      getCachedServerCollection('books'),
-      getCachedServerCollection('loans'),
-      getCachedServerCollection('bookings'),
-      getCachedServerCollection('members'),
-      getCachedServerCollection('deleted_books')
+      getCachedServerCollection('books', force),
+      getCachedServerCollection('loans', force),
+      getCachedServerCollection('bookings', force),
+      getCachedServerCollection('members', force),
+      getCachedServerCollection('deleted_books', force)
     ])
 
     const deletedIds = new Set(deleted.map(d => d.id))
@@ -1295,8 +1341,9 @@ app.get('/api/visits', async (req, res) => {
     const purpose = ((req.query.purpose || 'all') as string).trim()
     const dateFilter = ((req.query.dateFilter || 'all') as string).trim()
     const customDate = ((req.query.customDate || '') as string).trim()
+    const force = req.query.force === 'true' || req.headers['cache-control']?.includes('no-cache')
 
-    let allVisits = await getCachedServerCollection('visits')
+    let allVisits = await getCachedServerCollection('visits', force)
 
     // Urutkan data presensi descending (terbaru ke terlama)
     allVisits.sort((a, b) => {
@@ -1392,6 +1439,30 @@ app.get('/api/visits', async (req, res) => {
   } catch (err: any) {
     console.error('[Server] /api/visits error:', err)
     return res.status(500).json({ success: false, message: err?.message || 'Gagal memuat presensi kunjungan' })
+  }
+})
+
+// 14. Endpoint Sinkronisasi Komprehensif Firestore ke Server Cache Antar-Perangkat
+app.all('/api/sync-all', async (_req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+  try {
+    const collectionsToSync = ['visits', 'loans', 'bookings', 'members', 'books', 'deleted_books']
+    const results: Record<string, number> = {}
+    await Promise.all(
+      collectionsToSync.map(async (c) => {
+        const list = await getCachedServerCollection(c, true)
+        results[c] = list.length
+      })
+    )
+    return res.json({
+      success: true,
+      message: 'Semua data server berhasil disinkronkan langsung dari Firestore!',
+      counts: results,
+      timestamp: Date.now()
+    })
+  } catch (err: any) {
+    console.error('[Server] /api/sync-all error:', err)
+    return res.status(500).json({ success: false, message: err?.message || 'Gagal sinkronisasi koleksi' })
   }
 })
 

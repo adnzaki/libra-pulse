@@ -215,6 +215,18 @@
                       type="date"
                       class="px-2 py-1 rounded-xl bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-white"
                     />
+
+                    <!-- Tombol Segarkan Data Firestore -->
+                    <button 
+                      @click="handleManualRefresh"
+                      :disabled="isServerLoading"
+                      type="button"
+                      title="Segarkan data presensi langsung dari Firestore"
+                      class="px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer flex items-center gap-1.5 active:scale-95 disabled:opacity-50 shadow-2xs"
+                    >
+                      <RefreshCw class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" :class="{ 'animate-spin': isServerLoading }" />
+                      <span class="hidden sm:inline">Segarkan</span>
+                    </button>
                   </div>
                 </div>
 
@@ -1713,6 +1725,7 @@ const totalServerVisits = ref(0);
 const totalServerPages = ref(1);
 const serverVisitsList = ref<LibraryVisit[]>([]);
 const isServerLoading = ref(false);
+const hasServerLoaded = ref(false);
 let serverFetchDebounceTimer: any = null;
 
 const fetchServerVisits = async (forceRefresh = false) => {
@@ -1735,6 +1748,7 @@ const fetchServerVisits = async (forceRefresh = false) => {
     serverVisitsList.value = res.data;
     totalServerVisits.value = res.pagination.total;
     totalServerPages.value = res.pagination.totalPages;
+    hasServerLoaded.value = true;
   } catch (err) {
     console.warn('[Visits] Server-side pagination fetch error, fallback ke lokal:', err);
   } finally {
@@ -1742,10 +1756,19 @@ const fetchServerVisits = async (forceRefresh = false) => {
   }
 };
 
+const handleManualRefresh = async () => {
+  invalidateClientCache('visits');
+  await Promise.all([
+    fetchServerVisits(true),
+    store.syncVisitsFromServer(true)
+  ]);
+  store.showToast('✅ Data presensi kunjungan berhasil disinkronkan dengan Cloud Firestore.');
+};
+
 const triggerDebouncedServerFetch = () => {
   if (serverFetchDebounceTimer) clearTimeout(serverFetchDebounceTimer);
   serverFetchDebounceTimer = setTimeout(() => {
-    fetchServerVisits();
+    fetchServerVisits(true);
   }, 300);
 };
 
@@ -1787,8 +1810,8 @@ const localFilteredVisits = computed(() => {
 });
 
 const filteredVisits = computed(() => {
-  // Jika data server tersedia atau sedang loading, tampilkan data server paginated
-  if (serverVisitsList.value.length > 0 || isServerLoading.value) {
+  // Jika server sudah pernah merespon atau sedang loading, gunakan data server
+  if (hasServerLoaded.value || isServerLoading.value) {
     return serverVisitsList.value;
   }
   // Fallback: client pagination 25 data per halaman jika offline
@@ -1797,10 +1820,16 @@ const filteredVisits = computed(() => {
 });
 
 const totalVisitsCount = computed(() => {
+  if (hasServerLoaded.value) {
+    return totalServerVisits.value;
+  }
   return totalServerVisits.value || localFilteredVisits.value.length;
 });
 
 const totalPages = computed(() => {
+  if (hasServerLoaded.value) {
+    return totalServerPages.value;
+  }
   return totalServerPages.value || Math.max(1, Math.ceil(localFilteredVisits.value.length / pageSize.value));
 });
 
@@ -1808,13 +1837,15 @@ const totalPages = computed(() => {
 watch(() => props.isOpen, (open) => {
   if (open) {
     currentPage.value = 1;
-    fetchServerVisits();
+    fetchServerVisits(true);
+    store.syncVisitsFromServer(true);
   }
 });
 
 watch(activeTab, (tab) => {
   if (tab === 'list') {
-    fetchServerVisits();
+    fetchServerVisits(true);
+    store.syncVisitsFromServer(true);
   }
 });
 

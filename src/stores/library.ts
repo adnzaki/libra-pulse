@@ -510,7 +510,7 @@ export const useLibraryStore = defineStore('library', {
 
     async syncBooksFromServer(force = false) {
       try {
-        const res = await fetch('/api/books?limit=500', {
+        const res = await fetch(`/api/books?limit=500${force ? '&force=true' : ''}`, {
           headers: { 'Cache-Control': 'no-cache' }
         });
         if (res.ok) {
@@ -523,6 +523,36 @@ export const useLibraryStore = defineStore('library', {
         }
       } catch (err) {
         console.warn('Failed to sync books from server:', err);
+      }
+    },
+
+    async syncVisitsFromServer(force = false) {
+      try {
+        const res = await fetch(`/api/visits?limit=100${force ? '&force=true' : ''}`, {
+          headers: { 'Cache-Control': 'no-cache' }
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json && json.success && Array.isArray(json.data)) {
+            const serverVisits: LibraryVisit[] = json.data;
+            for (const sVisit of serverVisits) {
+              const idx = this.visits.findIndex(v => v.id === sVisit.id);
+              if (idx >= 0) {
+                this.visits[idx] = { ...this.visits[idx], ...sVisit };
+              } else {
+                this.visits.push(sVisit);
+              }
+            }
+            this.visits.sort((a, b) => {
+              const timeA = new Date(a.timestamp || a.visitDate || 0).getTime();
+              const timeB = new Date(b.timestamp || b.visitDate || 0).getTime();
+              return timeB - timeA;
+            });
+            this.persistVisitsToLocalCache();
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to sync visits from server:', err);
       }
     },
 
@@ -1185,6 +1215,12 @@ export const useLibraryStore = defineStore('library', {
 
         // Step 2: Ambil ringkasan statistik server tanpa menarik ribuan data dokumen (0 reads Firestore)
         await this.fetchServerStats();
+
+        // Step 2b: Sinkronkan pinjaman aktif dan presensi kunjungan terkini agar akurat di semua perangkat
+        await Promise.allSettled([
+          this.syncActiveLoansFromServer(),
+          this.syncVisitsFromServer(true)
+        ]);
 
         // Step 3: Muat rak dan kategori secara hemat dari server cache jika belum ada di lokal
         if (!this.shelves || this.shelves.length === 0) {

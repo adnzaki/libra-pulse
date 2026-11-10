@@ -172,6 +172,10 @@ export async function fetchPaginatedData<T = any>(
     }
   }
 
+  if (options.forceRefresh) {
+    queryParams.set('force', 'true');
+  }
+
   const res = await fetch(`/api/${collectionName}?${queryParams.toString()}`, {
     headers: {
       'Cache-Control': 'no-cache',

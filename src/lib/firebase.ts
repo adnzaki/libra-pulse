@@ -414,33 +414,39 @@ export async function syncNotificationDoc(notif: any) {
   if (!notif?.id) return;
   const clean = sanitizeForFirestore(notif);
   await withTimeout(setDoc(doc(db, 'notifications', notif.id), clean, { merge: true }), 7000);
+  invalidateClientCache('notifications', { type: 'upsert', item: clean, id: notif.id });
 }
 
 export async function removeNotificationDoc(id: string) {
   if (!id) return;
   await withTimeout(deleteDoc(doc(db, 'notifications', id)), 7000);
+  invalidateClientCache('notifications', { type: 'delete', id });
 }
 
 export async function syncTeacherRequestDoc(req: any) {
   if (!req?.id) return;
   const clean = sanitizeForFirestore(req);
   await withTimeout(setDoc(doc(db, 'teacher_requests', req.id), clean), 7000);
+  invalidateClientCache('teacher_requests', { type: 'upsert', item: clean, id: req.id });
 }
 
 export async function removeTeacherRequestDoc(id: string) {
   if (!id) return;
   await withTimeout(deleteDoc(doc(db, 'teacher_requests', id)), 7000);
+  invalidateClientCache('teacher_requests', { type: 'delete', id });
 }
 
 export async function syncStudentVerificationDoc(req: any) {
   if (!req?.id) return;
   const clean = sanitizeForFirestore(req);
   await withTimeout(setDoc(doc(db, 'student_verifications', req.id), clean), 7000);
+  invalidateClientCache('student_verifications', { type: 'upsert', item: clean, id: req.id });
 }
 
 export async function removeStudentVerificationDoc(id: string) {
   if (!id) return;
   await withTimeout(deleteDoc(doc(db, 'student_verifications', id)), 7000);
+  invalidateClientCache('student_verifications', { type: 'delete', id });
 }
 
 export async function syncDeviceSessionDoc(session: any) {
@@ -458,22 +464,26 @@ export async function syncVisitDoc(visit: any) {
   if (!visit?.id) return;
   const clean = sanitizeForFirestore(visit);
   await withTimeout(setDoc(doc(db, 'visits', visit.id), clean, { merge: true }), 7000);
+  invalidateClientCache('visits', { type: 'upsert', item: clean, id: visit.id });
 }
 
 export async function removeVisitDoc(visitId: string) {
   if (!visitId) return;
   await withTimeout(deleteDoc(doc(db, 'visits', visitId)), 7000);
+  invalidateClientCache('visits', { type: 'delete', id: visitId });
 }
 
 export async function syncVisitTokenDoc(token: any) {
   if (!token?.id) return;
   const clean = sanitizeForFirestore(token);
   await withTimeout(setDoc(doc(db, 'visit_tokens', token.id), clean, { merge: true }), 7000);
+  invalidateClientCache('visit_tokens', { type: 'upsert', item: clean, id: token.id });
 }
 
 export async function removeVisitTokenDoc(tokenId: string) {
   if (!tokenId) return;
   await withTimeout(deleteDoc(doc(db, 'visit_tokens', tokenId)), 7000);
+  invalidateClientCache('visit_tokens', { type: 'delete', id: tokenId });
 }
 
 /**
