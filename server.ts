@@ -405,7 +405,7 @@ app.get('/api/books', async (req, res) => {
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
   try {
     const page = Math.max(1, parseInt(req.query.page as string) || 1)
-    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit as string) || 25))
+    const limit = Math.max(1, Math.min(1000, parseInt(req.query.limit as string) || 25))
     const search = ((req.query.search || req.query.q || '') as string).trim().toLowerCase()
     const category = ((req.query.category || 'all') as string).trim()
     const shelfId = ((req.query.shelfId || req.query.shelf || 'all') as string).trim()

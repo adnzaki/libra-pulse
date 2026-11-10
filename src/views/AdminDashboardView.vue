@@ -1829,7 +1829,7 @@
               <h3 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <span>Katalog Master Buku & Penempatan Rak</span>
                 <span class="text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-500/15 border border-blue-500/30 px-2.5 py-0.5 rounded-full">
-                  {{ filteredBooks.length }} Judul Buku
+                  {{ bookTotalCount || store.stats?.totalTitles || filteredBooks.length }} Judul Buku
                 </span>
               </h3>
               <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">Kelola judul buku, stok eksemplar, penempatan rak fisik, dan unggah e-Book digital.</p>
@@ -3677,7 +3677,7 @@ const primaryTabs = computed(() => [
     shortLabel: 'Master Buku', 
     description: 'Manajemen koleksi buku fisik, dokumen e-Book & lokasi rak', 
     icon: BookOpen, 
-    badge: store.books.length 
+    badge: store.stats?.totalTitles ?? (bookTotalCount.value || store.books.length) 
   },
   { 
     id: 'loans', 
@@ -3722,7 +3722,7 @@ const allTabMenuModules = computed(() => [
     label: 'Master Data Buku', 
     description: 'Manajemen koleksi buku fisik, dokumen e-Book, dan lokasi penempatan rak', 
     icon: BookOpen, 
-    badge: store.books.length 
+    badge: store.stats?.totalTitles ?? (bookTotalCount.value || store.books.length) 
   },
   { 
     id: 'loans', 

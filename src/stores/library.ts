@@ -508,6 +508,24 @@ export const useLibraryStore = defineStore('library', {
       }
     },
 
+    async syncBooksFromServer(force = false) {
+      try {
+        const res = await fetch('/api/books?limit=500', {
+          headers: { 'Cache-Control': 'no-cache' }
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json && json.success && Array.isArray(json.data) && json.data.length > 0) {
+            this.books = json.data.filter((b: Book) => !this.isBookDeleted(b.id));
+            this.calculateStats();
+            this.persistToLocalCache();
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to sync books from server:', err);
+      }
+    },
+
     // ------------------------------------------------------------------------
     // Realtime Listener Setup & Online/Offline Events
     // ------------------------------------------------------------------------
@@ -1321,6 +1339,7 @@ export const useLibraryStore = defineStore('library', {
         }
 
         this.initTheme();
+        await this.syncBooksFromServer();
         await this.syncActiveLoansFromServer();
         this.calculateStats();
         this.restoreUserSession();

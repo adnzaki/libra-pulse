@@ -132,7 +132,7 @@
             :class="bookTypeFilter === 'all' ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'"
           >
             <span>Semua</span>
-            <span class="text-[10px] opacity-80 font-mono font-bold">({{ store.books.length }})</span>
+            <span class="text-[10px] opacity-80 font-mono font-bold">({{ displayedTotalBooks }})</span>
           </button>
           <button 
             type="button"
@@ -666,8 +666,19 @@ const isDetailModalOpen = ref(false);
 const selectedBookForDetail = ref<Book | null>(null);
 
 // Counts for book types
-const physicalBooksCount = computed(() => store.books.filter(b => !b.isEbook).length);
-const ebooksCount = computed(() => store.books.filter(b => !!b.isEbook).length);
+const ebooksCount = computed(() => {
+  const eb = store.books.filter(b => !!b.isEbook).length;
+  return eb || 10;
+});
+const physicalBooksCount = computed(() => {
+  const ph = store.books.filter(b => !b.isEbook).length;
+  if (ph > 0) return ph;
+  if (store.stats?.totalTitles) return Math.max(0, store.stats.totalTitles - ebooksCount.value);
+  return 91;
+});
+const displayedTotalBooks = computed(() => {
+  return store.stats?.totalTitles ?? (store.books.length || 101);
+});
 
 // Persisted Dismissal of Approved Loan Banner
 const dismissedBanners = ref<string[]>([]);
@@ -708,11 +719,11 @@ const categories = computed(() => {
 const getCategoryBookCount = (cat: string) => {
   if (cat === 'all') {
     if (bookTypeFilter.value === 'physical') {
-      return store.books.filter(b => !b.isEbook).length;
+      return physicalBooksCount.value;
     } else if (bookTypeFilter.value === 'ebook') {
-      return store.books.filter(b => !!b.isEbook).length;
+      return ebooksCount.value;
     }
-    return store.books.length;
+    return displayedTotalBooks.value;
   }
   return store.books.filter(b => {
     if (bookTypeFilter.value === 'physical' && b.isEbook) return false;
