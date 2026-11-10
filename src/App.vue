@@ -125,11 +125,10 @@
             }"
           >
             <span 
-              class="w-2 h-2 rounded-full"
-              :class="store.isQuotaExhausted ? 'bg-amber-500' : (store.isUsingOfflineData ? 'bg-amber-500' : 'bg-green-500 animate-pulse')"
+              class="w-2 h-2 rounded-full bg-green-500 animate-pulse"
             ></span>
             <span class="font-medium">
-              {{ store.isQuotaExhausted ? 'Penyimpanan Offline Lokal Aktif (Batas Kuota Cloud Harian)' : (store.isUsingOfflineData ? 'Mode Offline Lokal' : 'Sinkronisasi Otomatis Cloud Aktif (Hold 24h & Auto-Suspend)') }}
+              Sinkronisasi Otomatis Cloud Aktif (Hold 24h & Auto-Suspend)
             </span>
           </div>
 
