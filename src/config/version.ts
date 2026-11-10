@@ -8,7 +8,7 @@ import type { ChangelogItem, AppVersionConfig } from '../types.js';
  * akan secara otomatis mengikuti konstanta ini.
  * ============================================================================
  */
-export const APP_BUILD_NUMBER = '10010';
+export const APP_BUILD_NUMBER = '10011';
 export const CURRENT_APP_VERSION = '1.0.0';
 export const APP_RELEASE_DATE = '10 November 2026';
 export const APP_RELEASE_CODENAME = `Libra Stabil (Build ${APP_BUILD_NUMBER})`;
@@ -19,11 +19,22 @@ export const DEFAULT_APP_VERSION_CONFIG: AppVersionConfig = {
   releaseDate: APP_RELEASE_DATE,
   forceReload: false,
   minSupportedVersion: '1.0.0',
-  updateMessage: `Pembaruan aplikasi Libra v${CURRENT_APP_VERSION} (Build ${APP_BUILD_NUMBER}) telah tersedia dengan penyempurnaan alur muat ulang bebas blank screen dan peningkatan stabilitas sistem.`,
-  changelogSummary: `Rilis Stabil v${CURRENT_APP_VERSION} Build ${APP_BUILD_NUMBER}: Konstanta Build Number Terpusat dan Perbaikan Blank Screen saat Muat Ulang Pembaruan.`
+  updateMessage: `Pembaruan aplikasi Libra v${CURRENT_APP_VERSION} (Build ${APP_BUILD_NUMBER}) telah aktif: Optimasi drastis operasi read Firestore dengan on-demand data pagination & server shield caching.`,
+  changelogSummary: `Rilis Stabil v${CURRENT_APP_VERSION} Build ${APP_BUILD_NUMBER}: Optimasi Read Operations Firestore & On-Demand Data Loading.`
 };
 
 export const CHANGELOG_LIST: ChangelogItem[] = [
+  {
+    id: 'firestore-read-optimization-10011',
+    title: 'Optimasi Efisiensi Read Operations Cloud Firestore & On-Demand Loading',
+    description:
+      'Penyusutan drastis konsumsi kuota read Firestore hingga mendekati nol saat akses aplikasi. Menghilangkan seluruh listener onSnapshot global yang membebani traffic, membatalkan download ratusan data saat startup awal, dan menerapkan pemuatan data strictly on-demand sesuai halaman aktif (Katalog 12 item/hal, Panel Admin 25 item/hal) dengan proteksi server disk caching.',
+    targetAudience: 'all',
+    targetAudienceLabel: 'Semua Pengguna',
+    category: 'improvement',
+    badge: `Build ${APP_BUILD_NUMBER}`,
+    iconName: 'Zap',
+  },
   {
     id: 'feature-buku-tamu-online',
     title: 'Penambahan Fitur Buku Tamu & Presensi Kunjungan Online',

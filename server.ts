@@ -335,32 +335,66 @@ function saveDiskCollectionCache() {
   }
 }
 
-export function invalidateServerCollection(collectionName: string) {
+export function invalidateServerCollection(
+  collectionName: string,
+  mutationType?: 'upsert' | 'delete' | 'refresh',
+  item?: any,
+  itemId?: string
+) {
   const newRev = Date.now()
   collectionRevisions[collectionName] = newRev
-  serverCollectionCache.delete(collectionName)
+
+  const cached = serverCollectionCache.get(collectionName)
+  if (cached && Array.isArray(cached.data)) {
+    if (mutationType === 'upsert' && item && item.id) {
+      const idx = cached.data.findIndex((x: any) => x.id === item.id)
+      if (idx >= 0) {
+        cached.data[idx] = { ...cached.data[idx], ...item }
+      } else {
+        cached.data.unshift(item)
+      }
+    } else if (mutationType === 'delete' && (itemId || (item && item.id))) {
+      const targetId = itemId || item?.id
+      cached.data = cached.data.filter((x: any) => x.id !== targetId)
+    }
+    cached.revision = newRev
+    cached.fetchedAt = Date.now()
+  }
+
   if (['books', 'loans', 'bookings', 'members'].includes(collectionName)) {
     collectionRevisions.stats = newRev
-    serverCollectionCache.delete('stats')
   }
   saveDiskCollectionCache()
 }
 
 async function getCachedServerCollection(collectionName: string): Promise<any[]> {
-  const currentRev = collectionRevisions[collectionName] || 1
   const cached = serverCollectionCache.get(collectionName)
-  const now = Date.now()
 
-  // Jika cache valid dan revisi cocok serta belum kadaluarsa, gunakan cache 100% tanpa ke Firestore
-  if (cached && cached.revision === currentRev && now - cached.fetchedAt < SERVER_CACHE_TTL) {
+  // 1. Jika data ada di memori, selalu gunakan data memori tanpa pernah query ulang Firestore
+  if (cached && Array.isArray(cached.data) && cached.data.length > 0) {
     return cached.data
   }
 
+  // 2. Jika tidak ada di memori, periksa apakah tersimpan di file disk lokal uploads/server_collections_cache.json
+  try {
+    if (fs.existsSync(SERVER_CACHE_FILE)) {
+      const parsed = JSON.parse(fs.readFileSync(SERVER_CACHE_FILE, 'utf8'))
+      if (parsed && parsed[collectionName] && Array.isArray(parsed[collectionName].data) && parsed[collectionName].data.length > 0) {
+        serverCollectionCache.set(collectionName, parsed[collectionName])
+        if (parsed[collectionName].revision) {
+          collectionRevisions[collectionName] = parsed[collectionName].revision
+        }
+        return parsed[collectionName].data
+      }
+    }
+  } catch {}
+
+  // 3. Fallback terakhir hanya jika cache benar-benar kosong saat cold start pertama kali
   const db = await getServerFirestore()
   if (!db) return cached ? cached.data : []
 
   try {
-    console.log(`[Firestore] Mengambil dokumen koleksi '${collectionName}' dari server (Cache Miss/Mutasi)...`)
+    console.log(`[Firestore] Mengambil dokumen koleksi '${collectionName}' pertama kali (Cold Start)...`)
     const { collection, getDocs } = await import('firebase/firestore')
     const snap = await getDocs(collection(db, collectionName))
     const list: any[] = []
@@ -368,6 +402,8 @@ async function getCachedServerCollection(collectionName: string): Promise<any[]>
       list.push({ id: d.id, ...d.data() })
     })
 
+    const now = Date.now()
+    const currentRev = collectionRevisions[collectionName] || now
     serverCollectionCache.set(collectionName, {
       data: list,
       fetchedAt: now,
@@ -394,8 +430,11 @@ app.get('/api/data-revisions', (_req, res) => {
 // 2. Endpoint Mutasi Invalidation Hook
 app.post('/api/notify-mutation', express.json(), (req, res) => {
   const coll = req.body?.collection
+  const type = req.body?.type || 'upsert'
+  const item = req.body?.item
+  const itemId = req.body?.id || item?.id
   if (coll && typeof coll === 'string') {
-    invalidateServerCollection(coll)
+    invalidateServerCollection(coll, type, item, itemId)
   }
   res.json({ success: true, timestamp: Date.now() })
 })
@@ -755,12 +794,11 @@ app.post('/api/loans/:id/return', express.json(), async (req, res) => {
             activeLoansCount: newActiveCount
           }
 
-          // Cek apakah ada pinjaman lain yang masih terlambat
-          const allLoansSnap = await getDocs(collection(db, 'loans'))
+          // Cek apakah ada pinjaman lain yang masih terlambat menggunakan cache server
+          const allLoans = await getCachedServerCollection('loans')
           let hasOtherOverdue = false
-          allLoansSnap.forEach(d => {
-            if (d.id !== loanId) {
-              const l = d.data()
+          allLoans.forEach(l => {
+            if (l.id !== loanId) {
               if (l.memberId === memberId && (l.status === 'overdue' || (l.status === 'active' && l.dueDate && l.dueDate < today))) {
                 hasOtherOverdue = true
               }
@@ -804,18 +842,17 @@ app.post('/api/members/reconcile-suspends', async (_req, res) => {
     const db = await getServerFirestore()
     if (!db) return res.status(500).json({ success: false, message: 'Firestore tidak siap' })
 
-    const { collection, getDocs, doc, updateDoc } = await import('firebase/firestore')
-    const [loansSnap, membersSnap] = await Promise.all([
-      getDocs(collection(db, 'loans')),
-      getDocs(collection(db, 'members'))
+    const { doc, updateDoc } = await import('firebase/firestore')
+    const [loansList, membersList] = await Promise.all([
+      getCachedServerCollection('loans'),
+      getCachedServerCollection('members')
     ])
 
     const today = new Date().toISOString().slice(0, 10)
     const overdueMemberIds = new Set<string>()
     const activeLoansMap = new Map<string, number>()
 
-    loansSnap.forEach(d => {
-      const l = d.data()
+    loansList.forEach(l => {
       if (l.status === 'active' || l.status === 'overdue') {
         if (l.memberId) {
           activeLoansMap.set(l.memberId, (activeLoansMap.get(l.memberId) || 0) + 1)
@@ -828,8 +865,7 @@ app.post('/api/members/reconcile-suspends', async (_req, res) => {
     })
 
     let unsuspendedCount = 0
-    for (const docSnap of membersSnap.docs) {
-      const m = docSnap.data()
+    for (const m of membersList) {
       const hasOverdue = overdueMemberIds.has(m.id) || overdueMemberIds.has(m.cardNumber)
       const actualActiveCount = activeLoansMap.get(m.id) || 0
 
@@ -852,7 +888,7 @@ app.post('/api/members/reconcile-suspends', async (_req, res) => {
       }
 
       if (needsUpdate) {
-        await updateDoc(doc(db, 'members', docSnap.id), updates)
+        await updateDoc(doc(db, 'members', m.id), updates)
       }
     }
 

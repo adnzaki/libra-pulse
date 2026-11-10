@@ -59,7 +59,10 @@ export async function getServerRevisions(force = false): Promise<Record<string, 
 /**
  * Invalidate client cache for a collection when local user mutates data
  */
-export function invalidateClientCache(collectionName: string) {
+export function invalidateClientCache(
+  collectionName: string,
+  mutation?: { type?: 'upsert' | 'delete'; item?: any; id?: string }
+) {
   // Bump local revision so existing cached pages become stale
   serverRevisions[collectionName] = Date.now();
   lastRevisionFetchTime = Date.now();
@@ -82,12 +85,17 @@ export function invalidateClientCache(collectionName: string) {
     }
   } catch {}
 
-  // Notify server of mutation
+  // Notify server of mutation with payload so server updates in-place with ZERO Firestore reads
   try {
     fetch('/api/notify-mutation', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ collection: collectionName })
+      body: JSON.stringify({
+        collection: collectionName,
+        type: mutation?.type || 'upsert',
+        item: mutation?.item,
+        id: mutation?.id || mutation?.item?.id
+      })
     }).catch(() => {});
   } catch {}
 }

@@ -550,9 +550,6 @@ export const useLibraryStore = defineStore('library', {
       });
 
       import('../lib/firebase.js').then(({ 
-        subscribeToFirestoreCollection, 
-        subscribeToFirestoreDoc,
-        syncAppVersionDoc,
         isFirestoreQuotaExhausted,
         onFirestoreQuotaChange 
       }) => {
@@ -569,108 +566,10 @@ export const useLibraryStore = defineStore('library', {
           return;
         }
 
-        subscribeToFirestoreCollection<Shelf>('shelves', (items) => {
-          if (items && items.length > 0) {
-            this.shelves = sortShelves(items);
-            this.calculateStats();
-            this.persistToLocalCache();
-          }
-        });
-        subscribeToFirestoreCollection<BookCategory>('categories', (items) => {
-          if (items && items.length > 0) {
-            this.categories = items;
-            this.calculateStats();
-            this.persistToLocalCache();
-          }
-        });
+        // Ambil ringkasan statistik terkini dari server cache (0 Firestore reads)
         this.fetchServerStats();
-        subscribeToFirestoreCollection<any>('config', (items) => {
-          if (items && items.length > 0) {
-            const susp = items.find(i => (i as any).maxActiveLoans !== undefined || (i as any).id === 'suspend_config');
-            if (susp) {
-              this.suspendConfig = susp;
-              this.persistToLocalCache();
-            }
-          }
-        });
-        subscribeToFirestoreDoc<AppVersionConfig>('config', 'app_version', (versionData) => {
-          if (versionData && (versionData.version || versionData.buildNumber)) {
-            const remoteRelease = {
-              version: versionData.version || this.currentAppVersion,
-              buildNumber: versionData.buildNumber || '10000'
-            };
-            const localRelease = {
-              version: this.currentAppVersion,
-              buildNumber: this.currentBuildNumber
-            };
 
-            const isRemoteNewer = isNewerAppRelease(remoteRelease, localRelease);
-            const isLocalNewer = isNewerAppRelease(localRelease, remoteRelease);
-
-            if (isLocalNewer) {
-              // Versi/build lokal lebih baru daripada Firestore -> perbarui dokumen Firestore
-              syncAppVersionDoc(DEFAULT_APP_VERSION_CONFIG).catch(() => {});
-              this.appVersionConfig = { ...DEFAULT_APP_VERSION_CONFIG };
-              this.remoteAppVersion = CURRENT_APP_VERSION;
-              this.hasNewVersionAvailable = false;
-            } else {
-              this.appVersionConfig = { ...DEFAULT_APP_VERSION_CONFIG, ...versionData };
-              this.remoteAppVersion = versionData.version || CURRENT_APP_VERSION;
-              this.hasNewVersionAvailable = isRemoteNewer;
-              if (isRemoteNewer) {
-                this.isDismissedUpdateBanner = false;
-              }
-            }
-          } else {
-            // Inisialisasi awal dokumen versi di Firestore jika belum ada
-            syncAppVersionDoc(DEFAULT_APP_VERSION_CONFIG).catch(() => {});
-          }
-        });
-        subscribeToFirestoreCollection<UserDeviceSession>('device_sessions', (items) => {
-          if (items) {
-            this.deviceSessions = items;
-            this.checkCurrentDeviceSessionStatus();
-          }
-        });
-        subscribeToFirestoreCollection<LibraryVisit>('visits', (items) => {
-          if (items && Array.isArray(items)) {
-            this.visits = items.sort((a, b) => new Date(b.timestamp || b.visitDate).getTime() - new Date(a.timestamp || a.visitDate).getTime());
-            this.persistVisitsToLocalCache();
-          }
-        });
-        subscribeToFirestoreCollection<VisitToken>('visit_tokens', (items) => {
-          if (items && Array.isArray(items)) {
-            this.visitTokens = items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-            this.persistVisitTokensToLocalCache();
-          }
-        });
-
-        // Heartbeat berkala saat tab aktif di layar (misal PC & HP aktif bersamaan)
-        if (typeof window !== 'undefined') {
-          if ((window as any).__overdue_checker_interval) {
-            clearInterval((window as any).__overdue_checker_interval);
-            delete (window as any).__overdue_checker_interval;
-          }
-
-          if (!(window as any).__session_heartbeat_interval) {
-            (window as any).__session_heartbeat_interval = setInterval(() => {
-              if (typeof document !== 'undefined' && document.visibilityState === 'visible' && this.currentUser) {
-                this.checkAndAutoRegisterCurrentDevice(false);
-              }
-            }, 120000); // Setiap 2 menit saat aplikasi sedang dibuka/aktif
-          }
-
-          if (!(window as any).__session_visibility_listener) {
-            (window as any).__session_visibility_listener = true;
-            document.addEventListener('visibilitychange', () => {
-              if (document.visibilityState === 'visible' && this.currentUser) {
-                this.checkAndAutoRegisterCurrentDevice(false);
-              }
-            });
-          }
-        }
-
-        // Pengawas perubahan versi dan build number server secara otomatis
+        // Pengawas perubahan versi dan build number server secara otomatis (hemat kuota, via /api/app-version)
         this.startServerVersionWatcher();
       }).catch(err => {
         console.warn('Realtime listener setup warning:', err);
@@ -1270,7 +1169,7 @@ export const useLibraryStore = defineStore('library', {
           this.loadOfflineFallback();
         }
 
-        const { getFirestoreCollection, checkAndSeedFirestore, isFirestoreQuotaExhausted, getDeletedBookIds, removeBookDoc } = await import('../lib/firebase.js');
+        const { isFirestoreQuotaExhausted } = await import('../lib/firebase.js');
 
         if (isFirestoreQuotaExhausted()) {
           this.isQuotaExhausted = true;
@@ -1281,53 +1180,35 @@ export const useLibraryStore = defineStore('library', {
           return;
         }
 
-        // Load remote deleted book IDs (tombstones) from Firestore
-        try {
-          const remoteDeletedIds = await getDeletedBookIds();
-          for (const dId of remoteDeletedIds) {
-            this.markBookAsDeleted(dId);
-          }
-        } catch {
-          // ignore
-        }
-
-        // Active purge for dummy books that were deleted by user
-        // Dummy books in initialBooks: BKO-001 (Clean Code), BKO-002, BKO-003, BKO-004 (Atomic Habits)
-        const dummyIds = ['BKO-001', 'BKO-002', 'BKO-003', 'BKO-004'];
-        for (const dummyId of dummyIds) {
-          // If tombstoned or not in active user books, ensure it is permanently tombstoned and removed from Firestore
-          if (this.isBookDeleted(dummyId) || !this.books.some(b => b.id === dummyId)) {
-            this.markBookAsDeleted(dummyId);
-            removeBookDoc(dummyId).catch(() => {});
-          }
-        }
-
+        // Setup lightweight version/network listener
         this.setupRealtimeListeners();
 
-        try {
-          const [fShelves, fCats, fConfig, fDeviceSessions] = await Promise.all([
-            getFirestoreCollection<Shelf>('shelves'),
-            getFirestoreCollection<BookCategory>('categories'),
-            getFirestoreCollection<SuspendConfig>('config'),
-            getFirestoreCollection<UserDeviceSession>('device_sessions'),
-          ]);
+        // Step 2: Ambil ringkasan statistik server tanpa menarik ribuan data dokumen (0 reads Firestore)
+        await this.fetchServerStats();
 
-          if (fShelves && fShelves.length > 0) this.shelves = sortShelves(fShelves);
-          if (fCats && fCats.length > 0) this.categories = fCats;
-          if (fConfig && fConfig.length > 0) {
-            const susp = fConfig.find(c => (c as any).maxActiveLoans !== undefined || (c as any).id === 'suspend_config');
-            if (susp) this.suspendConfig = susp;
-          }
-          this.deviceSessions = fDeviceSessions || [];
+        // Step 3: Muat rak dan kategori secara hemat dari server cache jika belum ada di lokal
+        if (!this.shelves || this.shelves.length === 0) {
+          try {
+            const res = await fetch('/api/shelves?limit=100');
+            if (res.ok) {
+              const json = await res.json();
+              if (json?.data && Array.isArray(json.data) && json.data.length > 0) {
+                this.shelves = sortShelves(json.data);
+              }
+            }
+          } catch {}
+        }
 
-          // Ambil ringkasan statistik server tanpa menarik ribuan data dokumen
-          await this.fetchServerStats();
-
-          this.isUsingOfflineData = false;
-          this.persistToLocalCache();
-        } catch (fetchErr) {
-          console.warn('Lightweight fetch fallback to offline:', fetchErr);
-          this.loadOfflineFallback();
+        if (!this.categories || this.categories.length === 0) {
+          try {
+            const res = await fetch('/api/categories?limit=100');
+            if (res.ok) {
+              const json = await res.json();
+              if (json?.data && Array.isArray(json.data) && json.data.length > 0) {
+                this.categories = json.data;
+              }
+            }
+          } catch {}
         }
 
         // Cek apakah versi aplikasi saat ini sudah pernah dilihat catatan rilisnya (Changelog)
@@ -1339,19 +1220,14 @@ export const useLibraryStore = defineStore('library', {
         }
 
         this.initTheme();
-        await this.syncBooksFromServer();
-        await this.syncActiveLoansFromServer();
-        this.calculateStats();
         this.restoreUserSession();
+        this.calculateStats();
         this.checkCurrentDeviceSessionStatus();
-        this.checkAndAutoRegisterCurrentDevice();
         this.startBookingExpiryWatcher();
-        await this.checkAndCleanExpiredBookings({ silent: true });
-        // Bersihkan antrean mutasi lama agar tidak ada auto-replay write yang membebani Firestore
         clearPendingOfflineMutations();
         this.pendingMutationsCount = 0;
       } catch (err: any) {
-        console.warn('Direct Firestore fetch error, switching to offline fallback:', err?.message || err);
+        console.warn('InitAll fallback to offline:', err?.message || err);
         this.loadOfflineFallback();
       } finally {
         this.isLoading = false;
@@ -3029,17 +2905,7 @@ export const useLibraryStore = defineStore('library', {
     async refreshDeviceSessions() {
       if (!this.currentUser) return;
       try {
-        // 1. Update status aktif dan lastActive perangkat ini ke Firestore
-        await this.checkAndAutoRegisterCurrentDevice(true);
-
-        // 2. Ambil snapshot data sesi terbaru langsung dari Firestore
-        const { getFirestoreCollection } = await import('../lib/firebase.js');
-        const freshSessions = await getFirestoreCollection<UserDeviceSession>('device_sessions');
-        if (freshSessions && Array.isArray(freshSessions)) {
-          this.deviceSessions = freshSessions;
-        }
-
-        // 3. Periksa apakah sesi perangkat saat ini dicabut
+        await this.checkAndAutoRegisterCurrentDevice(false);
         await this.checkCurrentDeviceSessionStatus();
       } catch (err) {
         console.warn('Gagal memuat ulang sesi perangkat:', err);

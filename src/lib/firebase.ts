@@ -22,6 +22,7 @@ import {
 } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 import { initialBooks, initialCategories, initialShelves, initialMembers, defaultSuspendConfig } from './default-catalog';
+import { invalidateClientCache } from '../utils/apiCache.js';
 
 // Initialize Firebase App
 const app = initializeApp(firebaseConfig);
@@ -86,17 +87,7 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   throw new Error(JSON.stringify(errInfo));
 }
 
-// Validate connection to Firestore on application boot
-async function testConnection() {
-  try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration.");
-    }
-  }
-}
-testConnection();
+// Connection to Firestore is lazily initialized without running unneeded getDoc reads on boot
 
 export async function loginWithGoogle() {
   try {
@@ -277,6 +268,7 @@ export async function syncBookDoc(book: any) {
   if (!book?.id) return;
   const clean = sanitizeForFirestore(book);
   await withTimeout(setDoc(doc(db, 'books', book.id), clean, { merge: true }), 7000);
+  invalidateClientCache('books', { type: 'upsert', item: clean, id: book.id });
 }
 
 export async function recordDeletedBookId(bookId: string) {
@@ -306,12 +298,14 @@ export async function removeBookDoc(bookId: string) {
     withTimeout(deleteDoc(doc(db, 'books', bookId)), 7000),
     recordDeletedBookId(bookId)
   ]);
+  invalidateClientCache('books', { type: 'delete', id: bookId });
 }
 
 export async function syncShelfDoc(shelf: any) {
   if (!shelf?.id) return;
   const clean = sanitizeForFirestore(shelf);
   await withTimeout(setDoc(doc(db, 'shelves', shelf.id), clean, { merge: true }), 7000);
+  invalidateClientCache('shelves', { type: 'upsert', item: clean, id: shelf.id });
 }
 
 export async function syncShelvesOrder(orderUpdates: { id: string; order: number }[]) {
@@ -323,11 +317,13 @@ export async function syncShelvesOrder(orderUpdates: { id: string; order: number
     }
   }
   await withTimeout(batch.commit(), 7000);
+  invalidateClientCache('shelves', { type: 'upsert' });
 }
 
 export async function removeShelfDoc(shelfId: string) {
   if (!shelfId) return;
   await withTimeout(deleteDoc(doc(db, 'shelves', shelfId)), 7000);
+  invalidateClientCache('shelves', { type: 'delete', id: shelfId });
 }
 
 export async function syncMemberDoc(member: any) {
@@ -345,44 +341,52 @@ export async function syncMemberDoc(member: any) {
     sanitized.isManualSuspend = false;
   }
   await withTimeout(setDoc(doc(db, 'members', member.id), sanitized, { merge: true }), 7000);
+  invalidateClientCache('members', { type: 'upsert', item: sanitized, id: member.id });
 }
 
 export async function removeMemberDoc(memberId: string) {
   if (!memberId) return;
   await withTimeout(deleteDoc(doc(db, 'members', memberId)), 7000);
+  invalidateClientCache('members', { type: 'delete', id: memberId });
 }
 
 export async function syncCategoryDoc(category: any) {
   if (!category?.id) return;
   const clean = sanitizeForFirestore(category);
   await withTimeout(setDoc(doc(db, 'categories', category.id), clean, { merge: true }), 7000);
+  invalidateClientCache('categories', { type: 'upsert', item: clean, id: category.id });
 }
 
 export async function removeCategoryDoc(categoryId: string) {
   if (!categoryId) return;
   await withTimeout(deleteDoc(doc(db, 'categories', categoryId)), 7000);
+  invalidateClientCache('categories', { type: 'delete', id: categoryId });
 }
 
 export async function syncLoanDoc(loan: any) {
   if (!loan?.id) return;
   const clean = sanitizeForFirestore(loan);
   await withTimeout(setDoc(doc(db, 'loans', loan.id), clean, { merge: true }), 7000);
+  invalidateClientCache('loans', { type: 'upsert', item: clean, id: loan.id });
 }
 
 export async function removeLoanDoc(loanId: string) {
   if (!loanId) return;
   await withTimeout(deleteDoc(doc(db, 'loans', loanId)), 7000);
+  invalidateClientCache('loans', { type: 'delete', id: loanId });
 }
 
 export async function syncBookingDoc(booking: any) {
   if (!booking?.id) return;
   const clean = sanitizeForFirestore(booking);
   await withTimeout(setDoc(doc(db, 'bookings', booking.id), clean, { merge: true }), 7000);
+  invalidateClientCache('bookings', { type: 'upsert', item: clean, id: booking.id });
 }
 
 export async function removeBookingDoc(bookingId: string) {
   if (!bookingId) return;
   await withTimeout(deleteDoc(doc(db, 'bookings', bookingId)), 7000);
+  invalidateClientCache('bookings', { type: 'delete', id: bookingId });
 }
 
 export async function syncConfigDoc(config: any) {
