@@ -2271,7 +2271,7 @@
       :is-open="isReturnOpen"
       :selected-loan="selectedLoanForReturn"
       @close="isReturnOpen = false"
-      @returned="() => { isReturnOpen = false; loadAdminLoans(true); loadAdminLoanHistory(true); loadAdminBooks(true); loadAdminMembers(true); store.fetchServerStats(); }"
+      @returned="() => { isReturnOpen = false; loadAdminLoans(true); loadAdminLoanHistory(true); loadAdminBooks(true); loadAdminMembers(true); loadAdminSuspendedMembers(true); store.fetchServerStats(); }"
     />
 
     <NotificationModal 

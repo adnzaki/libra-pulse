@@ -8,9 +8,9 @@ import type { ChangelogItem, AppVersionConfig } from '../types.js';
  * akan secara otomatis mengikuti konstanta ini.
  * ============================================================================
  */
-export const APP_BUILD_NUMBER = '10013';
+export const APP_BUILD_NUMBER = '10014';
 export const CURRENT_APP_VERSION = '1.0.0';
-export const APP_RELEASE_DATE = '10 November 2026';
+export const APP_RELEASE_DATE = '12 November 2026';
 export const APP_RELEASE_CODENAME = `Libra Stabil (Build ${APP_BUILD_NUMBER})`;
 
 export const DEFAULT_APP_VERSION_CONFIG: AppVersionConfig = {
@@ -19,11 +19,22 @@ export const DEFAULT_APP_VERSION_CONFIG: AppVersionConfig = {
   releaseDate: APP_RELEASE_DATE,
   forceReload: false,
   minSupportedVersion: '1.0.0',
-  updateMessage: `Pembaruan aplikasi Libra v${CURRENT_APP_VERSION} (Build ${APP_BUILD_NUMBER}) telah aktif: Optimasi drastis operasi read Firestore dengan on-demand data pagination & server shield caching.`,
-  changelogSummary: `Rilis Stabil v${CURRENT_APP_VERSION} Build ${APP_BUILD_NUMBER}: Optimasi Read Operations Firestore & On-Demand Data Loading.`
+  updateMessage: `Pembaruan aplikasi Libra v${CURRENT_APP_VERSION} (Build ${APP_BUILD_NUMBER}) telah aktif: Sistem deteksi auto-suspend keterlambatan akurat kalender WIB, cabut suspend seketika saat pengembalian buku, dan pencabutan suspend manual yang 100% andal.`,
+  changelogSummary: `Rilis Stabil v${CURRENT_APP_VERSION} Build ${APP_BUILD_NUMBER}: Rekonsiliasi Otomatis Auto-Suspend Keterlambatan, Pemulihan Instan Kuota & Suspend saat Terima Pengembalian.`
 };
 
 export const CHANGELOG_LIST: ChangelogItem[] = [
+  {
+    id: 'auto-suspend-overdue-reconciliation-10014',
+    title: 'Sistem Deteksi Auto-Suspend Keterlambatan & Pemulihan Instan saat Pengembalian',
+    description:
+      'Memperbaiki keandalan sistem auto-suspend agar setiap keterlambatan pengembalian buku fisik langsung otomatis menangguhkan kartu anggota sesuai kalender waktu Indonesia (WIB). Begitu Admin mengklik "Terima Pengembalian", sanksi suspend otomatis seketika dicabut, stok buku dipulihkan, dan kuota peminjaman member langsung normal kembali. Serta memastikan aksi pencabutan suspend manual oleh admin berfungsi 100% permanen.',
+    targetAudience: 'all',
+    targetAudienceLabel: 'Semua Pengguna',
+    category: 'fix',
+    badge: `Build ${APP_BUILD_NUMBER}`,
+    iconName: 'ShieldAlert',
+  },
   {
     id: 'firestore-read-optimization-10011',
     title: 'Optimasi Efisiensi Read Operations Cloud Firestore & On-Demand Loading',

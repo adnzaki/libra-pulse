@@ -778,11 +778,18 @@ export const useLibraryStore = defineStore('library', {
     },
 
     /**
-     * Verifikasi Keterlambatan: Menghitung status dan penalti keterlambatan secara in-memory.
-     * ZERO automatic writes ke Cloud Firestore! Mencegah kuota harian terlampaui.
-     * Semua status dan pembatasan peminjaman dihitung dinamis tanpa membebani database.
+     * Verifikasi Keterlambatan: Menghitung status dan penalti keterlambatan secara otomatis.
+     * Memicu rekonsiliasi server jika online agar status Firestore & server cache selalu sinkron.
      */
     async checkOverdueAndAutoSuspend() {
+      try {
+        if (!this.isOfflineMode) {
+          await fetch('/api/members/reconcile-suspends', { method: 'POST' }).catch(() => {});
+          await this.fetchServerStats();
+        }
+      } catch (e) {
+        console.warn('[Store] Reconcile suspends check warning:', e);
+      }
       this.calculateStats();
     },
 
@@ -1982,7 +1989,7 @@ export const useLibraryStore = defineStore('library', {
         }
       }
 
-      invalidateClientCache('members');
+      invalidateClientCache('members', target ? { type: 'upsert', item: target, id: target.id } : undefined);
       await this.fetchServerStats();
       this.calculateStats();
       this.persistToLocalCache();
@@ -3803,13 +3810,21 @@ export const useLibraryStore = defineStore('library', {
     },
 
     async returnLoan(loanId: string, options?: { customToast?: string }) {
+      let returnedMemberFromServer: any = null;
+      let returnedLoanFromServer: any = null;
+
       // 1. Eksekusi melalui Server Endpoint agar mutasi Firestore & Server Cache 100% konsisten
       try {
-        await fetch(`/api/loans/${encodeURIComponent(loanId)}/return`, {
+        const resp = await fetch(`/api/loans/${encodeURIComponent(loanId)}/return`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ handledBy: 'Admin Sirkulasi' })
         });
+        if (resp.ok) {
+          const resJson = await resp.json();
+          returnedMemberFromServer = resJson?.member;
+          returnedLoanFromServer = resJson?.loan;
+        }
       } catch (apiErr) {
         console.warn('[Store] Server return endpoint warning, fallback to direct Firestore:', apiErr);
       }
@@ -3839,33 +3854,41 @@ export const useLibraryStore = defineStore('library', {
         if (book.borrowedCopies > 0) book.borrowedCopies -= 1;
       }
 
-      const member = loan ? this.members.find(m => 
+      let member = loan ? this.members.find(m => 
         m.id === loan!.memberId || 
         m.cardNumber === loan!.memberCardNumber ||
         (m.email && loan!.memberEmail && m.email.toLowerCase() === loan!.memberEmail.toLowerCase())
       ) : null;
 
-      if (member && member.activeLoansCount && member.activeLoansCount > 0) {
-        member.activeLoansCount -= 1;
+      if (!member && returnedMemberFromServer) {
+        member = returnedMemberFromServer;
+        this.members.push(member!);
       }
 
-      // Jika anggota terkena suspend karena keterlambatan, cek apakah masih ada pinjaman overdue lain
       if (member) {
-        const remainingOverdue = this.loans.filter(
-          l => l.id !== loanId &&
-               l.status === 'overdue' &&
-               (l.memberId === member.id || l.memberCardNumber === member.cardNumber || (l.memberEmail && member.email && l.memberEmail.toLowerCase() === member.email.toLowerCase()))
-        );
-        const isManualSuspend = member.suspendedBy === 'admin' || member.isManualSuspend === true;
-        if (remainingOverdue.length === 0 && member.isSuspended && !isManualSuspend) {
-          member.isSuspended = false;
-          member.suspendReason = '';
-          member.suspendedUntil = null;
-          member.suspendedBy = undefined;
-          member.isManualSuspend = false;
-          if (this.currentUser?.id === member.id || this.currentUser?.cardNumber === member.cardNumber) {
-            this.currentUser = { ...member };
+        if (returnedMemberFromServer) {
+          Object.assign(member, returnedMemberFromServer);
+        } else {
+          if (member.activeLoansCount && member.activeLoansCount > 0) {
+            member.activeLoansCount -= 1;
           }
+          const remainingOverdue = this.loans.filter(
+            l => l.id !== loanId &&
+                 l.status === 'overdue' &&
+                 (l.memberId === member!.id || l.memberCardNumber === member!.cardNumber || (l.memberEmail && member!.email && l.memberEmail.toLowerCase() === member!.email.toLowerCase()))
+          );
+          const isManualSuspend = member.suspendedBy === 'admin' || member.isManualSuspend === true;
+          if (remainingOverdue.length === 0 && member.isSuspended && !isManualSuspend) {
+            member.isSuspended = false;
+            member.suspendReason = '';
+            member.suspendedUntil = null;
+            member.suspendedBy = undefined;
+            member.isManualSuspend = false;
+          }
+        }
+
+        if (this.currentUser && (this.currentUser.id === member.id || this.currentUser.cardNumber === member.cardNumber)) {
+          this.currentUser = { ...this.currentUser, ...member };
         }
       }
 
@@ -3883,17 +3906,23 @@ export const useLibraryStore = defineStore('library', {
         this.pendingMutationsCount++;
       }
 
-      invalidateClientCache('loans');
-      invalidateClientCache('books');
-      invalidateClientCache('members');
+      const activeLoanPayload = loan || returnedLoanFromServer;
+      invalidateClientCache('loans', activeLoanPayload ? { type: 'upsert', item: activeLoanPayload, id: activeLoanPayload.id } : undefined);
+      if (book) invalidateClientCache('books', { type: 'upsert', item: book, id: book.id });
+      const activeMemberPayload = member || returnedMemberFromServer;
+      if (activeMemberPayload) invalidateClientCache('members', { type: 'upsert', item: activeMemberPayload, id: activeMemberPayload.id });
 
       await this.syncActiveLoansFromServer();
       await this.fetchServerStats();
       await this.checkOverdueAndAutoSuspend();
       this.persistToLocalCache();
 
-      this.showToast(options?.customToast || '✅ Buku berhasil dikembalikan!');
-      return { success: true, data: loan };
+      const successToastMessage = options?.customToast || 
+        (activeMemberPayload && !activeMemberPayload.isSuspended
+          ? `✅ Buku berhasil dikembalikan ke stok, kuota dipulihkan, dan status keanggotaan ${activeMemberPayload.name || 'member'} aktif kembali!`
+          : '✅ Buku berhasil dikembalikan ke stok fisik perpustakaan!');
+      this.showToast(successToastMessage);
+      return { success: true, data: loan || returnedLoanFromServer };
     },
 
     async returnEbookSelf(loanId: string) {

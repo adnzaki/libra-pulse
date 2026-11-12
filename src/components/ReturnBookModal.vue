@@ -66,11 +66,11 @@
             </div>
 
             <div v-if="isLate" class="mt-2.5 pt-2.5 border-t border-rose-200/80 space-y-1.5">
-              <div class="flex justify-between text-[11px] text-amber-800">
-                <span>Sanksi Suspend Otomatis:</span>
-                <span class="font-bold">{{ store.suspendConfig.defaultSuspendDays }} Hari Penangguhan Akun</span>
+              <div class="flex justify-between text-[11px] text-emerald-800 font-bold">
+                <span>Pemulihan Status Member:</span>
+                <span class="text-emerald-700">Cabut Suspend Seketika</span>
               </div>
-              <p class="text-[10px] text-slate-500 pt-1">Kartu member akan disuspend selama {{ store.suspendConfig.defaultSuspendDays }} hari karena keterlambatan pengembalian buku.</p>
+              <p class="text-[10px] text-slate-600 pt-0.5 leading-relaxed">Begitu Anda mengklik <strong>Konfirmasi Terima Pengembalian</strong>, buku akan dikembalikan ke stok rak, kuota peminjaman member dipulihkan, dan sanksi suspend otomatis akan langsung dicabut.</p>
             </div>
           </div>
         </div>

@@ -350,6 +350,10 @@ function saveDiskCollectionCache() {
   }
 }
 
+export function getWIBDateString(date = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(date)
+}
+
 export function invalidateServerCollection(
   collectionName: string,
   mutationType?: 'upsert' | 'delete' | 'refresh',
@@ -358,37 +362,276 @@ export function invalidateServerCollection(
 ) {
   const newRev = Date.now()
   collectionRevisions[collectionName] = newRev
+  const cached = serverCollectionCache.get(collectionName)
 
-  if (mutationType === 'refresh') {
-    // Reset fetchedAt agar query berikutnya memicu pembacaan segar dari Firestore
-    const existing = serverCollectionCache.get(collectionName)
-    if (existing) {
-      existing.fetchedAt = 0
-      existing.revision = newRev
-    }
-  } else {
-    const cached = serverCollectionCache.get(collectionName)
+  if (mutationType === 'upsert' && item && item.id) {
     if (cached && Array.isArray(cached.data)) {
-      if (mutationType === 'upsert' && item && item.id) {
-        const idx = cached.data.findIndex((x: any) => x.id === item.id)
-        if (idx >= 0) {
-          cached.data[idx] = { ...cached.data[idx], ...item }
-        } else {
-          cached.data.unshift(item)
-        }
-      } else if (mutationType === 'delete' && (itemId || (item && item.id))) {
-        const targetId = itemId || item?.id
-        cached.data = cached.data.filter((x: any) => x.id !== targetId)
+      const idx = cached.data.findIndex((x: any) => x.id === item.id)
+      if (idx >= 0) {
+        cached.data[idx] = { ...cached.data[idx], ...item }
+      } else {
+        cached.data.unshift(item)
       }
       cached.revision = newRev
       cached.fetchedAt = Date.now()
+    }
+  } else if (mutationType === 'delete' && (itemId || (item && item.id))) {
+    const targetId = itemId || item?.id
+    if (cached && Array.isArray(cached.data)) {
+      cached.data = cached.data.filter((x: any) => x.id !== targetId)
+      cached.revision = newRev
+      cached.fetchedAt = Date.now()
+    }
+  } else {
+    // Default / refresh: paksa pembacaan ulang segar dari Firestore saat pemanggilan data berikutnya
+    if (cached) {
+      cached.fetchedAt = 0
+      cached.revision = newRev
     }
   }
 
   if (['books', 'loans', 'bookings', 'members'].includes(collectionName)) {
     collectionRevisions.stats = newRev
+    const statsCache = serverCollectionCache.get('stats')
+    if (statsCache) {
+      statsCache.fetchedAt = 0
+      statsCache.revision = newRev
+    }
   }
   saveDiskCollectionCache()
+}
+
+let lastReconcileTime = 0
+let isReconciling = false
+
+/**
+ * Rekonsiliasi Authoritative Sanksi Keterlambatan Peminjaman & Auto-Suspend Anggota
+ * Mengikuti alur bisnis:
+ * 1. Pinjam buku -> Jatuh tempo terlewati -> Otomatis beri sanksi suspend pada kartu anggota.
+ * 2. Terima Pengembalian -> Stok buku pulih, kuota pinjam pulih, dan sanksi suspend langsung dicabut seketika.
+ * 3. Cabut suspend manual oleh Admin -> Sanksi suspend dicabut permanen tanpa tertimpa ulang.
+ */
+export async function reconcileLoansAndSuspends(force = false): Promise<{ suspendedCount: number; unsuspendedCount: number }> {
+  const now = Date.now()
+  if (isReconciling) return { suspendedCount: 0, unsuspendedCount: 0 }
+  if (!force && (now - lastReconcileTime < 10000)) {
+    return { suspendedCount: 0, unsuspendedCount: 0 }
+  }
+
+  isReconciling = true
+  lastReconcileTime = now
+
+  try {
+    const db = await getServerFirestore()
+    if (!db) return { suspendedCount: 0, unsuspendedCount: 0 }
+
+    const { doc, updateDoc } = await import('firebase/firestore')
+    const today = getWIBDateString()
+
+    const [loansList, membersList, configList] = await Promise.all([
+      getCachedServerCollection('loans', force),
+      getCachedServerCollection('members', force),
+      getCachedServerCollection('config', force)
+    ])
+
+    const suspendConfig = configList.find(c => c.id === 'suspend_config' || c.id === 'default') || {}
+    const autoSuspendEnabled = suspendConfig.autoSuspendEnabled !== false
+    const defaultSuspendDays = Number(suspendConfig.defaultSuspendDays) || 7
+
+    // 1. Evaluasi pinjaman: deteksi buku fisik yang melewati jatuh tempo (WIB)
+    const overdueMemberMap = new Map<string, { worstLoan: any; daysOverdue: number }>()
+    const activeLoansCountMap = new Map<string, number>()
+    const loanUpdatesToSave: Array<{ id: string; updates: any }> = []
+
+    for (const loan of loansList) {
+      if (loan.status === 'returned') continue
+
+      const isEbook = Boolean(loan.isEbook)
+      const dueDate = loan.dueDate
+
+      // Jika e-Book melewati batas waktu, kembalikan otomatis secara toleran tanpa sanksi
+      if (isEbook) {
+        if (dueDate && dueDate < today) {
+          loan.status = 'returned'
+          loan.returnDate = loan.returnDate || today
+          loan.daysOverdue = 0
+          loanUpdatesToSave.push({
+            id: loan.id,
+            updates: { status: 'returned', returnDate: loan.returnDate, daysOverdue: 0 }
+          })
+          continue
+        }
+      }
+
+      // Hitung pinjaman aktif per anggota
+      if (loan.memberId) {
+        activeLoansCountMap.set(loan.memberId, (activeLoansCountMap.get(loan.memberId) || 0) + 1)
+      }
+
+      // Buku Fisik: Pengecekan jatuh tempo
+      if (!isEbook && dueDate) {
+        if (dueDate < today) {
+          // Jatuh tempo telah lewat: Tandai OVERDUE & hitung hari keterlambatan
+          const dueMidnight = new Date(dueDate + 'T00:00:00+07:00').getTime()
+          const todayMidnight = new Date(today + 'T00:00:00+07:00').getTime()
+          const daysOverdue = Math.max(1, Math.round((todayMidnight - dueMidnight) / (24 * 3600 * 1000)))
+
+          if (loan.status !== 'overdue' || loan.daysOverdue !== daysOverdue) {
+            loan.status = 'overdue'
+            loan.daysOverdue = daysOverdue
+            loanUpdatesToSave.push({
+              id: loan.id,
+              updates: { status: 'overdue', daysOverdue }
+            })
+          }
+
+          const overdueData = { worstLoan: loan, daysOverdue }
+          if (loan.memberId) overdueMemberMap.set(loan.memberId, overdueData)
+          if (loan.memberCardNumber) overdueMemberMap.set(loan.memberCardNumber, overdueData)
+          if (loan.memberEmail) overdueMemberMap.set(loan.memberEmail.toLowerCase().trim(), overdueData)
+        } else if (loan.status === 'overdue') {
+          // Tanggal belum lewat (misal diedit oleh admin), kembalikan ke active
+          loan.status = 'active'
+          loan.daysOverdue = 0
+          loanUpdatesToSave.push({
+            id: loan.id,
+            updates: { status: 'active', daysOverdue: 0 }
+          })
+        }
+      }
+    }
+
+    // Tulis pembaruan pinjaman ke Firestore
+    for (const lUp of loanUpdatesToSave) {
+      try {
+        await updateDoc(doc(db, 'loans', lUp.id), lUp.updates)
+      } catch (err) {
+        console.warn(`[Server] Rekonsiliasi gagal update pinjaman ${lUp.id}:`, err)
+      }
+    }
+
+    // 2. Evaluasi status keanggotaan & sanksi suspend otomatis/manual
+    let suspendedCount = 0
+    let unsuspendedCount = 0
+    const memberUpdatesToSave: Array<{ id: string; updates: any }> = []
+
+    for (const m of membersList) {
+      const isGuru = m.memberType === 'guru'
+      const overdueInfo = overdueMemberMap.get(m.id) || 
+                          (m.cardNumber ? overdueMemberMap.get(m.cardNumber) : null) || 
+                          (m.email ? overdueMemberMap.get(m.email.toLowerCase().trim()) : null)
+      const hasOverdue = Boolean(overdueInfo)
+      const actualActiveLoans = activeLoansCountMap.get(m.id) || 0
+
+      let needsUpdate = false
+      const updates: any = {}
+
+      // Sinkronkan kuota pinjaman aktif agar selalu konsisten
+      if (m.activeLoansCount !== actualActiveLoans) {
+        updates.activeLoansCount = actualActiveLoans
+        m.activeLoansCount = actualActiveLoans
+        needsUpdate = true
+      }
+
+      const isManualSuspend = m.suspendedBy === 'admin' || m.isManualSuspend === true
+      const isSuspendExpired = m.suspendedUntil ? (m.suspendedUntil < today) : false
+
+      if (hasOverdue) {
+        // Terlambat! Jika bukan guru dan auto-suspend aktif:
+        if (!isGuru && autoSuspendEnabled) {
+          if (!m.isSuspended) {
+            const worst = overdueInfo!.worstLoan
+            const days = overdueInfo!.daysOverdue
+            const suspendUntilDate = new Date(Date.now() + defaultSuspendDays * 86400000).toISOString().slice(0, 10)
+            const reason = worst
+              ? `Keterlambatan pengembalian buku "${worst.bookTitle}" (Jatuh tempo: ${worst.dueDate}, telat ${days} hari)`
+              : 'Sanksi Keterlambatan Pengembalian Buku'
+
+            updates.isSuspended = true
+            updates.suspendedBy = isManualSuspend ? 'admin' : 'auto'
+            updates.suspendReason = reason
+            updates.suspendedUntil = m.suspendedUntil || suspendUntilDate
+            updates.isManualSuspend = isManualSuspend
+
+            m.isSuspended = true
+            m.suspendedBy = updates.suspendedBy
+            m.suspendReason = reason
+            m.suspendedUntil = updates.suspendedUntil
+            m.isManualSuspend = updates.isManualSuspend
+
+            needsUpdate = true
+            suspendedCount++
+          }
+        }
+      } else {
+        // Anggota TIDAK memiliki pinjaman yang terlambat:
+        if (m.isSuspended) {
+          if (m.suspendedBy === 'auto' || (!isManualSuspend && (m.suspendReason?.includes('Keterlambatan') || !m.suspendReason))) {
+            // Sanksi otomatis dicabut seketika setelah buku kembali / tidak ada pinjaman telat
+            updates.isSuspended = false
+            updates.suspendReason = ''
+            updates.suspendedUntil = null
+            updates.suspendedBy = null
+            updates.isManualSuspend = false
+
+            m.isSuspended = false
+            m.suspendReason = ''
+            m.suspendedUntil = null
+            m.suspendedBy = null
+            m.isManualSuspend = false
+
+            needsUpdate = true
+            unsuspendedCount++
+          } else if (isManualSuspend && isSuspendExpired) {
+            // Sanksi manual admin yang tanggal berlakunya sudah habis
+            updates.isSuspended = false
+            updates.suspendReason = ''
+            updates.suspendedUntil = null
+            updates.suspendedBy = null
+            updates.isManualSuspend = false
+
+            m.isSuspended = false
+            m.suspendReason = ''
+            m.suspendedUntil = null
+            m.suspendedBy = null
+            m.isManualSuspend = false
+
+            needsUpdate = true
+            unsuspendedCount++
+          }
+        }
+      }
+
+      if (needsUpdate) {
+        memberUpdatesToSave.push({ id: m.id, updates })
+      }
+    }
+
+    // Tulis pembaruan member ke Firestore
+    for (const mUp of memberUpdatesToSave) {
+      try {
+        await updateDoc(doc(db, 'members', mUp.id), mUp.updates)
+      } catch (err) {
+        console.warn(`[Server] Rekonsiliasi gagal update member ${mUp.id}:`, err)
+      }
+    }
+
+    if (loanUpdatesToSave.length > 0 || memberUpdatesToSave.length > 0) {
+      saveDiskCollectionCache()
+      collectionRevisions.loans = Date.now()
+      collectionRevisions.members = Date.now()
+      collectionRevisions.stats = Date.now()
+      const statsEntry = serverCollectionCache.get('stats')
+      if (statsEntry) statsEntry.fetchedAt = 0
+    }
+
+    return { suspendedCount, unsuspendedCount }
+  } catch (err) {
+    console.error('[Server] Reconcile loans and suspends error:', err)
+    return { suspendedCount: 0, unsuspendedCount: 0 }
+  } finally {
+    isReconciling = false
+  }
 }
 
 async function getCachedServerCollection(collectionName: string, forceRefresh = false): Promise<any[]> {
@@ -590,6 +833,9 @@ app.get('/api/members', async (req, res) => {
     const status = ((req.query.status || 'all') as string).trim()
     const force = req.query.force === 'true' || req.headers['cache-control']?.includes('no-cache')
 
+    // Jalankan sinkronisasi keterlambatan & auto-suspend agar status keanggotaan selalu mutakhir
+    await reconcileLoansAndSuspends(force)
+
     let members = await getCachedServerCollection('members', force)
 
     // Saring role jika diminta
@@ -678,7 +924,7 @@ app.post('/api/members/:id/suspend', express.json(), async (req, res) => {
         isManualSuspend: true
       }
     } else {
-      // Cabut sanksi suspend secara bersih
+      // Cabut sanksi suspend secara bersih dan permanen
       updates = {
         isSuspended: false,
         suspendedUntil: null,
@@ -689,13 +935,14 @@ app.post('/api/members/:id/suspend', express.json(), async (req, res) => {
     }
 
     await updateDoc(memberRef, updates)
-    invalidateServerCollection('members')
-    invalidateServerCollection('stats')
+    const updatedMember = { ...memberData, ...updates, id: memberId }
+    invalidateServerCollection('members', 'upsert', updatedMember)
+    invalidateServerCollection('stats', 'refresh')
 
     return res.json({
       success: true,
       message: suspend ? 'Anggota berhasil disuspend' : 'Sanksi suspend berhasil dicabut',
-      member: { ...memberData, ...updates }
+      member: updatedMember
     })
   } catch (err: any) {
     console.error('[Server] /api/members/:id/suspend error:', err)
@@ -712,6 +959,9 @@ app.get('/api/loans', async (req, res) => {
     const search = ((req.query.search || '') as string).trim().toLowerCase()
     const status = ((req.query.status || 'all') as string).trim()
     const force = req.query.force === 'true' || req.headers['cache-control']?.includes('no-cache')
+
+    // Jalankan rekonsiliasi keterlambatan & auto-suspend agar status selalu mutakhir
+    await reconcileLoansAndSuspends(force)
 
     let loans = await getCachedServerCollection('loans', force)
 
@@ -778,7 +1028,7 @@ app.post('/api/loans/:id/return', express.json(), async (req, res) => {
     const db = await getServerFirestore()
     if (!db) return res.status(500).json({ success: false, message: 'Database Firestore tidak tersedia' })
 
-    const { doc, getDoc, updateDoc, collection, getDocs } = await import('firebase/firestore')
+    const { doc, getDoc, updateDoc } = await import('firebase/firestore')
     const loanRef = doc(db, 'loans', loanId)
     const loanSnap = await getDoc(loanRef)
 
@@ -787,18 +1037,21 @@ app.post('/api/loans/:id/return', express.json(), async (req, res) => {
     }
 
     const loanData = loanSnap.data()
-    const today = new Date().toISOString().slice(0, 10)
+    const today = getWIBDateString()
 
-    // Update status peminjaman menjadi returned
-    await updateDoc(loanRef, {
+    // 1. Update status peminjaman menjadi returned
+    const loanUpdates = {
       status: 'returned',
       returnDate: today,
       daysOverdue: 0,
       handledBy: handledBy || 'Admin Sirkulasi',
       _needsAutoReturnSync: false
-    })
+    }
+    await updateDoc(loanRef, loanUpdates)
+    const updatedLoan = { ...loanData, ...loanUpdates, id: loanId }
 
-    // Pulihkan kuota stok buku
+    // 2. Pulihkan kuota stok buku
+    let updatedBook: any = null
     if (loanData.bookId) {
       try {
         const bookRef = doc(db, 'books', loanData.bookId)
@@ -814,14 +1067,16 @@ app.post('/api/loans/:id/return', express.json(), async (req, res) => {
             availableCopies: newAvail,
             borrowedCopies: newBorrowed
           })
+          updatedBook = { ...bData, id: loanData.bookId, availableCopies: newAvail, borrowedCopies: newBorrowed }
         }
       } catch (bErr) {
         console.warn('[Server] Catatan pengembalian buku:', bErr)
       }
     }
 
-    // Perbarui anggota & auto-unsuspend jika tidak ada pinjaman terlambat lain
+    // 3. Perbarui anggota: pulihkan kuota & cabut suspend seketika jika tidak ada keterlambatan lain
     const memberId = loanData.memberId
+    let updatedMember: any = null
     if (memberId) {
       try {
         const memberRef = doc(db, 'members', memberId)
@@ -833,19 +1088,24 @@ app.post('/api/loans/:id/return', express.json(), async (req, res) => {
             activeLoansCount: newActiveCount
           }
 
-          // Cek apakah ada pinjaman lain yang masih terlambat menggunakan cache server
+          // Cek apakah ada pinjaman lain yang masih terlambat
           const allLoans = await getCachedServerCollection('loans')
           let hasOtherOverdue = false
           allLoans.forEach(l => {
             if (l.id !== loanId) {
-              if (l.memberId === memberId && (l.status === 'overdue' || (l.status === 'active' && l.dueDate && l.dueDate < today))) {
-                hasOtherOverdue = true
+              const isMatch = (l.memberId === memberId) || 
+                              (mData.cardNumber && l.memberCardNumber === mData.cardNumber) ||
+                              (mData.email && l.memberEmail && l.memberEmail.toLowerCase() === mData.email.toLowerCase())
+              if (isMatch && !l.isEbook && l.status !== 'returned') {
+                if (l.status === 'overdue' || (l.dueDate && l.dueDate < today)) {
+                  hasOtherOverdue = true
+                }
               }
             }
           })
 
-          // Jika sudah bersih dari pinjaman overdue dan terkena suspend otomatis
-          if (!hasOtherOverdue && mData.isSuspended && (!mData.isManualSuspend || mData.suspendedBy === 'auto' || mData.suspendReason?.includes('Keterlambatan'))) {
+          // Cabut sanksi suspend seketika jika tidak ada pinjaman lain yang terlambat!
+          if (!hasOtherOverdue) {
             memberUpdates.isSuspended = false
             memberUpdates.suspendReason = ''
             memberUpdates.suspendedUntil = null
@@ -854,20 +1114,29 @@ app.post('/api/loans/:id/return', express.json(), async (req, res) => {
           }
 
           await updateDoc(memberRef, memberUpdates)
+          updatedMember = { ...mData, ...memberUpdates, id: memberId }
         }
       } catch (mErr) {
         console.warn('[Server] Catatan pembaruan anggota:', mErr)
       }
     }
 
-    invalidateServerCollection('loans')
-    invalidateServerCollection('books')
-    invalidateServerCollection('members')
-    invalidateServerCollection('stats')
+    // Invalidate caches in-memory with updated records
+    invalidateServerCollection('loans', 'upsert', updatedLoan)
+    if (updatedBook) invalidateServerCollection('books', 'upsert', updatedBook)
+    if (updatedMember) invalidateServerCollection('members', 'upsert', updatedMember)
+    invalidateServerCollection('stats', 'refresh')
+
+    // Jalankan rekonsiliasi menyeluruh
+    await reconcileLoansAndSuspends(true)
 
     return res.json({
       success: true,
-      message: 'Buku berhasil dikembalikan dan status anggota telah diperbarui'
+      message: updatedMember && !updatedMember.isSuspended
+        ? 'Buku berhasil dikembalikan ke stok, kuota dipulihkan, dan sanksi suspend anggota telah dicabut.'
+        : 'Buku berhasil dikembalikan dan stok telah dipulihkan.',
+      loan: updatedLoan,
+      member: updatedMember
     })
   } catch (err: any) {
     console.error('[Server] /api/loans/:id/return error:', err)
@@ -878,65 +1147,8 @@ app.post('/api/loans/:id/return', express.json(), async (req, res) => {
 // 5c. Endpoint Rekonsiliasi Otomatis Sanksi Suspend (/api/members/reconcile-suspends)
 app.post('/api/members/reconcile-suspends', async (_req, res) => {
   try {
-    const db = await getServerFirestore()
-    if (!db) return res.status(500).json({ success: false, message: 'Firestore tidak siap' })
-
-    const { doc, updateDoc } = await import('firebase/firestore')
-    const [loansList, membersList] = await Promise.all([
-      getCachedServerCollection('loans'),
-      getCachedServerCollection('members')
-    ])
-
-    const today = new Date().toISOString().slice(0, 10)
-    const overdueMemberIds = new Set<string>()
-    const activeLoansMap = new Map<string, number>()
-
-    loansList.forEach(l => {
-      if (l.status === 'active' || l.status === 'overdue') {
-        if (l.memberId) {
-          activeLoansMap.set(l.memberId, (activeLoansMap.get(l.memberId) || 0) + 1)
-        }
-        if (l.status === 'overdue' || (l.status === 'active' && l.dueDate && l.dueDate < today)) {
-          if (l.memberId) overdueMemberIds.add(l.memberId)
-          if (l.memberCardNumber) overdueMemberIds.add(l.memberCardNumber)
-        }
-      }
-    })
-
-    let unsuspendedCount = 0
-    for (const m of membersList) {
-      const hasOverdue = overdueMemberIds.has(m.id) || overdueMemberIds.has(m.cardNumber)
-      const actualActiveCount = activeLoansMap.get(m.id) || 0
-
-      let needsUpdate = false
-      const updates: any = {}
-
-      if (!hasOverdue && m.isSuspended && (m.suspendedBy === 'auto' || !m.isManualSuspend || m.suspendReason?.includes('Keterlambatan'))) {
-        updates.isSuspended = false
-        updates.suspendReason = ''
-        updates.suspendedUntil = null
-        updates.suspendedBy = null
-        updates.isManualSuspend = false
-        needsUpdate = true
-        unsuspendedCount++
-      }
-
-      if (m.activeLoansCount !== actualActiveCount) {
-        updates.activeLoansCount = actualActiveCount
-        needsUpdate = true
-      }
-
-      if (needsUpdate) {
-        await updateDoc(doc(db, 'members', m.id), updates)
-      }
-    }
-
-    if (unsuspendedCount > 0) {
-      invalidateServerCollection('members')
-      invalidateServerCollection('stats')
-    }
-
-    return res.json({ success: true, unsuspendedCount })
+    const result = await reconcileLoansAndSuspends(true)
+    return res.json({ success: true, ...result })
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err?.message })
   }
@@ -1271,6 +1483,10 @@ app.get('/api/stats', async (req, res) => {
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
   try {
     const force = req.query.force === 'true' || req.headers['cache-control']?.includes('no-cache')
+    
+    // Pastikan status pinjaman dan sanksi suspend terekonsiliasi mutakhir sebelum menghitung ringkasan
+    await reconcileLoansAndSuspends(force)
+
     const [books, loans, bookings, members, deleted] = await Promise.all([
       getCachedServerCollection('books', force),
       getCachedServerCollection('loans', force),
@@ -1454,6 +1670,10 @@ app.all('/api/sync-all', async (_req, res) => {
         results[c] = list.length
       })
     )
+
+    // Rekonsiliasikan status keterlambatan & auto-suspend
+    await reconcileLoansAndSuspends(true)
+
     return res.json({
       success: true,
       message: 'Semua data server berhasil disinkronkan langsung dari Firestore!',
@@ -2151,6 +2371,12 @@ async function startServer() {
 
   const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running at http://0.0.0.0:${PORT}`)
+
+    // Inisialisasi awal & pemantauan otomatis keterlambatan peminjaman / auto-suspend
+    reconcileLoansAndSuspends().catch(e => console.warn('[Server] Initial reconcile warn:', e))
+    setInterval(() => {
+      reconcileLoansAndSuspends().catch(e => console.warn('[Server] Interval reconcile warn:', e))
+    }, 60000)
   })
 
   server.on('error', (err: any) => {
