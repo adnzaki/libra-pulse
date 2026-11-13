@@ -14,10 +14,10 @@
     ></div>
 
     <div class="relative z-50 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
+      <div ref="headerRowRef" class="flex items-center justify-between h-16 gap-2 min-w-0">
         
         <!-- Brand / Logo -->
-        <div class="flex items-center gap-3">
+        <div ref="brandRef" class="flex items-center gap-3 shrink-0">
           <router-link to="/" class="flex items-center gap-2.5 group">
             <div class="w-9 h-9 rounded-xl overflow-hidden group-hover:scale-105 transition duration-200 flex items-center justify-center" :class="store.currentTheme === 'light' ? 'bg-blue-50' : 'bg-slate-900'">
               <img :src="'/pwa-192x192.png'" alt="Libra Logo" class="w-full h-full object-cover" />
@@ -31,48 +31,49 @@
         </div>
 
         <!-- Desktop Navigation -->
-        <nav class="hidden md:flex items-center gap-1.5">
+        <nav class="hidden md:flex items-center min-w-0 overflow-x-auto no-scrollbar">
+          <div ref="navContentRef" class="flex items-center gap-1 lg:gap-1.5 w-max">
           <router-link 
             to="/" 
-            class="px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2"
+            class="px-2.5 lg:px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 lg:gap-2 whitespace-nowrap shrink-0"
             :class="$route.name === 'catalog' 
               ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25' 
               : (store.currentTheme === 'light' ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' : 'text-slate-300 hover:text-white hover:bg-slate-800/80')"
           >
-            <BookMarked class="w-4 h-4" />
+            <BookMarked class="w-4 h-4 shrink-0" />
             Katalog
           </router-link>
 
           <router-link 
             to="/shelves" 
-            class="px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2"
+            class="px-2.5 lg:px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 lg:gap-2 whitespace-nowrap shrink-0"
             :class="$route.name === 'shelves' 
               ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25' 
               : (store.currentTheme === 'light' ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' : 'text-slate-300 hover:text-white hover:bg-slate-800/80')"
           >
-            <Layers class="w-4 h-4" />
+            <Layers class="w-4 h-4 shrink-0" />
             Rak
           </router-link>
 
           <router-link 
             to="/member-card" 
-            class="px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2"
+            class="px-2.5 lg:px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 lg:gap-2 whitespace-nowrap shrink-0"
             :class="$route.name === 'member-card' 
               ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25' 
               : (store.currentTheme === 'light' ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' : 'text-slate-300 hover:text-white hover:bg-slate-800/80')"
           >
-            <QrCode class="w-4 h-4" />
+            <QrCode class="w-4 h-4 shrink-0" />
             Kartu Member
           </router-link>
 
           <router-link 
             to="/kunjungan" 
-            class="px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2"
+            class="px-2.5 lg:px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 lg:gap-2 whitespace-nowrap shrink-0"
             :class="$route.name === 'public-visit' 
               ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25' 
               : (store.currentTheme === 'light' ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' : 'text-slate-300 hover:text-white hover:bg-slate-800/80')"
           >
-            <BookOpenCheck class="w-4 h-4" />
+            <BookOpenCheck class="w-4 h-4 shrink-0" />
             Buku Tamu
           </router-link>
 
@@ -113,10 +114,11 @@
               <span>Telat</span>
             </span>
           </router-link>
+          </div>
         </nav>
 
         <!-- Right Side: User Menu & Quick Actions -->
-        <div class="flex items-center gap-2 sm:gap-3 shrink-0 ml-3 lg:ml-5 pl-2 sm:pl-3 border-l border-slate-200/50 dark:border-slate-800/80">
+        <div class="flex items-center gap-2 sm:gap-2.5 shrink-0 ml-1 sm:ml-2 lg:ml-3 pl-2 sm:pl-3 border-l border-slate-200/50 dark:border-slate-800/80">
             <!-- Mobile Quick Buku Tamu Button -->
             <router-link 
               to="/kunjungan"
@@ -139,12 +141,15 @@
               <button 
                 type="button"
                 @click.stop="toggleUserMenu"
-                class="flex items-center gap-2.5 px-3 py-1.5 min-h-[40px] rounded-xl border text-xs transition cursor-pointer select-none touch-manipulation active:scale-95"
-                :class="store.currentTheme === 'light' 
-                  ? 'bg-slate-100 hover:bg-slate-200/80 border-slate-200 text-slate-700' 
-                  : (store.currentTheme === 'elegant' 
-                    ? 'bg-blue-950/60 hover:bg-blue-900/70 border-blue-400/40 text-white backdrop-blur-md shadow-xs ring-1 ring-blue-400/20' 
-                    : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200')"
+                class="flex items-center min-h-[40px] rounded-xl border text-xs transition cursor-pointer select-none touch-manipulation active:scale-95"
+                :class="[
+                  isCompactAccountMenu ? 'gap-1.5 px-2.5 py-1.5' : 'gap-2.5 px-3 py-1.5',
+                  store.currentTheme === 'light' 
+                    ? 'bg-slate-100 hover:bg-slate-200/80 border-slate-200 text-slate-700' 
+                    : (store.currentTheme === 'elegant' 
+                      ? 'bg-blue-950/60 hover:bg-blue-900/70 border-blue-400/40 text-white backdrop-blur-md shadow-xs ring-1 ring-blue-400/20' 
+                      : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200')
+                ]"
                 aria-label="Menu akun pengguna"
               >
                 <template v-if="store.currentUser">
@@ -154,27 +159,27 @@
                     class="w-6 h-6 rounded-full object-cover border border-blue-400 shrink-0" 
                     alt="" 
                   />
-                  <div class="text-left hidden lg:block">
-                    <div class="font-semibold flex items-center gap-1.5" :class="store.currentTheme === 'light' ? 'text-slate-900' : 'text-white'">
-                      {{ store.currentUser.name }}
-                      <span v-if="store.currentUser.role === 'admin'" class="text-[9px] px-1.5 py-0.2 bg-blue-500/20 text-blue-600 dark:text-blue-300 border border-blue-500/30 rounded-full font-bold">ADMIN</span>
-                      <span v-else-if="store.currentUser.isSuspended" class="text-[9px] px-1.5 py-0.2 bg-rose-500/20 text-rose-600 dark:text-rose-300 border border-rose-500/30 rounded-full font-bold">SUSPEND</span>
+                  <div v-if="!isCompactAccountMenu" class="text-left hidden lg:block max-w-[180px] xl:max-w-[220px] min-w-0">
+                    <div class="font-semibold flex items-center gap-1.5 min-w-0" :class="store.currentTheme === 'light' ? 'text-slate-900' : 'text-white'">
+                      <span class="truncate">{{ store.currentUser.name }}</span>
+                      <span v-if="store.currentUser.role === 'admin'" class="text-[9px] px-1.5 py-0.2 bg-blue-500/20 text-blue-600 dark:text-blue-300 border border-blue-500/30 rounded-full font-bold shrink-0">ADMIN</span>
+                      <span v-else-if="store.currentUser.isSuspended" class="text-[9px] px-1.5 py-0.2 bg-rose-500/20 text-rose-600 dark:text-rose-300 border border-rose-500/30 rounded-full font-bold shrink-0">SUSPEND</span>
                     </div>
-                    <div class="text-[10px] text-blue-500 font-mono font-medium">{{ store.currentUser.cardNumber }}</div>
+                    <div class="text-[10px] text-blue-500 font-mono font-medium truncate">{{ store.currentUser.cardNumber }}</div>
                   </div>
                 </template>
                 <template v-else>
-                  <User class="w-4 h-4" :class="store.currentTheme === 'light' ? 'text-slate-500' : 'text-slate-400'" />
-                  <span class="font-medium hidden lg:inline" :class="store.currentTheme === 'light' ? 'text-slate-700' : 'text-slate-300'">Masuk / Akun</span>
+                  <User class="w-4 h-4 shrink-0" :class="store.currentTheme === 'light' ? 'text-slate-500' : 'text-slate-400'" />
+                  <span v-if="!isCompactAccountMenu" class="font-medium hidden lg:inline whitespace-nowrap" :class="store.currentTheme === 'light' ? 'text-slate-700' : 'text-slate-300'">Masuk / Akun</span>
                 </template>
-                <ChevronDown class="w-3.5 h-3.5" :class="store.currentTheme === 'light' ? 'text-slate-500' : 'text-slate-400'" />
+                <ChevronDown class="w-3.5 h-3.5 shrink-0" :class="store.currentTheme === 'light' ? 'text-slate-500' : 'text-slate-400'" />
               </button>
 
               <!-- Dropdown Options -->
               <Transition name="dropdown">
                 <div 
                   v-if="isUserMenuOpen" 
-                  class="account-dropdown-menu absolute right-0 mt-2 w-72 rounded-2xl shadow-2xl py-2 z-50 text-xs space-y-1 border"
+                  class="account-dropdown-menu absolute right-0 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-2xl shadow-2xl py-2 z-50 text-xs space-y-1 border"
                   :class="{
                     'bg-white text-slate-800 border-slate-200 shadow-xl': store.currentTheme === 'light',
                     'bg-[#0e1422] text-slate-200 border-slate-800 shadow-2xl': store.currentTheme === 'dark',
@@ -477,7 +482,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useLibraryStore } from '../stores/library.js';
 import { 
@@ -494,9 +499,33 @@ const router = useRouter();
 const isUserMenuOpen = ref(false);
 const isScrolled = ref(false);
 const isDeviceModalOpen = ref(false);
+const isCompactAccountMenu = ref(false);
 
 const userDropdownRef = ref<HTMLElement | null>(null);
 const navHeaderRef = ref<HTMLElement | null>(null);
+const headerRowRef = ref<HTMLElement | null>(null);
+const brandRef = ref<HTMLElement | null>(null);
+const navContentRef = ref<HTMLElement | null>(null);
+let navResizeObserver: ResizeObserver | null = null;
+
+const checkNavbarSpace = () => {
+  if (typeof window === 'undefined') return;
+  if (window.innerWidth < 1024) {
+    isCompactAccountMenu.value = true;
+    return;
+  }
+  const rowEl = headerRowRef.value;
+  const brandEl = brandRef.value;
+  const navEl = navContentRef.value;
+  if (!rowEl || !brandEl || !navEl) return;
+
+  const availableWidth = rowEl.clientWidth;
+  const brandWidth = brandEl.offsetWidth;
+  const navWidth = navEl.offsetWidth;
+  // Reserve enough width for the expanded account menu + padding/divider so it never overflows
+  const neededWidthForExpanded = brandWidth + navWidth + 295;
+  isCompactAccountMenu.value = availableWidth < neededWidthForExpanded;
+};
 
 const toggleUserMenu = (e?: Event) => {
   e?.stopPropagation();
@@ -532,17 +561,45 @@ watch(() => route.path, () => {
   isUserMenuOpen.value = false;
 });
 
+watch(
+  () => [
+    store.currentUser,
+    store.isAdmin,
+    store.pendingStudentVerificationsCount,
+    store.pendingTeacherRequestsCount,
+    store.stats?.overdueLoans,
+  ],
+  () => {
+    nextTick(checkNavbarSpace);
+  }
+);
+
 onMounted(() => {
   handleScroll();
+  nextTick(checkNavbarSpace);
   window.addEventListener('scroll', handleScroll, { passive: true });
+  window.addEventListener('resize', checkNavbarSpace, { passive: true });
   window.addEventListener('click', handleClickOutside);
   window.addEventListener('keydown', handleKeyDown);
+
+  if (typeof ResizeObserver !== 'undefined') {
+    navResizeObserver = new ResizeObserver(() => {
+      checkNavbarSpace();
+    });
+    if (headerRowRef.value) navResizeObserver.observe(headerRowRef.value);
+    if (navContentRef.value) navResizeObserver.observe(navContentRef.value);
+  }
 });
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll);
+  window.removeEventListener('resize', checkNavbarSpace);
   window.removeEventListener('click', handleClickOutside);
   window.removeEventListener('keydown', handleKeyDown);
+  if (navResizeObserver) {
+    navResizeObserver.disconnect();
+    navResizeObserver = null;
+  }
 });
 
 const handleLogoutClick = async () => {

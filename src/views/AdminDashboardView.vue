@@ -1883,14 +1883,14 @@
               <div 
                 v-for="b in paginatedBooks" 
                 :key="b.id"
-                class="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-100 dark:border-slate-800 shadow-sm space-y-3"
+                class="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-100 dark:border-slate-800 shadow-sm space-y-3 overflow-hidden"
               >
-                <div class="flex gap-3">
+                <div class="flex gap-3 min-w-0">
                   <img :src="b.cover" class="w-14 h-20 object-cover rounded-xl shadow-xs border border-slate-200/80 dark:border-slate-800 shrink-0" alt="Cover" />
                   <div class="flex-1 min-w-0">
-                    <div class="flex items-center justify-between gap-1">
+                    <div class="flex items-center justify-between gap-1.5 min-w-0">
                       <span 
-                        class="px-2 py-0.5 rounded-full text-[10px] font-bold truncate max-w-[120px]"
+                        class="px-2 py-0.5 rounded-full text-[10px] font-bold truncate max-w-[150px]"
                         :style="{ backgroundColor: `${getCategoryColor(b.category)}18`, color: getCategoryColor(b.category) }"
                       >
                         {{ b.category }}
@@ -1899,8 +1899,11 @@
                         {{ b.shelfCode }}
                       </span>
                     </div>
-                    <h4 class="font-bold text-slate-900 dark:text-white text-sm mt-1 truncate">{{ b.title }}</h4>
-                    <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">{{ b.author }} ({{ b.year }})</div>
+                    <h4 class="font-bold text-slate-900 dark:text-white text-sm mt-1 truncate" :title="b.title">{{ b.title }}</h4>
+                    <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate" :title="b.author">{{ b.author || '-' }}</div>
+                    <div class="text-[10px] text-slate-400 dark:text-slate-500 truncate">
+                      {{ b.publisher ? `${b.publisher}${b.year ? ` (${b.year})` : ''}` : (b.year ? `(${b.year})` : '-') }}
+                    </div>
                     <div class="text-xs font-semibold text-slate-700 dark:text-slate-300 mt-1">
                       Stok: <span class="text-emerald-600 dark:text-emerald-400 font-bold">{{ b.availableCopies }}</span> / {{ b.totalCopies }} Buku
                     </div>
@@ -1928,59 +1931,62 @@
             </div>
 
             <!-- Desktop Table for Master Books -->
-            <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80 shadow-xs">
-              <table class="w-full min-w-[880px] text-left text-xs text-slate-600 dark:text-slate-300">
+            <div class="hidden md:block w-full overflow-hidden rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80 shadow-xs">
+              <table class="w-full table-fixed text-left text-xs text-slate-600 dark:text-slate-300">
                 <thead class="bg-slate-50 dark:bg-slate-850/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 font-bold">
                   <tr>
-                    <th class="py-3.5 px-4 whitespace-nowrap min-w-[260px]">Cover &amp; Judul</th>
-                    <th class="py-3.5 px-4 whitespace-nowrap min-w-[140px]">Kategori</th>
-                    <th class="py-3.5 px-4 whitespace-nowrap min-w-[110px]">Lokasi Rak</th>
-                    <th class="py-3.5 px-4 whitespace-nowrap min-w-[150px]">Stok (Tersedia / Total)</th>
-                    <th class="py-3.5 px-4 text-right whitespace-nowrap min-w-[100px]">Aksi</th>
+                    <th class="py-3.5 px-3 lg:px-4 w-[44%] lg:w-[46%]">Cover &amp; Judul</th>
+                    <th class="py-3.5 px-2.5 lg:px-4 w-[28%] lg:w-[27%]">Kategori / Rak</th>
+                    <th class="py-3.5 px-2.5 lg:px-4 w-[16%] lg:w-[15%] whitespace-nowrap">Stok</th>
+                    <th class="py-3.5 px-2.5 lg:px-4 w-[12%] text-right whitespace-nowrap">Aksi</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
                   <tr v-for="b in paginatedBooks" :key="b.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
-                    <td class="py-3.5 px-4">
-                      <div class="flex items-center gap-3">
-                        <img :src="b.cover" class="w-10 h-14 object-cover rounded-lg shadow-xs border border-slate-200/80 dark:border-slate-800 shrink-0" alt="Cover" />
-                        <div class="min-w-0">
-                          <div class="font-bold text-slate-900 dark:text-white truncate max-w-xs">{{ b.title }}</div>
-                          <div class="text-[10px] text-slate-400 dark:text-slate-500 truncate">{{ b.author }} • {{ b.publisher }} ({{ b.year }})</div>
+                    <td class="py-3 px-3 lg:px-4 align-middle">
+                      <div class="flex items-center gap-2.5 lg:gap-3 min-w-0">
+                        <img :src="b.cover" class="w-9 h-12 lg:w-10 lg:h-14 object-cover rounded-lg shadow-xs border border-slate-200/80 dark:border-slate-800 shrink-0" alt="Cover" />
+                        <div class="min-w-0 flex-1 space-y-0.5">
+                          <div class="font-bold text-slate-900 dark:text-white truncate" :title="b.title">{{ b.title }}</div>
+                          <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate" :title="b.author">{{ b.author || '-' }}</div>
+                          <div class="text-[10px] text-slate-400 dark:text-slate-500 truncate" :title="b.publisher ? `${b.publisher}${b.year ? ` (${b.year})` : ''}` : (b.year ? `(${b.year})` : '-')">
+                            {{ b.publisher ? `${b.publisher}${b.year ? ` (${b.year})` : ''}` : (b.year ? `(${b.year})` : '-') }}
+                          </div>
                         </div>
                       </div>
                     </td>
-                    <td class="py-3.5 px-4 whitespace-nowrap">
-                      <span 
-                        class="px-2.5 py-1 rounded-md text-[11px] font-bold whitespace-nowrap inline-flex items-center shadow-2xs"
-                        :style="{ 
-                          backgroundColor: `${getCategoryColor(b.category)}18`, 
-                          color: getCategoryColor(b.category) 
-                        }"
-                      >
-                        {{ b.category }}
-                      </span>
+                    <td class="py-3 px-2.5 lg:px-4 align-middle">
+                      <div class="flex flex-col items-start gap-1.5 min-w-0">
+                        <span 
+                          class="px-2.5 py-1 rounded-md text-[11px] font-bold inline-flex items-center shadow-2xs max-w-full min-w-0"
+                          :style="{ 
+                            backgroundColor: `${getCategoryColor(b.category)}18`, 
+                            color: getCategoryColor(b.category) 
+                          }"
+                          :title="b.category"
+                        >
+                          <span class="truncate">{{ b.category }}</span>
+                        </span>
+                        <span class="px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 font-mono text-[11px] font-bold whitespace-nowrap inline-flex items-center shadow-2xs">
+                          {{ b.shelfCode }}
+                        </span>
+                      </div>
                     </td>
-                    <td class="py-3.5 px-4 whitespace-nowrap">
-                      <span class="px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 font-mono text-[11px] font-bold whitespace-nowrap inline-flex items-center shadow-2xs">
-                        {{ b.shelfCode }}
-                      </span>
+                    <td class="py-3 px-2.5 lg:px-4 font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap align-middle">
+                      <span class="text-emerald-600 dark:text-emerald-400 font-bold">{{ b.availableCopies }}</span> / {{ b.totalCopies }} <span class="hidden lg:inline">Buku</span>
                     </td>
-                    <td class="py-3.5 px-4 font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                      <span class="text-emerald-600 dark:text-emerald-400 font-bold">{{ b.availableCopies }}</span> / {{ b.totalCopies }} Buku
-                    </td>
-                    <td class="py-3.5 px-4 text-right whitespace-nowrap">
-                      <div class="inline-flex items-center justify-end gap-1.5 shrink-0 flex-nowrap">
+                    <td class="py-3 px-2.5 lg:px-4 text-right whitespace-nowrap align-middle">
+                      <div class="inline-flex items-center justify-end gap-1 lg:gap-1.5 shrink-0 flex-nowrap">
                         <button 
                           @click="openEditBookModal(b)"
-                          class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs transition cursor-pointer shrink-0"
+                          class="p-1.5 lg:p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs transition cursor-pointer shrink-0"
                           title="Edit Buku"
                         >
                           <Pencil class="w-3.5 h-3.5" />
                         </button>
                         <button 
                           @click="handleDeleteBook(b.id)"
-                          class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-slate-600 dark:text-slate-300 hover:text-rose-700 dark:hover:text-rose-300 text-xs transition cursor-pointer shrink-0"
+                          class="p-1.5 lg:p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-slate-600 dark:text-slate-300 hover:text-rose-700 dark:hover:text-rose-300 text-xs transition cursor-pointer shrink-0"
                           title="Hapus Buku"
                         >
                           <Trash2 class="w-3.5 h-3.5" />
