@@ -79,14 +79,14 @@
           <router-link 
             v-if="store.currentUser"
             to="/member-portal" 
-            class="px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2 relative"
+            class="px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 sm:gap-2 relative whitespace-nowrap shrink-0"
             :class="$route.name === 'member-portal' 
               ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25' 
               : (store.currentTheme === 'light' ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' : 'text-slate-300 hover:text-white hover:bg-slate-800/80')"
           >
-            <UserCheck class="w-4 h-4" />
-            Portal Saya
-            <span v-if="store.myActiveLoans.length" class="px-1.5 py-0.2 text-[10px] rounded-full bg-amber-400 text-slate-950 font-bold">
+            <UserCheck class="w-4 h-4 shrink-0" />
+            <span class="whitespace-nowrap">Portal Saya</span>
+            <span v-if="store.myActiveLoans.length" class="px-1.5 py-0.2 text-[10px] rounded-full bg-amber-400 text-slate-950 font-bold whitespace-nowrap shrink-0">
               {{ store.myActiveLoans.length }}
             </span>
             <span v-if="store.currentUser.isSuspended" class="w-2 h-2 rounded-full bg-rose-500 animate-ping absolute -top-0.5 -right-0.5"></span>
@@ -95,27 +95,28 @@
           <router-link 
             v-if="store.isAdmin"
             to="/admin" 
-            class="px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2 relative"
+            class="px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 sm:gap-2 relative whitespace-nowrap shrink-0"
             :class="$route.name === 'admin' 
               ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25' 
               : (store.currentTheme === 'light' ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' : 'text-slate-300 hover:text-white hover:bg-slate-800/80')"
           >
-            <ShieldCheck class="w-4 h-4 text-blue-400" />
-            Admin Panel
-            <span v-if="store.pendingStudentVerificationsCount > 0" class="px-1.5 py-0.2 text-[10px] rounded-full bg-blue-500 text-white font-bold animate-pulse flex items-center gap-0.5" title="Permohonan Verifikasi Siswa Menunggu Konfirmasi">
+            <ShieldCheck class="w-4 h-4 text-blue-400 shrink-0" />
+            <span class="whitespace-nowrap">Admin Panel</span>
+            <span v-if="store.pendingStudentVerificationsCount > 0" class="px-1.5 py-0.5 text-[10px] rounded-full bg-blue-500 text-white font-bold animate-pulse inline-flex items-center gap-0.5 shrink-0 whitespace-nowrap" title="Permohonan Verifikasi Siswa Menunggu Konfirmasi">
               <span>🎒</span> {{ store.pendingStudentVerificationsCount }}
             </span>
-            <span v-else-if="store.pendingTeacherRequestsCount > 0" class="px-1.5 py-0.2 text-[10px] rounded-full bg-amber-500 text-white font-bold animate-pulse flex items-center gap-0.5" title="Permintaan Verifikasi Guru Menunggu Konfirmasi">
+            <span v-else-if="store.pendingTeacherRequestsCount > 0" class="px-1.5 py-0.5 text-[10px] rounded-full bg-amber-500 text-white font-bold animate-pulse inline-flex items-center gap-0.5 shrink-0 whitespace-nowrap" title="Permintaan Verifikasi Guru Menunggu Konfirmasi">
               <span>👨‍🏫</span> {{ store.pendingTeacherRequestsCount }}
             </span>
-            <span v-else-if="(store.stats?.overdueLoans ?? store.overdueLoans.length) > 0" class="px-1.5 py-0.2 text-[10px] rounded-full bg-rose-500 text-white font-bold animate-pulse">
-              {{ store.stats?.overdueLoans ?? store.overdueLoans.length }} Telat
+            <span v-else-if="(store.stats?.overdueLoans ?? store.overdueLoans.length) > 0" class="px-2 py-0.5 text-[10px] rounded-full bg-rose-500 text-white font-bold animate-pulse inline-flex items-center gap-1 shrink-0 whitespace-nowrap">
+              <span>{{ store.stats?.overdueLoans ?? store.overdueLoans.length }}</span>
+              <span>Telat</span>
             </span>
           </router-link>
         </nav>
 
         <!-- Right Side: User Menu & Quick Actions -->
-        <div class="flex items-center gap-2 sm:gap-3">
+        <div class="flex items-center gap-2 sm:gap-3 shrink-0 ml-3 lg:ml-5 pl-2 sm:pl-3 border-l border-slate-200/50 dark:border-slate-800/80">
             <!-- Mobile Quick Buku Tamu Button -->
             <router-link 
               to="/kunjungan"

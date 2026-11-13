@@ -620,21 +620,21 @@
 
                 <div v-if="store.visitTokens.length > 0" class="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-900 shadow-xs">
                   <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
+                    <table class="w-full min-w-[780px] text-left text-xs">
                       <thead class="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold">
                         <tr>
-                          <th class="py-2.5 px-3.5">Kode Token</th>
-                          <th class="py-2.5 px-3">Tipe</th>
-                          <th class="py-2.5 px-3">Status</th>
-                          <th class="py-2.5 px-3">Pemakaian</th>
-                          <th class="py-2.5 px-3">Kedaluwarsa</th>
-                          <th class="py-2.5 px-3">Catatan / Pembuat</th>
-                          <th class="py-2.5 px-3 text-right">Aksi</th>
+                          <th class="py-2.5 px-3.5 whitespace-nowrap">Kode Token</th>
+                          <th class="py-2.5 px-3 whitespace-nowrap">Tipe</th>
+                          <th class="py-2.5 px-3 whitespace-nowrap">Status</th>
+                          <th class="py-2.5 px-3 whitespace-nowrap">Pemakaian</th>
+                          <th class="py-2.5 px-3 whitespace-nowrap">Kedaluwarsa</th>
+                          <th class="py-2.5 px-3 min-w-[180px]">Catatan / Pembuat</th>
+                          <th class="py-2.5 px-3 text-right whitespace-nowrap min-w-[150px]">Aksi</th>
                         </tr>
                       </thead>
                       <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
                         <tr v-for="t in store.visitTokens" :key="t.id" class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
-                          <td class="py-2.5 px-3.5">
+                          <td class="py-2.5 px-3.5 whitespace-nowrap">
                             <div class="flex items-center gap-2">
                               <span class="font-mono font-bold text-xs sm:text-sm text-slate-900 dark:text-white">{{ t.token }}</span>
                               <button @click="copyCode(t.token)" type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer" title="Salin">
@@ -642,35 +642,36 @@
                               </button>
                             </div>
                           </td>
-                          <td class="py-2.5 px-3">
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold capitalize" :class="t.type === 'daily' ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300' : 'bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300'">
+                          <td class="py-2.5 px-3 whitespace-nowrap">
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold capitalize whitespace-nowrap inline-flex items-center" :class="t.type === 'daily' ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300' : 'bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300'">
                               {{ t.type === 'daily' ? 'Harian' : 'Sekali Pakai' }}
                             </span>
                           </td>
-                          <td class="py-2.5 px-3">
+                          <td class="py-2.5 px-3 whitespace-nowrap">
                             <span 
-                              class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                              class="px-2 py-0.5 rounded-md text-[10px] font-bold whitespace-nowrap inline-flex items-center gap-1 shadow-2xs"
                               :class="isTokenLive(t) ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'"
                             >
-                              {{ isTokenLive(t) ? 'Aktif' : (!t.isActive ? 'Nonaktif' : 'Kedaluwarsa') }}
+                              <span class="w-1.5 h-1.5 rounded-full" :class="isTokenLive(t) ? 'bg-emerald-500' : 'bg-slate-400'"></span>
+                              <span>{{ isTokenLive(t) ? 'Aktif' : (!t.isActive ? 'Nonaktif' : 'Kedaluwarsa') }}</span>
                             </span>
                           </td>
-                          <td class="py-2.5 px-3 font-semibold text-slate-700 dark:text-slate-300">
+                          <td class="py-2.5 px-3 font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
                             {{ t.usageCount || 0 }}x {{ t.maxUsage ? `/ ${t.maxUsage}` : '' }}
                           </td>
-                          <td class="py-2.5 px-3 text-slate-500 dark:text-slate-400">
+                          <td class="py-2.5 px-3 text-slate-500 dark:text-slate-400 whitespace-nowrap">
                             {{ formatTokenExpiry(t.expiresAt) }}
                           </td>
                           <td class="py-2.5 px-3 text-slate-500 dark:text-slate-400 max-w-xs truncate">
                             {{ t.notes || t.generatedBy || '-' }}
                           </td>
-                          <td class="py-2.5 px-3 text-right">
-                            <div class="flex items-center justify-end gap-1.5">
+                          <td class="py-2.5 px-3 text-right whitespace-nowrap">
+                            <div class="inline-flex items-center justify-end gap-1.5 shrink-0 flex-nowrap">
                               <button 
                                 v-if="t.isActive"
                                 @click="store.revokeVisitToken(t.id)"
                                 type="button"
-                                class="px-2 py-1 rounded-lg text-[11px] bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold transition cursor-pointer"
+                                class="px-2.5 py-1 rounded-lg text-[11px] bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold transition cursor-pointer whitespace-nowrap shrink-0"
                                 title="Nonaktifkan"
                               >
                                 Nonaktifkan
@@ -678,7 +679,7 @@
                               <button 
                                 @click="deleteToken(t.id)"
                                 type="button"
-                                class="p-1 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition cursor-pointer"
+                                class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition cursor-pointer shrink-0"
                                 title="Hapus Token"
                               >
                                 <Trash2 class="w-3.5 h-3.5" />

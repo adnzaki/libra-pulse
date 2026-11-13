@@ -459,17 +459,17 @@
             </div>
 
             <!-- Desktop Table View -->
-            <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80">
-              <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+            <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80 shadow-xs">
+              <table class="w-full min-w-[980px] text-left text-xs text-slate-600 dark:text-slate-300">
                 <thead class="bg-slate-50 dark:bg-slate-850/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 font-bold">
                   <tr>
-                    <th class="py-3.5 px-4">ID Transaksi</th>
-                    <th class="py-3.5 px-4">Buku & Lokasi Rak</th>
-                    <th class="py-3.5 px-4">Peminjam (Kartu Member)</th>
-                    <th class="py-3.5 px-4">Tanggal Pinjam</th>
-                    <th class="py-3.5 px-4">Jatuh Tempo</th>
-                    <th class="py-3.5 px-4">Status</th>
-                    <th class="py-3.5 px-4 text-right">Aksi Sirkulasi</th>
+                    <th class="py-3.5 px-4 whitespace-nowrap">ID Transaksi</th>
+                    <th class="py-3.5 px-4 min-w-[200px]">Buku &amp; Lokasi Rak</th>
+                    <th class="py-3.5 px-4 min-w-[180px]">Peminjam (Kartu Member)</th>
+                    <th class="py-3.5 px-4 whitespace-nowrap">Tanggal Pinjam</th>
+                    <th class="py-3.5 px-4 whitespace-nowrap">Jatuh Tempo</th>
+                    <th class="py-3.5 px-4 whitespace-nowrap min-w-[130px]">Status</th>
+                    <th class="py-3.5 px-4 text-right whitespace-nowrap min-w-[260px]">Aksi Sirkulasi</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -479,46 +479,54 @@
                     class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition"
                     :class="l.status === 'overdue' ? 'bg-rose-50/30 dark:bg-rose-950/20' : ''"
                   >
-                    <td class="py-3 px-4 font-mono font-bold text-blue-600 dark:text-blue-400">{{ l.id }}</td>
-                    <td class="py-3 px-4">
+                    <td class="py-3.5 px-4 font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">{{ l.id }}</td>
+                    <td class="py-3.5 px-4">
                       <div class="font-bold text-slate-900 dark:text-white truncate max-w-xs">{{ l.bookTitle }}</div>
                       <div class="text-[10px] text-slate-400 dark:text-slate-400 font-mono">{{ l.shelfCode }}</div>
                     </td>
-                    <td class="py-3 px-4">
+                    <td class="py-3.5 px-4">
                       <div class="font-semibold text-slate-900 dark:text-slate-100">{{ l.memberName }}</div>
                       <div class="text-[10px] font-mono text-slate-400 dark:text-slate-400">{{ l.memberCardNumber }}</div>
                     </td>
-                    <td class="py-3 px-4 text-slate-600 dark:text-slate-300">{{ new Date(l.borrowDate).toLocaleDateString('id-ID') }}</td>
-                    <td class="py-3 px-4">
+                    <td class="py-3.5 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">{{ new Date(l.borrowDate).toLocaleDateString('id-ID') }}</td>
+                    <td class="py-3.5 px-4 whitespace-nowrap">
                       <span :class="l.status === 'overdue' ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-700 dark:text-slate-300 font-medium'">
                         {{ new Date(l.dueDate).toLocaleDateString('id-ID') }}
                       </span>
                     </td>
-                    <td class="py-3 px-4">
-                      <div v-if="l.status === 'overdue'" class="space-y-0.5">
-                        <span class="px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60 font-bold text-[10px] inline-flex items-center gap-1">
-                          ⚠️ Telat {{ l.daysOverdue }} Hari
+                    <td class="py-3.5 px-4 whitespace-nowrap">
+                      <div v-if="l.status === 'overdue'" class="inline-flex">
+                        <span class="px-2.5 py-1 rounded-lg bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-300/80 dark:border-rose-800/80 font-bold text-[11px] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 shadow-2xs">
+                          <AlertTriangle class="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
+                          <span>Telat {{ l.daysOverdue }} Hari</span>
                         </span>
                       </div>
-                      <span v-else class="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 font-bold text-[10px]">
-                        Aktif
+                      <span v-else class="px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-800/80 font-bold text-[11px] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 shadow-2xs">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                        <span>Aktif</span>
                       </span>
                     </td>
-                    <td class="py-3 px-4 text-right space-x-2">
-                      <button 
-                        v-if="l.status === 'overdue'"
-                        @click="openNotifyModal(l)"
-                        class="px-3 py-1.5 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs transition cursor-pointer shadow-xs active:scale-95"
-                        title="Kirim Notifikasi Keterlambatan"
-                      >
-                        Peringatan
-                      </button>
-                      <button 
-                        @click="openReturnModal(l)"
-                        class="px-3 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition cursor-pointer active:scale-95"
-                      >
-                        Terima Pengembalian
-                      </button>
+                    <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                      <div class="inline-flex items-center justify-end gap-2 shrink-0 flex-nowrap">
+                        <button 
+                          v-if="l.status === 'overdue'"
+                          type="button"
+                          @click="openNotifyModal(l)"
+                          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-500/50 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold text-xs transition cursor-pointer shadow-2xs active:scale-95 whitespace-nowrap shrink-0"
+                          title="Kirim Notifikasi Keterlambatan"
+                        >
+                          <Send class="w-3.5 h-3.5 shrink-0" />
+                          <span>Peringatan</span>
+                        </button>
+                        <button 
+                          type="button"
+                          @click="openReturnModal(l)"
+                          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition cursor-pointer active:scale-95 whitespace-nowrap shrink-0"
+                        >
+                          <CheckCircle2 class="w-3.5 h-3.5 shrink-0" />
+                          <span>Terima Pengembalian</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 </tbody>
@@ -680,18 +688,18 @@
             </div>
 
             <!-- Desktop Table View -->
-            <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80">
-              <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+            <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80 shadow-xs">
+              <table class="w-full min-w-[980px] text-left text-xs text-slate-600 dark:text-slate-300">
                 <thead class="bg-slate-50 dark:bg-slate-850/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 font-bold">
                   <tr>
-                    <th class="py-3.5 px-4">ID Transaksi</th>
-                    <th class="py-3.5 px-4">Buku &amp; Jenis Koleksi</th>
-                    <th class="py-3.5 px-4">Peminjam (Kartu Member)</th>
-                    <th class="py-3.5 px-4">Tgl Pinjam</th>
-                    <th class="py-3.5 px-4">Jatuh Tempo</th>
-                    <th class="py-3.5 px-4">Tgl Dikembalikan</th>
-                    <th class="py-3.5 px-4">Status</th>
-                    <th class="py-3.5 px-4 text-right">Aksi</th>
+                    <th class="py-3.5 px-4 whitespace-nowrap">ID Transaksi</th>
+                    <th class="py-3.5 px-4 min-w-[220px]">Buku &amp; Jenis Koleksi</th>
+                    <th class="py-3.5 px-4 min-w-[180px]">Peminjam (Kartu Member)</th>
+                    <th class="py-3.5 px-4 whitespace-nowrap">Tgl Pinjam</th>
+                    <th class="py-3.5 px-4 whitespace-nowrap">Jatuh Tempo</th>
+                    <th class="py-3.5 px-4 whitespace-nowrap">Tgl Dikembalikan</th>
+                    <th class="py-3.5 px-4 whitespace-nowrap min-w-[150px]">Status</th>
+                    <th class="py-3.5 px-4 text-right whitespace-nowrap min-w-[80px]">Aksi</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -700,8 +708,8 @@
                     :key="l.id"
                     class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition"
                   >
-                    <td class="py-3 px-4 font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">{{ l.id }}</td>
-                    <td class="py-3 px-4">
+                    <td class="py-3.5 px-4 font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">{{ l.id }}</td>
+                    <td class="py-3.5 px-4">
                       <div class="flex items-center gap-2.5">
                         <img 
                           v-if="l.bookCover" 
@@ -714,13 +722,13 @@
                           <div class="flex items-center gap-1.5 mt-0.5">
                             <span 
                               v-if="l.isEbook" 
-                              class="px-2 py-0.2 rounded-full bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200/70 dark:border-indigo-800/60 text-[10px] font-bold"
+                              class="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200/70 dark:border-indigo-800/60 text-[10px] font-bold whitespace-nowrap shrink-0"
                             >
                               📱 e-Book Digital
                             </span>
                             <span 
                               v-else 
-                              class="px-2 py-0.2 rounded-full bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200/70 dark:border-blue-800/60 text-[10px] font-bold"
+                              class="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200/70 dark:border-blue-800/60 text-[10px] font-bold whitespace-nowrap shrink-0"
                             >
                               📘 Buku Fisik • Rak {{ l.shelfCode }}
                             </span>
@@ -728,17 +736,17 @@
                         </div>
                       </div>
                     </td>
-                    <td class="py-3 px-4">
+                    <td class="py-3.5 px-4">
                       <div class="font-semibold text-slate-900 dark:text-slate-100">{{ l.memberName }}</div>
                       <div class="text-[10px] font-mono text-slate-400 dark:text-slate-400">{{ l.memberCardNumber }}</div>
                     </td>
-                    <td class="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                    <td class="py-3.5 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
                       {{ new Date(l.borrowDate).toLocaleDateString('id-ID') }}
                     </td>
-                    <td class="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                    <td class="py-3.5 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
                       {{ new Date(l.dueDate).toLocaleDateString('id-ID') }}
                     </td>
-                    <td class="py-3 px-4 whitespace-nowrap">
+                    <td class="py-3.5 px-4 whitespace-nowrap">
                       <div class="font-bold text-emerald-600 dark:text-emerald-400">
                         {{ l.returnDate ? new Date(l.returnDate).toLocaleDateString('id-ID') : '-' }}
                       </div>
@@ -746,21 +754,23 @@
                         Oleh: {{ l.handledBy || 'Sistem' }}
                       </div>
                     </td>
-                    <td class="py-3 px-4 whitespace-nowrap">
-                      <span class="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 font-bold text-[10px] inline-flex items-center gap-1">
-                        <CheckCircle2 class="w-3 h-3" />
+                    <td class="py-3.5 px-4 whitespace-nowrap">
+                      <span class="px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-800/80 font-bold text-[11px] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 shadow-2xs">
+                        <CheckCircle2 class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                         <span>Sudah Dikembalikan</span>
                       </span>
                     </td>
-                    <td class="py-3 px-4 text-right whitespace-nowrap">
-                      <button 
-                        type="button"
-                        @click="handleDeleteLoanHistory(l)"
-                        class="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 transition cursor-pointer"
-                        title="Hapus log riwayat peminjaman ini"
-                      >
-                        <Trash2 class="w-4 h-4" />
-                      </button>
+                    <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                      <div class="inline-flex items-center justify-end shrink-0">
+                        <button 
+                          type="button"
+                          @click="handleDeleteLoanHistory(l)"
+                          class="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 transition cursor-pointer shrink-0"
+                          title="Hapus log riwayat peminjaman ini"
+                        >
+                          <Trash2 class="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 </tbody>
@@ -993,99 +1003,102 @@
           </div>
 
           <!-- Desktop Table for Members -->
-          <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80">
-            <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+          <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80 shadow-xs">
+            <table class="w-full min-w-[1080px] text-left text-xs text-slate-600 dark:text-slate-300">
               <thead class="bg-slate-50 dark:bg-slate-850/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 font-bold">
                 <tr>
-                  <th class="py-3.5 px-4">Nama & Email</th>
-                  <th class="py-3.5 px-4">No. Kartu</th>
-                  <th class="py-3.5 px-4">Kontak / HP</th>
-                  <th class="py-3.5 px-4">Tipe Keanggotaan</th>
-                  <th class="py-3.5 px-4">Peran</th>
-                  <th class="py-3.5 px-4">Status</th>
-                  <th class="py-3.5 px-4 text-center">Pinjaman</th>
-                  <th class="py-3.5 px-4 text-right">Aksi Kelola</th>
+                  <th class="py-3.5 px-4 whitespace-nowrap min-w-[220px]">Nama &amp; Email</th>
+                  <th class="py-3.5 px-4 whitespace-nowrap">No. Kartu</th>
+                  <th class="py-3.5 px-4 whitespace-nowrap">Kontak / HP</th>
+                  <th class="py-3.5 px-4 whitespace-nowrap">Tipe Keanggotaan</th>
+                  <th class="py-3.5 px-4 whitespace-nowrap">Peran</th>
+                  <th class="py-3.5 px-4 whitespace-nowrap min-w-[130px]">Status</th>
+                  <th class="py-3.5 px-4 text-center whitespace-nowrap">Pinjaman</th>
+                  <th class="py-3.5 px-4 text-right whitespace-nowrap min-w-[280px]">Aksi Kelola</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
                 <tr v-for="m in paginatedMembers" :key="m.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
-                  <td class="py-3 px-4 flex items-center gap-3">
-                    <img :src="m.avatar" class="w-9 h-9 rounded-2xl object-cover border border-slate-200 dark:border-slate-700/60 shadow-sm shrink-0" alt="Avatar" />
-                    <div>
-                      <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                        {{ m.name }}
-                        <span v-if="isSuperAdminAccount(m)" class="px-1.5 py-0.2 bg-blue-600 text-white text-[9px] font-bold rounded-full">SUPER ADMIN</span>
+                  <td class="py-3.5 px-4">
+                    <div class="flex items-center gap-3">
+                      <img :src="m.avatar" class="w-9 h-9 rounded-2xl object-cover border border-slate-200 dark:border-slate-700/60 shadow-sm shrink-0" alt="Avatar" />
+                      <div class="min-w-0">
+                        <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5 whitespace-nowrap">
+                          {{ m.name }}
+                          <span v-if="isSuperAdminAccount(m)" class="px-1.5 py-0.5 bg-blue-600 text-white text-[9px] font-bold rounded-md whitespace-nowrap">SUPER ADMIN</span>
+                        </div>
+                        <div class="text-[11px] text-slate-400 dark:text-slate-400 font-sans truncate">{{ m.email }}</div>
                       </div>
-                      <div class="text-[11px] text-slate-400 dark:text-slate-400 font-sans">{{ m.email }}</div>
                     </div>
                   </td>
-                  <td class="py-3 px-4 font-mono font-bold text-blue-600 dark:text-blue-400">{{ m.cardNumber }}</td>
-                  <td class="py-3 px-4 font-mono text-slate-700 dark:text-slate-300">{{ m.phone }}</td>
-                  <td class="py-3 px-4">
+                  <td class="py-3.5 px-4 font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">{{ m.cardNumber }}</td>
+                  <td class="py-3.5 px-4 font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">{{ m.phone }}</td>
+                  <td class="py-3.5 px-4 whitespace-nowrap">
                     <span 
-                      class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1 shadow-2xs border"
+                      class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1 shadow-2xs border whitespace-nowrap shrink-0"
                       :class="m.memberType === 'guru' ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60' : 'bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800/60'"
                     >
                       <span v-if="m.memberType === 'guru'">👨‍🏫 Guru</span>
                       <span v-else>🎒 Siswa</span>
                     </span>
                   </td>
-                  <td class="py-3 px-4">
+                  <td class="py-3.5 px-4 whitespace-nowrap">
                     <span 
-                      class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border shadow-2xs"
+                      class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border shadow-2xs whitespace-nowrap shrink-0"
                       :class="m.role === 'admin' ? 'bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/60 font-extrabold' : 'bg-slate-100 dark:bg-slate-850/90 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 font-bold'"
                     >
                       {{ m.role === 'admin' ? 'ADMIN' : 'ANGGOTA' }}
                     </span>
                   </td>
-                  <td class="py-3 px-4">
+                  <td class="py-3.5 px-4 whitespace-nowrap">
                     <span 
-                      class="px-2.5 py-0.5 rounded-full text-[10px] font-bold border"
+                      class="px-2.5 py-1 rounded-md text-[10px] font-bold border whitespace-nowrap shrink-0 inline-flex items-center gap-1 shadow-2xs"
                       :class="m.isSuspended ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60' : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60'"
                     >
-                      {{ m.isSuspended ? 'Disuspend' : 'Aktif' }}
+                      <span class="w-1.5 h-1.5 rounded-full" :class="m.isSuspended ? 'bg-rose-500' : 'bg-emerald-500'"></span>
+                      <span>{{ m.isSuspended ? 'Disuspend' : 'Aktif' }}</span>
                     </span>
                     <div v-if="m.isSuspended" class="text-[10px] text-rose-600 dark:text-rose-400 max-w-xs truncate mt-0.5" :title="m.suspendReason">
                       {{ m.suspendReason }}
                     </div>
                   </td>
-                  <td class="py-3 px-4 text-center font-bold text-slate-800 dark:text-slate-200">
+                  <td class="py-3.5 px-4 text-center font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
                     {{ m.totalBorrowed || 0 }}x
                   </td>
-                  <td class="py-3 px-4 text-right">
-                    <div class="flex items-center justify-end gap-1.5">
+                  <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                    <div class="inline-flex items-center justify-end gap-1.5 shrink-0 flex-nowrap">
                       <button 
                         @click="openEditMemberModal(m)"
-                        class="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs transition cursor-pointer"
+                        class="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs transition cursor-pointer whitespace-nowrap shrink-0"
                       >
                         Edit
                       </button>
                       <button 
                         @click="openAdminResetMemberPassword(m)"
-                        class="px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-800/50 font-semibold text-xs transition cursor-pointer flex items-center gap-1"
+                        class="px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-800/50 font-semibold text-xs transition cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shrink-0"
                         title="Reset Sandi Anggota"
                       >
-                        <KeyRound class="w-3 h-3" />
-                        Reset Sandi
+                        <KeyRound class="w-3.5 h-3.5 shrink-0" />
+                        <span>Reset Sandi</span>
                       </button>
                       <button 
                         v-if="m.isSuspended"
                         @click="handleUnsuspend(m.id)"
-                        class="px-2.5 py-1 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition cursor-pointer"
+                        class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition cursor-pointer whitespace-nowrap shrink-0"
                       >
                         Aktifkan
                       </button>
                       <button 
                         v-else-if="m.role !== 'admin'"
                         @click="openSuspendMemberModal(m)"
-                        class="px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200/50 dark:border-rose-800/50 font-semibold text-xs transition cursor-pointer"
+                        class="px-2.5 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200/50 dark:border-rose-800/50 font-semibold text-xs transition cursor-pointer whitespace-nowrap shrink-0"
                       >
                         Suspend
                       </button>
                       <button 
                         v-if="m.role !== 'admin' && !isSuperAdminAccount(m)"
                         @click="handleDeleteMember(m.id, m.name)"
-                        class="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-rose-100 dark:hover:bg-rose-950/50 text-slate-500 hover:text-rose-700 transition cursor-pointer"
+                        class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-rose-100 dark:hover:bg-rose-950/50 text-slate-500 hover:text-rose-700 transition cursor-pointer shrink-0"
                         title="Hapus Anggota"
                       >
                         <Trash2 class="w-3.5 h-3.5" />
@@ -1222,21 +1235,21 @@
             </div>
 
             <!-- Desktop Table for Teacher Requests -->
-            <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80">
-              <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+            <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80 shadow-xs">
+              <table class="w-full min-w-[920px] text-left text-xs text-slate-600 dark:text-slate-300">
                 <thead class="bg-slate-50 dark:bg-slate-850/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 font-bold">
                   <tr>
-                    <th class="py-3.5 px-4 text-center">Foto Selfie</th>
-                    <th class="py-3.5 px-4">Nama & No. Kartu</th>
-                    <th class="py-3.5 px-4">Kontak Pemohon</th>
-                    <th class="py-3.5 px-4">Waktu Pengajuan</th>
-                    <th class="py-3.5 px-4 text-center">Status</th>
-                    <th class="py-3.5 px-4 text-right">Aksi Verifikasi</th>
+                    <th class="py-3.5 px-4 text-center whitespace-nowrap">Foto Selfie</th>
+                    <th class="py-3.5 px-4 whitespace-nowrap min-w-[200px]">Nama &amp; No. Kartu</th>
+                    <th class="py-3.5 px-4 whitespace-nowrap min-w-[180px]">Kontak Pemohon</th>
+                    <th class="py-3.5 px-4 whitespace-nowrap">Waktu Pengajuan</th>
+                    <th class="py-3.5 px-4 text-center whitespace-nowrap min-w-[140px]">Status</th>
+                    <th class="py-3.5 px-4 text-right whitespace-nowrap min-w-[240px]">Aksi Verifikasi</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
                   <tr v-for="req in paginatedTeacherRequests" :key="req.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
-                    <td class="py-3 px-4 text-center">
+                    <td class="py-3.5 px-4 text-center whitespace-nowrap">
                       <div 
                         class="relative inline-block group cursor-pointer" 
                         @click="openSelfiePreview(req.selfieUrl, req.memberName)"
@@ -1254,55 +1267,56 @@
                       </div>
                     </td>
 
-                    <td class="py-3 px-4">
+                    <td class="py-3.5 px-4">
                       <div class="font-bold text-slate-900 dark:text-white">{{ req.memberName }}</div>
                       <div class="text-[11px] text-blue-600 dark:text-blue-400 font-mono font-medium">{{ req.memberCardNumber }}</div>
                       <div class="text-[10px] text-slate-400 font-mono">ID: {{ req.id }}</div>
                     </td>
 
-                    <td class="py-3 px-4">
+                    <td class="py-3.5 px-4">
                       <div class="text-slate-800 dark:text-slate-200">{{ req.memberEmail || '-' }}</div>
                       <div class="text-[11px] text-slate-500 dark:text-slate-400 font-mono">{{ req.memberPhone || '-' }}</div>
                     </td>
 
-                    <td class="py-3 px-4 text-slate-600 dark:text-slate-300 font-medium">
+                    <td class="py-3.5 px-4 text-slate-600 dark:text-slate-300 font-medium whitespace-nowrap">
                       {{ formatDateTime(req.requestDate) }}
                     </td>
 
-                    <td class="py-3 px-4 text-center">
+                    <td class="py-3.5 px-4 text-center whitespace-nowrap">
                       <span 
-                        class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border"
-                        :class="req.status === 'pending' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 animate-pulse' : req.status === 'approved' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'"
+                        class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border whitespace-nowrap inline-flex items-center gap-1 shadow-2xs"
+                        :class="req.status === 'pending' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30' : req.status === 'approved' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'"
                       >
-                        {{ req.status === 'pending' ? 'Menunggu Review' : req.status === 'approved' ? 'Disetujui' : 'Ditolak' }}
+                        <span class="w-1.5 h-1.5 rounded-full" :class="req.status === 'pending' ? 'bg-amber-500 animate-pulse' : req.status === 'approved' ? 'bg-emerald-500' : 'bg-rose-500'"></span>
+                        <span>{{ req.status === 'pending' ? 'Menunggu Review' : req.status === 'approved' ? 'Disetujui' : 'Ditolak' }}</span>
                       </span>
                       <div v-if="req.status === 'rejected' && req.rejectionReason" class="text-[10px] text-rose-600 dark:text-rose-400 max-w-xs truncate mx-auto mt-0.5" :title="req.rejectionReason">
                         {{ req.rejectionReason }}
                       </div>
                     </td>
 
-                    <td class="py-3 px-4 text-right">
-                      <div v-if="req.status === 'pending'" class="flex items-center justify-end gap-1.5">
+                    <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                      <div v-if="req.status === 'pending'" class="inline-flex items-center justify-end gap-2 shrink-0 flex-nowrap">
                         <button 
                           @click="promptRejectTeacherRequest(req)"
-                          class="px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/50 font-bold text-xs transition cursor-pointer flex items-center gap-1 active:scale-95"
+                          class="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/50 font-bold text-xs transition cursor-pointer inline-flex items-center gap-1 active:scale-95 whitespace-nowrap shrink-0"
                           title="Tolak permohonan status Guru"
                         >
-                          <X class="w-3.5 h-3.5" />
+                          <X class="w-3.5 h-3.5 shrink-0" />
                           <span>Tolak</span>
                         </button>
 
                         <button 
                           @click="promptApproveTeacherRequest(req)"
-                          class="px-4 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer flex items-center gap-1 active:scale-95"
+                          class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer inline-flex items-center gap-1 active:scale-95 whitespace-nowrap shrink-0"
                           title="Setujui permohonan dan jadikan anggota sebagai Guru"
                         >
-                          <Check class="w-3.5 h-3.5" />
+                          <Check class="w-3.5 h-3.5 shrink-0" />
                           <span>Terima Permintaan</span>
                         </button>
                       </div>
 
-                      <div v-else class="text-[11px] text-slate-400">
+                      <div v-else class="text-[11px] text-slate-400 whitespace-nowrap">
                         <div>Oleh: <span class="text-slate-700 dark:text-slate-300 font-semibold">{{ req.reviewedBy || 'Admin' }}</span></div>
                         <div class="text-[10px]">{{ req.reviewedDate ? formatDateTime(req.reviewedDate) : '' }}</div>
                       </div>
@@ -1446,22 +1460,22 @@
             </div>
 
             <!-- Desktop Table for Student Verifications -->
-            <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80">
-              <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+            <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80 shadow-xs">
+              <table class="w-full min-w-[960px] text-left text-xs text-slate-600 dark:text-slate-300">
                 <thead class="bg-slate-50 dark:bg-slate-850/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 font-bold">
                   <tr>
-                    <th class="py-3.5 px-4 text-center">Foto Selfie</th>
-                    <th class="py-3.5 px-4">Nama & No. Kartu</th>
-                    <th class="py-3.5 px-4">Identitas Siswa (NIS / NISN)</th>
-                    <th class="py-3.5 px-4">Kontak Pemohon</th>
-                    <th class="py-3.5 px-4">Waktu Pengajuan</th>
-                    <th class="py-3.5 px-4 text-center">Status</th>
-                    <th class="py-3.5 px-4 text-right">Aksi Verifikasi</th>
+                    <th class="py-3.5 px-4 text-center whitespace-nowrap">Foto Selfie</th>
+                    <th class="py-3.5 px-4 whitespace-nowrap min-w-[200px]">Nama &amp; No. Kartu</th>
+                    <th class="py-3.5 px-4 whitespace-nowrap min-w-[180px]">Identitas Siswa (NIS / NISN)</th>
+                    <th class="py-3.5 px-4 whitespace-nowrap min-w-[180px]">Kontak Pemohon</th>
+                    <th class="py-3.5 px-4 whitespace-nowrap">Waktu Pengajuan</th>
+                    <th class="py-3.5 px-4 text-center whitespace-nowrap min-w-[140px]">Status</th>
+                    <th class="py-3.5 px-4 text-right whitespace-nowrap min-w-[240px]">Aksi Verifikasi</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
                   <tr v-for="req in paginatedStudentVerifications" :key="req.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
-                    <td class="py-3 px-4 text-center">
+                    <td class="py-3.5 px-4 text-center whitespace-nowrap">
                       <div 
                         class="relative inline-block group cursor-pointer" 
                         @click="openSelfiePreview(req.selfieUrl, req.memberName)"
@@ -1479,60 +1493,61 @@
                       </div>
                     </td>
 
-                    <td class="py-3 px-4">
+                    <td class="py-3.5 px-4">
                       <div class="font-bold text-slate-900 dark:text-white">{{ req.memberName }}</div>
                       <div class="text-[11px] text-blue-600 dark:text-blue-400 font-mono font-medium">{{ req.memberCardNumber }}</div>
                       <div class="text-[10px] text-slate-400 font-mono">ID: {{ req.id }}</div>
                     </td>
 
-                    <td class="py-3 px-4">
+                    <td class="py-3.5 px-4 whitespace-nowrap">
                       <div class="font-mono text-slate-900 dark:text-slate-100">NIS: <strong class="font-bold">{{ req.nis }}</strong></div>
                       <div class="font-mono text-slate-600 dark:text-slate-400 text-[11px]">NISN: <strong>{{ req.nisn }}</strong></div>
                     </td>
 
-                    <td class="py-3 px-4">
+                    <td class="py-3.5 px-4">
                       <div class="text-slate-800 dark:text-slate-200">{{ req.memberEmail || '-' }}</div>
                       <div class="text-[11px] text-slate-500 dark:text-slate-400 font-mono">{{ req.memberPhone || '-' }}</div>
                     </td>
 
-                    <td class="py-3 px-4 text-slate-600 dark:text-slate-300 font-medium">
+                    <td class="py-3.5 px-4 text-slate-600 dark:text-slate-300 font-medium whitespace-nowrap">
                       {{ formatDateTime(req.requestDate) }}
                     </td>
 
-                    <td class="py-3 px-4 text-center">
+                    <td class="py-3.5 px-4 text-center whitespace-nowrap">
                       <span 
-                        class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border"
-                        :class="req.status === 'pending' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 animate-pulse' : req.status === 'approved' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'"
+                        class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border whitespace-nowrap inline-flex items-center gap-1 shadow-2xs"
+                        :class="req.status === 'pending' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30' : req.status === 'approved' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'"
                       >
-                        {{ req.status === 'pending' ? 'Menunggu Review' : req.status === 'approved' ? 'Disetujui' : 'Ditolak' }}
+                        <span class="w-1.5 h-1.5 rounded-full" :class="req.status === 'pending' ? 'bg-amber-500 animate-pulse' : req.status === 'approved' ? 'bg-emerald-500' : 'bg-rose-500'"></span>
+                        <span>{{ req.status === 'pending' ? 'Menunggu Review' : req.status === 'approved' ? 'Disetujui' : 'Ditolak' }}</span>
                       </span>
                       <div v-if="req.status === 'rejected' && req.rejectionReason" class="text-[10px] text-rose-600 dark:text-rose-400 max-w-xs truncate mx-auto mt-0.5" :title="req.rejectionReason">
                         {{ req.rejectionReason }}
                       </div>
                     </td>
 
-                    <td class="py-3 px-4 text-right">
-                      <div v-if="req.status === 'pending'" class="flex items-center justify-end gap-1.5">
+                    <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                      <div v-if="req.status === 'pending'" class="inline-flex items-center justify-end gap-2 shrink-0 flex-nowrap">
                         <button 
                           @click="promptRejectStudentRequest(req)"
-                          class="px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/50 font-bold text-xs transition cursor-pointer flex items-center gap-1 active:scale-95"
+                          class="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/50 font-bold text-xs transition cursor-pointer inline-flex items-center gap-1 active:scale-95 whitespace-nowrap shrink-0"
                           title="Tolak permohonan verifikasi siswa"
                         >
-                          <X class="w-3.5 h-3.5" />
+                          <X class="w-3.5 h-3.5 shrink-0" />
                           <span>Tolak</span>
                         </button>
 
                         <button 
                           @click="promptApproveStudentRequest(req)"
-                          class="px-4 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer flex items-center gap-1 active:scale-95"
+                          class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer inline-flex items-center gap-1 active:scale-95 whitespace-nowrap shrink-0"
                           title="Setujui verifikasi siswa untuk akses e-Book"
                         >
-                          <Check class="w-3.5 h-3.5" />
+                          <Check class="w-3.5 h-3.5 shrink-0" />
                           <span>Setujui Siswa</span>
                         </button>
                       </div>
 
-                      <div v-else class="text-[11px] text-slate-400">
+                      <div v-else class="text-[11px] text-slate-400 whitespace-nowrap">
                         <div>Oleh: <span class="text-slate-700 dark:text-slate-300 font-semibold">{{ req.reviewedBy || 'Admin' }}</span></div>
                         <div class="text-[10px]">{{ req.reviewedDate ? formatDateTime(req.reviewedDate) : '' }}</div>
                       </div>
@@ -1625,38 +1640,42 @@
               <span class="text-xs text-rose-600 dark:text-rose-400 font-bold">{{ store.stats?.suspendedMembers ?? effectiveSuspendedMembers.length }} Anggota Terkena Sanksi</span>
             </div>
 
-            <div class="overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80">
-              <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+            <div class="overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80 shadow-xs">
+              <table class="w-full min-w-[850px] text-left text-xs text-slate-600 dark:text-slate-300">
                 <thead class="bg-slate-50 dark:bg-slate-850/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 font-bold">
                   <tr>
-                    <th class="py-3.5 px-4">Nama Anggota</th>
-                    <th class="py-3.5 px-4">No. Kartu Member</th>
-                    <th class="py-3.5 px-4">Alasan Suspend</th>
-                    <th class="py-3.5 px-4">Berlaku Sampai</th>
-                    <th class="py-3.5 px-4 text-right">Tindakan Admin</th>
+                    <th class="py-3.5 px-4 whitespace-nowrap min-w-[200px]">Nama Anggota</th>
+                    <th class="py-3.5 px-4 whitespace-nowrap">No. Kartu Member</th>
+                    <th class="py-3.5 px-4 min-w-[240px]">Alasan Suspend</th>
+                    <th class="py-3.5 px-4 whitespace-nowrap">Berlaku Sampai</th>
+                    <th class="py-3.5 px-4 text-right whitespace-nowrap min-w-[190px]">Tindakan Admin</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
                   <tr v-for="m in effectiveSuspendedMembers" :key="m.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
-                    <td class="py-3 px-4 flex items-center gap-2.5">
-                      <img :src="m.avatar" class="w-8 h-8 rounded-full object-cover border border-rose-300 dark:border-rose-900" alt="Avatar" />
-                      <div>
-                        <span class="font-bold text-slate-900 dark:text-white">{{ m.name }}</span>
-                        <div class="text-[10px] text-slate-400 dark:text-slate-500">{{ m.email }}</div>
+                    <td class="py-3.5 px-4">
+                      <div class="flex items-center gap-2.5">
+                        <img :src="m.avatar" class="w-8 h-8 rounded-full object-cover border border-rose-300 dark:border-rose-900 shrink-0" alt="Avatar" />
+                        <div class="min-w-0">
+                          <span class="font-bold text-slate-900 dark:text-white whitespace-nowrap">{{ m.name }}</span>
+                          <div class="text-[10px] text-slate-400 dark:text-slate-500 truncate">{{ m.email }}</div>
+                        </div>
                       </div>
                     </td>
-                    <td class="py-3 px-4 font-mono font-semibold text-slate-800 dark:text-slate-200">{{ m.cardNumber }}</td>
-                    <td class="py-3 px-4 text-rose-600 dark:text-rose-400 font-medium max-w-xs">{{ m.suspendReason }}</td>
-                    <td class="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">
+                    <td class="py-3.5 px-4 font-mono font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap">{{ m.cardNumber }}</td>
+                    <td class="py-3.5 px-4 text-rose-600 dark:text-rose-400 font-medium max-w-xs">{{ m.suspendReason }}</td>
+                    <td class="py-3.5 px-4 font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap">
                       {{ new Date(m.suspendedUntil || '').toLocaleDateString('id-ID') }}
                     </td>
-                    <td class="py-3 px-4 text-right">
-                      <button 
-                        @click="handleUnsuspend(m.id)"
-                        class="px-3 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer active:scale-95 shadow-xs"
-                      >
-                        Cabut Suspend (Aktifkan)
-                      </button>
+                    <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                      <div class="inline-flex items-center justify-end shrink-0">
+                        <button 
+                          @click="handleUnsuspend(m.id)"
+                          class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer active:scale-95 shadow-xs whitespace-nowrap shrink-0"
+                        >
+                          Cabut Suspend (Aktifkan)
+                        </button>
+                      </div>
                     </td>
                   </tr>
                   <tr v-if="effectiveSuspendedMembers.length === 0">
@@ -1762,47 +1781,48 @@
               </div>
             </div>
 
-            <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80">
-              <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+            <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80 shadow-xs">
+              <table class="w-full min-w-[850px] text-left text-xs text-slate-600 dark:text-slate-300">
                 <thead class="bg-slate-50 dark:bg-slate-850/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 font-bold">
                   <tr>
-                    <th class="py-3.5 px-4">Waktu</th>
-                    <th class="py-3.5 px-4">Penerima</th>
-                    <th class="py-3.5 px-4">Saluran</th>
-                    <th class="py-3.5 px-4">Pesan</th>
-                    <th class="py-3.5 px-4">Status</th>
+                    <th class="py-3.5 px-4 whitespace-nowrap">Waktu</th>
+                    <th class="py-3.5 px-4 whitespace-nowrap min-w-[180px]">Penerima</th>
+                    <th class="py-3.5 px-4 whitespace-nowrap min-w-[170px]">Saluran</th>
+                    <th class="py-3.5 px-4 min-w-[280px]">Pesan</th>
+                    <th class="py-3.5 px-4 whitespace-nowrap min-w-[100px]">Status</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
                   <tr v-for="n in paginatedNotifications" :key="n.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
-                    <td class="py-3 px-4 font-mono text-[10px] text-slate-500 dark:text-slate-400">
+                    <td class="py-3.5 px-4 font-mono text-[10px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
                       {{ new Date(n.sentAt).toLocaleString('id-ID') }}
                     </td>
-                    <td class="py-3 px-4">
-                      <div class="font-bold text-slate-900 dark:text-white">{{ n.memberName }}</div>
-                      <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">{{ n.recipient }}</div>
+                    <td class="py-3.5 px-4">
+                      <div class="font-bold text-slate-900 dark:text-white whitespace-nowrap">{{ n.memberName }}</div>
+                      <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono truncate">{{ n.recipient }}</div>
                     </td>
-                    <td class="py-3 px-4">
-                      <div class="flex items-center gap-1.5 flex-wrap">
+                    <td class="py-3.5 px-4 whitespace-nowrap">
+                      <div class="flex items-center gap-1.5 flex-nowrap">
                         <span 
-                          class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30" 
+                          class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 whitespace-nowrap shrink-0 shadow-2xs" 
                         >
                           {{ n.type }}
                         </span>
                         <span 
                           v-if="n.triggerReason === 'ebook_expired'" 
-                          class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 whitespace-nowrap"
+                          class="px-2 py-1 rounded-md text-[9px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 whitespace-nowrap shrink-0 shadow-2xs"
                         >
                           📱 e-Book Kedaluwarsa
                         </span>
                       </div>
                     </td>
-                    <td class="py-3 px-4 max-w-sm truncate text-slate-700 dark:text-slate-300" :title="n.message">
+                    <td class="py-3.5 px-4 max-w-sm truncate text-slate-700 dark:text-slate-300" :title="n.message">
                       {{ n.message }}
                     </td>
-                    <td class="py-3 px-4">
-                      <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold text-[10px]">
-                        {{ n.status }}
+                    <td class="py-3.5 px-4 whitespace-nowrap">
+                      <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold text-[10px] inline-flex items-center gap-1 whitespace-nowrap shrink-0 shadow-2xs">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        <span>{{ n.status }}</span>
                       </span>
                     </td>
                   </tr>
@@ -1908,29 +1928,31 @@
             </div>
 
             <!-- Desktop Table for Master Books -->
-            <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80">
-              <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+            <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80 shadow-xs">
+              <table class="w-full min-w-[880px] text-left text-xs text-slate-600 dark:text-slate-300">
                 <thead class="bg-slate-50 dark:bg-slate-850/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 font-bold">
                   <tr>
-                    <th class="py-3.5 px-4">Cover & Judul</th>
-                    <th class="py-3.5 px-4">Kategori</th>
-                    <th class="py-3.5 px-4">Lokasi Rak</th>
-                    <th class="py-3.5 px-4">Stok (Tersedia / Total)</th>
-                    <th class="py-3.5 px-4 text-right">Aksi</th>
+                    <th class="py-3.5 px-4 whitespace-nowrap min-w-[260px]">Cover &amp; Judul</th>
+                    <th class="py-3.5 px-4 whitespace-nowrap min-w-[140px]">Kategori</th>
+                    <th class="py-3.5 px-4 whitespace-nowrap min-w-[110px]">Lokasi Rak</th>
+                    <th class="py-3.5 px-4 whitespace-nowrap min-w-[150px]">Stok (Tersedia / Total)</th>
+                    <th class="py-3.5 px-4 text-right whitespace-nowrap min-w-[100px]">Aksi</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
                   <tr v-for="b in paginatedBooks" :key="b.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
-                    <td class="py-3 px-4 flex items-center gap-3">
-                      <img :src="b.cover" class="w-10 h-14 object-cover rounded-lg shadow-xs border border-slate-200/80 dark:border-slate-800" alt="Cover" />
-                      <div>
-                        <div class="font-bold text-slate-900 dark:text-white">{{ b.title }}</div>
-                        <div class="text-[10px] text-slate-400 dark:text-slate-500">{{ b.author }} • {{ b.publisher }} ({{ b.year }})</div>
+                    <td class="py-3.5 px-4">
+                      <div class="flex items-center gap-3">
+                        <img :src="b.cover" class="w-10 h-14 object-cover rounded-lg shadow-xs border border-slate-200/80 dark:border-slate-800 shrink-0" alt="Cover" />
+                        <div class="min-w-0">
+                          <div class="font-bold text-slate-900 dark:text-white truncate max-w-xs">{{ b.title }}</div>
+                          <div class="text-[10px] text-slate-400 dark:text-slate-500 truncate">{{ b.author }} • {{ b.publisher }} ({{ b.year }})</div>
+                        </div>
                       </div>
                     </td>
-                    <td class="py-3 px-4">
+                    <td class="py-3.5 px-4 whitespace-nowrap">
                       <span 
-                        class="px-2.5 py-0.5 rounded-full text-[11px] font-bold"
+                        class="px-2.5 py-1 rounded-md text-[11px] font-bold whitespace-nowrap inline-flex items-center shadow-2xs"
                         :style="{ 
                           backgroundColor: `${getCategoryColor(b.category)}18`, 
                           color: getCategoryColor(b.category) 
@@ -1939,29 +1961,31 @@
                         {{ b.category }}
                       </span>
                     </td>
-                    <td class="py-3 px-4">
-                      <span class="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 font-mono text-[11px] font-bold">
+                    <td class="py-3.5 px-4 whitespace-nowrap">
+                      <span class="px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 font-mono text-[11px] font-bold whitespace-nowrap inline-flex items-center shadow-2xs">
                         {{ b.shelfCode }}
                       </span>
                     </td>
-                    <td class="py-3 px-4 font-semibold text-slate-700 dark:text-slate-300">
+                    <td class="py-3.5 px-4 font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
                       <span class="text-emerald-600 dark:text-emerald-400 font-bold">{{ b.availableCopies }}</span> / {{ b.totalCopies }} Buku
                     </td>
-                    <td class="py-3 px-4 text-right space-x-1">
-                      <button 
-                        @click="openEditBookModal(b)"
-                        class="p-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs transition cursor-pointer"
-                        title="Edit Buku"
-                      >
-                        <Pencil class="w-3.5 h-3.5" />
-                      </button>
-                      <button 
-                        @click="handleDeleteBook(b.id)"
-                        class="p-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-slate-600 dark:text-slate-300 hover:text-rose-700 dark:hover:text-rose-300 text-xs transition cursor-pointer"
-                        title="Hapus Buku"
-                      >
-                        <Trash2 class="w-3.5 h-3.5" />
-                      </button>
+                    <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                      <div class="inline-flex items-center justify-end gap-1.5 shrink-0 flex-nowrap">
+                        <button 
+                          @click="openEditBookModal(b)"
+                          class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs transition cursor-pointer shrink-0"
+                          title="Edit Buku"
+                        >
+                          <Pencil class="w-3.5 h-3.5" />
+                        </button>
+                        <button 
+                          @click="handleDeleteBook(b.id)"
+                          class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-slate-600 dark:text-slate-300 hover:text-rose-700 dark:hover:text-rose-300 text-xs transition cursor-pointer shrink-0"
+                          title="Hapus Buku"
+                        >
+                          <Trash2 class="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 </tbody>
