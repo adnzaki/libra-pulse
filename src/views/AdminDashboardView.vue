@@ -689,17 +689,16 @@
 
             <!-- Desktop Table View -->
             <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80 shadow-xs">
-              <table class="w-full min-w-[980px] text-left text-xs text-slate-600 dark:text-slate-300">
+              <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
                 <thead class="bg-slate-50 dark:bg-slate-850/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 font-bold">
                   <tr>
-                    <th class="py-3.5 px-4 whitespace-nowrap">ID Transaksi</th>
-                    <th class="py-3.5 px-4 min-w-[220px]">Buku &amp; Jenis Koleksi</th>
-                    <th class="py-3.5 px-4 min-w-[180px]">Peminjam (Kartu Member)</th>
-                    <th class="py-3.5 px-4 whitespace-nowrap">Tgl Pinjam</th>
-                    <th class="py-3.5 px-4 whitespace-nowrap">Jatuh Tempo</th>
-                    <th class="py-3.5 px-4 whitespace-nowrap">Tgl Dikembalikan</th>
-                    <th class="py-3.5 px-4 whitespace-nowrap min-w-[150px]">Status</th>
-                    <th class="py-3.5 px-4 text-right whitespace-nowrap min-w-[80px]">Aksi</th>
+                    <th class="py-3.5 px-3 lg:px-4 whitespace-nowrap">ID Transaksi</th>
+                    <th class="py-3.5 px-3 lg:px-4 min-w-[230px]">Buku &amp; Peminjam</th>
+                    <th class="py-3.5 px-2.5 lg:px-3.5 whitespace-nowrap">Tgl Pinjam</th>
+                    <th class="py-3.5 px-2.5 lg:px-3.5 whitespace-nowrap">Jatuh Tempo</th>
+                    <th class="py-3.5 px-2.5 lg:px-3.5 whitespace-nowrap">Tgl Dikembalikan</th>
+                    <th class="py-3.5 px-2.5 lg:px-3.5 whitespace-nowrap">Status</th>
+                    <th class="py-3.5 px-3 lg:px-4 text-right whitespace-nowrap">Aksi</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -708,18 +707,18 @@
                     :key="l.id"
                     class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition"
                   >
-                    <td class="py-3.5 px-4 font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">{{ l.id }}</td>
-                    <td class="py-3.5 px-4">
-                      <div class="flex items-center gap-2.5">
+                    <td class="py-3.5 px-3 lg:px-4 font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap align-middle">{{ l.id }}</td>
+                    <td class="py-3.5 px-3 lg:px-4 align-middle">
+                      <div class="flex items-start gap-2.5 min-w-0">
                         <img 
                           v-if="l.bookCover" 
                           :src="l.bookCover" 
-                          class="w-8 h-11 object-cover rounded-lg border border-slate-200 dark:border-slate-700 shrink-0" 
+                          class="w-9 h-12 object-cover rounded-lg border border-slate-200 dark:border-slate-700 shrink-0 mt-0.5" 
                           alt="" 
                         />
-                        <div class="min-w-0">
-                          <div class="font-bold text-slate-900 dark:text-white truncate max-w-xs">{{ l.bookTitle }}</div>
-                          <div class="flex items-center gap-1.5 mt-0.5">
+                        <div class="min-w-0 flex-1 space-y-1">
+                          <div class="font-bold text-slate-900 dark:text-white truncate max-w-xs" :title="l.bookTitle">{{ l.bookTitle }}</div>
+                          <div class="flex items-center gap-1.5">
                             <span 
                               v-if="l.isEbook" 
                               class="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200/70 dark:border-indigo-800/60 text-[10px] font-bold whitespace-nowrap shrink-0"
@@ -733,20 +732,20 @@
                               📘 Buku Fisik • Rak {{ l.shelfCode }}
                             </span>
                           </div>
+                          <div class="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] min-w-0 pt-0.5">
+                            <span class="font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[200px]" :title="l.memberName">{{ l.memberName }}</span>
+                            <span class="text-[10px] font-mono text-slate-400 dark:text-slate-400 shrink-0">{{ l.memberCardNumber }}</span>
+                          </div>
                         </div>
                       </div>
                     </td>
-                    <td class="py-3.5 px-4">
-                      <div class="font-semibold text-slate-900 dark:text-slate-100">{{ l.memberName }}</div>
-                      <div class="text-[10px] font-mono text-slate-400 dark:text-slate-400">{{ l.memberCardNumber }}</div>
-                    </td>
-                    <td class="py-3.5 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                    <td class="py-3.5 px-2.5 lg:px-3.5 text-slate-600 dark:text-slate-300 whitespace-nowrap align-middle">
                       {{ new Date(l.borrowDate).toLocaleDateString('id-ID') }}
                     </td>
-                    <td class="py-3.5 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                    <td class="py-3.5 px-2.5 lg:px-3.5 text-slate-600 dark:text-slate-300 whitespace-nowrap align-middle">
                       {{ new Date(l.dueDate).toLocaleDateString('id-ID') }}
                     </td>
-                    <td class="py-3.5 px-4 whitespace-nowrap">
+                    <td class="py-3.5 px-2.5 lg:px-3.5 whitespace-nowrap align-middle">
                       <div class="font-bold text-emerald-600 dark:text-emerald-400">
                         {{ l.returnDate ? new Date(l.returnDate).toLocaleDateString('id-ID') : '-' }}
                       </div>
@@ -754,13 +753,13 @@
                         Oleh: {{ l.handledBy || 'Sistem' }}
                       </div>
                     </td>
-                    <td class="py-3.5 px-4 whitespace-nowrap">
+                    <td class="py-3.5 px-2.5 lg:px-3.5 whitespace-nowrap align-middle">
                       <span class="px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-800/80 font-bold text-[11px] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 shadow-2xs">
                         <CheckCircle2 class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                        <span>Sudah Dikembalikan</span>
+                        <span>Dikembalikan</span>
                       </span>
                     </td>
-                    <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                    <td class="py-3.5 px-3 lg:px-4 text-right whitespace-nowrap align-middle">
                       <div class="inline-flex items-center justify-end shrink-0">
                         <button 
                           type="button"
@@ -909,7 +908,7 @@
               </button>
             </div>
             <div class="text-xs text-slate-500 dark:text-slate-400 font-mono">
-              Menampilkan {{ filteredMembers.length }} dari {{ displayedTotalMembers }} Akun
+              Menampilkan {{ paginatedMembers.length }} dari {{ filteredMembers.length }} Akun
             </div>
           </div>
 
@@ -1003,37 +1002,36 @@
           </div>
 
           <!-- Desktop Table for Members -->
-          <div class="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80 shadow-xs">
-            <table class="w-full min-w-[1080px] text-left text-xs text-slate-600 dark:text-slate-300">
+          <div class="hidden md:block w-full overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900/80 shadow-xs">
+            <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
               <thead class="bg-slate-50 dark:bg-slate-850/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 font-bold">
                 <tr>
-                  <th class="py-3.5 px-4 whitespace-nowrap min-w-[220px]">Nama &amp; Email</th>
-                  <th class="py-3.5 px-4 whitespace-nowrap">No. Kartu</th>
-                  <th class="py-3.5 px-4 whitespace-nowrap">Kontak / HP</th>
-                  <th class="py-3.5 px-4 whitespace-nowrap">Tipe Keanggotaan</th>
-                  <th class="py-3.5 px-4 whitespace-nowrap">Peran</th>
-                  <th class="py-3.5 px-4 whitespace-nowrap min-w-[130px]">Status</th>
-                  <th class="py-3.5 px-4 text-center whitespace-nowrap">Pinjaman</th>
-                  <th class="py-3.5 px-4 text-right whitespace-nowrap min-w-[280px]">Aksi Kelola</th>
+                  <th class="py-3.5 px-3 lg:px-4 min-w-[220px]">Nama, Email &amp; No. Kartu</th>
+                  <th class="py-3.5 px-2.5 lg:px-3.5 whitespace-nowrap">Kontak / HP</th>
+                  <th class="py-3.5 px-2.5 lg:px-3.5 whitespace-nowrap">Tipe Keanggotaan</th>
+                  <th class="py-3.5 px-2.5 lg:px-3 whitespace-nowrap w-[96px]">Status</th>
+                  <th class="py-3.5 px-2.5 lg:px-3 text-center whitespace-nowrap">Pinjaman</th>
+                  <th class="py-3.5 px-3 lg:px-4 text-right whitespace-nowrap">Aksi Kelola</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
                 <tr v-for="m in paginatedMembers" :key="m.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
-                  <td class="py-3.5 px-4">
-                    <div class="flex items-center gap-3">
+                  <td class="py-3 px-3 lg:px-4 align-middle">
+                    <div class="flex items-center gap-2.5 lg:gap-3 min-w-0">
                       <img :src="m.avatar" class="w-9 h-9 rounded-2xl object-cover border border-slate-200 dark:border-slate-700/60 shadow-sm shrink-0" alt="Avatar" />
-                      <div class="min-w-0">
-                        <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5 whitespace-nowrap">
-                          {{ m.name }}
-                          <span v-if="isSuperAdminAccount(m)" class="px-1.5 py-0.5 bg-blue-600 text-white text-[9px] font-bold rounded-md whitespace-nowrap">SUPER ADMIN</span>
+                      <div class="min-w-0 flex-1">
+                        <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5 min-w-0">
+                          <span class="truncate" :title="m.name">{{ m.name }}</span>
+                          <span v-if="isSuperAdminAccount(m)" class="px-1.5 py-0.5 bg-blue-600 text-white text-[9px] font-bold rounded-md whitespace-nowrap shrink-0">SUPER ADMIN</span>
+                          <span v-else-if="m.role === 'admin'" class="px-1.5 py-0.5 bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 text-[9px] font-bold rounded-md whitespace-nowrap shrink-0">ADMIN</span>
                         </div>
-                        <div class="text-[11px] text-slate-400 dark:text-slate-400 font-sans truncate">{{ m.email }}</div>
+                        <div class="text-[11px] text-slate-400 dark:text-slate-400 font-sans truncate" :title="m.email">{{ m.email }}</div>
+                        <div class="text-[11px] font-mono font-bold text-blue-600 dark:text-blue-400 truncate mt-0.5">{{ m.cardNumber }}</div>
                       </div>
                     </div>
                   </td>
-                  <td class="py-3.5 px-4 font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">{{ m.cardNumber }}</td>
-                  <td class="py-3.5 px-4 font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">{{ m.phone }}</td>
-                  <td class="py-3.5 px-4 whitespace-nowrap">
+                  <td class="py-3 px-2.5 lg:px-3.5 font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap align-middle">{{ m.phone || '-' }}</td>
+                  <td class="py-3 px-2.5 lg:px-3.5 whitespace-nowrap align-middle">
                     <span 
                       class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1 shadow-2xs border whitespace-nowrap shrink-0"
                       :class="m.memberType === 'guru' ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60' : 'bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800/60'"
@@ -1042,78 +1040,112 @@
                       <span v-else>🎒 Siswa</span>
                     </span>
                   </td>
-                  <td class="py-3.5 px-4 whitespace-nowrap">
+                  <td class="py-3 px-2.5 lg:px-3 whitespace-nowrap align-middle">
                     <span 
-                      class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border shadow-2xs whitespace-nowrap shrink-0"
-                      :class="m.role === 'admin' ? 'bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/60 font-extrabold' : 'bg-slate-100 dark:bg-slate-850/90 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 font-bold'"
-                    >
-                      {{ m.role === 'admin' ? 'ADMIN' : 'ANGGOTA' }}
-                    </span>
-                  </td>
-                  <td class="py-3.5 px-4 whitespace-nowrap">
-                    <span 
-                      class="px-2.5 py-1 rounded-md text-[10px] font-bold border whitespace-nowrap shrink-0 inline-flex items-center gap-1 shadow-2xs"
+                      class="px-2 py-0.5 rounded-md text-[10px] font-bold border whitespace-nowrap shrink-0 inline-flex items-center gap-1 shadow-2xs"
                       :class="m.isSuspended ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60' : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60'"
                     >
                       <span class="w-1.5 h-1.5 rounded-full" :class="m.isSuspended ? 'bg-rose-500' : 'bg-emerald-500'"></span>
                       <span>{{ m.isSuspended ? 'Disuspend' : 'Aktif' }}</span>
                     </span>
-                    <div v-if="m.isSuspended" class="text-[10px] text-rose-600 dark:text-rose-400 max-w-xs truncate mt-0.5" :title="m.suspendReason">
+                    <div v-if="m.isSuspended && m.suspendReason" class="text-[10px] text-rose-600 dark:text-rose-400 max-w-[100px] truncate mt-0.5" :title="m.suspendReason">
                       {{ m.suspendReason }}
                     </div>
                   </td>
-                  <td class="py-3.5 px-4 text-center font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                  <td class="py-3 px-2.5 lg:px-3 text-center font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap align-middle">
                     {{ m.totalBorrowed || 0 }}x
                   </td>
-                  <td class="py-3.5 px-4 text-right whitespace-nowrap">
-                    <div class="inline-flex items-center justify-end gap-1.5 shrink-0 flex-nowrap">
+                  <td class="py-3 px-3 lg:px-4 text-right whitespace-nowrap align-middle">
+                    <div class="inline-flex items-center justify-end shrink-0">
                       <button 
-                        @click="openEditMemberModal(m)"
-                        class="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs transition cursor-pointer whitespace-nowrap shrink-0"
+                        type="button"
+                        @click="toggleMemberActionMenu(m, $event)"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/70 text-indigo-700 dark:text-indigo-300 font-semibold text-xs transition cursor-pointer whitespace-nowrap shrink-0 border border-indigo-200/80 dark:border-indigo-800/70 shadow-2xs"
+                        :class="{ 'bg-indigo-100 dark:bg-indigo-900/70 ring-2 ring-indigo-500/20 dark:ring-indigo-400/25': openMemberMenuId === m.id }"
+                        :aria-expanded="openMemberMenuId === m.id"
                       >
-                        Edit
-                      </button>
-                      <button 
-                        @click="openAdminResetMemberPassword(m)"
-                        class="px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-800/50 font-semibold text-xs transition cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shrink-0"
-                        title="Reset Sandi Anggota"
-                      >
-                        <KeyRound class="w-3.5 h-3.5 shrink-0" />
-                        <span>Reset Sandi</span>
-                      </button>
-                      <button 
-                        v-if="m.isSuspended"
-                        @click="handleUnsuspend(m.id)"
-                        class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition cursor-pointer whitespace-nowrap shrink-0"
-                      >
-                        Aktifkan
-                      </button>
-                      <button 
-                        v-else-if="m.role !== 'admin'"
-                        @click="openSuspendMemberModal(m)"
-                        class="px-2.5 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200/50 dark:border-rose-800/50 font-semibold text-xs transition cursor-pointer whitespace-nowrap shrink-0"
-                      >
-                        Suspend
-                      </button>
-                      <button 
-                        v-if="m.role !== 'admin' && !isSuperAdminAccount(m)"
-                        @click="handleDeleteMember(m.id, m.name)"
-                        class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-rose-100 dark:hover:bg-rose-950/50 text-slate-500 hover:text-rose-700 transition cursor-pointer shrink-0"
-                        title="Hapus Anggota"
-                      >
-                        <Trash2 class="w-3.5 h-3.5" />
+                        <span>Edit</span>
+                        <ChevronDown class="w-3.5 h-3.5 transition-transform duration-150" :class="{ 'rotate-180': openMemberMenuId === m.id }" />
                       </button>
                     </div>
                   </td>
                 </tr>
                 <tr v-if="filteredMembers.length === 0">
-                  <td colspan="8" class="py-8 text-center text-slate-400 italic">
+                  <td colspan="6" class="py-8 text-center text-slate-400 italic">
                     Tidak ada data anggota yang cocok dengan filter atau pencarian.
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
+
+          <!-- Floating Action Menu for Member Row -->
+          <Teleport to="body">
+            <div
+              v-if="openMemberMenuId && activeMenuMember"
+              class="fixed z-[120] w-48 rounded-2xl border shadow-2xl py-1.5 text-xs space-y-0.5"
+              :class="store.currentTheme === 'light'
+                ? 'bg-white text-slate-800 border-slate-200'
+                : (store.currentTheme === 'elegant'
+                  ? 'bg-[#0b142c]/95 text-slate-100 border-blue-400/35 backdrop-blur-xl'
+                  : 'bg-[#0e1422] text-slate-200 border-slate-700')"
+              :style="{
+                top: memberMenuPos.top !== undefined ? `${memberMenuPos.top}px` : undefined,
+                bottom: memberMenuPos.bottom !== undefined ? `${memberMenuPos.bottom}px` : undefined,
+                right: `${memberMenuPos.right}px`
+              }"
+              @click.stop
+            >
+              <button
+                type="button"
+                @click="openEditMemberModal(activeMenuMember); openMemberMenuId = null"
+                class="w-full text-left px-3.5 py-2 flex items-center gap-2.5 font-semibold transition cursor-pointer"
+                :class="store.currentTheme === 'light' ? 'hover:bg-slate-100 text-slate-700' : 'hover:bg-slate-800 text-slate-200'"
+              >
+                <Pencil class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                <span>Edit Data Anggota</span>
+              </button>
+              <button
+                type="button"
+                @click="openAdminResetMemberPassword(activeMenuMember); openMemberMenuId = null"
+                class="w-full text-left px-3.5 py-2 flex items-center gap-2.5 font-semibold transition cursor-pointer"
+                :class="store.currentTheme === 'light' ? 'hover:bg-blue-50 text-blue-700' : 'hover:bg-blue-950/50 text-blue-300'"
+              >
+                <KeyRound class="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                <span>Reset Sandi</span>
+              </button>
+              <button
+                v-if="activeMenuMember.isSuspended"
+                type="button"
+                @click="handleUnsuspend(activeMenuMember.id); openMemberMenuId = null"
+                class="w-full text-left px-3.5 py-2 flex items-center gap-2.5 font-semibold transition cursor-pointer"
+                :class="store.currentTheme === 'light' ? 'hover:bg-emerald-50 text-emerald-700' : 'hover:bg-emerald-950/50 text-emerald-300'"
+              >
+                <CheckCircle class="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                <span>Aktifkan Kembali</span>
+              </button>
+              <button
+                v-else-if="activeMenuMember.role !== 'admin' && !isSuperAdminAccount(activeMenuMember)"
+                type="button"
+                @click="openSuspendMemberModal(activeMenuMember); openMemberMenuId = null"
+                class="w-full text-left px-3.5 py-2 flex items-center gap-2.5 font-semibold transition cursor-pointer"
+                :class="store.currentTheme === 'light' ? 'hover:bg-amber-50 text-amber-700' : 'hover:bg-amber-950/50 text-amber-300'"
+              >
+                <AlertTriangle class="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                <span>Suspend Anggota</span>
+              </button>
+              <button
+                v-if="activeMenuMember.role !== 'admin' && !isSuperAdminAccount(activeMenuMember)"
+                type="button"
+                @click="handleDeleteMember(activeMenuMember.id, activeMenuMember.name); openMemberMenuId = null"
+                class="w-full text-left px-3.5 py-2 flex items-center gap-2.5 font-semibold transition cursor-pointer"
+                :class="store.currentTheme === 'light' ? 'hover:bg-rose-50 text-rose-600' : 'hover:bg-rose-950/50 text-rose-400'"
+              >
+                <Trash2 class="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                <span>Hapus Anggota</span>
+              </button>
+            </div>
+          </Teleport>
 
           <!-- Server-Side Pagination Controls for Members -->
           <AdminPagination 
@@ -3691,8 +3723,15 @@ const isCurrentSuperAdmin = computed(() => {
   return isSuperAdminAccount(store.currentUser);
 });
 
-// Total anggota yang boleh dilihat oleh admin saat ini (sembunyikan Super Admin jika bukan Super Admin)
+// Total anggota yang boleh dilihat oleh admin saat ini
+const totalMembersAllCount = ref(0);
 const displayedTotalMembers = computed(() => {
+  if (totalMembersAllCount.value > 0) {
+    return totalMembersAllCount.value;
+  }
+  if (typeof store.stats?.totalMembers === 'number' && store.stats.totalMembers > 0) {
+    return store.stats.totalMembers;
+  }
   if (isCurrentSuperAdmin.value) {
     return store.members.length;
   }
@@ -4099,19 +4138,78 @@ const memberTotalCount = ref(0);
 const memberTotalPages = ref(1);
 const filteredMembers = computed(() => ({ length: memberTotalCount.value }));
 
+// Dropdown menu state for Aksi Kelola button
+const openMemberMenuId = ref<string | null>(null);
+const memberMenuPos = ref<{ top?: number; bottom?: number; right: number }>({ top: 0, right: 0 });
+const activeMenuMember = computed(() => paginatedMembers.value.find(m => m.id === openMemberMenuId.value) || null);
+
+const toggleMemberActionMenu = (member: Member, event: MouseEvent) => {
+  event.stopPropagation();
+  if (openMemberMenuId.value === member.id) {
+    openMemberMenuId.value = null;
+    return;
+  }
+  const btn = event.currentTarget as HTMLElement | null;
+  if (btn) {
+    const rect = btn.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const right = Math.max(12, window.innerWidth - rect.right);
+    if (spaceBelow < 185) {
+      memberMenuPos.value = { bottom: window.innerHeight - rect.top + 6, right };
+    } else {
+      memberMenuPos.value = { top: rect.bottom + 6, right };
+    }
+  }
+  openMemberMenuId.value = member.id;
+};
+
+const closeMemberActionMenu = () => {
+  if (openMemberMenuId.value) {
+    openMemberMenuId.value = null;
+  }
+};
+
 const loadAdminMembers = async (force = false) => {
+  openMemberMenuId.value = null;
+  const filterVal = memberFilter.value;
+  const searchVal = memberSearch.value.trim();
   try {
     const res = await fetchPaginatedData<Member>('members', {
       page: memberCurrentPage.value,
       limit: memberItemsPerPage.value,
-      search: memberSearch.value.trim(),
-      status: memberFilter.value
+      search: searchVal,
+      role: filterVal === 'admin' ? 'admin' : 'all',
+      memberType: (filterVal === 'guru' || filterVal === 'siswa') ? filterVal : 'all',
+      status: (filterVal === 'active' || filterVal === 'suspended') ? filterVal : 'all'
     }, { forceRefresh: force });
     paginatedMembers.value = res.data;
     memberTotalCount.value = res.pagination.total;
     memberTotalPages.value = res.pagination.totalPages;
+    if (filterVal === 'all' && !searchVal) {
+      totalMembersAllCount.value = res.pagination.total;
+    }
   } catch {
-    const list = store.members;
+    let list = [...store.members];
+    if (filterVal === 'guru') {
+      list = list.filter(m => m.memberType === 'guru');
+    } else if (filterVal === 'siswa') {
+      list = list.filter(m => m.memberType === 'siswa' || !m.memberType);
+    } else if (filterVal === 'active') {
+      list = list.filter(m => !m.isSuspended);
+    } else if (filterVal === 'suspended') {
+      list = list.filter(m => Boolean(m.isSuspended));
+    } else if (filterVal === 'admin') {
+      list = list.filter(m => m.role === 'admin' || isSuperAdminAccount(m));
+    }
+    if (searchVal) {
+      const q = searchVal.toLowerCase();
+      list = list.filter(m =>
+        (m.name && m.name.toLowerCase().includes(q)) ||
+        (m.cardNumber && m.cardNumber.toLowerCase().includes(q)) ||
+        (m.email && m.email.toLowerCase().includes(q)) ||
+        (m.phone && m.phone.toLowerCase().includes(q))
+      );
+    }
     memberTotalCount.value = list.length;
     memberTotalPages.value = Math.max(1, Math.ceil(list.length / memberItemsPerPage.value));
     const start = (memberCurrentPage.value - 1) * memberItemsPerPage.value;
@@ -4505,11 +4603,19 @@ const reloadActiveTab = async (force = false) => {
 };
 
 watch(activeTab, () => {
+  openMemberMenuId.value = null;
   reloadActiveTab();
 });
 
 onMounted(() => {
   reloadActiveTab();
+  window.addEventListener('click', closeMemberActionMenu);
+  window.addEventListener('scroll', closeMemberActionMenu, true);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('click', closeMemberActionMenu);
+  window.removeEventListener('scroll', closeMemberActionMenu, true);
 });
 
 // Student Verification Approval Custom Modal State

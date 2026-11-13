@@ -840,17 +840,33 @@ app.get('/api/members', async (req, res) => {
 
     // Saring role jika diminta
     if (role !== 'all') {
-      members = members.filter(m => m.role === role)
+      if (role === 'admin') {
+        members = members.filter(m => m.role === 'admin' || m.role === 'superadmin' || m.isSuperAdmin === true)
+      } else {
+        members = members.filter(m => m.role === role)
+      }
     }
 
     if (memberType !== 'all') {
-      members = members.filter(m => m.memberType === memberType)
+      if (memberType === 'guru') {
+        members = members.filter(m => m.memberType === 'guru')
+      } else if (memberType === 'siswa') {
+        members = members.filter(m => m.memberType === 'siswa' || !m.memberType)
+      } else {
+        members = members.filter(m => m.memberType === memberType)
+      }
     }
 
     if (status === 'suspended') {
       members = members.filter(m => Boolean(m.isSuspended))
     } else if (status === 'active') {
       members = members.filter(m => !m.isSuspended)
+    } else if (status === 'guru') {
+      members = members.filter(m => m.memberType === 'guru')
+    } else if (status === 'siswa') {
+      members = members.filter(m => m.memberType === 'siswa' || !m.memberType)
+    } else if (status === 'admin') {
+      members = members.filter(m => m.role === 'admin' || m.role === 'superadmin' || m.isSuperAdmin === true)
     }
 
     if (search) {

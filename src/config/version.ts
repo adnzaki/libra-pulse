@@ -8,7 +8,7 @@ import type { ChangelogItem, AppVersionConfig } from '../types.js';
  * akan secara otomatis mengikuti konstanta ini.
  * ============================================================================
  */
-export const APP_BUILD_NUMBER = '10014';
+export const APP_BUILD_NUMBER = '10015';
 export const CURRENT_APP_VERSION = '1.0.0';
 export const APP_RELEASE_DATE = '12 November 2026';
 export const APP_RELEASE_CODENAME = `Libra Stabil (Build ${APP_BUILD_NUMBER})`;
